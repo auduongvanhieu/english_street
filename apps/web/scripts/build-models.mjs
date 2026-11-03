@@ -6,8 +6,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, quantize, resample, meshopt } from '@gltf-transform/functions';
+import { dedup, prune, quantize, resample, meshopt, textureCompress } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
+import sharp from 'sharp';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const cache = path.resolve(here, '../node_modules/.cache/es-models');
@@ -67,7 +68,8 @@ for (const [name, m] of Object.entries(MODELS)) {
     if (seen.has(a.getName())) a.dispose();
     seen.add(a.getName());
   }
-  await doc.transform(dedup(), prune(), resample(), quantize({ quantizePosition: 14, quantizeNormal: 10, quantizeTexcoord: 12 }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  // Flora textures ship at 1024²+; 256² is plenty for flat-shaded clumps seen from a few metres away.
+  await doc.transform(textureCompress({ encoder: sharp, resize: [256, 256], targetFormat: 'webp', quality: 80 }), dedup(), prune(), resample(), quantize({ quantizePosition: 14, quantizeNormal: 10, quantizeTexcoord: 12 }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   mkdirSync(path.join(out, m.dir), { recursive: true });
   const dest = path.join(out, m.dir, `${name}.glb`);
   await io.write(dest, doc);

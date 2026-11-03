@@ -7,6 +7,8 @@ import { City } from './City';
 import { LocalPlayer, type Controls } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
+import { Critters } from './Critters';
+import { Flora } from './Flora';
 import { PerfProbe } from './PerfProbe';
 import { useSettings } from '../store/settings';
 
@@ -50,6 +52,11 @@ export default function Scene({ playerName }: { playerName: string }) {
           <Npcs />
           <LocalPlayer name={playerName} />
           <RemotePlayers />
+        </Suspense>
+        {/* Decoration loads after the street itself so the first frame is never held back by flowers. */}
+        <Suspense fallback={null}>
+          <Flora />
+          <Critters />
         </Suspense>
         <PerfProbe />
       </Canvas>

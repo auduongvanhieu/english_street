@@ -11,6 +11,10 @@ triangles are). Measured via `window.__esPerf` after joining and dismissing the 
 | 2026-11-03 | Step 2 / phase 7 (mobile HUD) | Pixel 7 412×839 | low | 184 | 47.8k |
 | 2026-11-03 | Step 2 / phase 7 (mobile HUD) | iPhone 13 landscape 750×342 | low | 198 | 49.1k |
 
+| 2026-11-04 | Step 2 / phase 10 (human NPCs) | 1280×720 | high | 257 | ~150k |
+| 2026-11-04 | Step 2 / phase 11 (flora + critters) | 1280×720 | high | 286 | ~410k |
+| 2026-11-04 | Step 2 / phase 11 (flora + critters) | iPhone 13 390×664 | low | 133 | ~174k |
+
 Budgets (see the Step 2 plan): ≤ 450 draw calls on high, ≤ 250 on low, ≥ 30 FPS on a mid-range phone.
 Real-device FPS should be checked with the ⚡/✨ quality toggle; the `perf` analytics event records it per session
 (`/admin/stats` → client.avgFps, lowFpsSessions).

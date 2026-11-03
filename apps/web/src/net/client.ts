@@ -38,6 +38,10 @@ export function getRoom() {
   return room;
 }
 
+/** Server clock: Date.now() - offset ≈ the game server's Date.now() (set from the TIME message on join). */
+let clockOffset = 0;
+export const serverNow = () => Date.now() - clockOffset;
+
 export async function connect(opts: JoinOptions): Promise<Room<StreetStateLike>> {
   const g = useGame.getState();
   g.setConn('connecting');
@@ -91,6 +95,9 @@ function bindRoom(r: Room<StreetStateLike>) {
   $(r.state).players.onRemove((_p, id) => g.removePlayer(id));
 
   r.onMessage<ChatDelivery>(MSG.CHAT, (m) => g.pushChat(m));
+  r.onMessage<{ now: number }>(MSG.TIME, (m) => {
+    if (typeof m?.now === 'number') clockOffset = Date.now() - m.now;
+  });
   r.onMessage<TalkMessage & { from: string }>(MSG.TALK, (m) => talkHandlers.forEach((h) => h(m)));
   r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));

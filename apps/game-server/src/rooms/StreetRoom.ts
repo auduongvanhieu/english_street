@@ -192,6 +192,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     p.y = SPAWN.y;
     p.z = SPAWN.z + (Math.random() - 0.5) * 2;
     this.state.players.set(client.sessionId, p);
+    client.send(MSG.TIME, { now: Date.now() });
     console.log(`[street] ${p.name} joined (${this.clients.length}/${this.maxClients})`);
   }
 

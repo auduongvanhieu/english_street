@@ -62,4 +62,4 @@ export const sendFeedback = (text: string, name: string, page: string, meta: Rec
 // ---- learning helpers (phase 8)
 export const fetchIpa = (words: string[]) => get<Record<string, string>>(`/dict/ipa?words=${encodeURIComponent(words.join(','))}`);
 export const translateText = (text: string) => post<{ vi: string; cached: boolean }>('/translate', { text, playerId: getPlayerId() });
-export const addVocab = (word: string, meaningVi: string, example = '') => post<{ ok: true }>(`/me/vocab${q()}`, { word, meaningVi, example });
+export const addVocab = (word: string, meaningVi: string, example = '') => post<{ ok: true }>(`/me/vocab${q()}`, { playerId: getPlayerId(), word, meaningVi, example });

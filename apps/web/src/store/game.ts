@@ -52,6 +52,9 @@ interface GameState {
   /** Remote player tapped in the scene (shows the player popup). */
   selectedPlayer: string | null;
   setSelectedPlayer: (id: string | null) => void;
+  /** Cat / dog tapped in the scene (shows the critter card). */
+  selectedCritter: string | null;
+  setSelectedCritter: (id: string | null) => void;
   /** Local one-shot emote (anim name) and when it ends. */
   emote: { name: string; until: number } | null;
   playEmote: (name: string) => void;
@@ -92,7 +95,9 @@ export const useGame = create<GameState>((set) => ({
   chatLog: [],
   pushChat: (m) => set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
   selectedPlayer: null,
-  setSelectedPlayer: (selectedPlayer) => set({ selectedPlayer }),
+  setSelectedPlayer: (selectedPlayer) => set({ selectedPlayer, ...(selectedPlayer ? { selectedCritter: null } : {}) }),
+  selectedCritter: null,
+  setSelectedCritter: (selectedCritter) => set({ selectedCritter, ...(selectedCritter ? { selectedPlayer: null } : {}) }),
   emote: null,
   playEmote: (name) => set({ emote: { name, until: Date.now() + 2600 } }),
   uiPanel: null,

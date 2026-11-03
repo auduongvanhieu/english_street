@@ -13,6 +13,8 @@ export const MSG = {
   TALK: 'talk',
   /** client -> server: text heard within SHOUT_RADIUS; server -> client as a CHAT message with shout: true */
   SHOUT: 'shout',
+  /** server -> client on join: { now } server epoch ms, so every client can run the same deterministic street life clock */
+  TIME: 'time',
 } as const;
 
 export interface JoinOptions {

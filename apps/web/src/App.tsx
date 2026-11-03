@@ -14,6 +14,9 @@ import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
 import { PlayerPopup, ShoutButton, TalkBox, TalkToast } from './ui/Talk';
+import { CritterCard } from './ui/CritterCard';
+import { setAmbientVolume } from './audio/ambient';
+import { useSettings } from './store/settings';
 import { isTouchDevice } from './input/joystick';
 import { attachCameraGestures, cameraOrbit } from './input/camera';
 import { Joystick } from './ui/Joystick';
@@ -56,6 +59,20 @@ export default function App() {
       offWatch();
     };
   }, []);
+
+  // Ambient sound follows the setting; browsers only allow audio after a gesture, so (re)apply on first tap/key.
+  const ambient = useSettings((s) => s.ambientVolume);
+  useEffect(() => {
+    if (conn !== 'connected') return;
+    setAmbientVolume(ambient);
+    const kick = () => setAmbientVolume(useSettings.getState().ambientVolume);
+    window.addEventListener('pointerdown', kick, { once: true });
+    window.addEventListener('keydown', kick, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', kick);
+      window.removeEventListener('keydown', kick);
+    };
+  }, [conn, ambient]);
 
   // Drag on the scene rotates the camera (mouse or one finger); wheel / pinch zooms.
   useEffect(() => {
@@ -151,6 +168,7 @@ export default function App() {
       <InviteToast />
       <TalkToast />
       {!hudHidden && <PlayerPopup />}
+      {!hudHidden && <CritterCard />}
       {!hudHidden && <TalkBox compact={touch} />}
       <NpcPanel />
       <PairPanel />

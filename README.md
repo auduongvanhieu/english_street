@@ -156,3 +156,15 @@ and **procedural accessories** attached to bones (`scene/Human.tsx`): barista ca
 stethoscope, bow tie, apron. Bone-space objects are scaled by the inverse bone world scale (the rigs use ~95×).
 Players still use the robot model; the same pipeline will give them human avatars in Step 3.
 Preview any look without joining the game: `http://localhost:5173/dev/preview.html?npcs=barista,doctor` (dev only).
+
+## Street life (Step 2 / phase 11)
+
+- **Cats and dogs** (`world/critters.ts`, `scene/Critters.tsx`): 3 cats + 2 dogs (Quaternius CC0) follow fixed waypoint
+  loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
+  so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
+  sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
+- **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh
+  (9 draw calls); density 5+8 per tile on high, 2+3 on low. Textures were downsized to 256² WebP by the model build.
+- **Ambient sound** (`audio/ambient.ts`): procedural wind/traffic noise bed + bird chirps and critter voices via WebAudio
+  (no audio files). Follows the ⚙️ ambient slider; default 40 % on desktop, off on phones.
+- Draw calls after this phase: high 286 (budget 450), low 133 (budget 250).
