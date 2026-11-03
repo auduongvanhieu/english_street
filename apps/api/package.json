@@ -9,7 +9,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "prisma": "prisma",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "eval:npc": "tsx scripts/npc-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
