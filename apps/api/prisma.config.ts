@@ -1,4 +1,8 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
+import { findRootEnv } from '@es/shared/loadEnv';
+
+const envPath = findRootEnv(process.cwd());
+if (envPath) loadDotenv({ path: envPath, quiet: true });
 import { defineConfig } from 'prisma/config';
 
 export default defineConfig({

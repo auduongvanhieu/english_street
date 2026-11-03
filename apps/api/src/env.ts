@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+import { findRootEnv } from '@es/shared/loadEnv';
+
+// Load the nearest .env walking up from the API folder (the monorepo root in dev).
+const envPath = findRootEnv(process.cwd());
+if (envPath) loadDotenv({ path: envPath, quiet: true });
 
 const EnvSchema = z.object({
   DATABASE_URL: z.string().default('postgresql://es:es@localhost:5432/english_street'),

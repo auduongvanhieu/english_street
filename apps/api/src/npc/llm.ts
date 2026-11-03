@@ -38,8 +38,18 @@ export const SAFE_FALLBACK: NpcTurnResponse = {
 };
 
 // ---------------------------------------------------------------- Claude
+export interface UsageTotals {
+  requests: number;
+  input: number;
+  cacheRead: number;
+  cacheWrite: number;
+  output: number;
+}
+
 export class ClaudeNpcLlm implements NpcLlm {
   readonly name = `claude:${env.NPC_MODEL}`;
+  /** Running token totals since process start (for cost reporting). */
+  readonly usage: UsageTotals = { requests: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
   private client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   async turn(input: TurnInput): Promise<NpcTurnResponse> {
@@ -69,6 +79,11 @@ export class ClaudeNpcLlm implements NpcLlm {
 
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await this.client.messages.parse(req);
+      this.usage.requests += 1;
+      this.usage.input += res.usage.input_tokens;
+      this.usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
+      this.usage.cacheWrite += res.usage.cache_creation_input_tokens ?? 0;
+      this.usage.output += res.usage.output_tokens;
       if (res.stop_reason === 'refusal') return SAFE_FALLBACK;
       if (res.parsed_output) return sanitize(res.parsed_output, input);
     }

@@ -1,9 +1,13 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
+import { findRootEnv } from '@es/shared/loadEnv';
 import { createServer } from 'node:http';
 import { Server } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { STREET_ROOM } from '@es/shared';
 import { StreetRoom } from './rooms/StreetRoom';
+
+const envPath = findRootEnv(process.cwd());
+if (envPath) loadDotenv({ path: envPath, quiet: true });
 
 const port = Number(process.env.GAME_PORT ?? 2567);
 
