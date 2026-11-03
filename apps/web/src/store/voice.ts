@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useSettings } from './settings';
 import { track } from '../net/analytics';
 import { speak, stopSpeaking, ttsSupported } from '../voice/tts';
 import { sttSupported } from '../voice/stt';
@@ -37,6 +38,7 @@ export const useVoice = create<VoiceStore>((set, get) => ({
     cancelCurrent?.();
     cancelCurrent = speak(text, {
       lang,
+      rate: useSettings.getState().ttsRate,
       onStart: () => set({ speakingNpc: npcId }),
       onEnd: () => set((s) => (s.speakingNpc === npcId ? { speakingNpc: null } : {})),
     });

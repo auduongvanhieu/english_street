@@ -18,7 +18,8 @@ import { Joystick } from './ui/Joystick';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
-import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, QualityToggle, TalkButton, VoiceChatButton } from './ui/Hud';
+import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
+import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
 
 if (import.meta.env.DEV) {
@@ -110,7 +111,7 @@ export default function App() {
           {/* top-right: utility buttons */}
           <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <VoiceChatButton compact />
-            <QualityToggle compact />
+            <SettingsButton compact />
             <FeedbackButton compact />
           </div>
           {/* bottom-right: actions */}
@@ -129,7 +130,7 @@ export default function App() {
           <div data-ui className="absolute left-3 top-3 flex flex-wrap gap-2">
             <EmoteBar />
             <VoiceChatButton />
-            <QualityToggle />
+            <SettingsButton />
             <FeedbackButton />
           </div>
           <ChatBox compact={false} open onClose={() => undefined} />

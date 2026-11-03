@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AVATAR_COLORS, BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
 import { useGame } from '../store/game';
 import { Sheet, SheetHeader } from './Sheet';
+import { SettingsPanel } from './SettingsPanel';
 import { useProfile } from '../store/profile';
 import { buyItem, fetchPlacement, fetchVocab, reviewVocab, setAvatarColor, submitPlacement } from '../net/api';
 
@@ -134,6 +135,7 @@ export function UiPanels() {
   if (which === 'avatar') return <AvatarPanel />;
   if (which === 'placement') return <PlacementPanel />;
   if (which === 'profile') return <ProfilePanel />;
+  if (which === 'settings') return <SettingsPanel />;
   return null;
 }
 

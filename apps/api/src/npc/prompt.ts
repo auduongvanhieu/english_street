@@ -24,6 +24,7 @@ ${npc.knowledge.trim()}
 
 # Output fields
 - reply: what you say out loud, in English.
+- reply_vi: null, unless the current state says subtitles are ON — then a natural Vietnamese translation of "reply" (same meaning, same tone, no extra commentary).
 - emotion: neutral | happy | confused | annoyed — how you feel right now.
 - goals_completed: ids of quest goals the learner has JUST achieved in their latest message (only goals not yet done; empty if none). Be fair: a goal counts if the intent is clear even with small mistakes.
 - corrections: real mistakes in the learner's latest message worth fixing (max 2, most important first). "explanation_vi" is a one-sentence explanation in Vietnamese. Ignore punctuation/capitalisation-only issues and casual chat style. If the message is already correct, corrections must be an empty list — never "correct" a sentence into the same sentence.
@@ -54,6 +55,7 @@ export function stateBlock(opts: {
   goalsDone: string[];
   goalsTotal: number;
   turnsLeft: number;
+  subtitles?: boolean;
 }): string {
   const done = opts.goalsDone.length ? opts.goalsDone.join(', ') : 'none yet';
   const wrap =
@@ -64,6 +66,7 @@ export function stateBlock(opts: {
         : '';
   return `# Current state
 Learner level: ${opts.level}
+Vietnamese subtitles: ${opts.subtitles ? 'ON (fill reply_vi)' : 'OFF (reply_vi must be null)'}
 Goals already completed: ${done} (${opts.goalsDone.length}/${opts.goalsTotal})
 Exchanges remaining: ${opts.turnsLeft}${wrap}`;
 }

@@ -38,7 +38,7 @@ const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
 export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
 export const startQuest = (questId: string, playerName: string) => post<SessionState>(`/quests/${questId}/start`, { playerId: getPlayerId(), playerName });
 export const startFreeTalk = (npcId: string, playerName: string) => post<SessionState>(`/npc/${npcId}/talk`, { playerId: getPlayerId(), playerName });
-export const sendTurn = (sessionId: string, text: string, source: 'text' | 'voice' = 'text') => post<SessionChatResponse>(`/sessions/${sessionId}/chat`, { playerId: getPlayerId(), text, source });
+export const sendTurn = (sessionId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false) => post<SessionChatResponse>(`/sessions/${sessionId}/chat`, { playerId: getPlayerId(), text, source, subtitles });
 export const endSession = (sessionId: string) => post<{ summary: AttemptSummary | null }>(`/sessions/${sessionId}/end`, { playerId: getPlayerId() });
 
 export const register = (email: string, password: string, name: string, guestId: string) => post<AuthResponse>('/auth/register', { email, password, name, guestId });
@@ -58,3 +58,8 @@ export const fetchConfig = () => get<ClientConfig>('/config');
 export const verifyBetaCode = (code: string) => post<{ pass: string }>('/beta/verify', { code });
 export const sendFeedback = (text: string, name: string, page: string, meta: Record<string, string | number | boolean>) =>
   post<{ ok: true }>('/feedback', { playerId: getPlayerId(), name, text, page, meta });
+
+// ---- learning helpers (phase 8)
+export const fetchIpa = (words: string[]) => get<Record<string, string>>(`/dict/ipa?words=${encodeURIComponent(words.join(','))}`);
+export const translateText = (text: string) => post<{ vi: string; cached: boolean }>('/translate', { text, playerId: getPlayerId() });
+export const addVocab = (word: string, meaningVi: string, example = '') => post<{ ok: true }>(`/me/vocab${q()}`, { word, meaningVi, example });

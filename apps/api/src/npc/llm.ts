@@ -27,6 +27,8 @@ export interface TurnInput {
   /** Prior exchanges (user/assistant alternating, user first). */
   history: ChatMessage[];
   text: string;
+  /** Include a Vietnamese translation of the reply. */
+  subtitles?: boolean;
 }
 
 export interface JudgeInput {
@@ -46,11 +48,14 @@ export interface NpcLlm {
   turn(input: TurnInput): Promise<NpcTurnResponse>;
   /** Pair quests: the NPC evaluates one learner's line as an observer. */
   judge(input: JudgeInput): Promise<NpcTurnResponse>;
+  /** Short English → Vietnamese translation (subtitles for greetings, chat lines, single words). */
+  translate(text: string): Promise<string>;
 }
 
 /** Said when the model refuses or returns unparseable output, so the game never stalls. */
 export const SAFE_FALLBACK: NpcTurnResponse = {
   reply: "Sorry, I didn't quite catch that. Could you say it another way?",
+  reply_vi: null,
   emotion: 'confused',
   goals_completed: [],
   corrections: [],
@@ -91,6 +96,7 @@ export class ClaudeNpcLlm implements NpcLlm {
             goalsDone: input.goalsDone,
             goalsTotal: input.quest?.goals.length ?? 0,
             turnsLeft: input.turnsLeft,
+            subtitles: input.subtitles,
           }),
         },
       ],
@@ -137,6 +143,23 @@ export class ClaudeNpcLlm implements NpcLlm {
       corrections: out.corrections.filter((c) => normalize(c.corrected) !== normalize(c.original)).slice(0, 2),
       new_vocab: out.new_vocab.slice(0, 2),
     };
+  }
+
+  async translate(text: string): Promise<string> {
+    const res = await this.client.messages.create({
+      model: env.NPC_MODEL_BASIC,
+      max_tokens: 300,
+      system: 'Translate the user message from English to natural Vietnamese for a language learner. Reply with the translation only — no quotes, no notes. If the message is a single word, give its most common meaning(s) as a short gloss.',
+      messages: [{ role: 'user', content: text }],
+    });
+    this.usage.requests += 1;
+    this.usage.input += res.usage.input_tokens;
+    this.usage.output += res.usage.output_tokens;
+    budget.recordUsage(env.NPC_MODEL_BASIC, { input: res.usage.input_tokens, output: res.usage.output_tokens, cacheRead: 0, cacheWrite: 0 });
+    return res.content
+      .map((b) => (b.type === 'text' ? b.text : ''))
+      .join('')
+      .trim();
   }
 
   /** One parse call with usage accounting; null on refusal or unparseable output (after one retry). */
@@ -190,6 +213,9 @@ const VI_RE = /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọ�
 
 export class MockNpcLlm implements NpcLlm {
   readonly name = 'mock';
+  async translate(text: string): Promise<string> {
+    return `[vi] ${text}`;
+  }
   declare judge: (input: JudgeInput) => Promise<NpcTurnResponse>;
   async turn(input: TurnInput): Promise<NpcTurnResponse> {
     const t = input.text.toLowerCase();
@@ -229,6 +255,7 @@ export class MockNpcLlm implements NpcLlm {
       corrections,
       new_vocab: goals.includes('order_drink') ? [{ word: 'to go', meaning_vi: 'mang đi', example: 'A latte to go, please.' }] : [],
       hint: vi || silent ? 'Try: "Can I have a coffee, please?"' : null,
+      reply_vi: input.subtitles ? `[vi] ${reply}` : null,
     };
   }
 }
@@ -262,6 +289,7 @@ MockNpcLlm.prototype.judge = async function (input: JudgeInput): Promise<NpcTurn
       : [],
     new_vocab: [],
     hint: vi ? 'Try: "What do you recommend?"' : null,
+    reply_vi: null,
   };
 };
 

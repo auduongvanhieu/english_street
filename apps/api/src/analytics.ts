@@ -72,6 +72,12 @@ export async function computeStats(repo: AttemptRepo, days: number) {
       spendToday: spend,
     },
     social: { pairQuests: count('pair_start'), voiceChatEnabled: count('voice_chat_on'), reports: count('report'), feedback: count('feedback') },
+    learning: {
+      subtitleTurns: events.filter((e) => e.name === 'npc_turn' && e.props?.subtitles === true).length,
+      wordTaps: count('word_tap'),
+      chatTranslations: count('translate_chat'),
+      settingsChanges: count('settings_change'),
+    },
     client: {
       pageLoads: loads.length,
       touchShare: loads.length ? Math.round((loads.filter((e) => e.props?.touch === true).length / loads.length) * 100) : null,

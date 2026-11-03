@@ -8,6 +8,7 @@ import { npcRoutes } from './routes/npc';
 import { pairRoutes } from './routes/pair';
 import { adminRoutes } from './routes/admin';
 import { telemetryRoutes } from './routes/telemetry';
+import { dictRoutes } from './routes/dict';
 import { PairService, type PairSession } from './npc/pairService';
 import { createNpcLlm } from './npc/llm';
 import { registerAuth } from './auth';
@@ -18,11 +19,13 @@ import { NpcService } from './npc/service';
 import { budget } from './npc/budget';
 import { limiter } from './npc/ratelimit';
 
-const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env.TRUST_PROXY });
+// forceCloseConnections: a restart (tsx watch, systemd) must free the port immediately instead of waiting for keep-alive sockets.
+const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env.TRUST_PROXY, forceCloseConnections: true });
 
 const [redis, attempts] = await Promise.all([connectRedis(), createAttemptRepo()]);
 const sessions = createStore<Session>(redis, 'sess');
 const pairs = createStore<PairSession>(redis, 'pair');
+const translations = createStore<{ vi: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
 budget.useRedis(redis);
 limiter.useRedis(redis);
 const llm = createNpcLlm();
@@ -50,6 +53,7 @@ await app.register(accountRoutes(attempts));
 await app.register(contentRoutes);
 await app.register(npcRoutes(new NpcService(llm, sessions, attempts)));
 await app.register(pairRoutes(new PairService(llm, attempts, pairs), attempts));
+await app.register(dictRoutes(llm, translations, attempts));
 await app.register(adminRoutes(attempts));
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {

@@ -85,7 +85,7 @@ export class NpcService {
     return this.state(s, quest);
   }
 
-  async chat(sessionId: string, playerId: string, text: string, source: 'text' | 'voice' = 'text'): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
+  async chat(sessionId: string, playerId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
     const s = await this.sessions.get(sessionId);
     if (!s || s.playerId !== playerId) throw new NpcError(404, 'session_not_found');
     if (s.finished) throw new NpcError(409, 'session_finished');
@@ -105,6 +105,7 @@ export class NpcService {
       turnsLeft: s.maxTurns - s.turns,
       history: trimHistory(s.history.map((m) => ({ role: m.role, content: m.content })), env.NPC_HISTORY_MAX),
       text: clean,
+      subtitles,
     });
 
     s.turns += 1;
@@ -112,7 +113,7 @@ export class NpcService {
     s.corrections.push(...turn.corrections);
     s.vocab.push(...turn.new_vocab.filter((v) => !s.vocab.some((x) => x.word.toLowerCase() === v.word.toLowerCase())));
     s.history.push({ role: 'user', content: clean, corrections: turn.corrections, goalsCompleted: turn.goals_completed });
-    s.history.push({ role: 'assistant', content: turn.reply });
+    s.history.push({ role: 'assistant', content: turn.reply, ...(turn.reply_vi ? { content_vi: turn.reply_vi } : {}) });
 
     const allDone = !!quest && quest.goals.every((g) => s.goalsDone.includes(g.id));
     const outOfTurns = s.turns >= s.maxTurns;
@@ -134,7 +135,7 @@ export class NpcService {
     await this.attempts.logEvent({
       name: 'npc_turn',
       playerId,
-      props: { npcId: s.npcId, questId: s.questId ?? '', level, source, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
+      props: { npcId: s.npcId, questId: s.questId ?? '', level, source, subtitles, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
     });
     if (summary) await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: s.questId ?? '', status: summary.status, score: summary.score, turns: s.turns } });
     return { turn, state: this.state(s, quest), summary };

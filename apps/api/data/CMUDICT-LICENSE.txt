@@ -1,0 +1,4 @@
+cmudict.dict.gz — The CMU Pronouncing Dictionary (cmudict), https://github.com/cmusphinx/cmudict
+Copyright (C) 1993-2015 Carnegie Mellon University. All rights reserved.
+Redistributed under the BSD 2-clause license (see the upstream repository for the full text).
+Used by apps/api/src/dict/ipa.ts to show IPA pronunciations (US English) in the game.

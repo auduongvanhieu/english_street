@@ -119,3 +119,14 @@ Load test game-server: `BOTS=50 SECONDS=30 pnpm --filter @es/game-server load:bo
 
 The web client has a touch HUD (joystick, Talk button, bottom sheets, keyboard-safe inputs) and is installable
 as a PWA (Add to Home Screen). See `docs/PERF.md` for the layout notes and draw-call budget.
+
+## Settings, Vietnamese subtitles, IPA (Step 2 / phase 8)
+
+- ⚙️ **Settings** sheet: Vietnamese subtitles (auto = on for A1–A2), IPA line, NPC voice + speed, voice chat,
+  graphics quality, ambient volume. Stored in `localStorage` (`es:subs`, `es:ipa`, `es:ttsRate`, `es:ambient`).
+- **Subtitles**: the chat request carries `subtitles: true`; the NPC structured output then fills `reply_vi`
+  (same Claude call, measured at ≈ +0.0001 USD per turn on Haiku). Static text (greetings, nearby chat,
+  single words) goes through `POST /translate`, a Haiku call cached in Redis for 30 days by text hash.
+- **IPA**: `GET /dict/ipa?words=a,b` from CMUdict (BSD, `apps/api/data/cmudict.dict.gz`, US English,
+  ARPAbet → IPA with stress marks). No LLM involved. Tap any word in an NPC line for IPA + meaning + 🔊 + save to notebook (`POST /me/vocab`).
+- `/admin/stats` → `learning`: subtitle turns, word taps, chat translations, settings changes.

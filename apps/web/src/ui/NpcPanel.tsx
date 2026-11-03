@@ -8,6 +8,9 @@ import { startStt, type SttHandle } from '../voice/stt';
 import { usePair } from '../store/pair';
 import { INTERACT_RADIUS, PROXIMITY_RADIUS } from '@es/shared';
 import { Sheet, SheetHeader } from './Sheet';
+import { Subtitled } from './Subtitled';
+import { subtitlesOn, useSettings } from '../store/settings';
+import { useProfile } from '../store/profile';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -248,7 +251,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
 
       <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3" style={{ minHeight: 160 }}>
         {state.messages.map((m, i) => (
-          <Bubble key={i} m={m} onReplay={m.role === 'assistant' && voice.ttsSupported ? () => useVoice.getState().speakAs(npcId, m.content, lang) : undefined} />
+          <Bubble key={i} m={m} lang={lang} npcId={npcId} onReplay={m.role === 'assistant' && voice.ttsSupported ? () => useVoice.getState().speakAs(npcId, m.content, lang) : undefined} />
         ))}
         {loading && (
           <div className="flex justify-start">
@@ -301,13 +304,21 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
   );
 }
 
-function Bubble({ m, onReplay }: { m: ChatMessage; onReplay?: () => void }) {
+function Bubble({ m, onReplay, lang, npcId }: { m: ChatMessage; onReplay?: () => void; lang: string; npcId: string }) {
   const mine = m.role === 'user';
+  const pref = useSettings((s) => s.subtitlesVi);
+  const level = useProfile((p) => p.profile?.cefrLevel);
+  const showVi = !mine && subtitlesOn(pref, level);
+  const viFallback = useConversation((c) => c.vi[m.content]);
+  const translate = useConversation((c) => c.translate);
+  useEffect(() => {
+    if (showVi && !m.content_vi && !viFallback) void translate(m.content);
+  }, [showVi, m.content, m.content_vi, viFallback, translate]);
   return (
     <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%]">
         <div className={`flex items-start gap-1 rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
-          <span>{m.content}</span>
+          {mine ? <span>{m.content}</span> : <Subtitled text={m.content} vi={m.content_vi ?? viFallback} showVi={showVi} lang={lang} npcId={npcId} />}
           {onReplay && (
             <button type="button" onClick={onReplay} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label="Replay" title="Listen again">
               🔊

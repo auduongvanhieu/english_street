@@ -14,7 +14,8 @@ export function attachCameraGestures(el: HTMLElement): () => void {
   let pinchDist = 0;
   let dragging = false;
 
-  const isUi = (t: EventTarget | null) => t instanceof Element && t.closest('[data-ui]') !== null;
+  // Only pointer-downs that land on the WebGL canvas start a drag; anything else is UI (buttons, sheets, inputs).
+  const isUi = (t: EventTarget | null) => !(t instanceof Element) || t.tagName !== 'CANVAS';
   const spread = () => {
     const [a, b] = [...pointers.values()];
     return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;

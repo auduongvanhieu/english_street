@@ -34,6 +34,8 @@ export type VocabItem = z.infer<typeof VocabItemSchema>;
 /** Structured output returned by the LLM for one NPC turn. */
 export const NpcTurnResponseSchema = z.object({
   reply: z.string(),
+  /** Vietnamese translation of reply for subtitles; null unless the learner asked for subtitles. */
+  reply_vi: z.string().nullable(),
   emotion: NpcEmotionSchema,
   goals_completed: z.array(z.string()),
   corrections: z.array(CorrectionSchema),

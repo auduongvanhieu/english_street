@@ -7,6 +7,8 @@ import { API_URL, sendFeedback } from '../net/api';
 import { useSettings } from '../store/settings';
 import { getPlayerId } from '../net/player';
 import { sendChat } from '../net/client';
+import { translateText } from '../net/api';
+import { track } from '../net/analytics';
 
 const EMOTE_ICON: Record<Emote, string> = { wave: '👋', dance: '💃', thumbsup: '👍', yes: '✅', no: '❌' };
 
@@ -183,6 +185,7 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
           chatLog.map((m, i) => (
             <div key={i}>
               <b>{m.name}:</b> {m.text}
+              <TranslateButton text={m.text} />
               <ReportButton targetName={m.name} targetPlayerId={m.pid} />
             </div>
           ))
@@ -229,6 +232,31 @@ export function InviteToast() {
   if (pending) return <div className={`${top} rounded-xl bg-white/90 px-4 py-2 text-sm shadow`}>Waiting for {pending.name} to accept…</div>;
   if (err && !inv) return <div className={`${top} rounded-xl bg-white/90 px-4 py-2 text-sm text-red-700 shadow`}>{err}</div>;
   return null;
+}
+
+/** "dịch" link under a chat line: Vietnamese translation on demand (cached server-side). */
+export function TranslateButton({ text }: { text: string }) {
+  const [vi, setVi] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (vi) return <div className="text-xs text-blue-200">{vi}</div>;
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        setBusy(true);
+        track('translate_chat');
+        translateText(text)
+          .then((r) => setVi(r.vi))
+          .catch(() => setVi('(cannot translate right now)'))
+          .finally(() => setBusy(false));
+      }}
+      className="ml-1 px-1 text-xs text-gray-300 hover:text-white"
+      title="Translate to Vietnamese"
+    >
+      {busy ? '…' : 'dịch'}
+    </button>
+  );
 }
 
 /** Report a player from the chat log. */

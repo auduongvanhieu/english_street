@@ -59,13 +59,14 @@ export class RedisStore<T> implements KeyedStore<T> {
   constructor(
     private redis: Redis,
     private prefix: string,
+    private ttl = TTL_SEC,
   ) {}
   async get(id: string) {
     const raw = await this.redis.get(`${this.prefix}:${id}`);
     return raw ? (JSON.parse(raw) as T) : null;
   }
   async set(id: string, v: T) {
-    await this.redis.set(`${this.prefix}:${id}`, JSON.stringify(v), 'EX', TTL_SEC);
+    await this.redis.set(`${this.prefix}:${id}`, JSON.stringify(v), 'EX', this.ttl);
   }
   async delete(id: string) {
     await this.redis.del(`${this.prefix}:${id}`);
@@ -85,6 +86,6 @@ export async function connectRedis(): Promise<Redis | null> {
   }
 }
 
-export function createStore<T>(redis: Redis | null, prefix: string): KeyedStore<T> {
-  return redis ? new RedisStore<T>(redis, prefix) : new MemoryStore<T>();
+export function createStore<T>(redis: Redis | null, prefix: string, ttlSec = TTL_SEC): KeyedStore<T> {
+  return redis ? new RedisStore<T>(redis, prefix, ttlSec) : new MemoryStore<T>();
 }

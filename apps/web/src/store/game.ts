@@ -29,7 +29,7 @@ export interface NpcInfo {
 }
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'error';
-export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | null;
+export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | 'settings' | null;
 
 interface GameState {
   playerName: string;

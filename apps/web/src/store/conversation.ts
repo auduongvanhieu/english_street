@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import type { AttemptSummary, NpcTurnResponse, SessionState } from '@es/shared';
-import { endSession, sendTurn, startFreeTalk, startQuest } from '../net/api';
+import { endSession, sendTurn, startFreeTalk, startQuest, translateText } from '../net/api';
 import { useProfile } from './profile';
+import { subtitlesOn, useSettings } from './settings';
 
 interface ConversationStore {
   state: SessionState | null;
@@ -9,11 +10,17 @@ interface ConversationStore {
   summary: AttemptSummary | null;
   loading: boolean;
   error: string | null;
+  /** Vietnamese subtitles for lines that did not come with content_vi (greeting, older turns), by English text. */
+  vi: Record<string, string>;
+  translate: (text: string) => Promise<void>;
   start: (npcId: string, questId: string | null, playerName: string) => Promise<void>;
   send: (text: string, source?: 'text' | 'voice') => Promise<void>;
   end: () => Promise<void>;
   reset: () => void;
 }
+
+/** Texts currently being translated (avoids duplicate requests from several bubbles). */
+const inflight = new Set<string>();
 
 export const useConversation = create<ConversationStore>((set, get) => ({
   state: null,
@@ -21,12 +28,30 @@ export const useConversation = create<ConversationStore>((set, get) => ({
   summary: null,
   loading: false,
   error: null,
+  vi: {},
+
+  async translate(text) {
+    if (get().vi[text] || inflight.has(text)) return;
+    inflight.add(text);
+    try {
+      const r = await translateText(text);
+      set((s) => ({ vi: { ...s.vi, [text]: r.vi } }));
+    } catch {
+      /* subtitles are best-effort */
+    } finally {
+      inflight.delete(text);
+    }
+  },
 
   async start(npcId, questId, playerName) {
-    set({ loading: true, error: null, summary: null, lastTurn: null });
+    set({ loading: true, error: null, summary: null, lastTurn: null, vi: {} });
     try {
       const state = questId ? await startQuest(questId, playerName) : await startFreeTalk(npcId, playerName);
       set({ state, loading: false });
+      // The greeting is static text, so it is translated through the cached /translate endpoint.
+      if (subtitlesOn(useSettings.getState().subtitlesVi, useProfile.getState().profile?.cefrLevel)) {
+        for (const m of state.messages) if (m.role === 'assistant' && !m.content_vi) void get().translate(m.content);
+      }
     } catch (e) {
       set({ loading: false, error: (e as Error).message });
     }
@@ -42,7 +67,8 @@ export const useConversation = create<ConversationStore>((set, get) => ({
       state: { ...s, messages: [...s.messages, { role: 'user', content: text }] },
     });
     try {
-      const r = await sendTurn(s.sessionId, text, source);
+      const subs = subtitlesOn(useSettings.getState().subtitlesVi, useProfile.getState().profile?.cefrLevel);
+      const r = await sendTurn(s.sessionId, text, source, subs);
       set({ state: r.state, lastTurn: r.turn, summary: r.summary, loading: false });
       if (r.summary) void useProfile.getState().refresh();
     } catch (e) {
@@ -68,6 +94,6 @@ export const useConversation = create<ConversationStore>((set, get) => ({
   },
 
   reset() {
-    set({ state: null, lastTurn: null, summary: null, loading: false, error: null });
+    set({ state: null, lastTurn: null, summary: null, loading: false, error: null, vi: {} });
   },
 }));
