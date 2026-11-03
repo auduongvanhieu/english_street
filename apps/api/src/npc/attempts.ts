@@ -23,10 +23,21 @@ export interface AttemptRepo {
   update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
   reward(userId: string, xp: number, coins: number): Promise<void>;
   saveVocab(userId: string, items: VocabItem[]): Promise<void>;
+  createReport(r: ReportInput): Promise<void>;
+}
+
+export interface ReportInput {
+  reporterId: string;
+  targetPlayerId?: string;
+  targetName: string;
+  reason: string;
+  details: string;
+  context: unknown[];
 }
 
 export class MemoryAttemptRepo implements AttemptRepo {
   readonly name = 'memory';
+  reports: ReportInput[] = [];
   users = new Map<string, { name: string; cefrLevel: string; xp: number; coins: number }>();
   attempts = new Map<string, AttemptRecord>();
   vocab = new Map<string, Map<string, VocabItem>>();
@@ -57,6 +68,10 @@ export class MemoryAttemptRepo implements AttemptRepo {
     const m = this.vocab.get(userId) ?? new Map();
     for (const v of items) m.set(v.word.toLowerCase(), v);
     this.vocab.set(userId, m);
+  }
+  async createReport(r: ReportInput) {
+    this.reports.push(r);
+    console.warn(`[report] ${r.reporterId} reported ${r.targetName} (${r.reason}): ${r.details}`);
   }
 }
 
@@ -109,6 +124,9 @@ export class PrismaAttemptRepo implements AttemptRepo {
         update: { meaningVi: v.meaning_vi, example: v.example },
       });
     }
+  }
+  async createReport(r: ReportInput) {
+    await prisma.report.create({ data: { ...r, context: r.context as object[] } });
   }
 }
 

@@ -1,0 +1,18 @@
+id: bistro-order-01
+npc: maitre
+level: A2
+title: Dinner at the Bistro
+intro: You're hungry. Get a table, ask about a dish, order a main and a drink, then ask for the bill.
+goals:
+  - id: table
+    desc: Ask for a table
+  - id: ask_dish
+    desc: Ask a question about a dish (ingredients, vegetarian, recommendation)
+  - id: order
+    desc: Order a main course and a drink
+  - id: bill
+    desc: Ask for the bill
+target_vocab: [table for one, starter, main course, vegetarian, bill, recommend]
+target_phrases: ["A table for one, please", "What do you recommend?", "I'll have…", "Could I have the bill, please?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

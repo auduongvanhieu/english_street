@@ -4,6 +4,7 @@ import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { INPUT_RATE_HZ, INTERACT_RADIUS, WALK_SPEED } from '@es/shared';
 import { sendInput } from '../net/client';
+import { useVoiceChat } from '../net/voicechat';
 import { useGame } from '../store/game';
 import { joystick } from '../input/joystick';
 import { buildBlockers, resolveMove } from '../world/layout';
@@ -69,6 +70,9 @@ export function LocalPlayer({ name }: { name: string }) {
     } else {
       anim.current = locked ? 'talk' : 'idle';
     }
+    // One-shot emote overrides the base animation while it lasts.
+    const emote = useGame.getState().emote;
+    if (emote && !moving(ix, iz)) anim.current = emote.until > Date.now() ? emote.name : anim.current;
     if (anim.current !== animState) setAnimState(anim.current);
 
     // --- third-person camera ---
@@ -80,7 +84,7 @@ export function LocalPlayer({ name }: { name: string }) {
     sendAcc.current += dt;
     if (sendAcc.current >= 1 / INPUT_RATE_HZ) {
       sendAcc.current = 0;
-      sendInput(g.position.x, g.position.z, g.rotation.y, anim.current);
+      sendInput(g.position.x, g.position.z, g.rotation.y, anim.current, useVoiceChat.getState().enabled);
     }
 
     // --- interaction target (nearest NPC in range), checked ~10x/s ---
@@ -109,4 +113,8 @@ export function LocalPlayer({ name }: { name: string }) {
       <NameTag name={name} />
     </group>
   );
+}
+
+function moving(ix: number, iz: number) {
+  return Math.hypot(ix, iz) > 0.05;
 }

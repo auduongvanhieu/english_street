@@ -2,6 +2,8 @@ import { Schema, MapSchema, type } from '@colyseus/schema';
 
 export class Player extends Schema {
   @type('string') id = '';
+  /** API player id (quest progress, reports). */
+  @type('string') pid = '';
   @type('string') name = '';
   @type('string') avatar = '{}';
   @type('number') x = 0;
@@ -9,6 +11,8 @@ export class Player extends Schema {
   @type('number') z = 0;
   @type('number') rot = 0;
   @type('string') anim = 'idle';
+  /** Proximity voice chat enabled. */
+  @type('boolean') voice = false;
   /** Last chat bubble text and when it was sent (ms epoch). */
   @type('string') bubble = '';
   @type('number') bubbleAt = 0;

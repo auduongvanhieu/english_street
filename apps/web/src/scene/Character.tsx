@@ -14,6 +14,9 @@ const CLIP: Record<string, string> = {
   wave: 'Wave',
   talk: 'Yes',
   dance: 'Dance',
+  thumbsup: 'ThumbsUp',
+  yes: 'Yes',
+  no: 'No',
 };
 
 export function Character({ anim, tint }: { anim: string; tint?: string }) {

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { loadNpcs, loadQuests, questsForNpc } from '@es/quests';
+import { loadNpcs, loadPairQuests, loadQuests, pairQuestsForNpc, questsForNpc } from '@es/quests';
 
 /** Static content: NPC list and quests (served from packages/quests YAML). */
 export async function contentRoutes(app: FastifyInstance) {
@@ -13,10 +13,12 @@ export async function contentRoutes(app: FastifyInstance) {
       greeting,
       voice,
       quests: questsForNpc(id).map(({ id, title, level }) => ({ id, title, level })),
+      pairQuests: pairQuestsForNpc(id).map(({ id, title, level, roles }) => ({ id, title, level, roles: roles.map((r) => ({ id: r.id, label: r.label })) })),
     })),
   );
 
   app.get('/quests', async () => loadQuests());
+  app.get('/pair-quests', async () => loadPairQuests());
 
   app.get<{ Params: { id: string } }>('/quests/:id', async (req, reply) => {
     const q = loadQuests().find((x) => x.id === req.params.id);

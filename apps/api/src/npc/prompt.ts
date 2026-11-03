@@ -70,3 +70,57 @@ Exchanges remaining: ${opts.turnsLeft}${wrap}`;
 
 /** The learner "enters" before the NPC's scripted greeting; keeps the message list user-first. */
 export const ENTER_MESSAGE = '[The learner walks up to you.]';
+
+// ---------------------------------------------------------------- pair quests (NPC as judge)
+import type { PairQuest, PairRole } from '@es/shared';
+
+export function judgePersonaBlock(npc: NpcPersona): string {
+  return `You are ${npc.name}, a ${npc.role} on English Street, a small town street where learners practise real-life English. Two learners are role-playing a situation at your workplace while you watch and coach. You do NOT play a role in the scene; you are the observer and judge.
+
+# Your character
+${npc.personality.trim()}
+
+# What you know
+${npc.knowledge.trim()}
+
+# How to judge
+- Evaluate ONLY the latest line, spoken by the learner named in the state block, against the goals of THEIR role.
+- Be fair: a goal counts when the intent is clear even with small mistakes.
+- Corrections (max 2) are for the latest line only; "explanation_vi" is one sentence in Vietnamese. If the line is already correct, corrections must be empty.
+- new_vocab: 0–2 useful words from the latest line or a natural alternative, with Vietnamese meaning and an example.
+- reply: usually an EMPTY string. Only when the scene is stuck, the speaker is off-topic, or the line is their last one, write ONE short aside in English (max 15 words) addressed to that learner, e.g. "Try asking what the waiter recommends."
+- hint: null unless the speaker seems stuck or wrote in Vietnamese; then give one example line in English they could say.
+- emotion: how you feel watching (happy for good lines, confused for unclear ones, neutral otherwise).`;
+}
+
+export function judgeQuestBlock(quest: PairQuest): string {
+  const role = (r: PairRole) =>
+    `## Role "${r.id}" (${r.label})\n${r.brief.trim()}\n${r.facts ? `Facts this role knows:\n${r.facts.trim()}\n` : ''}Goals (ids are exact):\n${r.goals.map((g) => `- ${g.id}: ${g.desc}`).join('\n')}`;
+  return `# Situation (pair quest "${quest.title}", level ${quest.level})
+${quest.intro}
+
+${role(quest.roles[0])}
+
+${role(quest.roles[1])}
+
+# Target language
+Vocabulary: ${quest.target_vocab.join(', ') || '(none)'}
+Phrases: ${quest.target_phrases.join(' | ') || '(none)'}`;
+}
+
+export function judgeStateBlock(opts: {
+  speakerName: string;
+  speakerRole: string;
+  level: CefrLevel;
+  goalsDone: Record<string, string[]>;
+  turnsLeft: number;
+}): string {
+  const done = Object.entries(opts.goalsDone)
+    .map(([r, g]) => `${r}: ${g.length ? g.join(', ') : 'none yet'}`)
+    .join('; ');
+  return `# Current state
+Speaker of the latest line: ${opts.speakerName}, playing "${opts.speakerRole}" (level ${opts.level}).
+Goals already completed — ${done}
+Lines remaining for this speaker: ${opts.turnsLeft}${opts.turnsLeft <= 1 ? ' (their last line: if goals remain, say so briefly in reply)' : ''}
+Report in goals_completed only goals of role "${opts.speakerRole}" achieved by the latest line.`;
+}

@@ -4,6 +4,8 @@ import { useGame } from '../store/game';
 import { useConversation } from '../store/conversation';
 import { useVoice } from '../store/voice';
 import { startStt, type SttHandle } from '../voice/stt';
+import { usePair } from '../store/pair';
+import { INTERACT_RADIUS, PROXIMITY_RADIUS } from '@es/shared';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -60,7 +62,7 @@ export function NpcPanel() {
         ) : conv.state ? (
           <Chat npcId={npc.id} lang={npc.voice} />
         ) : (
-          <Menu npcId={npc.id} greeting={npc.greeting} quests={npc.quests} playerName={playerName} />
+          <Menu npcId={npc.id} greeting={npc.greeting} quests={npc.quests} pairQuests={npc.pairQuests} playerName={playerName} />
         )}
       </div>
     </div>
@@ -68,8 +70,14 @@ export function NpcPanel() {
 }
 
 // ---------------------------------------------------------------- Menu
-function Menu({ npcId, greeting, quests, playerName }: { npcId: string; greeting: string; quests: { id: string; title: string; level: string }[]; playerName: string }) {
+function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: string; greeting: string; quests: { id: string; title: string; level: string }[]; pairQuests: { id: string; title: string; level: string; roles: { id: string; label: string }[] }[]; playerName: string }) {
   const { start, loading, error } = useConversation();
+  const pair = usePair();
+  const closePanel = useGame((s) => s.closePanel);
+  const [picking, setPicking] = useState<string | null>(null);
+  const players = useGame((s) => s.players);
+  const me = useGame((s) => (s.sessionId ? s.players[s.sessionId] : null));
+  const nearby = me ? Object.values(players).filter((p) => p.id !== me.id && Math.hypot(p.x - me.x, p.z - me.z) <= PROXIMITY_RADIUS + INTERACT_RADIUS) : [];
   return (
     <div className="p-5">
       <p className="mb-4 rounded-xl bg-blue-50 px-4 py-3 text-blue-900">“{greeting}”</p>
@@ -87,6 +95,52 @@ function Menu({ npcId, greeting, quests, playerName }: { npcId: string; greeting
           </li>
         ))}
       </ul>
+      {pairQuests.length > 0 && (
+        <>
+          <h3 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Pair quests (with another player)</h3>
+          <ul className="space-y-2">
+            {pairQuests.map((q) => (
+              <li key={q.id} className="rounded-lg border px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span>
+                    <span className="mr-2 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">{q.level}</span>
+                    👥 {q.title}
+                  </span>
+                  <button type="button" disabled={!!pair.pendingTo} onClick={() => setPicking(picking === q.id ? null : q.id)} className="rounded-lg bg-purple-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
+                    {pair.pendingTo ? 'Waiting…' : 'Invite'}
+                  </button>
+                </div>
+                {picking === q.id && (
+                  <div className="mt-2 text-sm">
+                    {nearby.length === 0 ? (
+                      <p className="text-gray-500">No other player nearby. Ask someone to walk over here first.</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {nearby.map((p) => (
+                          <li key={p.id} className="flex items-center justify-between rounded bg-gray-50 px-2 py-1">
+                            <span>{p.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                pair.invitePlayer({ id: p.id, name: p.name }, q.id, q.title, q.roles[1]?.label ?? 'partner');
+                                setPicking(null);
+                                closePanel();
+                              }}
+                              className="rounded bg-purple-600 px-2 py-0.5 text-xs text-white"
+                            >
+                              Invite as {q.roles[1]?.label}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <button type="button" disabled={loading} onClick={() => start(npcId, null, playerName)} className="mt-3 w-full rounded-lg border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
         💬 Just chat (no quest)
       </button>

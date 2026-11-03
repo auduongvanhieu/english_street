@@ -1,5 +1,5 @@
 import { Client, getStateCallbacks, type Room } from '@colyseus/sdk';
-import { MSG, STREET_ROOM, type JoinOptions } from '@es/shared';
+import { MSG, STREET_ROOM, type JoinOptions, type PairMessage, type RtcSignal } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -7,12 +7,14 @@ const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
 /** Shape of the server's Player schema as seen by the client (kept schema-agnostic). */
 interface PlayerLike {
   id: string;
+  pid: string;
   name: string;
   x: number;
   y: number;
   z: number;
   rot: number;
   anim: string;
+  voice: boolean;
   bubble: string;
 }
 interface StreetStateLike {
@@ -20,6 +22,12 @@ interface StreetStateLike {
 }
 
 let room: Room<StreetStateLike> | null = null;
+
+/** Subscribers for relayed messages (voice chat signalling, pair quests). */
+const rtcHandlers = new Set<(m: RtcSignal & { from: string }) => void>();
+const pairHandlers = new Set<(m: PairMessage & { from: string }) => void>();
+export const onRtc = (fn: (m: RtcSignal & { from: string }) => void) => (rtcHandlers.add(fn), () => rtcHandlers.delete(fn));
+export const onPair = (fn: (m: PairMessage & { from: string }) => void) => (pairHandlers.add(fn), () => pairHandlers.delete(fn));
 
 export function getRoom() {
   return room;
@@ -49,12 +57,14 @@ function bindRoom(r: Room<StreetStateLike>) {
   const sync = (p: PlayerLike, id: string) =>
     g.upsertPlayer(<RemotePlayer>{
       id,
+      pid: p.pid,
       name: p.name,
       x: p.x,
       y: p.y,
       z: p.z,
       rot: p.rot,
       anim: p.anim,
+      voice: p.voice,
       bubble: p.bubble,
     });
 
@@ -64,7 +74,9 @@ function bindRoom(r: Room<StreetStateLike>) {
   });
   $(r.state).players.onRemove((_p, id) => g.removePlayer(id));
 
-  r.onMessage<{ name: string; text: string }>(MSG.CHAT, (m) => g.pushChat(m));
+  r.onMessage<{ from: string; pid: string; name: string; text: string }>(MSG.CHAT, (m) => g.pushChat(m));
+  r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
+  r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
   r.onLeave(() => {
     g.setConn('idle');
     g.setSessionId(null);
@@ -72,10 +84,18 @@ function bindRoom(r: Room<StreetStateLike>) {
   });
 }
 
-export function sendInput(x: number, z: number, rot: number, anim: string) {
-  room?.send(MSG.INPUT, { x, z, rot, anim });
+export function sendInput(x: number, z: number, rot: number, anim: string, voice: boolean) {
+  room?.send(MSG.INPUT, { x, z, rot, anim, voice });
 }
 
 export function sendChat(text: string) {
   room?.send(MSG.CHAT, text);
+}
+
+export function sendRtc(signal: RtcSignal) {
+  room?.send(MSG.RTC, signal);
+}
+
+export function sendPair(msg: PairMessage) {
+  room?.send(MSG.PAIR, msg);
 }

@@ -8,8 +8,9 @@ import {
   type NpcTurnResponse,
   type Quest,
 } from '@es/shared';
+import type { PairLine, PairQuest } from '@es/shared';
 import { env, hasRealApiKey } from '../env';
-import { personaBlock, questBlock, stateBlock } from './prompt';
+import { judgePersonaBlock, judgeQuestBlock, judgeStateBlock, personaBlock, questBlock, stateBlock } from './prompt';
 
 export interface TurnInput {
   npc: NpcPersona;
@@ -22,9 +23,23 @@ export interface TurnInput {
   text: string;
 }
 
+export interface JudgeInput {
+  npc: NpcPersona;
+  quest: PairQuest;
+  level: CefrLevel;
+  speakerName: string;
+  speakerRole: string;
+  goalsDone: Record<string, string[]>;
+  turnsLeft: number;
+  transcript: PairLine[];
+  text: string;
+}
+
 export interface NpcLlm {
   readonly name: string;
   turn(input: TurnInput): Promise<NpcTurnResponse>;
+  /** Pair quests: the NPC evaluates one learner's line as an observer. */
+  judge(input: JudgeInput): Promise<NpcTurnResponse>;
 }
 
 /** Said when the model refuses or returns unparseable output, so the game never stalls. */
@@ -77,6 +92,49 @@ export class ClaudeNpcLlm implements NpcLlm {
       output_config: { format: zodOutputFormat(NpcTurnResponseSchema), effort: 'low' },
     };
 
+    const out = await this.call(req);
+    return out ? sanitize(out, input) : SAFE_FALLBACK;
+  }
+
+  async judge(input: JudgeInput): Promise<NpcTurnResponse> {
+    const lines = input.transcript.map((l) => `${l.role.toUpperCase()} (${l.name}): ${l.content}`).join('\n');
+    const user = `Transcript so far:\n${lines || '(nothing yet)'}\n\nLatest line from ${input.speakerRole.toUpperCase()} (${input.speakerName}): ${input.text}`;
+    const req: Anthropic.MessageCreateParamsNonStreaming = {
+      model: env.NPC_MODEL,
+      max_tokens: 1024,
+      system: [
+        { type: 'text', text: judgePersonaBlock(input.npc), cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: judgeQuestBlock(input.quest), cache_control: { type: 'ephemeral' } },
+        {
+          type: 'text',
+          text: judgeStateBlock({
+            speakerName: input.speakerName,
+            speakerRole: input.speakerRole,
+            level: input.level,
+            goalsDone: input.goalsDone,
+            turnsLeft: input.turnsLeft,
+          }),
+        },
+      ],
+      messages: [{ role: 'user', content: user }],
+      output_config: { format: zodOutputFormat(NpcTurnResponseSchema), effort: 'low' },
+    };
+    const out = await this.call(req);
+    if (!out) return { ...SAFE_FALLBACK, reply: '' };
+    const role = input.quest.roles.find((r) => r.id === input.speakerRole);
+    const valid = new Set((role?.goals ?? []).map((g) => g.id));
+    const done = input.goalsDone[input.speakerRole] ?? [];
+    return {
+      ...out,
+      reply: out.reply.trim().slice(0, 200),
+      goals_completed: [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !done.includes(g)),
+      corrections: out.corrections.filter((c) => normalize(c.corrected) !== normalize(c.original)).slice(0, 2),
+      new_vocab: out.new_vocab.slice(0, 2),
+    };
+  }
+
+  /** One parse call with usage accounting; null on refusal or unparseable output (after one retry). */
+  private async call(req: Anthropic.MessageCreateParamsNonStreaming): Promise<NpcTurnResponse | null> {
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await this.client.messages.parse(req);
       this.usage.requests += 1;
@@ -84,10 +142,10 @@ export class ClaudeNpcLlm implements NpcLlm {
       this.usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
       this.usage.cacheWrite += res.usage.cache_creation_input_tokens ?? 0;
       this.usage.output += res.usage.output_tokens;
-      if (res.stop_reason === 'refusal') return SAFE_FALLBACK;
-      if (res.parsed_output) return sanitize(res.parsed_output, input);
+      if (res.stop_reason === 'refusal') return null;
+      if (res.parsed_output) return res.parsed_output;
     }
-    return SAFE_FALLBACK;
+    return null;
   }
 }
 
@@ -120,6 +178,7 @@ const VI_RE = /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọ�
 
 export class MockNpcLlm implements NpcLlm {
   readonly name = 'mock';
+  declare judge: (input: JudgeInput) => Promise<NpcTurnResponse>;
   async turn(input: TurnInput): Promise<NpcTurnResponse> {
     const t = input.text.toLowerCase();
     const goals = (input.quest?.goals ?? [])
@@ -161,6 +220,38 @@ export class MockNpcLlm implements NpcLlm {
     };
   }
 }
+
+const PAIR_GOAL_KEYWORDS: Record<string, string[]> = {
+  ask_recommend: ['recommend', 'suggest', 'what is good', "what's good"],
+  say_vegetarian: ['vegetarian', 'no meat', "don't eat meat"],
+  order: ["i'll have", 'i will have', 'can i have', 'i would like', "i'd like", 'and a', 'please'],
+  bill: ['bill', 'check', 'pay'],
+  greet: ['welcome', 'good evening', 'hello', 'hi', 'menu'],
+  recommend: ['recommend', 'suggest', 'pasta', 'try the', 'is very good'],
+  take_order: ['anything to drink', 'drink', 'so that is', "so that's", 'got it', 'coming up'],
+  bring_bill: ['here is your bill', "here's your bill", 'total', 'comes to', 'that will be', "that'll be"],
+};
+
+MockNpcLlm.prototype.judge = async function (input: JudgeInput): Promise<NpcTurnResponse> {
+  const t = input.text.toLowerCase();
+  const role = input.quest.roles.find((r) => r.id === input.speakerRole);
+  const done = input.goalsDone[input.speakerRole] ?? [];
+  const goals = (role?.goals ?? [])
+    .filter((g) => !done.includes(g.id))
+    .filter((g) => (PAIR_GOAL_KEYWORDS[g.id] ?? []).some((k) => t.includes(k)))
+    .map((g) => g.id);
+  const vi = VI_RE.test(input.text);
+  return {
+    reply: vi ? 'English only, please!' : goals.length === 0 && input.turnsLeft <= 1 ? 'Last line — try to finish your goals.' : '',
+    emotion: goals.length ? 'happy' : 'neutral',
+    goals_completed: goals,
+    corrections: /\bi want\b/.test(t)
+      ? [{ original: input.text, corrected: input.text.replace(/\bi want\b/i, "I'd like"), explanation_vi: '"I\'d like" lịch sự hơn "I want".', type: 'register' }]
+      : [],
+    new_vocab: [],
+    hint: vi ? 'Try: "What do you recommend?"' : null,
+  };
+};
 
 /** Keep only goal ids that exist and are not done yet; clamp list sizes. */
 function sanitize(out: NpcTurnResponse, input: TurnInput): NpcTurnResponse {

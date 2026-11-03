@@ -3,7 +3,9 @@ import cors from '@fastify/cors';
 import { env } from './env';
 import { healthRoutes } from './routes/health';
 import { contentRoutes } from './routes/content';
-import { npcRoutes } from './routes/npc';
+import { allow, npcRoutes } from './routes/npc';
+import { pairRoutes } from './routes/pair';
+import { PairService } from './npc/pairService';
 import { createNpcLlm } from './npc/llm';
 import { createSessionStore } from './npc/store';
 import { createAttemptRepo } from './npc/attempts';
@@ -20,6 +22,7 @@ await app.register(cors, { origin: env.WEB_ORIGIN });
 await app.register(healthRoutes);
 await app.register(contentRoutes);
 await app.register(npcRoutes(new NpcService(llm, sessions, attempts)));
+await app.register(pairRoutes(new PairService(llm, attempts), attempts, allow));
 
 app.listen({ port: env.API_PORT, host: '0.0.0.0' }).catch((err) => {
   app.log.error(err);

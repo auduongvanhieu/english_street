@@ -1,0 +1,42 @@
+id: bistro-dinner-01
+npc: maitre
+level: A2
+title: Dinner for Two (pair)
+intro: One of you is the customer, the other is the waiter. Lucas watches and gives each of you feedback.
+roles:
+  - id: customer
+    label: Customer
+    brief: >
+      You just sat down at Le Petit Bistro. You are vegetarian. Ask what the waiter
+      recommends, order a main course and a drink, and at the end ask for the bill.
+    goals:
+      - id: ask_recommend
+        desc: Ask the waiter for a recommendation
+      - id: say_vegetarian
+        desc: Say that you are vegetarian
+      - id: order
+        desc: Order a main course and a drink
+      - id: bill
+        desc: Ask for the bill
+  - id: waiter
+    label: Waiter
+    brief: >
+      You work at Le Petit Bistro. Greet the customer, recommend a dish, take the
+      order (ask about drinks if they forget), and bring the bill when asked.
+    facts: |
+      Menu — Starters: Tomato soup $6, Caesar salad $8. Mains: Grilled chicken $16,
+      Mushroom pasta $14 (vegetarian), Fish and chips $15, Beef burger $13.
+      Desserts: Chocolate cake $7, Ice cream $5. Drinks: Water $3, Orange juice $4, Lemonade $4.
+    goals:
+      - id: greet
+        desc: Greet the customer and offer the menu
+      - id: recommend
+        desc: Recommend a dish (a vegetarian one if the customer is vegetarian)
+      - id: take_order
+        desc: Confirm the order and ask about a drink
+      - id: bring_bill
+        desc: Give the bill with the total
+target_vocab: [recommend, vegetarian, main course, bill, total]
+target_phrases: ["What do you recommend?", "I'd recommend…", "Anything to drink?", "Here's your bill"]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

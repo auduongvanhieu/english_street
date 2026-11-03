@@ -5,7 +5,7 @@ import { env } from '../env';
 
 /** Simple per-player sliding window rate limit (in-memory; fine for one API instance). */
 const buckets = new Map<string, number[]>();
-function allow(playerId: string) {
+export function allow(playerId: string) {
   const now = Date.now();
   const arr = (buckets.get(playerId) ?? []).filter((t) => now - t < 60_000);
   if (arr.length >= env.NPC_RATE_PER_MIN) return false;

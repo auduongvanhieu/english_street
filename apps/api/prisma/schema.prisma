@@ -74,3 +74,16 @@ model VocabEntry {
   @@unique([userId, word])
   @@index([userId, nextReviewAt])
 }
+
+model Report {
+  id             String   @id @default(cuid())
+  reporterId     String
+  targetPlayerId String?
+  targetName     String
+  reason         String
+  details        String   @default("")
+  context        Json     @default("[]")
+  createdAt      DateTime @default(now())
+
+  @@index([targetPlayerId])
+}

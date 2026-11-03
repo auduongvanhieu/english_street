@@ -56,6 +56,7 @@ export interface ShopDef {
 /** Shops line the north side of the street (tz = SHOP_ROW_TZ). */
 export const SHOP_ROW_TZ = -2;
 export const SHOPS: ShopDef[] = [
+  { id: 'bistro', label: 'Le Petit Bistro', npcId: 'maitre', tx: -5, model: 'building-small-c', tint: '#f9c6d8' },
   { id: 'cafe', label: 'Sunny Side Café', npcId: 'barista', tx: -3, model: 'building-small-a', tint: '#ffd3a1' },
   { id: 'mart', label: 'QuickMart', npcId: 'cashier', tx: -1, model: 'building-small-d', tint: '#b8f0bd' },
   { id: 'info', label: 'Tourist Info', npcId: 'guide', tx: 1, model: 'building-garage', tint: '#ffe78f' },
