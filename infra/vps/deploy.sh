@@ -22,6 +22,9 @@ echo "== restart services"
 if sudo -n systemctl restart englishstreet-api englishstreet-game 2>/dev/null; then
   sleep 3; sudo -n systemctl status englishstreet-api englishstreet-game --no-pager --lines=0 | grep -E 'service|Active'
 else
-  echo "!! cannot restart via systemd (setup-root.sh not run yet)"
+  # No passwordless sudo: the units have Restart=always, so ending our own processes makes systemd start fresh ones.
+  echo "(no sudo) asking systemd to restart by stopping the current processes"
+  pkill -u sm -f "/home/sm/apps/english-street/node_modules" || true
+  sleep 6
 fi
 curl -s http://127.0.0.1:4600/health; echo; curl -s http://127.0.0.1:2600/health; echo
