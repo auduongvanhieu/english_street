@@ -1,0 +1,18 @@
+id: cafe-complaint-01
+npc: barista
+level: B1
+title: The Wrong Order
+intro: You ordered a cappuccino but got a latte, and it's cold. Complain politely and get it fixed.
+goals:
+  - id: problem
+    desc: Explain what is wrong with your order
+  - id: request_fix
+    desc: Ask for a new drink or a refund
+  - id: accept
+    desc: Accept the solution politely
+  - id: thank
+    desc: Thank the barista
+target_vocab: [wrong order, cold, replace, refund, sorry about that]
+target_phrases: ["Excuse me, I think this is the wrong order", "Could I get a new one?", "No problem, thanks"]
+max_turns: 10
+reward: { xp: 70, coins: 15 }

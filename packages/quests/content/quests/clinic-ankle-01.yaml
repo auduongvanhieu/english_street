@@ -1,0 +1,18 @@
+id: clinic-ankle-01
+npc: doctor
+level: B1
+title: Twisted Ankle
+intro: You hurt your ankle playing football yesterday. It is swollen and painful. Explain what happened and ask how long until you can play again.
+goals:
+  - id: what_happened
+    desc: Explain how the injury happened
+  - id: describe_pain
+    desc: Describe the pain or swelling
+  - id: ask_recovery
+    desc: Ask how long recovery takes or when you can play again
+  - id: ask_cost
+    desc: Ask about the cost or insurance
+target_vocab: [swollen, sprain, painful, ice, raise, recovery]
+target_phrases: ["I twisted my ankle while…", "It hurts when I…", "How long until I can…?"]
+max_turns: 12
+reward: { xp: 80, coins: 18 }

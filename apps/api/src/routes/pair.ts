@@ -4,6 +4,8 @@ import { PairStartRequestSchema, ReportRequestSchema, SessionChatRequestSchema }
 import { NpcError } from '../npc/service';
 import type { PairService } from '../npc/pairService';
 import type { AttemptRepo } from '../npc/attempts';
+import { budget } from '../npc/budget';
+import { playerIdFrom } from '../auth';
 
 export function pairRoutes(pairs: PairService, repo: AttemptRepo, allow: (playerId: string) => boolean) {
   return async function routes(app: FastifyInstance) {
@@ -22,8 +24,13 @@ export function pairRoutes(pairs: PairService, repo: AttemptRepo, allow: (player
     app.post<{ Params: { id: string } }>('/pair/:id/chat', async (req, reply) => {
       const body = SessionChatRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
-      if (!allow(body.data.playerId)) return reply.code(429).send({ error: 'rate_limited' });
-      return pairs.chat(req.params.id, body.data.playerId, body.data.text);
+      const pid = playerIdFrom(req, body.data.playerId);
+      if (!pid) return reply.code(401).send({ error: 'unauthorized' });
+      if (!allow(pid)) return reply.code(429).send({ error: 'rate_limited' });
+      budget.check(pid, req.ip);
+      const out = await pairs.chat(req.params.id, pid, body.data.text);
+      budget.recordTurn(pid, req.ip);
+      return out;
     });
 
     app.post<{ Params: { id: string } }>('/pair/:id/end', async (req, reply) => {

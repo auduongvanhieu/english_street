@@ -15,6 +15,7 @@ interface PlayerLike {
   rot: number;
   anim: string;
   voice: boolean;
+  avatar: string;
   bubble: string;
 }
 interface StreetStateLike {
@@ -65,6 +66,7 @@ function bindRoom(r: Room<StreetStateLike>) {
       rot: p.rot,
       anim: p.anim,
       voice: p.voice,
+      avatar: p.avatar,
       bubble: p.bubble,
     });
 

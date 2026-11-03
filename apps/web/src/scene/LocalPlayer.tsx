@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { INPUT_RATE_HZ, INTERACT_RADIUS, WALK_SPEED } from '@es/shared';
 import { sendInput } from '../net/client';
 import { useVoiceChat } from '../net/voicechat';
+import { useProfile } from '../store/profile';
 import { useGame } from '../store/game';
 import { joystick } from '../input/joystick';
 import { buildBlockers, resolveMove } from '../world/layout';
@@ -32,6 +33,7 @@ export function LocalPlayer({ name }: { name: string }) {
   const anim = useRef('idle');
   const [animState, setAnimState] = useState('idle');
   const interactAcc = useRef(0);
+  const tint = useProfile((s) => s.profile?.avatar.color ?? '#4a90e2');
 
   useFrame((_, dt) => {
     const g = ref.current;
@@ -109,7 +111,7 @@ export function LocalPlayer({ name }: { name: string }) {
 
   return (
     <group ref={ref} position={SPAWN}>
-      <Character anim={animState} tint="#4a90e2" />
+      <Character anim={animState} tint={tint} />
       <NameTag name={name} />
     </group>
   );

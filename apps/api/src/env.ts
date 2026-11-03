@@ -17,6 +17,15 @@ const EnvSchema = z.object({
   NPC_PROVIDER: z.enum(['claude', 'mock', 'auto']).default('auto'),
   /** Max NPC turns per player per minute */
   NPC_RATE_PER_MIN: z.coerce.number().default(20),
+  /** Cheaper model for A1–A2 quests and free chat (set equal to NPC_MODEL to disable routing). */
+  NPC_MODEL_BASIC: z.string().default('claude-haiku-5-5'),
+  /** Anti-abuse: NPC turns per player per day, and a global daily spend ceiling (USD, estimated from usage). */
+  NPC_DAILY_TURNS_PER_PLAYER: z.coerce.number().default(60),
+  NPC_DAILY_BUDGET_USD: z.coerce.number().default(5),
+  /** How many recent messages are sent to the model (older ones are dropped). */
+  NPC_HISTORY_MAX: z.coerce.number().default(10),
+  /** Secret for signing auth tokens. */
+  AUTH_SECRET: z.string().default('dev-secret-change-me'),
 });
 
 export const env = EnvSchema.parse(process.env);

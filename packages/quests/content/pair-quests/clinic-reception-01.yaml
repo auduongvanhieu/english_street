@@ -1,0 +1,41 @@
+id: clinic-reception-01
+npc: doctor
+level: A2
+title: At Reception (pair)
+intro: One of you is a patient with a bad headache, the other is the clinic receptionist. Dr. Chen listens and gives feedback.
+roles:
+  - id: patient
+    label: Patient
+    brief: >
+      You have had a headache since this morning and you feel a bit dizzy. You want
+      to see a doctor today. You have insurance. Ask how long you will wait.
+    goals:
+      - id: say_problem
+        desc: Say why you came (your symptoms)
+      - id: ask_doctor
+        desc: Ask to see a doctor today
+      - id: give_details
+        desc: Give your name and say you have insurance
+      - id: ask_wait
+        desc: Ask how long the wait is
+  - id: receptionist
+    label: Receptionist
+    brief: >
+      You work at the clinic reception. Greet the patient, ask what the problem is,
+      take their name and insurance, and tell them the waiting time (about 20 minutes).
+    facts: |
+      Walk-in patients wait about 20 minutes. Consultation: $40, with insurance $10.
+      You need the patient's full name and whether they have insurance.
+    goals:
+      - id: greet
+        desc: Greet the patient and ask how you can help
+      - id: ask_symptoms
+        desc: Ask about the symptoms or how long they have had them
+      - id: take_details
+        desc: Ask for their name and insurance
+      - id: tell_wait
+        desc: Tell them the waiting time and where to wait
+target_vocab: [headache, dizzy, insurance, waiting time, take a seat]
+target_phrases: ["I have a…", "Do you have insurance?", "Please take a seat"]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

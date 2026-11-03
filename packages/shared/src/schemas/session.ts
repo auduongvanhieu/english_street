@@ -12,7 +12,8 @@ export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 /** POST /quests/:id/start and POST /npc/:id/talk (free chat) */
 export const StartSessionRequestSchema = z.object({
-  playerId: z.string().min(8).max(64),
+  /** Guest id; ignored when a bearer token identifies the player. */
+  playerId: z.string().min(8).max(64).optional(),
   playerName: z.string().min(2).max(20),
 });
 export type StartSessionRequest = z.infer<typeof StartSessionRequestSchema>;
@@ -32,7 +33,7 @@ export type SessionState = z.infer<typeof SessionStateSchema>;
 
 /** POST /sessions/:id/chat */
 export const SessionChatRequestSchema = z.object({
-  playerId: z.string().min(8).max(64),
+  playerId: z.string().min(8).max(64).optional(),
   text: z.string().min(1).max(500),
   source: z.enum(['text', 'voice']).default('text'),
 });

@@ -1,0 +1,18 @@
+id: jobs-search-01
+npc: recruiter
+level: A2
+title: Looking for a Job
+intro: You want a part-time job on weekends. Ask what is available, ask about pay and hours, and choose one to apply for.
+goals:
+  - id: looking
+    desc: Say what kind of job you are looking for
+  - id: ask_pay
+    desc: Ask about pay or hours
+  - id: choose
+    desc: Choose a job to apply for
+  - id: apply
+    desc: Ask how to apply
+target_vocab: [part-time, full-time, per hour, weekends, apply]
+target_phrases: ["I'm looking for a part-time job", "How much does it pay?", "How can I apply?"]
+max_turns: 10
+reward: { xp: 60, coins: 12 }

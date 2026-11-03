@@ -1,0 +1,18 @@
+id: info-recommend-01
+npc: guide
+level: B1
+title: A Free Afternoon
+intro: You have a free afternoon. Ask Priya for recommendations, say what you like, and decide on a plan.
+goals:
+  - id: ask_rec
+    desc: Ask for a recommendation for the afternoon
+  - id: preferences
+    desc: Say what you like or dislike
+  - id: details
+    desc: Ask a follow-up question (price, time, how to get there)
+  - id: decide
+    desc: Decide what you will do
+target_vocab: [recommend, museum, park, nearby, worth visiting]
+target_phrases: ["What would you recommend for…?", "I'm interested in…", "I think I'll…"]
+max_turns: 10
+reward: { xp: 70, coins: 15 }

@@ -11,6 +11,12 @@ import {
 import type { PairLine, PairQuest } from '@es/shared';
 import { env, hasRealApiKey } from '../env';
 import { judgePersonaBlock, judgeQuestBlock, judgeStateBlock, personaBlock, questBlock, stateBlock } from './prompt';
+import { budget } from './budget';
+
+/** A1–A2 quests and free chat go to the cheaper model; B1+ to the main one. */
+export function modelFor(level: string | null): string {
+  return !level || level === 'A1' || level === 'A2' ? env.NPC_MODEL_BASIC : env.NPC_MODEL;
+}
 
 export interface TurnInput {
   npc: NpcPersona;
@@ -62,7 +68,7 @@ export interface UsageTotals {
 }
 
 export class ClaudeNpcLlm implements NpcLlm {
-  readonly name = `claude:${env.NPC_MODEL}`;
+  readonly name = `claude:${env.NPC_MODEL}+${env.NPC_MODEL_BASIC}`;
   /** Running token totals since process start (for cost reporting). */
   readonly usage: UsageTotals = { requests: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
   private client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
@@ -73,7 +79,7 @@ export class ClaudeNpcLlm implements NpcLlm {
       { role: 'user', content: input.text },
     ];
     const req: Anthropic.MessageCreateParamsNonStreaming = {
-      model: env.NPC_MODEL,
+      model: modelFor(input.quest?.level ?? null),
       max_tokens: 1024,
       system: [
         { type: 'text', text: personaBlock(input.npc), cache_control: { type: 'ephemeral' } },
@@ -100,7 +106,7 @@ export class ClaudeNpcLlm implements NpcLlm {
     const lines = input.transcript.map((l) => `${l.role.toUpperCase()} (${l.name}): ${l.content}`).join('\n');
     const user = `Transcript so far:\n${lines || '(nothing yet)'}\n\nLatest line from ${input.speakerRole.toUpperCase()} (${input.speakerName}): ${input.text}`;
     const req: Anthropic.MessageCreateParamsNonStreaming = {
-      model: env.NPC_MODEL,
+      model: modelFor(input.quest.level),
       max_tokens: 1024,
       system: [
         { type: 'text', text: judgePersonaBlock(input.npc), cache_control: { type: 'ephemeral' } },
@@ -142,6 +148,12 @@ export class ClaudeNpcLlm implements NpcLlm {
       this.usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
       this.usage.cacheWrite += res.usage.cache_creation_input_tokens ?? 0;
       this.usage.output += res.usage.output_tokens;
+      budget.recordUsage(req.model, {
+        input: res.usage.input_tokens,
+        output: res.usage.output_tokens,
+        cacheRead: res.usage.cache_read_input_tokens ?? 0,
+        cacheWrite: res.usage.cache_creation_input_tokens ?? 0,
+      });
       if (res.stop_reason === 'refusal') return null;
       if (res.parsed_output) return res.parsed_output;
     }

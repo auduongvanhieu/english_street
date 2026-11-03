@@ -1,0 +1,18 @@
+id: clinic-cold-01
+npc: doctor
+level: A2
+title: I Don't Feel Well
+intro: You have had a cough, a sore throat and a slight fever for two days. Describe your symptoms and understand the doctor's advice.
+goals:
+  - id: symptoms
+    desc: Describe at least two symptoms
+  - id: duration
+    desc: Say how long you have felt like this
+  - id: ask_advice
+    desc: Ask what you should do or take
+  - id: confirm
+    desc: Repeat or confirm the advice
+target_vocab: [cough, sore throat, fever, rest, fluids, paracetamol]
+target_phrases: ["I have a…", "It started two days ago", "What should I do?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

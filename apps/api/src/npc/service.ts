@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { CEFR_LEVELS, type AttemptSummary, type CefrLevel, type NpcTurnResponse, type Quest, type SessionState } from '@es/shared';
 import { getNpc, getQuest } from '@es/quests';
 import { ENTER_MESSAGE } from './prompt';
+import { env } from '../env';
 import type { NpcLlm } from './llm';
 import type { Session, SessionStore } from './store';
 import type { AttemptRepo } from './attempts';
@@ -16,6 +17,15 @@ export class NpcError extends Error {
 }
 
 const FREE_TALK_MAX_TURNS = 20;
+
+/** Keep the opening exchange (enter + greeting) and the most recent messages, user-first. */
+export function trimHistory<T extends { role: 'user' | 'assistant' }>(h: T[], max: number): T[] {
+  if (h.length <= max) return h;
+  const head = h.slice(0, 2);
+  let tail = h.slice(-(max - 2));
+  if (tail[0]?.role === 'assistant') tail = tail.slice(1);
+  return [...head, ...tail];
+}
 
 export class NpcService {
   constructor(
@@ -92,7 +102,7 @@ export class NpcService {
       level,
       goalsDone: s.goalsDone,
       turnsLeft: s.maxTurns - s.turns,
-      history: s.history.filter((m) => m.role === 'user' || m.role === 'assistant').map((m) => ({ role: m.role, content: m.content })),
+      history: trimHistory(s.history.map((m) => ({ role: m.role, content: m.content })), env.NPC_HISTORY_MAX),
       text: clean,
     });
 
@@ -150,6 +160,8 @@ export class NpcService {
         finishedAt: new Date(),
       });
     }
+    const bonus = await this.attempts.dailyBonus(s.playerId, quest.id);
+    summary.reward.xp += bonus;
     await this.attempts.reward(s.playerId, summary.reward.xp, summary.reward.coins);
     await this.attempts.saveVocab(s.playerId, s.vocab);
     return summary;

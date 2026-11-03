@@ -4,6 +4,7 @@ import { onPair, sendPair } from '../net/client';
 import { API_URL } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { useGame } from './game';
+import { useProfile } from './profile';
 
 export interface Invite {
   from: string; // sessionId
@@ -76,6 +77,7 @@ export const usePair = create<PairStore>((set, get) => ({
     try {
       const r = await post<PairChatResponse>(`/pair/${s.sessionId}/chat`, { playerId: getPlayerId(), text });
       set({ state: r.state, summaries: r.summaries, loading: false });
+      if (r.summaries) void useProfile.getState().refresh();
       const line = r.state.messages[r.state.messages.length - 1];
       sendPair({ to: partner, type: 'msg', message: line, state: r.state, summaries: r.summaries ?? undefined });
     } catch (e) {

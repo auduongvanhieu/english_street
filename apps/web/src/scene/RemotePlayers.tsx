@@ -32,7 +32,7 @@ function Remote({ p }: { p: RemotePlayer }) {
   });
   return (
     <group ref={ref} position={[p.x, p.y, p.z]}>
-      <Character anim={p.anim} tint="#e2a04a" />
+      <Character anim={p.anim} tint={avatarColor(p.avatar, '#e2a04a')} />
       <NameTag name={p.name} bubble={p.bubble} />
     </group>
   );
@@ -43,4 +43,13 @@ function shortestAngle(from: number, to: number) {
   if (d > Math.PI) d -= Math.PI * 2;
   if (d < -Math.PI) d += Math.PI * 2;
   return d;
+}
+
+export function avatarColor(json: string, fallback: string): string {
+  try {
+    const c = (JSON.parse(json) as { color?: string }).color;
+    return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : fallback;
+  } catch {
+    return fallback;
+  }
 }

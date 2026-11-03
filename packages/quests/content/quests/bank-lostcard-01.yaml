@@ -1,0 +1,18 @@
+id: bank-lostcard-01
+npc: teller
+level: B2
+title: Lost Card
+intro: You lost your debit card this morning and noticed a payment you did not make. Block the card, report the problem, and ask for a replacement.
+goals:
+  - id: report_loss
+    desc: Report that your card is lost
+  - id: block
+    desc: Ask to block the card
+  - id: dispute
+    desc: Mention the payment you did not make and ask what happens next
+  - id: replacement
+    desc: Ask when the new card will arrive
+target_vocab: [block, replacement, unauthorised payment, dispute, reference number]
+target_phrases: ["I've lost my card", "Could you block it, please?", "There's a payment I didn't make"]
+max_turns: 12
+reward: { xp: 90, coins: 20 }

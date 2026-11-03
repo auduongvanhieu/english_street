@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AttemptSummary, NpcTurnResponse, SessionState } from '@es/shared';
 import { endSession, sendTurn, startFreeTalk, startQuest } from '../net/api';
+import { useProfile } from './profile';
 
 interface ConversationStore {
   state: SessionState | null;
@@ -43,6 +44,7 @@ export const useConversation = create<ConversationStore>((set, get) => ({
     try {
       const r = await sendTurn(s.sessionId, text, source);
       set({ state: r.state, lastTurn: r.turn, summary: r.summary, loading: false });
+      if (r.summary) void useProfile.getState().refresh();
     } catch (e) {
       set({ loading: false, error: (e as Error).message, state: s });
     }

@@ -1,0 +1,18 @@
+id: jobs-strengths-01
+npc: recruiter
+level: B2
+title: Strengths and Weaknesses
+intro: Sophie asks the classic questions. Give a strength with an example, an honest weakness with how you handle it, and talk about your availability.
+goals:
+  - id: strength
+    desc: Name a strength and give an example
+  - id: weakness
+    desc: Name a weakness and how you are improving it
+  - id: availability
+    desc: Say when you can start or your availability
+  - id: closing
+    desc: Thank the recruiter and ask about next steps
+target_vocab: [strength, weakness, improve, deadline, availability, next steps]
+target_phrases: ["One of my strengths is…", "I'm working on…", "What are the next steps?"]
+max_turns: 12
+reward: { xp: 100, coins: 22 }

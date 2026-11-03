@@ -1,0 +1,18 @@
+id: post-parcel-01
+npc: postal
+level: A2
+title: Parcel Abroad
+intro: Send a small parcel (a book, worth $30) to your cousin overseas. Fill in the customs details and ask about tracking.
+goals:
+  - id: want_send
+    desc: Say you want to send a parcel abroad
+  - id: contents
+    desc: Say what is inside and its value
+  - id: ask_tracking
+    desc: Ask about tracking or insurance
+  - id: pay
+    desc: Confirm and pay
+target_vocab: [parcel, abroad, customs form, tracking, insurance, value]
+target_phrases: ["I'd like to send a parcel to…", "It's a book worth…", "Does it have tracking?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

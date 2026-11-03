@@ -4,6 +4,9 @@ import { Scene } from './scene/Scene';
 import { connect, sendChat } from './net/client';
 import { fetchNpcs } from './net/api';
 import { getPlayerId } from './net/player';
+import { useProfile } from './store/profile';
+import { AuthScreen } from './ui/AuthScreen';
+import { ProfileHud, UiPanels } from './ui/ProfilePanels';
 import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
 import { useVoiceChat } from './net/voicechat';
@@ -21,7 +24,7 @@ if (import.meta.env.DEV) {
 
 export default function App() {
   const { playerName, setPlayerName, conn, chatLog } = useGame();
-  const [draft, setDraft] = useState(playerName);
+  const [draft] = useState(playerName);
   const [chat, setChat] = useState('');
   const [npcError, setNpcError] = useState(false);
   const chatInput = useRef<HTMLInputElement>(null);
@@ -44,7 +47,8 @@ export default function App() {
       const s = useGame.getState();
       const typing = document.activeElement?.tagName === 'INPUT';
       if (e.key === 'Escape') {
-        if (s.panelNpc) s.closePanel();
+        if (s.uiPanel) s.setUiPanel(null);
+        else if (s.panelNpc) s.closePanel();
         else (document.activeElement as HTMLElement | null)?.blur();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
@@ -60,12 +64,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  async function join(e: FormEvent) {
-    e.preventDefault();
-    const name = draft.trim();
-    if (name.length < 2) return;
+  async function join(name: string) {
     setPlayerName(name);
-    await connect({ name, avatar: '{}', playerId: getPlayerId() }).catch(() => undefined);
+    const prof = useProfile.getState();
+    await prof.refresh();
+    const avatar = JSON.stringify({ color: useProfile.getState().profile?.avatar.color ?? '#4a90e2' });
+    await connect({ name, avatar, playerId: getPlayerId() }).catch(() => undefined);
+    // First visit: offer the placement test right away.
+    const p = useProfile.getState().profile;
+    if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
+      useGame.getState().setUiPanel('placement');
+      localStorage.setItem('es:placement-skipped', '1');
+    }
   }
 
   function submitChat(e: FormEvent) {
@@ -77,19 +87,7 @@ export default function App() {
   }
 
   if (conn !== 'connected') {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <form onSubmit={join} className="w-80 rounded-2xl bg-white/90 p-6 shadow-xl">
-          <h1 className="mb-1 text-2xl font-bold">English Street</h1>
-          <p className="mb-4 text-sm text-gray-600">Walk the street. Talk in English.</p>
-          <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Your name" maxLength={20} className="mb-3 w-full rounded-lg border px-3 py-2" />
-          <button type="submit" disabled={conn === 'connecting'} className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white disabled:opacity-50">
-            {conn === 'connecting' ? 'Connecting…' : 'Enter the street'}
-          </button>
-          {conn === 'error' && <p className="mt-2 text-sm text-red-600">Cannot reach the game server. Is it running?</p>}
-        </form>
-      </div>
-    );
+    return <AuthScreen initialName={draft} onPlay={(n) => void join(n)} connecting={conn === 'connecting'} connError={conn === 'error'} />;
   }
 
   return (
@@ -127,9 +125,11 @@ export default function App() {
 
       {touch && <Joystick />}
       <InteractPrompt touch={touch} />
+      <ProfileHud />
       <InviteToast />
       <NpcPanel />
       <PairPanel />
+      <UiPanels />
     </div>
   );
 }

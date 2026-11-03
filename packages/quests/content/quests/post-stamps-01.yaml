@@ -1,0 +1,18 @@
+id: post-stamps-01
+npc: postal
+level: A1
+title: Stamps and Envelopes
+intro: Buy five stamps and two envelopes, then ask when the post office closes.
+goals:
+  - id: stamps
+    desc: Ask for five stamps
+  - id: envelopes
+    desc: Ask for two envelopes
+  - id: hours
+    desc: Ask what time the post office closes
+  - id: pay
+    desc: Pay
+target_vocab: [stamp, envelope, close, open]
+target_phrases: ["Can I have five stamps, please?", "What time do you close?"]
+max_turns: 8
+reward: { xp: 50, coins: 10 }

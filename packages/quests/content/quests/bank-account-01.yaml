@@ -1,0 +1,18 @@
+id: bank-account-01
+npc: teller
+level: B1
+title: Opening an Account
+intro: Open a bank account. Find out what documents you need, compare current and savings accounts, and choose one.
+goals:
+  - id: request
+    desc: Say you want to open an account
+  - id: documents
+    desc: Ask which documents you need
+  - id: compare
+    desc: Ask about the difference between account types
+  - id: choose
+    desc: Choose an account and confirm the minimum deposit
+target_vocab: [current account, savings account, deposit, proof of address, interest, debit card]
+target_phrases: ["I'd like to open an account", "What documents do I need?", "What's the difference between…?"]
+max_turns: 12
+reward: { xp: 80, coins: 18 }

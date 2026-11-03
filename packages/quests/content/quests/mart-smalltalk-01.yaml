@@ -1,0 +1,18 @@
+id: mart-smalltalk-01
+npc: cashier
+level: A1
+title: Small Talk at the Till
+intro: While paying for a sandwich and a drink, make some small talk with Tom about the weather and your day.
+goals:
+  - id: buy
+    desc: Say what you want to buy
+  - id: weather
+    desc: Say something about the weather
+  - id: day
+    desc: Say something about your day or plans
+  - id: goodbye
+    desc: Say goodbye
+target_vocab: [sunny, rainy, cold, busy, weekend]
+target_phrases: ["Nice weather today, isn't it?", "I'm going to…", "Have a nice day!"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

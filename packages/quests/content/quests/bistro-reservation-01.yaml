@@ -1,0 +1,18 @@
+id: bistro-reservation-01
+npc: maitre
+level: A2
+title: Booking a Table
+intro: Book a table for four for Saturday evening and mention that one guest is allergic to dairy.
+goals:
+  - id: book
+    desc: Ask to book a table for four
+  - id: when
+    desc: Say the day and time
+  - id: allergy
+    desc: Mention the dairy allergy
+  - id: confirm
+    desc: Confirm the reservation and give your name
+target_vocab: [reservation, table for four, allergic, dairy, confirm]
+target_phrases: ["I'd like to book a table for…", "One of us is allergic to…", "Under the name…"]
+max_turns: 10
+reward: { xp: 60, coins: 12 }

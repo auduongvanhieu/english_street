@@ -1,4 +1,6 @@
-import type { Correction, QuestAttemptStatus, VocabItem } from '@es/shared';
+import type { Correction, QuestAttemptStatus, ReviewGrade, VocabItem } from '@es/shared';
+import { dailyQuestIds, scheduleReview, type CefrLevel } from '@es/shared';
+import { loadQuests } from '@es/quests';
 import { prisma } from '../plugins/prisma';
 
 export interface AttemptRecord {
@@ -16,14 +18,30 @@ export interface AttemptRecord {
   finishedAt: Date | null;
 }
 
-export interface AttemptRepo {
-  readonly name: string;
-  ensureUser(id: string, name: string): Promise<{ cefrLevel: string; xp: number; coins: number }>;
-  create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>): Promise<AttemptRecord>;
-  update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
-  reward(userId: string, xp: number, coins: number): Promise<void>;
-  saveVocab(userId: string, items: VocabItem[]): Promise<void>;
-  createReport(r: ReportInput): Promise<void>;
+export interface UserRecord {
+  id: string;
+  email: string | null;
+  name: string;
+  passwordHash: string | null;
+  cefrLevel: string;
+  xp: number;
+  coins: number;
+  streak: number;
+  lastActiveAt: Date;
+  avatarConfig: unknown;
+  placementDoneAt: Date | null;
+  reviewsDone: number;
+}
+
+export interface VocabRecord {
+  id: string;
+  userId: string;
+  word: string;
+  meaningVi: string;
+  example: string;
+  ease: number;
+  intervalDays: number;
+  nextReviewAt: Date;
 }
 
 export interface ReportInput {
@@ -35,19 +53,103 @@ export interface ReportInput {
   context: unknown[];
 }
 
+export const DAILY_BONUS_XP = 30;
+
+export interface AttemptRepo {
+  readonly name: string;
+  /** Guest/anonymous or known user: upsert name, bump streak. */
+  ensureUser(id: string, name: string): Promise<UserRecord>;
+  getUser(id: string): Promise<UserRecord | null>;
+  getUserByEmail(email: string): Promise<UserRecord | null>;
+  createUser(u: { id: string; email: string; name: string; passwordHash: string }): Promise<UserRecord>;
+  updateUser(id: string, patch: Partial<Pick<UserRecord, 'name' | 'cefrLevel' | 'avatarConfig' | 'placementDoneAt' | 'coins' | 'reviewsDone'>>): Promise<void>;
+  /** Move a guest's attempts and vocabulary to a registered account. */
+  transferGuest(guestId: string, userId: string): Promise<void>;
+
+  create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>): Promise<AttemptRecord>;
+  update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
+  listCompleted(userId: string): Promise<Pick<AttemptRecord, 'questId' | 'npcId' | 'finishedAt'>[]>;
+  reward(userId: string, xp: number, coins: number): Promise<void>;
+  /** Daily-board bonus if the quest is on today's board and not yet completed today. */
+  dailyBonus(userId: string, questId: string): Promise<number>;
+
+  saveVocab(userId: string, items: VocabItem[]): Promise<void>;
+  listVocab(userId: string): Promise<VocabRecord[]>;
+  reviewVocab(userId: string, id: string, grade: ReviewGrade): Promise<VocabRecord | null>;
+
+  createReport(r: ReportInput): Promise<void>;
+}
+
+function bumpStreak(u: { streak: number; lastActiveAt: Date }, now = new Date()) {
+  const day = (d: Date) => Math.floor(d.getTime() / 86_400_000);
+  const diff = day(now) - day(u.lastActiveAt);
+  if (diff === 1) u.streak += 1;
+  else if (diff > 1) u.streak = 1;
+  else if (u.streak === 0) u.streak = 1;
+  u.lastActiveAt = now;
+}
+
+async function dailyBonusFor(repo: AttemptRepo, userId: string, questId: string): Promise<number> {
+  const today = dailyQuestIds(loadQuests().map((q) => q.id), new Date());
+  if (!today.includes(questId)) return 0;
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  const done = await repo.listCompleted(userId);
+  // The attempt being finished is not yet marked completed, so any match is a previous completion today.
+  return done.some((a) => a.questId === questId && a.finishedAt && a.finishedAt >= start) ? 0 : DAILY_BONUS_XP;
+}
+
+// ---------------------------------------------------------------- memory
 export class MemoryAttemptRepo implements AttemptRepo {
   readonly name = 'memory';
-  reports: ReportInput[] = [];
-  users = new Map<string, { name: string; cefrLevel: string; xp: number; coins: number }>();
+  users = new Map<string, UserRecord>();
   attempts = new Map<string, AttemptRecord>();
-  vocab = new Map<string, Map<string, VocabItem>>();
+  vocab = new Map<string, VocabRecord[]>();
+  reports: ReportInput[] = [];
 
   async ensureUser(id: string, name: string) {
-    const u = this.users.get(id) ?? { name, cefrLevel: 'A1', xp: 0, coins: 0 };
-    u.name = name;
-    this.users.set(id, u);
+    let u = this.users.get(id);
+    if (!u) {
+      u = { id, email: null, name, passwordHash: null, cefrLevel: 'A1', xp: 0, coins: 0, streak: 0, lastActiveAt: new Date(0), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0 };
+      this.users.set(id, u);
+    }
+    if (!u.email) u.name = name;
+    bumpStreak(u);
     return u;
   }
+  async getUser(id: string) {
+    return this.users.get(id) ?? null;
+  }
+  async getUserByEmail(email: string) {
+    return [...this.users.values()].find((u) => u.email === email.toLowerCase()) ?? null;
+  }
+  async createUser(u: { id: string; email: string; name: string; passwordHash: string }) {
+    const rec: UserRecord = { ...u, email: u.email.toLowerCase(), cefrLevel: 'A1', xp: 0, coins: 0, streak: 1, lastActiveAt: new Date(), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0 };
+    this.users.set(u.id, rec);
+    return rec;
+  }
+  async updateUser(id: string, patch: Partial<UserRecord>) {
+    const u = this.users.get(id);
+    if (u) Object.assign(u, patch);
+  }
+  async transferGuest(guestId: string, userId: string) {
+    const g = this.users.get(guestId);
+    const u = this.users.get(userId);
+    if (!g || !u) return;
+    for (const a of this.attempts.values()) if (a.userId === guestId) a.userId = userId;
+    const v = this.vocab.get(guestId);
+    if (v) {
+      for (const e of v) e.userId = userId;
+      this.vocab.set(userId, [...(this.vocab.get(userId) ?? []), ...v]);
+      this.vocab.delete(guestId);
+    }
+    u.xp += g.xp;
+    u.coins += g.coins;
+    u.cefrLevel = g.cefrLevel;
+    u.placementDoneAt = g.placementDoneAt;
+    this.users.delete(guestId);
+  }
+
   async create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>) {
     const rec: AttemptRecord = { ...a, startedAt: new Date(), finishedAt: null };
     this.attempts.set(a.id, rec);
@@ -57,6 +159,9 @@ export class MemoryAttemptRepo implements AttemptRepo {
     const r = this.attempts.get(id);
     if (r) Object.assign(r, patch);
   }
+  async listCompleted(userId: string) {
+    return [...this.attempts.values()].filter((a) => a.userId === userId && a.status === 'completed');
+  }
   async reward(userId: string, xp: number, coins: number) {
     const u = this.users.get(userId);
     if (u) {
@@ -64,41 +169,75 @@ export class MemoryAttemptRepo implements AttemptRepo {
       u.coins += coins;
     }
   }
-  async saveVocab(userId: string, items: VocabItem[]) {
-    const m = this.vocab.get(userId) ?? new Map();
-    for (const v of items) m.set(v.word.toLowerCase(), v);
-    this.vocab.set(userId, m);
+  dailyBonus(userId: string, questId: string) {
+    return dailyBonusFor(this, userId, questId);
   }
+
+  async saveVocab(userId: string, items: VocabItem[]) {
+    const list = this.vocab.get(userId) ?? [];
+    for (const v of items) {
+      const existing = list.find((e) => e.word.toLowerCase() === v.word.toLowerCase());
+      if (existing) Object.assign(existing, { meaningVi: v.meaning_vi, example: v.example });
+      else list.push({ id: `${userId}:${list.length + 1}`, userId, word: v.word, meaningVi: v.meaning_vi, example: v.example, ease: 2.5, intervalDays: 0, nextReviewAt: new Date() });
+    }
+    this.vocab.set(userId, list);
+  }
+  async listVocab(userId: string) {
+    return [...(this.vocab.get(userId) ?? [])];
+  }
+  async reviewVocab(userId: string, id: string, grade: ReviewGrade) {
+    const e = (this.vocab.get(userId) ?? []).find((x) => x.id === id);
+    if (!e) return null;
+    Object.assign(e, scheduleReview(grade, e.ease, e.intervalDays));
+    const u = this.users.get(userId);
+    if (u) u.reviewsDone += 1;
+    return e;
+  }
+
   async createReport(r: ReportInput) {
     this.reports.push(r);
     console.warn(`[report] ${r.reporterId} reported ${r.targetName} (${r.reason}): ${r.details}`);
   }
 }
 
+// ---------------------------------------------------------------- postgres
 export class PrismaAttemptRepo implements AttemptRepo {
   readonly name = 'postgres';
+
   async ensureUser(id: string, name: string) {
-    const u = await prisma.user.upsert({
-      where: { id },
-      create: { id, name },
-      update: { name, lastActiveAt: new Date() },
-      select: { cefrLevel: true, xp: true, coins: true },
-    });
-    return u;
+    const u = await prisma.user.upsert({ where: { id }, create: { id, name, lastActiveAt: new Date(0) }, update: {} });
+    const s = { streak: u.streak, lastActiveAt: u.lastActiveAt };
+    bumpStreak(s);
+    const updated = await prisma.user.update({ where: { id }, data: { ...(u.email ? {} : { name }), streak: s.streak, lastActiveAt: s.lastActiveAt } });
+    return updated as UserRecord;
   }
+  async getUser(id: string) {
+    return (await prisma.user.findUnique({ where: { id } })) as UserRecord | null;
+  }
+  async getUserByEmail(email: string) {
+    return (await prisma.user.findUnique({ where: { email: email.toLowerCase() } })) as UserRecord | null;
+  }
+  async createUser(u: { id: string; email: string; name: string; passwordHash: string }) {
+    return (await prisma.user.create({ data: { ...u, email: u.email.toLowerCase(), streak: 1 } })) as UserRecord;
+  }
+  async updateUser(id: string, patch: Parameters<AttemptRepo['updateUser']>[1]) {
+    const { avatarConfig, ...rest } = patch;
+    await prisma.user.update({ where: { id }, data: { ...rest, cefrLevel: rest.cefrLevel as CefrLevel | undefined, ...(avatarConfig !== undefined ? { avatarConfig: avatarConfig as object } : {}) } });
+  }
+  async transferGuest(guestId: string, userId: string) {
+    const g = await prisma.user.findUnique({ where: { id: guestId } });
+    if (!g) return;
+    await prisma.$transaction([
+      prisma.questAttempt.updateMany({ where: { userId: guestId }, data: { userId } }),
+      prisma.vocabEntry.updateMany({ where: { userId: guestId }, data: { userId } }),
+      prisma.user.update({ where: { id: userId }, data: { xp: { increment: g.xp }, coins: { increment: g.coins }, cefrLevel: g.cefrLevel, placementDoneAt: g.placementDoneAt } }),
+      prisma.user.delete({ where: { id: guestId } }),
+    ]);
+  }
+
   async create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>) {
     const r = await prisma.questAttempt.create({
-      data: {
-        id: a.id,
-        userId: a.userId,
-        questId: a.questId,
-        npcId: a.npcId,
-        status: a.status,
-        turns: a.turns,
-        goalsDone: a.goalsDone,
-        transcript: a.transcript as object,
-        corrections: a.corrections as object[],
-      },
+      data: { id: a.id, userId: a.userId, questId: a.questId, npcId: a.npcId, status: a.status, turns: a.turns, goalsDone: a.goalsDone, transcript: a.transcript as object, corrections: a.corrections as object[] },
     });
     return { ...r, corrections: r.corrections as Correction[] } as AttemptRecord;
   }
@@ -106,16 +245,19 @@ export class PrismaAttemptRepo implements AttemptRepo {
     const { transcript, corrections, ...rest } = patch;
     await prisma.questAttempt.update({
       where: { id },
-      data: {
-        ...rest,
-        ...(transcript !== undefined ? { transcript: transcript as object } : {}),
-        ...(corrections !== undefined ? { corrections: corrections as object[] } : {}),
-      },
+      data: { ...rest, ...(transcript !== undefined ? { transcript: transcript as object } : {}), ...(corrections !== undefined ? { corrections: corrections as object[] } : {}) },
     });
+  }
+  async listCompleted(userId: string) {
+    return prisma.questAttempt.findMany({ where: { userId, status: 'completed' }, select: { questId: true, npcId: true, finishedAt: true } });
   }
   async reward(userId: string, xp: number, coins: number) {
     await prisma.user.update({ where: { id: userId }, data: { xp: { increment: xp }, coins: { increment: coins } } });
   }
+  dailyBonus(userId: string, questId: string) {
+    return dailyBonusFor(this, userId, questId);
+  }
+
   async saveVocab(userId: string, items: VocabItem[]) {
     for (const v of items) {
       await prisma.vocabEntry.upsert({
@@ -125,6 +267,20 @@ export class PrismaAttemptRepo implements AttemptRepo {
       });
     }
   }
+  async listVocab(userId: string) {
+    return prisma.vocabEntry.findMany({ where: { userId }, orderBy: { nextReviewAt: 'asc' } });
+  }
+  async reviewVocab(userId: string, id: string, grade: ReviewGrade) {
+    const e = await prisma.vocabEntry.findFirst({ where: { id, userId } });
+    if (!e) return null;
+    const next = scheduleReview(grade, e.ease, e.intervalDays);
+    const [updated] = await prisma.$transaction([
+      prisma.vocabEntry.update({ where: { id }, data: next }),
+      prisma.user.update({ where: { id: userId }, data: { reviewsDone: { increment: 1 } } }),
+    ]);
+    return updated;
+  }
+
   async createReport(r: ReportInput) {
     await prisma.report.create({ data: { ...r, context: r.context as object[] } });
   }
@@ -133,10 +289,7 @@ export class PrismaAttemptRepo implements AttemptRepo {
 /** Postgres if reachable within 2 s, otherwise in-memory (dev machines without a DB). */
 export async function createAttemptRepo(): Promise<AttemptRepo> {
   try {
-    await Promise.race([
-      prisma.$queryRaw`SELECT 1`,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('db timeout')), 2000)),
-    ]);
+    await Promise.race([prisma.$queryRaw`SELECT 1`, new Promise((_, rej) => setTimeout(() => rej(new Error('db timeout')), 2000))]);
     return new PrismaAttemptRepo();
   } catch {
     return new MemoryAttemptRepo();

@@ -1,0 +1,18 @@
+id: post-letter-01
+npc: postal
+level: A2
+title: Send a Letter
+intro: Send a letter to a friend in another city. Choose standard or express and pay.
+goals:
+  - id: want_send
+    desc: Say you want to send a letter
+  - id: ask_options
+    desc: Ask about the delivery options or how long it takes
+  - id: choose
+    desc: Choose standard or express
+  - id: pay
+    desc: Pay and say thank you
+target_vocab: [letter, stamp, express, standard, delivery]
+target_phrases: ["I'd like to send…", "How long does it take?", "I'll take the express one"]
+max_turns: 10
+reward: { xp: 60, coins: 12 }

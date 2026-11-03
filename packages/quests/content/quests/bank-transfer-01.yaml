@@ -1,0 +1,18 @@
+id: bank-transfer-01
+npc: teller
+level: B1
+title: International Transfer
+intro: Send $300 to your family abroad. Ask about the fee and how long it takes, then confirm the details.
+goals:
+  - id: request
+    desc: Say you want to make an international transfer
+  - id: fee
+    desc: Ask about the fee
+  - id: time
+    desc: Ask how long it takes
+  - id: confirm
+    desc: Confirm the amount and recipient
+target_vocab: [transfer, fee, recipient, amount, working days]
+target_phrases: ["I need to transfer… to…", "Is there a fee?", "How long will it take?"]
+max_turns: 10
+reward: { xp: 70, coins: 15 }

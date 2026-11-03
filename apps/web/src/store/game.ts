@@ -10,6 +10,8 @@ export interface RemotePlayer {
   anim: string;
   voice: boolean;
   pid: string;
+  /** JSON-encoded avatar config from the join options */
+  avatar: string;
   bubble: string;
 }
 
@@ -27,6 +29,7 @@ export interface NpcInfo {
 }
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'error';
+export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | null;
 
 interface GameState {
   playerName: string;
@@ -43,6 +46,9 @@ interface GameState {
   /** Local one-shot emote (anim name) and when it ends. */
   emote: { name: string; until: number } | null;
   playEmote: (name: string) => void;
+  /** Which profile panel is open. */
+  uiPanel: UiPanel;
+  setUiPanel: (p: UiPanel) => void;
 
   npcs: NpcInfo[];
   setNpcs: (n: NpcInfo[]) => void;
@@ -73,10 +79,11 @@ export const useGame = create<GameState>((set) => ({
       return { players: rest };
     }),
   chatLog: [],
-  pushChat: (m) =>
-    set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
+  pushChat: (m) => set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
   emote: null,
   playEmote: (name) => set({ emote: { name, until: Date.now() + 2600 } }),
+  uiPanel: null,
+  setUiPanel: (uiPanel) => set({ uiPanel }),
 
   npcs: [],
   setNpcs: (npcs) => set({ npcs }),

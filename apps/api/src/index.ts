@@ -7,6 +7,8 @@ import { allow, npcRoutes } from './routes/npc';
 import { pairRoutes } from './routes/pair';
 import { PairService } from './npc/pairService';
 import { createNpcLlm } from './npc/llm';
+import { registerAuth } from './auth';
+import { accountRoutes } from './routes/account';
 import { createSessionStore } from './npc/store';
 import { createAttemptRepo } from './npc/attempts';
 import { NpcService } from './npc/service';
@@ -19,7 +21,10 @@ app.log.info({ llm: llm.name, sessions: sessions.name, attempts: attempts.name }
 if (llm.name === 'mock') app.log.warn('NPC provider is MOCK — set ANTHROPIC_API_KEY (and NPC_PROVIDER=claude) for real conversations');
 
 await app.register(cors, { origin: env.WEB_ORIGIN });
+registerAuth(app);
+if (env.AUTH_SECRET === 'dev-secret-change-me') app.log.warn('AUTH_SECRET is the default dev value — set a real secret in .env');
 await app.register(healthRoutes);
+await app.register(accountRoutes(attempts));
 await app.register(contentRoutes);
 await app.register(npcRoutes(new NpcService(llm, sessions, attempts)));
 await app.register(pairRoutes(new PairService(llm, attempts), attempts, allow));

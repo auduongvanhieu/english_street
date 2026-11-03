@@ -1,0 +1,18 @@
+id: jobs-interview-01
+npc: recruiter
+level: B1
+title: Interview Practice
+intro: Practise a short job interview for the receptionist position at the clinic. Introduce yourself, talk about your experience, and ask a question at the end.
+goals:
+  - id: intro
+    desc: Introduce yourself (name, background)
+  - id: experience
+    desc: Describe relevant experience or skills with an example
+  - id: why
+    desc: Explain why you want this job
+  - id: question
+    desc: Ask the recruiter a question about the job
+target_vocab: [experience, skills, responsible for, team, available]
+target_phrases: ["I'm…, and I have worked as…", "In my last job I…", "Could you tell me about…?"]
+max_turns: 12
+reward: { xp: 90, coins: 20 }

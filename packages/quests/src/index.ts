@@ -49,3 +49,14 @@ export const getQuest = (id: string) => loadQuests().find((q) => q.id === id);
 export const getPairQuest = (id: string) => loadPairQuests().find((q) => q.id === id);
 export const questsForNpc = (npcId: string) => loadQuests().filter((q) => q.npc === npcId);
 export const pairQuestsForNpc = (npcId: string) => loadPairQuests().filter((q) => q.npc === npcId);
+
+import { PlacementQuestionSchema, type PlacementQuestion } from '@es/shared';
+let placementCache: PlacementQuestion[] | undefined;
+export function loadPlacement(): PlacementQuestion[] {
+  placementCache ??= (parse(readFileSync(join(CONTENT_DIR, 'placement.yaml'), 'utf8')) as unknown[]).map((raw, i) => {
+    const r = PlacementQuestionSchema.safeParse(raw);
+    if (!r.success) throw new Error(`Invalid placement question #${i + 1}: ${r.error.message}`);
+    return r.data;
+  });
+  return placementCache;
+}

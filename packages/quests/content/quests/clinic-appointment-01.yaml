@@ -1,0 +1,18 @@
+id: clinic-appointment-01
+npc: doctor
+level: A2
+title: Making an Appointment
+intro: You need a check-up next week. Book an appointment, ask the opening hours and the price without insurance.
+goals:
+  - id: request
+    desc: Ask for an appointment for a check-up
+  - id: time
+    desc: Agree on a day and time
+  - id: price
+    desc: Ask how much a consultation costs
+  - id: thank
+    desc: Thank the doctor and say goodbye
+target_vocab: [appointment, check-up, consultation, insurance, available]
+target_phrases: ["I'd like to make an appointment", "Is Tuesday morning available?", "How much does it cost?"]
+max_turns: 10
+reward: { xp: 60, coins: 12 }

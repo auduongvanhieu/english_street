@@ -66,3 +66,20 @@ NPC_PROVIDER=claude pnpm --filter @es/api eval:npc  # chấm model thật
 ```
 
 ![Chat với NPC](docs/screenshots/phase2-chat.png)
+
+### Chống đốt token
+
+| Biến | Mặc định | Ý nghĩa |
+|---|---|---|
+| `NPC_MODEL_BASIC` | `claude-haiku-5-5` | Model cho quest A1–A2 và chat tự do (B1+ dùng `NPC_MODEL`) |
+| `NPC_DAILY_TURNS_PER_PLAYER` | 60 | Lượt NPC mỗi người mỗi ngày (theo IP: gấp 3) |
+| `NPC_DAILY_BUDGET_USD` | 5 | Trần chi tiêu ước tính mỗi ngày cho cả hệ thống; chạm trần thì NPC nghỉ đến hôm sau |
+| `NPC_HISTORY_MAX` | 10 | Số tin nhắn gần nhất gửi lên model |
+
+Xem mức chi hôm nay: `GET /admin/budget`. Ngoài ra hãy đặt spend limit cho workspace trên console Anthropic.
+
+## Tài khoản và tiến trình
+
+Chơi khách (tiến trình gắn với trình duyệt) hoặc đăng ký email + mật khẩu (tiến trình khách được chuyển sang tài khoản).
+Sau khi vào: bài test 10 câu xếp trình độ CEFR, hồ sơ XP/level/coins/streak/huy hiệu, 3 quest ngày có thưởng thêm,
+sổ tay từ vựng tự lưu từ hội thoại với ôn tập flashcard, và shop màu avatar. Đặt `AUTH_SECRET` thật trong `.env` khi deploy.
