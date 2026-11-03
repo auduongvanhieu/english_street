@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Clone, Text, useGLTF } from '@react-three/drei';
+import { useLayoutEffect, useMemo } from 'react';
+import { Text, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   MODEL_HEIGHT,
@@ -33,11 +33,16 @@ const ALL_MODELS: TileModel[] = [
 ALL_MODELS.forEach((m) => useGLTF.preload(MODEL_URL(m)));
 
 export function City() {
-  const tiles = useMemo(buildTiles, []);
+  // Group placements by model: each distinct (model, mesh) pair becomes ONE instanced draw call.
+  const byModel = useMemo(() => {
+    const map = new Map<TileModel, TilePlacement[]>();
+    for (const t of buildTiles()) map.set(t.model, [...(map.get(t.model) ?? []), t]);
+    return [...map.entries()];
+  }, []);
   return (
     <group>
-      {tiles.map((t, i) => (
-        <Tile key={i} t={t} />
+      {byModel.map(([model, placements]) => (
+        <InstancedTiles key={model} model={model} placements={placements} />
       ))}
       {SHOPS.map((s) => (
         <Shop key={s.id} shop={s} />
@@ -46,18 +51,54 @@ export function City() {
   );
 }
 
-function Tile({ t }: { t: TilePlacement }) {
-  const { scene } = useGLTF(MODEL_URL(t.model));
+/** Every mesh inside the GLB, with its transform relative to the GLB root. */
+function collectMeshes(scene: THREE.Object3D) {
+  scene.updateMatrixWorld(true);
+  const out: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }[] = [];
+  const rootInv = scene.matrixWorld.clone().invert();
+  scene.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    out.push({ geometry: m.geometry, material: m.material as THREE.Material, local: rootInv.clone().multiply(m.matrixWorld) });
+  });
+  return out;
+}
+
+/** Flat tiles (road, pavement, grass) only receive shadows; casting from them costs a shadow-pass draw call for nothing. */
+const CASTS_SHADOW = (model: TileModel) => MODEL_HEIGHT[model] > 0.1;
+
+function InstancedTiles({ model, placements }: { model: TileModel; placements: TilePlacement[] }) {
+  const { scene } = useGLTF(MODEL_URL(model));
+  const castShadow = CASTS_SHADOW(model);
+  const meshes = useMemo(() => collectMeshes(scene), [scene]);
+  const placementMatrices = useMemo(() => {
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3(TILE, TILE, TILE);
+    return placements.map((t) => new THREE.Matrix4().compose(new THREE.Vector3(t.tx * TILE, TILE_Y, t.tz * TILE), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.rot ?? 0), s));
+  }, [placements]);
   return (
-    <Clone
-      object={scene}
-      position={[t.tx * TILE, TILE_Y, t.tz * TILE]}
-      rotation={[0, t.rot ?? 0, 0]}
-      scale={TILE}
-      castShadow
-      receiveShadow
-    />
+    <>
+      {meshes.map((m, i) => (
+        <InstancedPart key={i} geometry={m.geometry} material={m.material} local={m.local} placements={placementMatrices} castShadow={castShadow} />
+      ))}
+    </>
   );
+}
+
+function InstancedPart({ geometry, material, local, placements, castShadow }: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4; placements: THREE.Matrix4[]; castShadow: boolean }) {
+  const mesh = useMemo(() => {
+    const im = new THREE.InstancedMesh(geometry, material, placements.length);
+    im.castShadow = castShadow;
+    im.receiveShadow = true;
+    return im;
+  }, [geometry, material, placements.length, castShadow]);
+  useLayoutEffect(() => {
+    const tmp = new THREE.Matrix4();
+    placements.forEach((p, i) => mesh.setMatrixAt(i, tmp.multiplyMatrices(p, local)));
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [mesh, placements, local]);
+  return <primitive object={mesh} />;
 }
 
 function Shop({ shop }: { shop: ShopDef }) {

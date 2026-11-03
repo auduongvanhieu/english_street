@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
+import { track } from '../net/analytics';
 import type { ChatMessage, Correction } from '@es/shared';
 import { useGame } from '../store/game';
 import { useConversation } from '../store/conversation';
@@ -202,6 +203,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     setSttError(null);
     voice.stop(); // don't transcribe the NPC's own voice
     const base = text.trim();
+    track('stt_used');
     stt.current = startStt({
       lang: 'en-US',
       onInterim: (t) => setText(base ? `${base} ${t}` : t),

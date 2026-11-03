@@ -89,3 +89,26 @@ model Report {
 
   @@index([targetPlayerId])
 }
+
+/// Product analytics (server + client events). Kept small: name + a few props.
+model Event {
+  id        String   @id @default(cuid())
+  name      String
+  playerId  String?
+  props     Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([createdAt])
+}
+
+/// Beta feedback form.
+model Feedback {
+  id        String   @id @default(cuid())
+  playerId  String?
+  name      String
+  text      String
+  page      String   @default("")
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+}

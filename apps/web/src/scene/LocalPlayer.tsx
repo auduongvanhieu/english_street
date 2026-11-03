@@ -15,6 +15,8 @@ import { NameTag } from './NameTag';
 export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 
 const CAM_OFFSET = new THREE.Vector3(0, 5.5, 8.5);
+/** Live local position (mutable, read by RemotePlayers for distance culling without React churn). */
+export const localPos = new THREE.Vector3(0, 0, 4);
 const SPAWN = new THREE.Vector3(0, 0, 4);
 const dir = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -76,6 +78,8 @@ export function LocalPlayer({ name }: { name: string }) {
     const emote = useGame.getState().emote;
     if (emote && !moving(ix, iz)) anim.current = emote.until > Date.now() ? emote.name : anim.current;
     if (anim.current !== animState) setAnimState(anim.current);
+
+    localPos.copy(g.position);
 
     // --- third-person camera ---
     camTarget.copy(g.position).add(CAM_OFFSET);

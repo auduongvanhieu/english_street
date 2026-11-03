@@ -23,6 +23,19 @@ export function getPlayerId(): string {
   return (getToken() && localStorage.getItem('es:uid')) || getGuestId();
 }
 export function authHeaders(): Record<string, string> {
+  const h: Record<string, string> = {};
   const t = getToken();
-  return t ? { authorization: `Bearer ${t}` } : {};
+  if (t) h.authorization = `Bearer ${t}`;
+  const b = localStorage.getItem('es:beta');
+  if (b) h['x-beta-pass'] = b;
+  return h;
+}
+
+/** Closed-beta invite pass (from POST /beta/verify). */
+export function getBetaPass(): string | null {
+  return localStorage.getItem('es:beta');
+}
+export function setBetaPass(pass: string | null) {
+  if (pass) localStorage.setItem('es:beta', pass);
+  else localStorage.removeItem('es:beta');
 }

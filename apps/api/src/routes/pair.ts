@@ -6,8 +6,9 @@ import type { PairService } from '../npc/pairService';
 import type { AttemptRepo } from '../npc/attempts';
 import { budget } from '../npc/budget';
 import { playerIdFrom } from '../auth';
+import { allowTurn } from '../npc/ratelimit';
 
-export function pairRoutes(pairs: PairService, repo: AttemptRepo, allow: (playerId: string) => boolean) {
+export function pairRoutes(pairs: PairService, repo: AttemptRepo) {
   return async function routes(app: FastifyInstance) {
     app.setErrorHandler((err, _req, reply) => {
       if (err instanceof NpcError) return reply.code(err.status).send({ error: err.message });
@@ -26,10 +27,10 @@ export function pairRoutes(pairs: PairService, repo: AttemptRepo, allow: (player
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
       const pid = playerIdFrom(req, body.data.playerId);
       if (!pid) return reply.code(401).send({ error: 'unauthorized' });
-      if (!allow(pid)) return reply.code(429).send({ error: 'rate_limited' });
-      budget.check(pid, req.ip);
+      if (!(await allowTurn(pid))) return reply.code(429).send({ error: 'rate_limited' });
+      await budget.check(pid, req.ip);
       const out = await pairs.chat(req.params.id, pid, body.data.text);
-      budget.recordTurn(pid, req.ip);
+      await budget.recordTurn(pid, req.ip);
       return out;
     });
 
@@ -43,6 +44,7 @@ export function pairRoutes(pairs: PairService, repo: AttemptRepo, allow: (player
       const body = ReportRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
       await repo.createReport(body.data);
+      await repo.logEvent({ name: 'report', playerId: body.data.reporterId, props: { reason: body.data.reason } });
       return reply.code(201).send({ ok: true });
     });
   };

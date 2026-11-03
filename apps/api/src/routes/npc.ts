@@ -1,20 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { SessionChatRequestSchema, StartSessionRequestSchema } from '@es/shared';
 import { NpcError, type NpcService } from '../npc/service';
-import { env } from '../env';
 import { budget } from '../npc/budget';
 import { playerIdFrom } from '../auth';
-
-/** Simple per-player sliding window rate limit (in-memory; fine for one API instance). */
-const buckets = new Map<string, number[]>();
-export function allow(playerId: string) {
-  const now = Date.now();
-  const arr = (buckets.get(playerId) ?? []).filter((t) => now - t < 60_000);
-  if (arr.length >= env.NPC_RATE_PER_MIN) return false;
-  arr.push(now);
-  buckets.set(playerId, arr);
-  return true;
-}
+import { allowTurn } from '../npc/ratelimit';
 
 export function npcRoutes(svc: NpcService) {
   return async function routes(app: FastifyInstance) {
@@ -51,10 +40,10 @@ export function npcRoutes(svc: NpcService) {
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
       const pid = playerIdFrom(req, body.data.playerId);
       if (!pid) return reply.code(401).send({ error: 'unauthorized' });
-      if (!allow(pid)) return reply.code(429).send({ error: 'rate_limited' });
-      budget.check(pid, req.ip);
-      const out = await svc.chat(req.params.id, pid, body.data.text);
-      budget.recordTurn(pid, req.ip);
+      if (!(await allowTurn(pid))) return reply.code(429).send({ error: 'rate_limited' });
+      await budget.check(pid, req.ip);
+      const out = await svc.chat(req.params.id, pid, body.data.text, body.data.source);
+      await budget.recordTurn(pid, req.ip);
       return out;
     });
 

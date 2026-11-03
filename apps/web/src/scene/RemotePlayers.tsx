@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGame, type RemotePlayer } from '../store/game';
 import { Character } from './Character';
+import { localPos } from './LocalPlayer';
+import { useSettings } from '../store/settings';
 import { NameTag } from './NameTag';
 
 export function RemotePlayers() {
@@ -19,8 +21,17 @@ export function RemotePlayers() {
   );
 }
 
+/** Beyond this distance a remote player is not drawn at all (the whole street is ~80 m wide). */
+const DRAW_RADIUS = { high: 45, low: 28 };
+/** Name tags (SDF text) only for players reasonably close. */
+const TAG_RADIUS = 22;
+
 function Remote({ p }: { p: RemotePlayer }) {
   const ref = useRef<THREE.Group>(null);
+  const [near, setNear] = useState(true);
+  const [tag, setTag] = useState(true);
+  const acc = useRef(Math.random());
+  const quality = useSettings((s) => s.quality);
   // Interpolate toward the last known server position for smooth motion.
   useFrame((_, dt) => {
     const g = ref.current;
@@ -29,11 +40,20 @@ function Remote({ p }: { p: RemotePlayer }) {
     g.position.x += (p.x - g.position.x) * k;
     g.position.z += (p.z - g.position.z) * k;
     g.rotation.y += shortestAngle(g.rotation.y, p.rot) * k;
+    // Distance culling, checked ~4x/s (staggered so players don't all re-render on the same frame).
+    acc.current += dt;
+    if (acc.current < 0.25) return;
+    acc.current = 0;
+    const d = Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z);
+    const n = d < DRAW_RADIUS[quality];
+    const t = d < TAG_RADIUS;
+    if (n !== near) setNear(n);
+    if (t !== tag) setTag(t);
   });
   return (
     <group ref={ref} position={[p.x, p.y, p.z]}>
-      <Character anim={p.anim} tint={avatarColor(p.avatar, '#e2a04a')} />
-      <NameTag name={p.name} bubble={p.bubble} />
+      {near ? <Character anim={p.anim} tint={avatarColor(p.avatar, '#e2a04a')} /> : null}
+      {tag ? <NameTag name={p.name} bubble={p.bubble} /> : null}
     </group>
   );
 }

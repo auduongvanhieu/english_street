@@ -80,11 +80,12 @@ export class NpcService {
         corrections: [],
       });
     }
-    await this.sessions.set(s);
+    await this.sessions.set(s.id, s);
+    await this.attempts.logEvent({ name: quest ? 'quest_start' : 'free_talk_start', playerId, props: { npcId, questId: questId ?? '' } });
     return this.state(s, quest);
   }
 
-  async chat(sessionId: string, playerId: string, text: string): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
+  async chat(sessionId: string, playerId: string, text: string, source: 'text' | 'voice' = 'text'): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
     const s = await this.sessions.get(sessionId);
     if (!s || s.playerId !== playerId) throw new NpcError(404, 'session_not_found');
     if (s.finished) throw new NpcError(409, 'session_finished');
@@ -129,7 +130,13 @@ export class NpcService {
         corrections: s.corrections,
       });
     }
-    await this.sessions.set(s);
+    await this.sessions.set(s.id, s);
+    await this.attempts.logEvent({
+      name: 'npc_turn',
+      playerId,
+      props: { npcId: s.npcId, questId: s.questId ?? '', level, source, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
+    });
+    if (summary) await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: s.questId ?? '', status: summary.status, score: summary.score, turns: s.turns } });
     return { turn, state: this.state(s, quest), summary };
   }
 
@@ -144,8 +151,9 @@ export class NpcService {
     if (quest && s.attemptId) {
       summary = this.summarize(s, quest, 'abandoned');
       await this.attempts.update(s.attemptId, { status: 'abandoned', finishedAt: new Date(), turns: s.turns, goalsDone: s.goalsDone });
+      await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: quest.id, status: 'abandoned', score: summary.score, turns: s.turns } });
     }
-    await this.sessions.set(s);
+    await this.sessions.set(s.id, s);
     return summary;
   }
 

@@ -1,3 +1,4 @@
+import type Redis from 'ioredis';
 import { env } from '../env';
 import { NpcError } from './service';
 
@@ -8,62 +9,96 @@ const PRICES: Record<string, [number, number, number, number]> = {
   'claude-haiku-5-5': [0.1, 0.5, 0.01, 0.125],
 };
 
+export function costUsd(model: string, u: { input: number; output: number; cacheRead: number; cacheWrite: number }) {
+  const [pi, po, pr, pw] = PRICES[model] ?? PRICES['claude-opus-5-5']!;
+  return (u.input * pi + u.output * po + u.cacheRead * pr + u.cacheWrite * pw) / 1e6;
+}
+
 function dayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
+/** Daily counters: per player, per client IP, global turns and global estimated spend. */
+interface Counters {
+  get(day: string, keys: string[]): Promise<number[]>;
+  incr(day: string, key: string, by: number): Promise<void>;
+}
+
+class MemoryCounters implements Counters {
+  private day = '';
+  private map = new Map<string, number>();
+  private roll(day: string) {
+    if (day !== this.day) {
+      this.day = day;
+      this.map.clear();
+    }
+  }
+  async get(day: string, keys: string[]) {
+    this.roll(day);
+    return keys.map((k) => this.map.get(k) ?? 0);
+  }
+  async incr(day: string, key: string, by: number) {
+    this.roll(day);
+    this.map.set(key, (this.map.get(key) ?? 0) + by);
+  }
+}
+
+/** Shared across API instances; keys expire after two days. */
+class RedisCounters implements Counters {
+  constructor(private redis: Redis) {}
+  private k = (day: string, key: string) => `budget:${day}:${key}`;
+  async get(day: string, keys: string[]) {
+    const vals = await this.redis.mget(keys.map((k) => this.k(day, k)));
+    return vals.map((v) => Number(v ?? 0));
+  }
+  async incr(day: string, key: string, by: number) {
+    const k = this.k(day, key);
+    await this.redis.multi().incrbyfloat(k, by).expire(k, 2 * 86_400).exec();
+  }
+}
+
 /**
- * Daily anti-burn limits kept in memory (per API instance):
- *  - NPC turns per player per day, also per client IP (guests can mint ids)
- *  - global estimated spend per day
+ * Anti-burn limits, per calendar day (UTC):
+ *  - NPC turns per player, also per client IP (guests can mint ids)
+ *  - global estimated spend
  */
 class Budget {
-  private day = dayKey();
-  private perPlayer = new Map<string, number>();
-  private perIp = new Map<string, number>();
-  spentUsd = 0;
-  turnsToday = 0;
+  private counters: Counters = new MemoryCounters();
+  backend = 'memory';
 
-  private roll() {
-    const k = dayKey();
-    if (k !== this.day) {
-      this.day = k;
-      this.perPlayer.clear();
-      this.perIp.clear();
-      this.spentUsd = 0;
-      this.turnsToday = 0;
-    }
+  useRedis(redis: Redis | null) {
+    if (!redis) return;
+    this.counters = new RedisCounters(redis);
+    this.backend = 'redis';
   }
 
   /** Throws a 429 NpcError when a limit is reached. */
-  check(playerId: string, ip: string) {
-    this.roll();
-    if (this.spentUsd >= env.NPC_DAILY_BUDGET_USD) throw new NpcError(429, 'daily_budget_exhausted');
-    if ((this.perPlayer.get(playerId) ?? 0) >= env.NPC_DAILY_TURNS_PER_PLAYER) throw new NpcError(429, 'daily_quota_exhausted');
-    if ((this.perIp.get(ip) ?? 0) >= env.NPC_DAILY_TURNS_PER_PLAYER * 3) throw new NpcError(429, 'daily_quota_exhausted');
+  async check(playerId: string, ip: string) {
+    const [usd, player, perIp] = await this.counters.get(dayKey(), ['usd', `p:${playerId}`, `ip:${ip}`]);
+    if (usd! >= env.NPC_DAILY_BUDGET_USD) throw new NpcError(429, 'daily_budget_exhausted');
+    if (player! >= env.NPC_DAILY_TURNS_PER_PLAYER) throw new NpcError(429, 'daily_quota_exhausted');
+    if (perIp! >= env.NPC_DAILY_TURNS_PER_PLAYER * 3) throw new NpcError(429, 'daily_quota_exhausted');
   }
 
-  recordTurn(playerId: string, ip: string) {
-    this.roll();
-    this.perPlayer.set(playerId, (this.perPlayer.get(playerId) ?? 0) + 1);
-    this.perIp.set(ip, (this.perIp.get(ip) ?? 0) + 1);
-    this.turnsToday += 1;
+  async recordTurn(playerId: string, ip: string) {
+    const day = dayKey();
+    await Promise.all([this.counters.incr(day, `p:${playerId}`, 1), this.counters.incr(day, `ip:${ip}`, 1), this.counters.incr(day, 'turns', 1)]);
   }
 
+  /** Fire-and-forget from the LLM client. */
   recordUsage(model: string, u: { input: number; output: number; cacheRead: number; cacheWrite: number }) {
-    this.roll();
-    const [pi, po, pr, pw] = PRICES[model] ?? PRICES['claude-opus-5-5']!;
-    this.spentUsd += (u.input * pi + u.output * po + u.cacheRead * pr + u.cacheWrite * pw) / 1e6;
+    void this.counters.incr(dayKey(), 'usd', costUsd(model, u)).catch(() => undefined);
   }
 
-  remainingFor(playerId: string) {
-    this.roll();
-    return Math.max(0, env.NPC_DAILY_TURNS_PER_PLAYER - (this.perPlayer.get(playerId) ?? 0));
+  async remainingFor(playerId: string) {
+    const [n] = await this.counters.get(dayKey(), [`p:${playerId}`]);
+    return Math.max(0, env.NPC_DAILY_TURNS_PER_PLAYER - n!);
   }
 
-  snapshot() {
-    this.roll();
-    return { day: this.day, spentUsd: Number(this.spentUsd.toFixed(4)), budgetUsd: env.NPC_DAILY_BUDGET_USD, turnsToday: this.turnsToday };
+  async snapshot() {
+    const day = dayKey();
+    const [usd, turns] = await this.counters.get(day, ['usd', 'turns']);
+    return { day, backend: this.backend, spentUsd: Number(usd!.toFixed(4)), budgetUsd: env.NPC_DAILY_BUDGET_USD, turnsToday: turns };
   }
 }
 

@@ -60,10 +60,10 @@ export const SHOPS: ShopDef[] = [
   { id: 'cafe', label: 'Sunny Side Café', npcId: 'barista', tx: -3, model: 'building-small-a', tint: '#ffd3a1' },
   { id: 'mart', label: 'QuickMart', npcId: 'cashier', tx: -1, model: 'building-small-d', tint: '#b8f0bd' },
   { id: 'info', label: 'Tourist Info', npcId: 'guide', tx: 1, model: 'building-garage', tint: '#ffe78f' },
-  { id: 'post', label: 'Post Office', npcId: null, tx: 3, model: 'building-small-b', tint: '#ffb3b3' },
-  { id: 'clinic', label: 'Clinic', npcId: null, tx: 5, model: 'building-small-c', tint: '#e3ecff' },
-  { id: 'bank', label: 'Bank', npcId: null, tx: 7, model: 'building-small-b', tint: '#d3ccff' },
-  { id: 'jobs', label: 'Job Center', npcId: null, tx: 9, model: 'building-small-a', tint: '#c6ecf5' },
+  { id: 'post', label: 'Post Office', npcId: 'postal', tx: 3, model: 'building-small-b', tint: '#ffb3b3' },
+  { id: 'clinic', label: 'Clinic', npcId: 'doctor', tx: 5, model: 'building-small-c', tint: '#e3ecff' },
+  { id: 'bank', label: 'Bank', npcId: 'teller', tx: 7, model: 'building-small-b', tint: '#d3ccff' },
+  { id: 'jobs', label: 'Job Center', npcId: 'recruiter', tx: 9, model: 'building-small-a', tint: '#c6ecf5' },
 ];
 
 const TX_MIN = -10;

@@ -1,0 +1,75 @@
+# Production stack on one VPS:  docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+# Needs DNS A records for WEB_DOMAIN, API_DOMAIN and WS_DOMAIN pointing at this machine (ports 80/443 open).
+name: english-street
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: es
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: english_street
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U es -d english_street"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+
+  api:
+    build: { context: .., dockerfile: infra/Dockerfile, target: api }
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "true"
+      DATABASE_URL: postgresql://es:${POSTGRES_PASSWORD}@postgres:5432/english_street
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: https://${WEB_DOMAIN}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  game:
+    build: { context: .., dockerfile: infra/Dockerfile, target: game }
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: web
+      args:
+        VITE_API_URL: https://${API_DOMAIN}
+        VITE_GAME_WS_URL: wss://${WS_DOMAIN}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      WS_DOMAIN: ${WS_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api, game]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

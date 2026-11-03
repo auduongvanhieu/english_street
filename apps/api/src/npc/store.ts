@@ -19,18 +19,20 @@ export interface Session {
   startedAt: number;
 }
 
-export interface SessionStore {
+/** Keyed JSON store with a TTL: NPC sessions, pair sessions. Redis in production, memory for dev. */
+export interface KeyedStore<T> {
   readonly name: string;
-  get(id: string): Promise<Session | null>;
-  set(s: Session): Promise<void>;
+  get(id: string): Promise<T | null>;
+  set(id: string, value: T): Promise<void>;
   delete(id: string): Promise<void>;
 }
+export type SessionStore = KeyedStore<Session>;
 
 const TTL_SEC = 60 * 60 * 2;
 
-export class MemorySessionStore implements SessionStore {
+export class MemoryStore<T> implements KeyedStore<T> {
   readonly name = 'memory';
-  private map = new Map<string, { s: Session; exp: number }>();
+  private map = new Map<string, { v: T; exp: number }>();
   async get(id: string) {
     const e = this.map.get(id);
     if (!e) return null;
@@ -38,13 +40,13 @@ export class MemorySessionStore implements SessionStore {
       this.map.delete(id);
       return null;
     }
-    return e.s;
+    return e.v;
   }
-  async set(s: Session) {
-    this.map.set(s.id, { s, exp: Date.now() + TTL_SEC * 1000 });
+  async set(id: string, v: T) {
+    this.map.set(id, { v, exp: Date.now() + TTL_SEC * 1000 });
     if (this.map.size > 5000) {
       const now = Date.now();
-      for (const [k, v] of this.map) if (v.exp < now) this.map.delete(k);
+      for (const [k, e] of this.map) if (e.exp < now) this.map.delete(k);
     }
   }
   async delete(id: string) {
@@ -52,30 +54,37 @@ export class MemorySessionStore implements SessionStore {
   }
 }
 
-export class RedisSessionStore implements SessionStore {
+export class RedisStore<T> implements KeyedStore<T> {
   readonly name = 'redis';
-  constructor(private redis: Redis) {}
+  constructor(
+    private redis: Redis,
+    private prefix: string,
+  ) {}
   async get(id: string) {
-    const raw = await this.redis.get(`sess:${id}`);
-    return raw ? (JSON.parse(raw) as Session) : null;
+    const raw = await this.redis.get(`${this.prefix}:${id}`);
+    return raw ? (JSON.parse(raw) as T) : null;
   }
-  async set(s: Session) {
-    await this.redis.set(`sess:${s.id}`, JSON.stringify(s), 'EX', TTL_SEC);
+  async set(id: string, v: T) {
+    await this.redis.set(`${this.prefix}:${id}`, JSON.stringify(v), 'EX', TTL_SEC);
   }
   async delete(id: string) {
-    await this.redis.del(`sess:${id}`);
+    await this.redis.del(`${this.prefix}:${id}`);
   }
 }
 
-/** Redis if reachable within 1.5 s, otherwise in-memory (dev machines without Redis). */
-export async function createSessionStore(): Promise<SessionStore> {
+/** Redis if reachable within 1.5 s, otherwise null (dev machines without Redis). */
+export async function connectRedis(): Promise<Redis | null> {
   const redis = new Redis(env.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1, connectTimeout: 1500 });
   try {
     await redis.connect();
     await redis.ping();
-    return new RedisSessionStore(redis);
+    return redis;
   } catch {
     redis.disconnect();
-    return new MemorySessionStore();
+    return null;
   }
+}
+
+export function createStore<T>(redis: Redis | null, prefix: string): KeyedStore<T> {
+  return redis ? new RedisStore<T>(redis, prefix) : new MemoryStore<T>();
 }

@@ -4,7 +4,8 @@
  */
 import { ClaudeNpcLlm, createNpcLlm } from '../src/npc/llm';
 import { MemoryAttemptRepo } from '../src/npc/attempts';
-import { PairService } from '../src/npc/pairService';
+import { PairService, type PairSession } from '../src/npc/pairService';
+import { MemoryStore } from '../src/npc/store';
 
 const A = { playerId: 'eval-customer-0001', name: 'Alice' };
 const B = { playerId: 'eval-waiter-00001', name: 'Bob' };
@@ -26,7 +27,7 @@ const SCRIPT: Step[] = [
 ];
 
 const llm = createNpcLlm();
-const svc = new PairService(llm, new MemoryAttemptRepo());
+const svc = new PairService(llm, new MemoryAttemptRepo(), new MemoryStore<PairSession>());
 console.log(`provider: ${llm.name}\n`);
 
 let state = await svc.start('bistro-dinner-01', [A, B]);

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { track } from '../net/analytics';
 import { speak, stopSpeaking, ttsSupported } from '../voice/tts';
 import { sttSupported } from '../voice/stt';
 
@@ -24,6 +25,7 @@ export const useVoice = create<VoiceStore>((set, get) => ({
   muted: localStorage.getItem('es:muted') === '1',
   setMuted: (muted) => {
     localStorage.setItem('es:muted', muted ? '1' : '0');
+    if (muted) track('tts_off');
     if (muted) get().stop();
     set({ muted });
   },

@@ -1,4 +1,5 @@
-import { createHmac, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
+import { signToken as signShared, verifyToken as verifyShared } from '@es/shared/token';
 import { promisify } from 'node:util';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { env } from './env';
@@ -19,26 +20,8 @@ export async function verifyPassword(pw: string, stored: string): Promise<boolea
   return key.length === expected.length && timingSafeEqual(key, expected);
 }
 
-const b64u = (b: Buffer | string) => Buffer.from(b).toString('base64url');
-function sign(payload: string) {
-  return createHmac('sha256', env.AUTH_SECRET).update(payload).digest('base64url');
-}
-export function signToken(userId: string): string {
-  const payload = b64u(JSON.stringify({ sub: userId, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_S }));
-  return `${payload}.${sign(payload)}`;
-}
-export function verifyToken(token: string): string | null {
-  const [payload, sig] = token.split('.');
-  if (!payload || !sig) return null;
-  const expected = sign(payload);
-  if (expected.length !== sig.length || !timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) return null;
-  try {
-    const { sub, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { sub: string; exp: number };
-    return exp > Date.now() / 1000 ? sub : null;
-  } catch {
-    return null;
-  }
-}
+export const signToken = (userId: string) => signShared(env.AUTH_SECRET, userId, TOKEN_TTL_S);
+export const verifyToken = (token: string) => verifyShared(env.AUTH_SECRET, token)?.sub ?? null;
 
 declare module 'fastify' {
   interface FastifyRequest {

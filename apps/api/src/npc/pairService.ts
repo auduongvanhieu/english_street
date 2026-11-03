@@ -3,23 +3,21 @@ import { CEFR_LEVELS, type AttemptSummary, type CefrLevel, type NpcTurnResponse,
 import { getNpc, getPairQuest } from '@es/quests';
 import type { NpcLlm } from './llm';
 import type { AttemptRepo } from './attempts';
+import type { KeyedStore } from './store';
 import { NpcError } from './service';
 
-interface PairSession extends PairSessionState {
+export interface PairSession extends PairSessionState {
   attemptIds: Record<string, string>;
   corrections: Record<string, PairLine['corrections']>;
   startedAt: number;
 }
 
-const TTL_MS = 2 * 60 * 60 * 1000;
-
-/** Two-player role-play judged by an NPC. Sessions live in memory (both players talk to one API instance). */
+/** Two-player role-play judged by an NPC. Sessions live in the shared store (Redis in production). */
 export class PairService {
-  private sessions = new Map<string, { s: PairSession; exp: number }>();
-
   constructor(
     private llm: NpcLlm,
     private attempts: AttemptRepo,
+    private store: KeyedStore<PairSession>,
   ) {}
 
   async start(questId: string, players: [{ playerId: string; name: string }, { playerId: string; name: string }]): Promise<PairSessionState> {
@@ -65,12 +63,13 @@ export class PairService {
         corrections: [],
       });
     }
-    this.put(s);
+    await this.put(s);
+    for (const p of s.players) await this.attempts.logEvent({ name: 'pair_start', playerId: p.playerId, props: { questId: quest.id, role: p.role } });
     return this.state(s);
   }
 
   async chat(sessionId: string, playerId: string, text: string): Promise<{ turn: NpcTurnResponse; state: PairSessionState; summaries: Record<string, AttemptSummary> | null }> {
-    const s = this.get(sessionId);
+    const s = await this.get(sessionId);
     const me = s.players.find((p) => p.playerId === playerId);
     if (!me) throw new NpcError(404, 'session_not_found');
     if (s.finished) throw new NpcError(409, 'session_finished');
@@ -117,12 +116,12 @@ export class PairService {
       transcript: s.messages,
       corrections: s.corrections[playerId],
     });
-    this.put(s);
+    await this.put(s);
     return { turn, state: this.state(s), summaries };
   }
 
   async end(sessionId: string, playerId: string): Promise<Record<string, AttemptSummary> | null> {
-    const s = this.get(sessionId);
+    const s = await this.get(sessionId);
     if (!s.players.some((p) => p.playerId === playerId)) throw new NpcError(404, 'session_not_found');
     if (s.finished) return null;
     const quest = getPairQuest(s.questId)!;
@@ -132,7 +131,7 @@ export class PairService {
       out[p.playerId] = this.summarize(s, quest, p.playerId, 'abandoned');
       await this.attempts.update(s.attemptIds[p.playerId]!, { status: 'abandoned', finishedAt: new Date() });
     }
-    this.put(s);
+    await this.put(s);
     return out;
   }
 
@@ -146,6 +145,7 @@ export class PairService {
       out[p.playerId] = sum;
       await this.attempts.update(s.attemptIds[p.playerId]!, { status: sum.status, score: sum.score, finishedAt: new Date() });
       await this.attempts.reward(p.playerId, sum.reward.xp, sum.reward.coins);
+      await this.attempts.logEvent({ name: 'pair_end', playerId: p.playerId, props: { questId: quest.id, status: sum.status, score: sum.score } });
     }
     return out;
   }
@@ -175,13 +175,13 @@ export class PairService {
     };
   }
 
-  private get(id: string): PairSession {
-    const e = this.sessions.get(id);
-    if (!e || e.exp < Date.now()) throw new NpcError(404, 'session_not_found');
-    return e.s;
+  private async get(id: string): Promise<PairSession> {
+    const s = await this.store.get(id);
+    if (!s) throw new NpcError(404, 'session_not_found');
+    return s;
   }
   private put(s: PairSession) {
-    this.sessions.set(s.sessionId, { s, exp: Date.now() + TTL_MS });
+    return this.store.set(s.sessionId, s);
   }
   private state(s: PairSession): PairSessionState {
     const { attemptIds: _a, corrections: _c, startedAt: _t, ...rest } = s;

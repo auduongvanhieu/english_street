@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./loadEnv": "./src/loadEnv.ts"
+    "./loadEnv": "./src/loadEnv.ts",
+    "./token": "./src/token.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

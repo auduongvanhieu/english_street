@@ -16,6 +16,9 @@ export interface JoinOptions {
   avatar: string; // JSON-encoded AvatarConfig
   /** Anonymous/API player id (maps the Colyseus session to quest progress). */
   playerId: string;
+  /** Closed beta: invite pass from POST /beta/verify, or the account token (either satisfies the gate). */
+  betaPass?: string;
+  token?: string;
 }
 
 export interface InputMessage {

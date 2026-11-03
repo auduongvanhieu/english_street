@@ -10,6 +10,7 @@ import {
   type PairMessage,
   type RtcSignal,
 } from '@es/shared';
+import { isBetaPass, verifyToken } from '@es/shared/token';
 import { Player, StreetState } from './schema/StreetState';
 
 const SPAWN = { x: 0, y: 0, z: 4 };
@@ -17,8 +18,18 @@ const BUBBLE_TTL_MS = 5000;
 /** Relay (voice signalling, pair quests) only works between players reasonably close to each other. */
 const RELAY_RADIUS = PROXIMITY_RADIUS * 2;
 
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'dev-secret-change-me';
+const BETA_GATE = (process.env.BETA_CODES ?? '').trim().length > 0;
+
 export class StreetRoom extends Room<{ state: StreetState }> {
   maxClients = STREET_ROOM_MAX_CLIENTS;
+
+  /** Closed beta: a player needs a beta pass or a signed-in token (both minted by the API with the shared AUTH_SECRET). */
+  static async onAuth(_token: string, options: Partial<JoinOptions>) {
+    if (!BETA_GATE) return true;
+    if (isBetaPass(AUTH_SECRET, options?.betaPass) || verifyToken(AUTH_SECRET, options?.token)) return true;
+    throw new Error('beta_pass_required');
+  }
 
   onCreate() {
     this.setState(new StreetState());

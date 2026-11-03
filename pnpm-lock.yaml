@@ -83,7 +83,7 @@ importers:
         version: link:../../packages/shared
       colyseus:
         specifier: ^0.18.10
-        version: 0.18.10(@colyseus/auth@0.18.4)(@colyseus/core@0.18.25)(@colyseus/redis-driver@0.18.7(@colyseus/core@0.18.25))(@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/uwebsockets-transport@0.18.4(@colyseus/core@0.18.25))(@colyseus/ws-transport@0.18.4)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(zod@4.6.7)
+        version: 0.18.10(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/core@0.18.25)(@colyseus/redis-driver@0.18.7(@colyseus/core@0.18.25))(@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/uwebsockets-transport@0.18.4(@colyseus/core@0.18.25))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(zod@4.6.7)
       dotenv:
         specifier: ^18.0.9
         version: 18.0.9
@@ -91,6 +91,12 @@ importers:
         specifier: ^4.23.15
         version: 4.23.15
     devDependencies:
+      '@colyseus/sdk':
+        specifier: ^0.18.9
+        version: 0.18.9(@colyseus/core@0.18.25)(typescript@5.9.3)(zod@4.6.7)
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
@@ -997,6 +1003,12 @@ packages:
   '@tweenjs/tween.js@23.1.3':
     resolution: {integrity: sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==}
 
+  '@types/body-parser@1.19.6':
+    resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/connect@3.4.38':
+    resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
+
   '@types/d3-array@3.0.3':
     resolution: {integrity: sha512-Reoy+pKnvsksN0lQUlcH6dOGjRZ/3WRwXR//m+/8lt1BXeI4xyaUZoqULNjyXXRuh0Mj4LNpkCvhUpQlY3X5xQ==}
 
@@ -1033,8 +1045,17 @@ packages:
   '@types/draco3d@1.4.10':
     resolution: {integrity: sha512-AX22jp8Y7wwaBgAixaSvkoG4M/+PlAcm3Qs4OW8yT9DM4xUpWKeFhLueTAyZF39pviAdcDdeJoACapiAceqNcw==}
 
+  '@types/express-serve-static-core@5.1.3':
+    resolution: {integrity: sha512-dPfW8NFiOF4wOHc7+N/QSxlY9cfSsenewGbAz8C8U/MULPd/YZ27LvJUIlzaXie7e6Ove9YunJGgC9tbHD2cKw==}
+
+  '@types/express@5.0.6':
+    resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
+
   '@types/geojson@7946.0.16':
     resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
+  '@types/http-errors@2.0.5':
+    resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
   '@types/jsonwebtoken@9.0.10':
     resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
@@ -1054,6 +1075,12 @@ packages:
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
+  '@types/qs@6.15.1':
+    resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
+
+  '@types/range-parser@1.2.7':
+    resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
+
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
     peerDependencies:
@@ -1066,6 +1093,12 @@ packages:
 
   '@types/react@19.3.0':
     resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
+
+  '@types/send@1.2.1':
+    resolution: {integrity: sha512-arsCikDvlU99zl1g69TcAB3mzZPpxgw0UQnaHeC1Nwb015xp8bknZv5rIfri9xTOcMuaVgvabfIRA7PSZVuZIQ==}
+
+  '@types/serve-static@2.2.0':
+    resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
 
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
@@ -2626,7 +2659,7 @@ snapshots:
       node-os-utils: 2.0.5
       zod: 4.6.7
 
-  '@colyseus/playground@0.18.6(@colyseus/auth@0.18.4)(@colyseus/core@0.18.25)(zod@4.6.7)':
+  '@colyseus/playground@0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/core@0.18.25)(zod@4.6.7)':
     dependencies:
       '@colyseus/auth': 0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7)
       '@colyseus/better-call': 1.3.3(zod@4.6.7)
@@ -2641,7 +2674,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)':
+  '@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)':
     dependencies:
       '@colyseus/core': 0.18.25(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)
       ioredis: 5.11.1
@@ -2683,7 +2716,7 @@ snapshots:
     dependencies:
       '@colyseus/clock': 2.0.3
 
-  '@colyseus/tools@0.18.11(@colyseus/core@0.18.25)(@colyseus/ws-transport@0.18.4)':
+  '@colyseus/tools@0.18.11(@colyseus/core@0.18.25)(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))':
     dependencies:
       '@colyseus/core': 0.18.25(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)
       '@colyseus/ws-transport': 0.18.4(@colyseus/core@0.18.25)(express@5.3.0)
@@ -3248,6 +3281,15 @@ snapshots:
 
   '@tweenjs/tween.js@23.1.3': {}
 
+  '@types/body-parser@1.19.6':
+    dependencies:
+      '@types/connect': 3.4.38
+      '@types/node': 22.20.5
+
+  '@types/connect@3.4.38':
+    dependencies:
+      '@types/node': 22.20.5
+
   '@types/d3-array@3.0.3': {}
 
   '@types/d3-color@3.1.0': {}
@@ -3280,7 +3322,22 @@ snapshots:
 
   '@types/draco3d@1.4.10': {}
 
+  '@types/express-serve-static-core@5.1.3':
+    dependencies:
+      '@types/node': 22.20.5
+      '@types/qs': 6.15.1
+      '@types/range-parser': 1.2.7
+      '@types/send': 1.2.1
+
+  '@types/express@5.0.6':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 5.1.3
+      '@types/serve-static': 2.2.0
+
   '@types/geojson@7946.0.16': {}
+
+  '@types/http-errors@2.0.5': {}
 
   '@types/jsonwebtoken@9.0.10':
     dependencies:
@@ -3303,6 +3360,10 @@ snapshots:
       pg-protocol: 1.16.1
       pg-types: 2.2.0
 
+  '@types/qs@6.15.1': {}
+
+  '@types/range-parser@1.2.7': {}
+
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
       '@types/react': 19.3.0
@@ -3314,6 +3375,15 @@ snapshots:
   '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.3
+
+  '@types/send@1.2.1':
+    dependencies:
+      '@types/node': 22.20.5
+
+  '@types/serve-static@2.2.0':
+    dependencies:
+      '@types/http-errors': 2.0.5
+      '@types/node': 22.20.5
 
   '@types/stats.js@0.17.4': {}
 
@@ -3534,16 +3604,16 @@ snapshots:
 
   cluster-key-slot@1.1.1: {}
 
-  colyseus@0.18.10(@colyseus/auth@0.18.4)(@colyseus/core@0.18.25)(@colyseus/redis-driver@0.18.7(@colyseus/core@0.18.25))(@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/uwebsockets-transport@0.18.4(@colyseus/core@0.18.25))(@colyseus/ws-transport@0.18.4)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(zod@4.6.7):
+  colyseus@0.18.10(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/core@0.18.25)(@colyseus/redis-driver@0.18.7(@colyseus/core@0.18.25))(@colyseus/redis-presence@0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/uwebsockets-transport@0.18.4(@colyseus/core@0.18.25))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(vite@8.3.5(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(zod@4.6.7):
     dependencies:
       '@colyseus/auth': 0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7)
       '@colyseus/core': 0.18.25(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)
       '@colyseus/monitor': 0.18.7(@colyseus/core@0.18.25)
-      '@colyseus/playground': 0.18.6(@colyseus/auth@0.18.4)(@colyseus/core@0.18.25)(zod@4.6.7)
+      '@colyseus/playground': 0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/core@0.18.25)(zod@4.6.7)
       '@colyseus/redis-driver': 0.18.7(@colyseus/core@0.18.25)
-      '@colyseus/redis-presence': 0.18.6(@colyseus/auth@0.18.4)(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4)(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)
+      '@colyseus/redis-presence': 0.18.6(@colyseus/auth@0.18.4(@colyseus/core@0.18.25)(express@5.3.0)(zod@4.6.7))(@colyseus/better-call@1.3.3(zod@4.6.7))(@colyseus/schema@5.0.43(typescript@5.9.3))(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))(@pm2/io@6.1.0)(express@5.3.0)(zod@4.6.7)
       '@colyseus/schema': 5.0.43(typescript@5.9.3)
-      '@colyseus/tools': 0.18.11(@colyseus/core@0.18.25)(@colyseus/ws-transport@0.18.4)
+      '@colyseus/tools': 0.18.11(@colyseus/core@0.18.25)(@colyseus/ws-transport@0.18.4(@colyseus/core@0.18.25)(express@5.3.0))
       '@colyseus/uwebsockets-transport': 0.18.4(@colyseus/core@0.18.25)
       '@colyseus/ws-transport': 0.18.4(@colyseus/core@0.18.25)(express@5.3.0)
     optionalDependencies:

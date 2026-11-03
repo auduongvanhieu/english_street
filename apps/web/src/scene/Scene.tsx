@@ -7,6 +7,8 @@ import { City } from './City';
 import { LocalPlayer, type Controls } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
+import { PerfProbe } from './PerfProbe';
+import { useSettings } from '../store/settings';
 
 const KEYMAP: { name: Controls; keys: string[] }[] = [
   { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
@@ -16,16 +18,24 @@ const KEYMAP: { name: Controls; keys: string[] }[] = [
   { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
 ];
 
-export function Scene({ playerName }: { playerName: string }) {
+export default function Scene({ playerName }: { playerName: string }) {
+  const quality = useSettings((s) => s.quality);
+  const low = quality === 'low';
   return (
     <KeyboardControls map={KEYMAP}>
-      <Canvas shadows={{ type: THREE.PCFShadowMap }} camera={{ position: [0, 5.5, 12.5], fov: 50 }} dpr={[1, 1.5]}>
+      <Canvas
+        key={quality} // shadow map settings are fixed at renderer creation
+        shadows={low ? false : { type: THREE.PCFShadowMap }}
+        camera={{ position: [0, 5.5, 12.5], fov: 50, far: 160 }}
+        dpr={low ? 1 : [1, 1.5]}
+        gl={{ antialias: !low, powerPreference: 'high-performance' }}
+      >
         <Sky sunPosition={[50, 40, 20]} />
-        <hemisphereLight args={['#dff3ff', '#6b8f4e', 0.6]} />
+        <hemisphereLight args={['#dff3ff', '#6b8f4e', low ? 0.9 : 0.6]} />
         <directionalLight
           position={[30, 40, 20]}
           intensity={1.6}
-          castShadow
+          castShadow={!low}
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0004}
           shadow-normalBias={0.04}
@@ -41,6 +51,7 @@ export function Scene({ playerName }: { playerName: string }) {
           <LocalPlayer name={playerName} />
           <RemotePlayers />
         </Suspense>
+        <PerfProbe />
       </Canvas>
     </KeyboardControls>
   );

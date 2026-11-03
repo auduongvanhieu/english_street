@@ -6,11 +6,24 @@ import { findRootEnv } from '@es/shared/loadEnv';
 const envPath = findRootEnv(process.cwd());
 if (envPath) loadDotenv({ path: envPath, quiet: true });
 
+const csv = (s: string | undefined) =>
+  (s ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+
 const EnvSchema = z.object({
+  NODE_ENV: z.string().default('development'),
   DATABASE_URL: z.string().default('postgresql://es:es@localhost:5432/english_street'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   API_PORT: z.coerce.number().default(4000),
+  /** Allowed browser origins (comma-separated). */
   WEB_ORIGIN: z.string().default('http://localhost:5173'),
+  /** Set when running behind a reverse proxy (Caddy/nginx) so req.ip is the real client address. */
+  TRUST_PROXY: z
+    .string()
+    .default('false')
+    .transform((s) => s === 'true' || s === '1'),
   ANTHROPIC_API_KEY: z.string().optional(),
   NPC_MODEL: z.string().default('claude-opus-5-5'),
   /** claude | mock | auto (claude when a real key is present, otherwise mock) */
@@ -24,11 +37,22 @@ const EnvSchema = z.object({
   NPC_DAILY_BUDGET_USD: z.coerce.number().default(5),
   /** How many recent messages are sent to the model (older ones are dropped). */
   NPC_HISTORY_MAX: z.coerce.number().default(10),
-  /** Secret for signing auth tokens. */
+  /** Secret for signing auth tokens and beta passes (shared with the game server). */
   AUTH_SECRET: z.string().default('dev-secret-change-me'),
+  /** Bearer token for /admin/* routes. Unset = admin routes open in development, closed in production. */
+  ADMIN_TOKEN: z.string().optional(),
+  /** Closed beta: comma-separated invite codes. Empty = open to everyone. */
+  BETA_CODES: z.string().optional().transform(csv),
 });
 
 export const env = EnvSchema.parse(process.env);
+export const isProd = env.NODE_ENV === 'production';
+export const webOrigins = csv(env.WEB_ORIGIN);
+
+if (isProd && env.AUTH_SECRET === 'dev-secret-change-me') {
+  console.error('[api] refusing to start in production with the default AUTH_SECRET');
+  process.exit(1);
+}
 
 export const hasRealApiKey = () =>
   !!env.ANTHROPIC_API_KEY && env.ANTHROPIC_API_KEY.startsWith('sk-ant-') && env.ANTHROPIC_API_KEY.length > 20;

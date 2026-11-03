@@ -1,0 +1,19 @@
+# Automatic HTTPS (Let's Encrypt) for the three public hosts. Domains come from .env via docker-compose.
+{
+  email {$ACME_EMAIL}
+}
+
+{$WEB_DOMAIN} {
+  encode gzip
+  reverse_proxy web:80
+}
+
+{$API_DOMAIN} {
+  encode gzip
+  reverse_proxy api:4000
+}
+
+# WebSocket (Colyseus) — Caddy proxies upgrades transparently.
+{$WS_DOMAIN} {
+  reverse_proxy game:2567
+}

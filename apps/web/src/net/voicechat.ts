@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { track } from './analytics';
 import { PROXIMITY_RADIUS } from '@es/shared';
 import { useGame } from '../store/game';
 import { getRoom, onRtc, sendRtc } from './client';
@@ -56,6 +57,7 @@ export const useVoiceChat = create<VoiceChatStore>((set, get) => ({
       return;
     }
     set({ enabled: true, error: null });
+    track('voice_chat_on');
     unsubscribe = onRtc(handleSignal);
     timer = window.setInterval(tick, 500);
   },

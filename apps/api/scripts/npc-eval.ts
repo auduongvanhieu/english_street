@@ -6,7 +6,7 @@
  */
 import { NpcTurnResponseSchema } from '@es/shared';
 import { ClaudeNpcLlm, createNpcLlm } from '../src/npc/llm';
-import { MemorySessionStore } from '../src/npc/store';
+import { MemoryStore, type Session } from '../src/npc/store';
 import { MemoryAttemptRepo } from '../src/npc/attempts';
 import { NpcService } from '../src/npc/service';
 
@@ -46,7 +46,7 @@ const CASES: Case[] = [
 ];
 
 const llm = createNpcLlm();
-const svc = new NpcService(llm, new MemorySessionStore(), new MemoryAttemptRepo());
+const svc = new NpcService(llm, new MemoryStore<Session>(), new MemoryAttemptRepo());
 console.log(`provider: ${llm.name}\n`);
 const VERBOSE = process.env.EVAL_VERBOSE === '1';
 const FILTER = process.env.EVAL_FILTER ?? '';

@@ -21,6 +21,7 @@ import { getQuest, loadPlacement, loadQuests } from '@es/quests';
 import { hashPassword, playerIdFrom, signToken, verifyPassword } from '../auth';
 import { DAILY_BONUS_XP, type AttemptRepo, type UserRecord } from '../npc/attempts';
 import { budget } from '../npc/budget';
+import { allowAuth } from '../npc/ratelimit';
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -79,21 +80,25 @@ export function accountRoutes(repo: AttemptRepo) {
   return async function routes(app: FastifyInstance) {
     // ---- auth ----
     app.post('/auth/register', async (req, reply) => {
+      if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = RegisterRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
       if (await repo.getUserByEmail(body.data.email)) return reply.code(409).send({ error: 'email_taken' });
       const u = await repo.createUser({ id: randomUUID(), email: body.data.email, name: body.data.name, passwordHash: await hashPassword(body.data.password) });
       if (body.data.guestId) await repo.transferGuest(body.data.guestId, u.id);
       const fresh = (await repo.getUser(u.id)) ?? u;
+      await repo.logEvent({ name: 'register', playerId: u.id, props: { fromGuest: !!body.data.guestId } });
       return reply.code(201).send({ token: signToken(u.id), profile: await profile(fresh) });
     });
 
     app.post('/auth/login', async (req, reply) => {
+      if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = LoginRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const u = await repo.getUserByEmail(body.data.email);
       if (!u?.passwordHash || !(await verifyPassword(body.data.password, u.passwordHash))) return reply.code(401).send({ error: 'invalid_credentials' });
       await repo.ensureUser(u.id, u.name); // streak
+      await repo.logEvent({ name: 'login', playerId: u.id });
       return { token: signToken(u.id), profile: await profile((await repo.getUser(u.id)) ?? u) };
     });
 
@@ -104,7 +109,7 @@ export function accountRoutes(repo: AttemptRepo) {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       const u = await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
-      return { ...(await profile(u)), quota: { turnsLeftToday: budget.remainingFor(id) } };
+      return { ...(await profile(u)), quota: { turnsLeftToday: await budget.remainingFor(id) } };
     });
 
     app.get('/placement', async () => loadPlacement().map(({ answer: _a, ...q }) => q));
@@ -119,6 +124,7 @@ export function accountRoutes(repo: AttemptRepo) {
       const level = placementLevel(correct);
       await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
       await repo.updateUser(id, { cefrLevel: level, placementDoneAt: new Date() });
+      await repo.logEvent({ name: 'placement', playerId: id, props: { level, correct } });
       return { correct, total: qs.length, level };
     });
 
@@ -169,6 +175,5 @@ export function accountRoutes(repo: AttemptRepo) {
       return { avatar, coins: u.coins - c.price };
     });
 
-    app.get('/admin/budget', async () => budget.snapshot());
   };
 }

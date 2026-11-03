@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { EMOTES } from '@es/shared';
-import { Scene } from './scene/Scene';
+// The 3D scene (three.js + models) loads only after sign-in, keeping the first paint small.
+const Scene = lazy(() => import('./scene/Scene'));
 import { connect, sendChat } from './net/client';
 import { fetchNpcs } from './net/api';
-import { getPlayerId } from './net/player';
+import { getBetaPass, getPlayerId, getToken } from './net/player';
+import { initAnalytics, track } from './net/analytics';
 import { useProfile } from './store/profile';
 import { AuthScreen } from './ui/AuthScreen';
 import { ProfileHud, UiPanels } from './ui/ProfilePanels';
@@ -15,7 +17,7 @@ import { Joystick } from './ui/Joystick';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
-import { EmoteBar, InviteToast, ReportButton, VoiceChatButton } from './ui/Hud';
+import { EmoteBar, FeedbackButton, InviteToast, QualityToggle, ReportButton, VoiceChatButton } from './ui/Hud';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
@@ -32,6 +34,7 @@ export default function App() {
 
   // Load NPC definitions once; subscribe to pair-quest relay messages.
   useEffect(() => {
+    initAnalytics();
     fetchNpcs()
       .then((n) => useGame.getState().setNpcs(n))
       .catch(() => setNpcError(true));
@@ -69,7 +72,8 @@ export default function App() {
     const prof = useProfile.getState();
     await prof.refresh();
     const avatar = JSON.stringify({ color: useProfile.getState().profile?.avatar.color ?? '#4a90e2' });
-    await connect({ name, avatar, playerId: getPlayerId() }).catch(() => undefined);
+    await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }).catch(() => undefined);
+    track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '' });
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
@@ -92,7 +96,9 @@ export default function App() {
 
   return (
     <div className="relative h-full">
-      <Scene playerName={playerName} />
+      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-gray-700">Loading the street…</div>}>
+        <Scene playerName={playerName} />
+      </Suspense>
 
       <div className="absolute left-3 top-3 flex flex-col gap-2">
         <div className="pointer-events-none rounded-lg bg-black/50 px-3 py-2 text-xs text-white">
@@ -102,6 +108,8 @@ export default function App() {
         <div className="flex flex-wrap gap-2">
           <EmoteBar />
           <VoiceChatButton />
+          <QualityToggle />
+          <FeedbackButton />
         </div>
       </div>
 

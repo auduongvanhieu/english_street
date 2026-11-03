@@ -13,6 +13,8 @@ export const ERROR_TEXT: Record<string, string> = {
   invalid_credentials: 'Wrong email or password.',
   email_taken: 'An account with this email already exists.',
   not_enough_coins: 'Not enough coins yet.',
+  beta_pass_required: 'English Street is in closed beta. Please enter an invite code.',
+  invalid_invite_code: 'That invite code is not valid.',
 };
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
@@ -48,3 +50,11 @@ export const fetchVocab = () => get<VocabEntryDto[]>(`/me/vocab${q()}`);
 export const reviewVocab = (id: string, grade: ReviewGrade) => post<VocabEntryDto>(`/me/vocab/review${q()}`, { id, grade });
 export const setAvatarColor = (color: string) => post<{ color: string; owned: string[] }>(`/me/avatar${q()}`, { color });
 export const buyItem = (item: string) => post<{ avatar: { color: string; owned: string[] }; coins: number }>(`/me/shop/buy${q()}`, { item });
+
+export interface ClientConfig {
+  betaGate: boolean;
+}
+export const fetchConfig = () => get<ClientConfig>('/config');
+export const verifyBetaCode = (code: string) => post<{ pass: string }>('/beta/verify', { code });
+export const sendFeedback = (text: string, name: string, page: string, meta: Record<string, string | number | boolean>) =>
+  post<{ ok: true }>('/feedback', { playerId: getPlayerId(), name, text, page, meta });

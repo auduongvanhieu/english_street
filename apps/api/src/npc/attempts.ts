@@ -53,6 +53,22 @@ export interface ReportInput {
   context: unknown[];
 }
 
+export interface EventInput {
+  name: string;
+  playerId?: string | null;
+  props?: Record<string, unknown>;
+}
+export interface EventRecord extends EventInput {
+  createdAt: Date;
+}
+export interface FeedbackInput {
+  playerId?: string | null;
+  name: string;
+  text: string;
+  page: string;
+  meta: Record<string, unknown>;
+}
+
 export const DAILY_BONUS_XP = 30;
 
 export interface AttemptRepo {
@@ -78,6 +94,15 @@ export interface AttemptRepo {
   reviewVocab(userId: string, id: string, grade: ReviewGrade): Promise<VocabRecord | null>;
 
   createReport(r: ReportInput): Promise<void>;
+  listReports(limit: number): Promise<(ReportInput & { createdAt: Date })[]>;
+
+  // ---- analytics / beta ----
+  logEvent(e: EventInput): Promise<void>;
+  listEventsSince(since: Date): Promise<EventRecord[]>;
+  listAttemptsSince(since: Date): Promise<Pick<AttemptRecord, 'userId' | 'questId' | 'npcId' | 'status' | 'score' | 'turns' | 'startedAt' | 'finishedAt'>[]>;
+  countUsers(): Promise<{ total: number; registered: number; activeSince: (d: Date) => Promise<number> }>;
+  createFeedback(f: FeedbackInput): Promise<void>;
+  listFeedback(limit: number): Promise<(FeedbackInput & { createdAt: Date })[]>;
 }
 
 function bumpStreak(u: { streak: number; lastActiveAt: Date }, now = new Date()) {
@@ -105,7 +130,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
   users = new Map<string, UserRecord>();
   attempts = new Map<string, AttemptRecord>();
   vocab = new Map<string, VocabRecord[]>();
-  reports: ReportInput[] = [];
+  reports: (ReportInput & { createdAt: Date })[] = [];
 
   async ensureUser(id: string, name: string) {
     let u = this.users.get(id);
@@ -195,8 +220,34 @@ export class MemoryAttemptRepo implements AttemptRepo {
   }
 
   async createReport(r: ReportInput) {
-    this.reports.push(r);
+    this.reports.push({ ...r, createdAt: new Date() });
     console.warn(`[report] ${r.reporterId} reported ${r.targetName} (${r.reason}): ${r.details}`);
+  }
+  async listReports(limit: number) {
+    return this.reports.slice(-limit).reverse();
+  }
+
+  events: EventRecord[] = [];
+  feedback: (FeedbackInput & { createdAt: Date })[] = [];
+  async logEvent(e: EventInput) {
+    this.events.push({ ...e, createdAt: new Date() });
+    if (this.events.length > 20_000) this.events.splice(0, this.events.length - 20_000);
+  }
+  async listEventsSince(since: Date) {
+    return this.events.filter((e) => e.createdAt >= since);
+  }
+  async listAttemptsSince(since: Date) {
+    return [...this.attempts.values()].filter((a) => a.startedAt >= since);
+  }
+  async countUsers() {
+    const all = [...this.users.values()];
+    return { total: all.length, registered: all.filter((u) => u.email).length, activeSince: async (d: Date) => all.filter((u) => u.lastActiveAt >= d).length };
+  }
+  async createFeedback(f: FeedbackInput) {
+    this.feedback.push({ ...f, createdAt: new Date() });
+  }
+  async listFeedback(limit: number) {
+    return this.feedback.slice(-limit).reverse();
   }
 }
 
@@ -283,6 +334,35 @@ export class PrismaAttemptRepo implements AttemptRepo {
 
   async createReport(r: ReportInput) {
     await prisma.report.create({ data: { ...r, context: r.context as object[] } });
+  }
+  async listReports(limit: number) {
+    const rows = await prisma.report.findMany({ orderBy: { createdAt: 'desc' }, take: limit });
+    return rows.map((r) => ({ ...r, targetPlayerId: r.targetPlayerId ?? undefined, context: r.context as unknown[] }));
+  }
+
+  async logEvent(e: EventInput) {
+    await prisma.event.create({ data: { name: e.name, playerId: e.playerId ?? null, props: (e.props ?? {}) as object } });
+  }
+  async listEventsSince(since: Date) {
+    const rows = await prisma.event.findMany({ where: { createdAt: { gte: since } }, orderBy: { createdAt: 'asc' }, take: 50_000 });
+    return rows.map((r) => ({ name: r.name, playerId: r.playerId, props: r.props as Record<string, unknown>, createdAt: r.createdAt }));
+  }
+  async listAttemptsSince(since: Date) {
+    return prisma.questAttempt.findMany({
+      where: { startedAt: { gte: since } },
+      select: { userId: true, questId: true, npcId: true, status: true, score: true, turns: true, startedAt: true, finishedAt: true },
+    });
+  }
+  async countUsers() {
+    const [total, registered] = await Promise.all([prisma.user.count(), prisma.user.count({ where: { email: { not: null } } })]);
+    return { total, registered, activeSince: (d: Date) => prisma.user.count({ where: { lastActiveAt: { gte: d } } }) };
+  }
+  async createFeedback(f: FeedbackInput) {
+    await prisma.feedback.create({ data: { ...f, playerId: f.playerId ?? null, meta: f.meta as object } });
+  }
+  async listFeedback(limit: number) {
+    const rows = await prisma.feedback.findMany({ orderBy: { createdAt: 'desc' }, take: limit });
+    return rows.map((r) => ({ ...r, meta: r.meta as Record<string, unknown> }));
   }
 }
 

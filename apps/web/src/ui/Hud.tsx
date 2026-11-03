@@ -3,7 +3,8 @@ import { EMOTES, type Emote } from '@es/shared';
 import { useGame } from '../store/game';
 import { useVoiceChat } from '../net/voicechat';
 import { usePair } from '../store/pair';
-import { API_URL } from '../net/api';
+import { API_URL, sendFeedback } from '../net/api';
+import { useSettings } from '../store/settings';
 import { getPlayerId } from '../net/player';
 
 const EMOTE_ICON: Record<Emote, string> = { wave: '👋', dance: '💃', thumbsup: '👍', yes: '✅', no: '❌' };
@@ -109,5 +110,68 @@ export function ReportButton({ targetName, targetPlayerId }: { targetName: strin
           </button>
         ))}
     </span>
+  );
+}
+
+/** Graphics quality: low = no shadows, 1x pixel ratio, fewer distant players. */
+export function QualityToggle() {
+  const quality = useSettings((s) => s.quality);
+  const set = useSettings((s) => s.setQuality);
+  return (
+    <button
+      type="button"
+      onClick={() => set(quality === 'high' ? 'low' : 'high')}
+      className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60"
+      title="Graphics quality (switch to Low on slow devices)"
+    >
+      ⚙️ {quality === 'high' ? 'High' : 'Low'}
+    </button>
+  );
+}
+
+/** Beta feedback form (text goes to the Feedback table, visible at GET /admin/feedback). */
+export function FeedbackButton() {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [state, setState] = useState<'idle' | 'busy' | 'sent' | 'error'>('idle');
+  const name = useGame((s) => s.playerName);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (text.trim().length < 3) return;
+    setState('busy');
+    try {
+      await sendFeedback(text.trim(), name, useGame.getState().panelNpc ? 'npc' : 'street', { quality: useSettings.getState().quality, w: innerWidth, h: innerHeight });
+      setState('sent');
+      setText('');
+      setTimeout(() => {
+        setOpen(false);
+        setState('idle');
+      }, 1500);
+    } catch {
+      setState('error');
+    }
+  }
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title="Send feedback to the team">
+        💬 Feedback
+      </button>
+      {open && (
+        <div className="absolute left-0 top-24 z-20 w-80 rounded-xl bg-white p-4 shadow-2xl">
+          <form onSubmit={submit}>
+            <div className="mb-2 flex items-center justify-between">
+              <b className="text-sm">Tell us what you think</b>
+              <button type="button" onClick={() => setOpen(false)} className="text-sm text-gray-500" aria-label="Close feedback">
+                ✕
+              </button>
+            </div>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={4} placeholder="What worked? What was confusing? Any bugs? (English or Tiếng Việt)" className="w-full rounded-lg border px-2 py-1 text-sm" />
+            <button type="submit" disabled={state === 'busy' || text.trim().length < 3} className="mt-2 w-full rounded-lg bg-blue-600 py-1.5 text-sm font-medium text-white disabled:opacity-50">
+              {state === 'busy' ? 'Sending…' : state === 'sent' ? 'Thank you! ✓' : state === 'error' ? 'Failed — try again' : 'Send'}
+            </button>
+          </form>
+        </div>
+      )}
+    </>
   );
 }

@@ -25,7 +25,8 @@ apps/api          Fastify REST API + Prisma + Claude (NPC AI)
 apps/game-server  Colyseus realtime server (vị trí, chat gần)
 packages/shared   Zod schemas + types dùng chung
 packages/quests   Nội dung NPC persona + quest (YAML)
-infra             docker-compose (Postgres, Redis)
+infra             docker-compose dev (Postgres, Redis) + Dockerfile, compose production, Caddy
+docs              GDD, DEPLOY.md, ảnh chụp
 ```
 
 ## Chạy dev
@@ -76,10 +77,40 @@ NPC_PROVIDER=claude pnpm --filter @es/api eval:npc  # chấm model thật
 | `NPC_DAILY_BUDGET_USD` | 5 | Trần chi tiêu ước tính mỗi ngày cho cả hệ thống; chạm trần thì NPC nghỉ đến hôm sau |
 | `NPC_HISTORY_MAX` | 10 | Số tin nhắn gần nhất gửi lên model |
 
-Xem mức chi hôm nay: `GET /admin/budget`. Ngoài ra hãy đặt spend limit cho workspace trên console Anthropic.
+Xem mức chi hôm nay: `GET /admin/budget` (header `authorization: Bearer $ADMIN_TOKEN`). Ngoài ra hãy đặt spend limit cho workspace trên console Anthropic.
+Khi có Redis, các bộ đếm này dùng chung cho mọi instance API.
 
 ## Tài khoản và tiến trình
 
 Chơi khách (tiến trình gắn với trình duyệt) hoặc đăng ký email + mật khẩu (tiến trình khách được chuyển sang tài khoản).
 Sau khi vào: bài test 10 câu xếp trình độ CEFR, hồ sơ XP/level/coins/streak/huy hiệu, 3 quest ngày có thưởng thêm,
 sổ tay từ vựng tự lưu từ hội thoại với ôn tập flashcard, và shop màu avatar. Đặt `AUTH_SECRET` thật trong `.env` khi deploy.
+
+## Hiệu năng
+
+- Tile phố vẽ bằng `InstancedMesh` (một draw call cho mỗi cặp model/mesh), nhà cửa hàng giữ màu riêng.
+- Nút ⚙️ High/Low: Low tắt bóng, pixel ratio 1, không antialias, chỉ vẽ người chơi trong 28 m; mặc định Low trên thiết bị cảm ứng.
+- Người chơi xa hơn 45 m không được vẽ, name tag chỉ trong 22 m; cảnh 3D chỉ tải sau màn đăng nhập.
+- Đo trên Chromium headless (1280×720): High 391 draw call, Low 210 (trước giai đoạn 6: 567 / 249). `window.__esPerf` giữ mẫu FPS/draw call mới nhất.
+
+![Chế độ Low](docs/screenshots/phase6-street-low.png)
+
+## Analytics, góp ý, beta kín
+
+- Mọi sự kiện quan trọng (vào phố, lượt NPC, quest bắt đầu/kết thúc, quest cặp đôi, voice, report, FPS) ghi vào bảng `Event`.
+  Xem tổng hợp: `GET /admin/stats?days=7` với header `authorization: Bearer $ADMIN_TOKEN` (không đặt token: mở ở dev, đóng ở production).
+- Nút 💬 Feedback trong game ghi vào bảng `Feedback` → `GET /admin/feedback`; report người chơi → `GET /admin/reports`.
+- `BETA_CODES=ma1,ma2` bật beta kín: màn đăng nhập hỏi mã mời, mã hợp lệ đổi lấy pass 90 ngày; API và game-server đều kiểm tra.
+
+![Cổng beta](docs/screenshots/phase6-beta-gate.png)
+
+## Deploy
+
+Một VPS + Docker Compose + Caddy (HTTPS tự động), xem [docs/DEPLOY.md](docs/DEPLOY.md):
+
+```bash
+cp .env.example .env   # AUTH_SECRET, ADMIN_TOKEN, POSTGRES_PASSWORD, domain, ANTHROPIC_API_KEY
+docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
+```
+
+Load test game-server: `BOTS=50 SECONDS=30 pnpm --filter @es/game-server load:bots` (50 bot: p95 45 ms, CPU 12 %).
