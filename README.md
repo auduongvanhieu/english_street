@@ -8,6 +8,7 @@ Thiết kế đầy đủ: [docs/GDD.md](docs/GDD.md).
 ![Phố English Street](docs/screenshots/phase1-street.png)
 
 **Điều khiển:** WASD / mũi tên di chuyển · Shift chạy · E nói chuyện với NPC · Enter mở chat · Esc đóng.
+Trong hội thoại: nhấn giữ 🎤 để nói (Chrome/Edge/Safari), thả ra rồi sửa transcript nếu cần và Send; 🔊 phát lại câu NPC; nút loa ở header để tắt tiếng.
 Trên mobile: joystick ảo góc trái, chạm nút "Tap to talk" khi đứng gần NPC.
 
 Asset 3D (CC0): xem [apps/web/public/models/CREDITS.md](apps/web/public/models/CREDITS.md).

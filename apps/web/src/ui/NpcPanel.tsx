@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import type { ChatMessage, Correction } from '@es/shared';
 import { useGame } from '../store/game';
 import { useConversation } from '../store/conversation';
+import { useVoice } from '../store/voice';
+import { startStt, type SttHandle } from '../voice/stt';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -9,15 +11,20 @@ export function NpcPanel() {
   const playerName = useGame((s) => s.playerName);
   const closePanel = useGame((s) => s.closePanel);
   const conv = useConversation();
+  const voice = useVoice();
 
-  // Leaving the panel ends any open session.
+  // Leaving the panel ends any open session and silences the NPC.
   useEffect(() => {
-    if (!id) useConversation.getState().reset();
+    if (!id) {
+      useConversation.getState().reset();
+      useVoice.getState().stop();
+    }
   }, [id]);
 
   if (!npc) return null;
 
   const close = async () => {
+    voice.stop();
     await conv.end();
     if (!useConversation.getState().summary) closePanel();
   };
@@ -30,15 +37,28 @@ export function NpcPanel() {
             <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
             <p className="text-xs text-gray-500">{npc.role}</p>
           </div>
-          <button type="button" onClick={close} className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
-            ✕ <span className="hidden sm:inline">Esc</span>
-          </button>
+          <div className="flex items-center gap-1">
+            {voice.ttsSupported && (
+              <button
+                type="button"
+                onClick={() => voice.setMuted(!voice.muted)}
+                className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+                title={voice.muted ? 'Unmute NPC voice' : 'Mute NPC voice'}
+                aria-label={voice.muted ? 'Unmute' : 'Mute'}
+              >
+                {voice.muted ? '🔇' : '🔊'}
+              </button>
+            )}
+            <button type="button" onClick={close} className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+              ✕ <span className="hidden sm:inline">Esc</span>
+            </button>
+          </div>
         </header>
 
         {conv.summary ? (
           <Summary onClose={() => { conv.reset(); closePanel(); }} />
         ) : conv.state ? (
-          <Chat />
+          <Chat npcId={npc.id} lang={npc.voice} />
         ) : (
           <Menu npcId={npc.id} greeting={npc.greeting} quests={npc.quests} playerName={playerName} />
         )}
@@ -76,11 +96,16 @@ function Menu({ npcId, greeting, quests, playerName }: { npcId: string; greeting
 }
 
 // ---------------------------------------------------------------- Chat
-function Chat() {
+function Chat({ npcId, lang }: { npcId: string; lang: string }) {
   const { state, lastTurn, loading, error, send } = useConversation();
+  const voice = useVoice();
   const [text, setText] = useState('');
+  const [sttError, setSttError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const stt = useRef<SttHandle | null>(null);
+  const spokeUpTo = useRef(0);
+  const fromVoice = useRef(false);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -89,6 +114,20 @@ function Chat() {
     if (!loading) inputRef.current?.focus();
   }, [loading]);
 
+  // Voice the newest NPC line (greeting on start, then every reply).
+  const msgCount = state?.messages.length ?? 0;
+  useEffect(() => {
+    if (!state) return;
+    const last = state.messages[state.messages.length - 1];
+    if (msgCount > spokeUpTo.current && last?.role === 'assistant') {
+      spokeUpTo.current = msgCount;
+      useVoice.getState().speakAs(npcId, last.content, lang);
+    }
+  }, [state, msgCount, npcId, lang]);
+
+  // Stop any recognition when the chat unmounts.
+  useEffect(() => () => stt.current?.abort(), []);
+
   if (!state) return null;
 
   function submit(e: FormEvent) {
@@ -96,7 +135,41 @@ function Chat() {
     const t = text.trim();
     if (!t || loading) return;
     setText('');
-    void send(t);
+    const src = fromVoice.current ? 'voice' : 'text';
+    fromVoice.current = false;
+    void send(t, src);
+  }
+
+  // --- push-to-talk ---
+  function micDown(e: PointerEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    if (stt.current || loading) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setSttError(null);
+    voice.stop(); // don't transcribe the NPC's own voice
+    const base = text.trim();
+    stt.current = startStt({
+      lang: 'en-US',
+      onInterim: (t) => setText(base ? `${base} ${t}` : t),
+      onFinal: (t) => {
+        setText(base ? `${base} ${t}` : t);
+        fromVoice.current = true;
+      },
+      onError: (code) => {
+        if (code !== 'aborted' && code !== 'no-speech') setSttError(code === 'not-allowed' ? 'Microphone permission denied' : `Speech recognition error: ${code}`);
+        if (code === 'no-speech') setSttError('No speech detected. Hold the mic and speak clearly.');
+      },
+      onEnd: () => {
+        stt.current = null;
+        voice.setListening(false);
+        inputRef.current?.focus();
+      },
+    });
+    if (stt.current) voice.setListening(true);
+    else setSttError('Voice input is not supported in this browser (try Chrome or Edge).');
+  }
+  function micUp() {
+    stt.current?.stop();
   }
 
   return (
@@ -120,7 +193,7 @@ function Chat() {
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3" style={{ minHeight: 240 }}>
         {state.messages.map((m, i) => (
-          <Bubble key={i} m={m} />
+          <Bubble key={i} m={m} onReplay={m.role === 'assistant' && voice.ttsSupported ? () => useVoice.getState().speakAs(npcId, m.content, lang) : undefined} />
         ))}
         {loading && (
           <div className="flex justify-start">
@@ -133,14 +206,33 @@ function Chat() {
           </div>
         )}
         {error && <p className="text-sm text-red-600">Error: {error}</p>}
+        {sttError && <p className="text-sm text-red-600">{sttError}</p>}
       </div>
 
       <form onSubmit={submit} className="flex gap-2 border-t p-3">
+        {voice.sttSupported && (
+          <button
+            type="button"
+            onPointerDown={micDown}
+            onPointerUp={micUp}
+            onPointerCancel={micUp}
+            onPointerLeave={micUp}
+            disabled={loading || state.finished}
+            aria-label="Hold to talk"
+            title="Hold to talk (release to stop)"
+            className={`select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-50`}
+          >
+            🎤
+          </button>
+        )}
         <input
           ref={inputRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={state.finished ? 'Conversation finished' : 'Type in English…'}
+          onChange={(e) => {
+            setText(e.target.value);
+            fromVoice.current = false;
+          }}
+          placeholder={state.finished ? 'Conversation finished' : voice.listening ? 'Listening…' : voice.sttSupported ? 'Type, or hold 🎤 to speak…' : 'Type in English…'}
           disabled={loading || state.finished}
           maxLength={500}
           className="flex-1 rounded-lg border px-3 py-2 text-sm disabled:bg-gray-50"
@@ -153,13 +245,18 @@ function Chat() {
   );
 }
 
-function Bubble({ m }: { m: ChatMessage }) {
+function Bubble({ m, onReplay }: { m: ChatMessage; onReplay?: () => void }) {
   const mine = m.role === 'user';
   return (
     <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%]">
-        <div className={`rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
-          {m.content}
+        <div className={`flex items-start gap-1 rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
+          <span>{m.content}</span>
+          {onReplay && (
+            <button type="button" onClick={onReplay} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label="Replay" title="Listen again">
+              🔊
+            </button>
+          )}
         </div>
         {m.corrections?.map((c, i) => (
           <CorrectionNote key={i} c={c} />

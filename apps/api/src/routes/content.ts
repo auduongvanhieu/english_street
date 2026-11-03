@@ -4,13 +4,14 @@ import { loadNpcs, loadQuests, questsForNpc } from '@es/quests';
 /** Static content: NPC list and quests (served from packages/quests YAML). */
 export async function contentRoutes(app: FastifyInstance) {
   app.get('/npcs', async () =>
-    loadNpcs().map(({ id, name, role, shop, position, greeting }) => ({
+    loadNpcs().map(({ id, name, role, shop, position, greeting, voice }) => ({
       id,
       name,
       role,
       shop,
       position,
       greeting,
+      voice,
       quests: questsForNpc(id).map(({ id, title, level }) => ({ id, title, level })),
     })),
   );

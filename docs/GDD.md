@@ -264,8 +264,8 @@ english-street/
 | 0 — Khởi tạo | ✅ Xong (2026-11-03) | Monorepo pnpm + Turborepo, 3 app skeleton (web R3F, api Fastify+Prisma, game-server Colyseus), `packages/shared` + `packages/quests` (3 NPC, 6 quest), Docker Compose, CI. Typecheck/build xanh; test 2 client đồng bộ vị trí + chat gần đạt. |
 | 1 — Con phố & di chuyển | ✅ Xong (2026-11-03) | Phố dựng từ Kenney City Builder (CC0) theo layout tile 4 m, 7 cửa hàng có biển tên, nhân vật RobotExpressive có animation idle/walk/run/wave, va chạm với toà nhà, camera góc 3, joystick mobile, NPC đứng trước cửa hàng + prompt "Press E to talk" mở panel chào + danh sách quest. Đã kiểm chứng bằng Chromium headless (ảnh trong docs/screenshots). |
 | 2 — NPC hội thoại text | ✅ Xong (2026-11-03) | API: start quest / free talk, `POST /sessions/:id/chat` chạy Claude (`messages.parse` + Zod, prompt caching, effort low) hoặc mock; session store Redis/in-memory; QuestAttempt + thưởng XP/coins qua Prisma hoặc in-memory; chấm điểm, rate limit. UI: checklist goal, bong bóng chat, gợi ý sửa lỗi (giải thích tiếng Việt), hint, màn hình tổng kết. Eval 20 kịch bản (20/20 với mock). Đã chạy với Claude thật ngày 2026-11-03: Opus 5.5 và Haiku 5.5 đều 19/20 (case trượt là ranh giới chấm goal), ~0,005 USD/lượt với Opus, ~0,00015 USD/lượt với Haiku. |
-| 3 — Giọng nói | 🔜 Tiếp theo | STT push-to-talk (Web Speech API), TTS đọc câu NPC, animation nói. |
-| 4 — Người chơi tương tác | ⏳ | |
+| 3 — Giọng nói | ✅ Xong (2026-11-03) | Nhấn giữ 🎤 để nói (Web Speech API, transcript tạm hiện trong ô nhập, sửa được trước khi gửi, gửi kèm source=voice); NPC đọc lời chào và mọi câu trả lời bằng SpeechSynthesis với giọng theo locale của NPC (en-US/GB/IN), nút phát lại từng câu, nút tắt tiếng lưu lại; NPC chạy animation "talk" khi đang phát tiếng. Lỗi TTS được bọc để không sập UI. Kiểm chứng e2e bằng stub SpeechRecognition/speechSynthesis trong Chromium headless. Chưa có fallback STT server (Deepgram) và chấm phát âm. |
+| 4 — Người chơi tương tác | 🔜 Tiếp theo | Emote, voice chat gần qua WebRTC (LiveKit), quest cặp đôi, lọc nội dung + report. |
 | 5 — Tiến trình & nội dung | ⏳ | |
 | 6 — Hoàn thiện & beta | ⏳ | |
 

@@ -18,6 +18,8 @@ export interface NpcInfo {
   shop: string;
   position: [number, number, number];
   greeting: string;
+  /** BCP-47 locale hint for TTS, e.g. en-GB */
+  voice: string;
   quests: { id: string; title: string; level: string }[];
 }
 

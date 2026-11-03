@@ -1,4 +1,5 @@
 import { useGame, type NpcInfo } from '../store/game';
+import { useVoice } from '../store/voice';
 import { Character } from './Character';
 import { NameTag } from './NameTag';
 
@@ -22,7 +23,8 @@ export function Npcs() {
 function Npc({ npc }: { npc: NpcInfo }) {
   const near = useGame((s) => s.interactTarget === npc.id);
   const talking = useGame((s) => s.panelNpc === npc.id);
-  const anim = talking ? 'talk' : near ? 'wave' : 'idle';
+  const speaking = useVoice((s) => s.speakingNpc === npc.id);
+  const anim = speaking ? 'talk' : talking ? 'idle' : near ? 'wave' : 'idle';
   return (
     <group position={npc.position} rotation={[0, 0, 0]}>
       <Character anim={anim} tint={NPC_TINT[npc.id] ?? '#cccccc'} />
