@@ -103,3 +103,26 @@ Kết quả đo ngày 2026-11-03 trên máy dev (1 instance game, không Redis):
   trỏ về VPS; bỏ service `web` và host `WEB_DOMAIN` trong Caddyfile; `WEB_ORIGIN` = domain Pages.
 - **Fly.io / Railway**: dùng `infra/Dockerfile` với `--target api` và `--target game`, Postgres/Redis managed;
   đặt `TRUST_PROXY=true`.
+
+## 7. Triển khai thực tế: VPS coffeesos (nginx có sẵn, không Docker)
+
+Domain **https://englishstreet.coffeesos.online** dùng một host, nginx route theo đường dẫn:
+`/` → bundle tĩnh trong `/var/www/englishstreet.coffeesos.online`, `/api/` → API cổng 4600 (bỏ prefix),
+`/ws/` → Colyseus cổng 2600 (bỏ prefix, WebSocket). Colyseus SDK giữ pathname nên `wss://host/ws` hoạt động.
+Mã deploy nằm ở `/home/sm/apps/english-street` (clone từ GitHub, `.env` production riêng), chạy bằng systemd dưới user `sm`.
+
+File trong `infra/vps/`:
+
+| File | Dùng để |
+|---|---|
+| `nginx-englishstreet.conf`, `nginx-upgrade-map.conf` | vhost nginx (certbot thêm TLS) |
+| `englishstreet-api.service`, `englishstreet-game.service` | unit systemd chạy `pnpm exec tsx` bằng Node của nvm |
+| `setup-root.sh` | chạy **một lần bằng sudo**: nginx, systemd, sudoers cho `sm`, Redis, Postgres (dùng container có sẵn hoặc apt), certbot |
+| `deploy.sh` | chạy bằng `sm` mỗi lần cập nhật: pull, install, migrate, build web, copy bundle, restart |
+
+Các bước:
+
+1. DNS: bản ghi A `englishstreet.coffeesos.online` → IP VPS.
+2. `sudo bash /home/sm/apps/english-street/infra/vps/setup-root.sh`
+3. `bash /home/sm/apps/english-street/infra/vps/deploy.sh`
+4. Kiểm tra `https://englishstreet.coffeesos.online/api/health` và `/ws/health`.

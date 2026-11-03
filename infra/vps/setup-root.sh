@@ -61,6 +61,9 @@ if [ ! -d /etc/letsencrypt/live/$DOMAIN ]; then
 fi
 
 echo "== 8. start"
+# stop any hand-started (nohup) copies of the app so systemd can take the ports
+pkill -u sm -f "/home/sm/apps/english-street/node_modules" || true
+sleep 1
 systemctl restart englishstreet-api englishstreet-game
 sleep 3
 systemctl --no-pager --lines=0 status englishstreet-api englishstreet-game | grep -E 'service|Active'
