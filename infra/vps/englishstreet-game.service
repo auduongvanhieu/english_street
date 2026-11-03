@@ -1,0 +1,20 @@
+[Unit]
+Description=English Street game server (Colyseus)
+After=network.target postgresql.service redis-server.service
+
+[Service]
+User=sm
+Group=sm
+WorkingDirectory=/home/sm/apps/english-street/apps/game-server
+Environment=HOME=/home/sm
+Environment=NODE_ENV=production
+Environment=PATH=/home/sm/.nvm/versions/node/v22.23.4/bin:/usr/local/bin:/usr/bin:/bin
+# Settings come from /home/sm/apps/english-street/.env (loaded by the app itself).
+ExecStart=/home/sm/.nvm/versions/node/v22.23.4/bin/pnpm exec tsx src/index.ts
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
