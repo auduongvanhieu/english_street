@@ -1,12 +1,46 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Scene } from './scene/Scene';
 import { connect, sendChat } from './net/client';
+import { fetchNpcs } from './net/api';
 import { useGame } from './store/game';
+import { isTouchDevice } from './input/joystick';
+import { Joystick } from './ui/Joystick';
+import { InteractPrompt } from './ui/InteractPrompt';
+import { NpcPanel } from './ui/NpcPanel';
 
 export default function App() {
   const { playerName, setPlayerName, conn, chatLog } = useGame();
   const [draft, setDraft] = useState(playerName);
   const [chat, setChat] = useState('');
+  const [npcError, setNpcError] = useState(false);
+  const chatInput = useRef<HTMLInputElement>(null);
+  const touch = isTouchDevice();
+
+  // Load NPC definitions once.
+  useEffect(() => {
+    fetchNpcs()
+      .then((n) => useGame.getState().setNpcs(n))
+      .catch(() => setNpcError(true));
+  }, []);
+
+  // Global keys: E = talk, Esc = close panel, Enter = focus chat.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const s = useGame.getState();
+      const typing = document.activeElement?.tagName === 'INPUT';
+      if (e.key === 'Escape') {
+        if (s.panelNpc) s.closePanel();
+        else (document.activeElement as HTMLElement | null)?.blur();
+      } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
+        s.openPanel(s.interactTarget);
+      } else if (!typing && e.key === 'Enter' && !s.panelNpc) {
+        chatInput.current?.focus();
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   async function join(e: FormEvent) {
     e.preventDefault();
@@ -19,9 +53,9 @@ export default function App() {
   function submitChat(e: FormEvent) {
     e.preventDefault();
     const t = chat.trim();
-    if (!t) return;
-    sendChat(t);
+    if (t) sendChat(t);
     setChat('');
+    chatInput.current?.blur();
   }
 
   if (conn !== 'connected') {
@@ -56,11 +90,14 @@ export default function App() {
   return (
     <div className="relative h-full">
       <Scene playerName={playerName} />
+
       <div className="pointer-events-none absolute left-3 top-3 rounded-lg bg-black/50 px-3 py-2 text-xs text-white">
-        WASD / arrows to move · Shift to run · Enter to chat
+        {touch ? 'Drag the joystick to move · tap NPCs to talk' : 'WASD / arrows to move · Shift to run · E to talk · Enter to chat'}
+        {npcError && <div className="mt-1 text-yellow-300">NPCs unavailable: API server not reachable.</div>}
       </div>
-      <div className="absolute bottom-3 left-3 w-80">
-        <div className="mb-2 max-h-40 overflow-y-auto rounded-lg bg-black/40 p-2 text-sm text-white">
+
+      <div className="absolute bottom-3 right-3 w-72 sm:w-80">
+        <div className="mb-2 max-h-36 overflow-y-auto rounded-lg bg-black/40 p-2 text-sm text-white">
           {chatLog.length === 0 ? (
             <span className="opacity-60">Nearby chat will appear here.</span>
           ) : (
@@ -73,6 +110,7 @@ export default function App() {
         </div>
         <form onSubmit={submitChat}>
           <input
+            ref={chatInput}
             value={chat}
             onChange={(e) => setChat(e.target.value)}
             placeholder="Say something in English…"
@@ -81,6 +119,10 @@ export default function App() {
           />
         </form>
       </div>
+
+      {touch && <Joystick />}
+      <InteractPrompt touch={touch} />
+      <NpcPanel />
     </div>
   );
 }

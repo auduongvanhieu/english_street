@@ -11,3 +11,7 @@ export const INPUT_RATE_HZ = 20;
 export const WALK_SPEED = 3;
 /** Distance within which chat bubbles / voice are heard. */
 export const PROXIMITY_RADIUS = 8;
+/** Walkable world bounds (world units). Street runs along X; shops are north (negative Z). */
+export const WORLD_BOUNDS = { minX: -41, maxX: 41, minZ: -5.5, maxZ: 13.5 } as const;
+/** Distance from an NPC within which the player can start talking. */
+export const INTERACT_RADIUS = 2.6;

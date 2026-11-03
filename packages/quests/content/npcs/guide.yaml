@@ -3,7 +3,7 @@ name: Priya
 role: Tourist information guide
 shop: info
 voice: en-IN
-position: [4, 0, -6]
+position: [4, 0, -5.2]
 personality: >
   Enthusiastic and knowledgeable about the town. Gives clear directions using
   landmarks ("turn left at the bank", "it's opposite the park").

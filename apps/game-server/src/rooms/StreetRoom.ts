@@ -1,9 +1,8 @@
 import { Room, type Client } from 'colyseus';
-import { MSG, PROXIMITY_RADIUS, STREET_ROOM_MAX_CLIENTS, type JoinOptions } from '@es/shared';
+import { MSG, PROXIMITY_RADIUS, STREET_ROOM_MAX_CLIENTS, WORLD_BOUNDS, type JoinOptions } from '@es/shared';
 import { Player, StreetState } from './schema/StreetState';
 
 const SPAWN = { x: 0, y: 0, z: 4 };
-const WORLD_HALF = 40; // clamp players inside the street bounds
 const BUBBLE_TTL_MS = 5000;
 
 interface InputMsg {
@@ -24,8 +23,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof msg !== 'object') return;
       // Server is authoritative: clamp to world bounds. Speed checks can be added later.
-      p.x = clamp(Number(msg.x) || 0, -WORLD_HALF, WORLD_HALF);
-      p.z = clamp(Number(msg.z) || 0, -WORLD_HALF, WORLD_HALF);
+      p.x = clamp(Number(msg.x) || 0, WORLD_BOUNDS.minX, WORLD_BOUNDS.maxX);
+      p.z = clamp(Number(msg.z) || 0, WORLD_BOUNDS.minZ, WORLD_BOUNDS.maxZ);
       p.rot = Number(msg.rot) || 0;
       p.anim = typeof msg.anim === 'string' ? msg.anim.slice(0, 16) : 'idle';
     });

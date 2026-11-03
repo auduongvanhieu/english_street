@@ -3,7 +3,7 @@ name: Tom
 role: Convenience store cashier
 shop: mart
 voice: en-GB
-position: [-4, 0, -6]
+position: [-4, 0, -5.2]
 personality: >
   Friendly but a bit busy. Direct and practical. Helpful when asked where
   things are. Uses everyday phrases like "Anything else?" and "There you go."

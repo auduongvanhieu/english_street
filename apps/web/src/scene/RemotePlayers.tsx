@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGame, type RemotePlayer } from '../store/game';
-import { PlayerMesh } from './PlayerMesh';
+import { Character } from './Character';
+import { NameTag } from './NameTag';
 
 export function RemotePlayers() {
   const players = useGame((s) => s.players);
@@ -31,7 +32,8 @@ function Remote({ p }: { p: RemotePlayer }) {
   });
   return (
     <group ref={ref} position={[p.x, p.y, p.z]}>
-      <PlayerMesh name={p.name} color="#e2a04a" bubble={p.bubble} />
+      <Character anim={p.anim} tint="#e2a04a" />
+      <NameTag name={p.name} bubble={p.bubble} />
     </group>
   );
 }

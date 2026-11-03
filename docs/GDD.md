@@ -257,5 +257,22 @@ english-street/
 - **Giai đoạn 4**: 2 người gần nhau nghe được nhau, đi xa thì tắt; quest cặp đôi hoàn thành và cả hai nhận điểm.
 - **Giai đoạn 6**: load test 50 người/room bằng bot Colyseus; chi phí LLM đo được ≤ ngưỡng đặt ra (vd. < $0.05/quest với Opus 5.5 có cache).
 
-## 8. Bước đầu tiên khi được duyệt
-Thực hiện **Giai đoạn 0**: khởi tạo monorepo, 3 app skeleton, Docker Compose, schema shared, CI. Sau đó dựng scene phố đầu tiên (Giai đoạn 1).
+## 8. Tiến độ
+
+| Giai đoạn | Trạng thái | Ghi chú |
+|---|---|---|
+| 0 — Khởi tạo | ✅ Xong (2026-11-03) | Monorepo pnpm + Turborepo, 3 app skeleton (web R3F, api Fastify+Prisma, game-server Colyseus), `packages/shared` + `packages/quests` (3 NPC, 6 quest), Docker Compose, CI. Typecheck/build xanh; test 2 client đồng bộ vị trí + chat gần đạt. |
+| 1 — Con phố & di chuyển | ✅ Xong (2026-11-03) | Phố dựng từ Kenney City Builder (CC0) theo layout tile 4 m, 7 cửa hàng có biển tên, nhân vật RobotExpressive có animation idle/walk/run/wave, va chạm với toà nhà, camera góc 3, joystick mobile, NPC đứng trước cửa hàng + prompt "Press E to talk" mở panel chào + danh sách quest. Đã kiểm chứng bằng Chromium headless (ảnh trong docs/screenshots). |
+| 2 — NPC hội thoại text | 🔜 Tiếp theo | Endpoint `POST /npc/:id/chat` với Claude structured output, Redis conversation, UI chat + checklist goal + correction, lưu QuestAttempt. |
+| 3 — Giọng nói | ⏳ | |
+| 4 — Người chơi tương tác | ⏳ | |
+| 5 — Tiến trình & nội dung | ⏳ | |
+| 6 — Hoàn thiện & beta | ⏳ | |
+
+**Lưu ý kỹ thuật đã rút ra ở giai đoạn 0**
+- Colyseus 0.18 đi với client `@colyseus/sdk` (schema v5); `colyseus.js` 0.16 không tương thích.
+- Không gắn request handler tuỳ ý vào http server của Colyseus (che route `/matchmake`).
+- `api` và `game-server` chạy bằng `tsx` cả dev lẫn prod; `pnpm build` của chúng chỉ typecheck.
+- Máy dev hiện không có Docker/Postgres: API báo `db: down`, migration sinh bằng `prisma migrate diff`.
+
+Mã nguồn: `/root/session_manager_workspaces/english-street/` (bản sao thiết kế tại `docs/GDD.md`).
