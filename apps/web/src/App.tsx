@@ -15,7 +15,7 @@ import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
 import { PlayerPopup, ShoutButton, TalkBox, TalkToast } from './ui/Talk';
 import { isTouchDevice } from './input/joystick';
-import { attachCameraGestures } from './input/camera';
+import { attachCameraGestures, cameraOrbit } from './input/camera';
 import { Joystick } from './ui/Joystick';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { NpcPanel } from './ui/NpcPanel';
@@ -26,7 +26,7 @@ import { useKeyboardInset } from './ui/useKeyboardInset';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit };
 }
 
 export default function App() {

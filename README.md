@@ -146,3 +146,13 @@ as a PWA (Add to Home Screen). See `docs/PERF.md` for the layout notes and draw-
 - Status dots next to names: red = shouting, green = talking with you, grey = talking with someone else.
 - Load test: `BOTS=50 SECONDS=30 SHOUT_RATE=0.002 pnpm --filter @es/game-server load:bots` (≈10 % of bots
   shouting per minute) measured 12 % CPU on the dev VPS, same as without shouts.
+
+## NPC characters (Step 2 / phase 10)
+
+Each shopkeeper is a Quaternius CC0 human (`public/models/characters/*.glb`, 7 base models, ~500 KB each after
+`pnpm --filter @es/web build:models`: unused clips removed, meshopt-compressed). `scene/npcLook.ts` maps every NPC
+to a model plus **material recolours** (the stock outfit becomes a uniform: white coat, green store vest, grey suit…)
+and **procedural accessories** attached to bones (`scene/Human.tsx`): barista cap, postal cap, sun hat, name badge,
+stethoscope, bow tie, apron. Bone-space objects are scaled by the inverse bone world scale (the rigs use ~95×).
+Players still use the robot model; the same pipeline will give them human avatars in Step 3.
+Preview any look without joining the game: `http://localhost:5173/dev/preview.html?npcs=barista,doctor` (dev only).
