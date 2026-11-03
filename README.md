@@ -130,3 +130,19 @@ as a PWA (Add to Home Screen). See `docs/PERF.md` for the layout notes and draw-
 - **IPA**: `GET /dict/ipa?words=a,b` from CMUdict (BSD, `apps/api/data/cmudict.dict.gz`, US English,
   ARPAbet → IPA with stress marks). No LLM involved. Tap any word in an NPC line for IPA + meaning + 🔊 + save to notebook (`POST /me/vocab`).
 - `/admin/stats` → `learning`: subtitle turns, word taps, chat translations, settings changes.
+
+## Talking to other players (Step 2 / phase 9)
+
+- **Tap a player** → popup: *Request to talk*, wave, report. The other side gets Accept / Not now.
+  A talk is a private text channel (server-relayed, profanity-masked, nobody else receives it) plus voice:
+  the requester's microphone is used if on, the partner auto-joins the voice mesh in **listen-only** mode
+  (no mic permission needed) and can turn their own mic on from the talk box. The server (`StreetRoom`) is the
+  referee: both players must be within `PROXIMITY_RADIUS + INTERACT_RADIUS`, neither already in a talk,
+  and the talk ends when they drift beyond `TALK_DROP_RADIUS` or one of them leaves.
+- **Shout** 📢: a text shout (toggle next to the chat input) is delivered to everyone within `SHOUT_RADIUS`
+  (24 m vs 8 m for normal chat), shown as a big red bubble, limited to one per 5 s per player. Holding the
+  📢 button shouts with your voice: your `shouting` flag is in the room state, and every player within the
+  radius connects to you at full volume (listen-only if they had voice off); releasing drops the extra connections.
+- Status dots next to names: red = shouting, green = talking with you, grey = talking with someone else.
+- Load test: `BOTS=50 SECONDS=30 SHOUT_RATE=0.002 pnpm --filter @es/game-server load:bots` (≈10 % of bots
+  shouting per minute) measured 12 % CPU on the dev VPS, same as without shouts.

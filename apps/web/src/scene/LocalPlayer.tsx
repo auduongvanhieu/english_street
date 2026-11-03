@@ -94,7 +94,8 @@ export function LocalPlayer({ name }: { name: string }) {
     sendAcc.current += dt;
     if (sendAcc.current >= 1 / INPUT_RATE_HZ) {
       sendAcc.current = 0;
-      sendInput(g.position.x, g.position.z, g.rotation.y, anim.current, useVoiceChat.getState().enabled);
+      const vc = useVoiceChat.getState();
+      sendInput(g.position.x, g.position.z, g.rotation.y, anim.current, vc.enabled, vc.shouting);
     }
 
     // --- interaction target (nearest NPC in range), checked ~10x/s ---

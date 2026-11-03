@@ -11,7 +11,9 @@ import { AuthScreen } from './ui/AuthScreen';
 import { ProfileHud, UiPanels } from './ui/ProfilePanels';
 import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
-import { useVoiceChat } from './net/voicechat';
+import { initVoiceWatch, useVoiceChat } from './net/voicechat';
+import { initTalkMessaging, useTalk } from './store/talk';
+import { PlayerPopup, ShoutButton, TalkBox, TalkToast } from './ui/Talk';
 import { isTouchDevice } from './input/joystick';
 import { attachCameraGestures } from './input/camera';
 import { Joystick } from './ui/Joystick';
@@ -36,6 +38,7 @@ export default function App() {
   const stage = useRef<HTMLDivElement>(null);
   const busy = useGame((s) => s.panelNpc !== null || s.uiPanel !== null);
   const inPair = usePair((s) => !!s.state || s.loading || !!s.summaries);
+  const inTalk = useTalk((s) => !!s.partner);
   useKeyboardInset();
 
   // Load NPC definitions once; subscribe to pair-quest relay messages.
@@ -45,8 +48,12 @@ export default function App() {
       .then((n) => useGame.getState().setNpcs(n))
       .catch(() => setNpcError(true));
     const off = initPairMessaging();
+    const offTalk = initTalkMessaging();
+    const offWatch = initVoiceWatch();
     return () => {
       off();
+      offTalk();
+      offWatch();
     };
   }, []);
 
@@ -115,14 +122,15 @@ export default function App() {
             <FeedbackButton compact />
           </div>
           {/* bottom-right: actions */}
-          {!hudHidden && !chatOpen && (
+          {!hudHidden && !chatOpen && !inTalk && (
             <div data-ui className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] flex flex-col items-end gap-3">
               <TalkButton />
               <EmoteBar compact />
+              <ShoutButton compact />
               <HudButton onClick={() => setChatOpen(true)} title="Nearby chat">💬</HudButton>
             </div>
           )}
-          {!hudHidden && !chatOpen && <Joystick />}
+          {!hudHidden && !chatOpen && !inTalk && <Joystick />}
           <ChatBox compact open={chatOpen} onClose={() => setChatOpen(false)} />
         </>
       ) : (
@@ -130,6 +138,7 @@ export default function App() {
           <div data-ui className="absolute left-3 top-3 flex flex-wrap gap-2">
             <EmoteBar />
             <VoiceChatButton />
+            <ShoutButton />
             <SettingsButton />
             <FeedbackButton />
           </div>
@@ -140,6 +149,9 @@ export default function App() {
 
       <ProfileHud compact={touch} />
       <InviteToast />
+      <TalkToast />
+      {!hudHidden && <PlayerPopup />}
+      {!hudHidden && <TalkBox compact={touch} />}
       <NpcPanel />
       <PairPanel />
       <UiPanels />

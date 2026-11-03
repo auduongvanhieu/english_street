@@ -28,6 +28,9 @@ const TAG_RADIUS = 22;
 
 function Remote({ p }: { p: RemotePlayer }) {
   const ref = useRef<THREE.Group>(null);
+  const selected = useGame((s) => s.selectedPlayer === p.id);
+  const select = useGame((s) => s.setSelectedPlayer);
+  const mySession = useGame((s) => s.sessionId);
   const [near, setNear] = useState(true);
   const [tag, setTag] = useState(true);
   const acc = useRef(Math.random());
@@ -50,10 +53,24 @@ function Remote({ p }: { p: RemotePlayer }) {
     if (n !== near) setNear(n);
     if (t !== tag) setTag(t);
   });
+  const badge = p.shouting ? 'shout' : p.talkWith ? (p.talkWith === mySession ? 'talk' : 'busy') : undefined;
   return (
-    <group ref={ref} position={[p.x, p.y, p.z]}>
+    <group
+      ref={ref}
+      position={[p.x, p.y, p.z]}
+      onClick={(e) => {
+        e.stopPropagation();
+        select(selected ? null : p.id);
+      }}
+    >
       {near ? <Character anim={p.anim} tint={avatarColor(p.avatar, '#e2a04a')} /> : null}
-      {tag ? <NameTag name={p.name} bubble={p.bubble} /> : null}
+      {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} /> : null}
+      {selected ? (
+        <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>
+          <ringGeometry args={[0.6, 0.75, 32]} />
+          <meshBasicMaterial color="#60a5fa" />
+        </mesh>
+      ) : null}
     </group>
   );
 }

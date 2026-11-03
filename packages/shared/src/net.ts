@@ -9,6 +9,10 @@ export const MSG = {
   RTC: 'rtc',
   /** both ways: pair-quest invitations and transcript relay */
   PAIR: 'pair',
+  /** both ways: one-to-one conversation (request / accept / decline / private lines / end) */
+  TALK: 'talk',
+  /** client -> server: text heard within SHOUT_RADIUS; server -> client as a CHAT message with shout: true */
+  SHOUT: 'shout',
 } as const;
 
 export interface JoinOptions {
@@ -28,7 +32,29 @@ export interface InputMessage {
   anim: string;
   /** Player has proximity voice chat enabled. */
   voice: boolean;
+  /** Holding the shout button: nearby players connect even beyond the normal voice radius. */
+  shouting?: boolean;
 }
+
+/** Chat line as delivered by the server. */
+export interface ChatDelivery {
+  from: string;
+  pid: string;
+  name: string;
+  text: string;
+  shout?: boolean;
+}
+
+/** One-to-one talk. `to` is the other player's sessionId; the server adds `from` and sends `start`/`end` itself. */
+export type TalkMessage = { to: string; from?: string } & (
+  | { type: 'request'; name: string }
+  | { type: 'accept' }
+  | { type: 'decline' }
+  | { type: 'start'; name: string }
+  | { type: 'msg'; text: string }
+  | { type: 'typing' }
+  | { type: 'end'; reason?: 'left' | 'distance' | 'busy' }
+);
 
 /** Relayed verbatim; `to` is the target sessionId, the server adds `from`. */
 export interface RtcSignal {

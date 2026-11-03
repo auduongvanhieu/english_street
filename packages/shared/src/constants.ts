@@ -15,3 +15,9 @@ export const PROXIMITY_RADIUS = 8;
 export const WORLD_BOUNDS = { minX: -41, maxX: 41, minZ: -5.5, maxZ: 13.5 } as const;
 /** Distance from an NPC within which the player can start talking. */
 export const INTERACT_RADIUS = 2.6;
+/** Distance within which a shout (text or voice) is heard. */
+export const SHOUT_RADIUS = 24;
+/** Minimum time between two shouts from the same player. */
+export const SHOUT_COOLDOWN_MS = 5000;
+/** A private talk ends automatically when the two players drift further apart than this. */
+export const TALK_DROP_RADIUS = PROXIMITY_RADIUS * 2;

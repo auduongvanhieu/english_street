@@ -13,6 +13,10 @@ export class Player extends Schema {
   @type('string') anim = 'idle';
   /** Proximity voice chat enabled. */
   @type('boolean') voice = false;
+  /** Holding the shout button (voice heard within SHOUT_RADIUS). */
+  @type('boolean') shouting = false;
+  /** sessionId of the player this one is in a private talk with ('' = none). */
+  @type('string') talkWith = '';
   /** Last chat bubble text and when it was sent (ms epoch). */
   @type('string') bubble = '';
   @type('number') bubbleAt = 0;

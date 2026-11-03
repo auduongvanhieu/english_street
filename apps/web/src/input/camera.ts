@@ -27,7 +27,11 @@ export function attachCameraGestures(el: HTMLElement): () => void {
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) pinchDist = spread();
     dragging = true;
-    el.setPointerCapture?.(e.pointerId);
+    // No pointer capture here: capturing on the container would steal pointerup from the canvas and
+    // break R3F click events (tapping a player). Window listeners track the drag instead.
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   }
   function move(e: PointerEvent) {
     const prev = pointers.get(e.pointerId);
@@ -46,7 +50,12 @@ export function attachCameraGestures(el: HTMLElement): () => void {
   function up(e: PointerEvent) {
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinchDist = 0;
-    if (pointers.size === 0) dragging = false;
+    if (pointers.size === 0) {
+      dragging = false;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    }
   }
   function wheel(e: WheelEvent) {
     if (isUi(e.target)) return;
@@ -61,16 +70,13 @@ export function attachCameraGestures(el: HTMLElement): () => void {
   };
 
   el.addEventListener('pointerdown', down);
-  el.addEventListener('pointermove', move);
-  el.addEventListener('pointerup', up);
-  el.addEventListener('pointercancel', up);
   el.addEventListener('wheel', wheel, { passive: false });
   el.addEventListener('contextmenu', noMenu);
   return () => {
     el.removeEventListener('pointerdown', down);
-    el.removeEventListener('pointermove', move);
-    el.removeEventListener('pointerup', up);
-    el.removeEventListener('pointercancel', up);
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
     el.removeEventListener('wheel', wheel);
     el.removeEventListener('contextmenu', noMenu);
   };

@@ -6,7 +6,7 @@ import { usePair } from '../store/pair';
 import { API_URL, sendFeedback } from '../net/api';
 import { useSettings } from '../store/settings';
 import { getPlayerId } from '../net/player';
-import { sendChat } from '../net/client';
+import { sendChat, sendShout } from '../net/client';
 import { translateText } from '../net/api';
 import { track } from '../net/analytics';
 
@@ -127,6 +127,7 @@ export function HintToast({ touch }: { touch: boolean }) {
 export function ChatBox({ compact, open, onClose }: { compact: boolean; open: boolean; onClose: () => void }) {
   const chatLog = useGame((s) => s.chatLog);
   const [chat, setChat] = useState('');
+  const [shout, setShout] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const log = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -152,7 +153,11 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
   function submit(e: FormEvent) {
     e.preventDefault();
     const t = chat.trim();
-    if (t) sendChat(t);
+    if (t && shout) {
+      sendShout(t);
+      track('shout');
+      setShout(false);
+    } else if (t) sendChat(t);
     setChat('');
     if (compact) onClose();
     else input.current?.blur();
@@ -164,8 +169,8 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
     return (
       <div className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] w-[70vw] max-w-sm -translate-x-1/2 space-y-0.5 text-center text-xs text-white [text-shadow:0_1px_2px_rgba(0,0,0,.8)]">
         {recent.map((m, i) => (
-          <div key={i} className="truncate">
-            <b>{m.name}:</b> {m.text}
+          <div key={i} className={`truncate ${m.shout ? 'text-yellow-300' : ''}`}>
+            {m.shout ? '📢 ' : ''}<b>{m.name}:</b> {m.text}
           </div>
         ))}
       </div>
@@ -183,8 +188,8 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
           <span className="opacity-60">Nearby chat will appear here.</span>
         ) : (
           chatLog.map((m, i) => (
-            <div key={i}>
-              <b>{m.name}:</b> {m.text}
+            <div key={i} className={m.shout ? 'text-yellow-300' : ''}>
+              {m.shout ? '📢 ' : ''}<b>{m.name}:</b> {m.text}
               <TranslateButton text={m.text} />
               <ReportButton targetName={m.name} targetPlayerId={m.pid} />
             </div>
@@ -192,7 +197,16 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
         )}
       </div>
       <form onSubmit={submit} className="flex gap-2">
-        <input ref={input} value={chat} onChange={(e) => setChat(e.target.value)} placeholder="Say something in English…" maxLength={140} enterKeyHint="send" className="min-h-11 w-full rounded-lg border bg-white/90 px-3 py-2 text-base sm:min-h-0 sm:text-sm" />
+        <button
+          type="button"
+          onClick={() => setShout((v) => !v)}
+          aria-pressed={shout}
+          title={shout ? 'Shout: everyone across the street will read this' : 'Shout (heard further away, once every 5 s)'}
+          className={`min-h-11 shrink-0 rounded-lg px-2 text-base sm:min-h-0 ${shout ? 'bg-red-600 text-white' : 'bg-black/40 text-white/80'}`}
+        >
+          📢
+        </button>
+        <input ref={input} value={chat} onChange={(e) => setChat(e.target.value)} placeholder={shout ? 'Shout to the whole street…' : 'Say something in English…'} maxLength={140} enterKeyHint="send" className={`min-h-11 w-full rounded-lg border bg-white/90 px-3 py-2 text-base sm:min-h-0 sm:text-sm ${shout ? 'ring-2 ring-red-500' : ''}`} />
         {compact && (
           <>
             <button type="submit" className="min-h-11 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white">Send</button>
@@ -235,10 +249,10 @@ export function InviteToast() {
 }
 
 /** "dịch" link under a chat line: Vietnamese translation on demand (cached server-side). */
-export function TranslateButton({ text }: { text: string }) {
+export function TranslateButton({ text, dark }: { text: string; dark?: boolean }) {
   const [vi, setVi] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  if (vi) return <div className="text-xs text-blue-200">{vi}</div>;
+  if (vi) return <div className={`text-xs ${dark ? 'text-blue-800' : 'text-blue-200'}`}>{vi}</div>;
   return (
     <button
       type="button"
@@ -251,7 +265,7 @@ export function TranslateButton({ text }: { text: string }) {
           .catch(() => setVi('(cannot translate right now)'))
           .finally(() => setBusy(false));
       }}
-      className="ml-1 px-1 text-xs text-gray-300 hover:text-white"
+      className={`ml-1 px-1 text-xs ${dark ? 'text-gray-400 hover:text-gray-700' : 'text-gray-300 hover:text-white'}`}
       title="Translate to Vietnamese"
     >
       {busy ? '…' : 'dịch'}

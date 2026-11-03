@@ -9,6 +9,9 @@ export interface RemotePlayer {
   rot: number;
   anim: string;
   voice: boolean;
+  shouting: boolean;
+  /** sessionId of their private-talk partner ('' = free). */
+  talkWith: string;
   pid: string;
   /** JSON-encoded avatar config from the join options */
   avatar: string;
@@ -44,8 +47,11 @@ interface GameState {
   players: Record<string, RemotePlayer>;
   upsertPlayer: (p: RemotePlayer) => void;
   removePlayer: (id: string) => void;
-  chatLog: { from: string; pid: string; name: string; text: string; at: number }[];
-  pushChat: (m: { from: string; pid: string; name: string; text: string }) => void;
+  chatLog: { from: string; pid: string; name: string; text: string; shout?: boolean; at: number }[];
+  pushChat: (m: { from: string; pid: string; name: string; text: string; shout?: boolean }) => void;
+  /** Remote player tapped in the scene (shows the player popup). */
+  selectedPlayer: string | null;
+  setSelectedPlayer: (id: string | null) => void;
   /** Local one-shot emote (anim name) and when it ends. */
   emote: { name: string; until: number } | null;
   playEmote: (name: string) => void;
@@ -85,6 +91,8 @@ export const useGame = create<GameState>((set) => ({
     }),
   chatLog: [],
   pushChat: (m) => set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
+  selectedPlayer: null,
+  setSelectedPlayer: (selectedPlayer) => set({ selectedPlayer }),
   emote: null,
   playEmote: (name) => set({ emote: { name, until: Date.now() + 2600 } }),
   uiPanel: null,

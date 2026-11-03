@@ -71,7 +71,7 @@ export async function computeStats(repo: AttemptRepo, days: number) {
       errors: { rateLimited: count('rate_limited'), quota: count('daily_quota_exhausted'), budget: count('daily_budget_exhausted') },
       spendToday: spend,
     },
-    social: { pairQuests: count('pair_start'), voiceChatEnabled: count('voice_chat_on'), reports: count('report'), feedback: count('feedback') },
+    social: { pairQuests: count('pair_start'), voiceChatEnabled: count('voice_chat_on'), reports: count('report'), feedback: count('feedback'), talks: count('talk_start'), shouts: count('shout'), voiceShouts: count('voice_shout') },
     learning: {
       subtitleTurns: events.filter((e) => e.name === 'npc_turn' && e.props?.subtitles === true).length,
       wordTaps: count('word_tap'),

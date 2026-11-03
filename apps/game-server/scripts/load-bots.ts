@@ -9,6 +9,8 @@
 import { Client, getStateCallbacks } from '@colyseus/sdk';
 import { INPUT_RATE_HZ, MSG, STREET_ROOM, WORLD_BOUNDS } from '@es/shared';
 
+/** Probability per tick that a bot shouts (SHOUT_RATE=0.002 ≈ 10% of bots shouting per minute at 20 Hz). */
+const SHOUT_RATE = Number(process.env.SHOUT_RATE ?? 0);
 const BOTS = Number(process.env.BOTS ?? 50);
 const SECONDS = Number(process.env.SECONDS ?? 30);
 const WS_URL = process.env.WS_URL ?? 'ws://localhost:2567';
@@ -53,6 +55,7 @@ async function bot(i: number) {
     if (!pending) pending = { x, at: performance.now() };
     room.send(MSG.INPUT, { x, z, rot: heading, anim: 'walk', voice: false });
     if (Math.random() < 0.01) room.send(MSG.CHAT, `hello from bot ${i}`);
+    if (Math.random() < SHOUT_RATE) room.send(MSG.SHOUT, `anyone want to practise? bot ${i}`);
   }, 1000 / INPUT_RATE_HZ);
   return () => {
     clearInterval(tick);
