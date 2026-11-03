@@ -1,0 +1,24 @@
+{
+  "name": "@es/game-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^5.0.43",
+    "@colyseus/ws-transport": "^0.18.4",
+    "@es/shared": "workspace:*",
+    "colyseus": "^0.18.10",
+    "dotenv": "^18.0.9",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,50 @@
+import { create } from 'zustand';
+
+export interface RemotePlayer {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  z: number;
+  rot: number;
+  anim: string;
+  bubble: string;
+}
+
+export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'error';
+
+interface GameState {
+  playerName: string;
+  setPlayerName: (n: string) => void;
+  conn: ConnStatus;
+  setConn: (c: ConnStatus) => void;
+  sessionId: string | null;
+  setSessionId: (id: string | null) => void;
+  players: Record<string, RemotePlayer>;
+  upsertPlayer: (p: RemotePlayer) => void;
+  removePlayer: (id: string) => void;
+  chatLog: { name: string; text: string; at: number }[];
+  pushChat: (m: { name: string; text: string }) => void;
+}
+
+export const useGame = create<GameState>((set) => ({
+  playerName: localStorage.getItem('es:name') ?? '',
+  setPlayerName: (n) => {
+    localStorage.setItem('es:name', n);
+    set({ playerName: n });
+  },
+  conn: 'idle',
+  setConn: (conn) => set({ conn }),
+  sessionId: null,
+  setSessionId: (sessionId) => set({ sessionId }),
+  players: {},
+  upsertPlayer: (p) => set((s) => ({ players: { ...s.players, [p.id]: p } })),
+  removePlayer: (id) =>
+    set((s) => {
+      const { [id]: _removed, ...rest } = s.players;
+      return { players: rest };
+    }),
+  chatLog: [],
+  pushChat: (m) =>
+    set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
+}));

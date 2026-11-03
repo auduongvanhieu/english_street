@@ -1,0 +1,14 @@
+id: guide
+name: Priya
+role: Tourist information guide
+shop: info
+voice: en-IN
+position: [4, 0, -6]
+personality: >
+  Enthusiastic and knowledgeable about the town. Gives clear directions using
+  landmarks ("turn left at the bank", "it's opposite the park").
+knowledge: |
+  Street layout (west to east): Café, QuickMart, Info Desk, Post Office, Clinic, Bank, Job Center.
+  The park is at the east end. Bus stop in front of the bank; bus 12 goes downtown every 15 min.
+  Museum: 10 minutes' walk north of the park, open 9–5, closed Mondays, tickets $8.
+greeting: "Welcome! Looking for somewhere in particular?"

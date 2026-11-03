@@ -1,0 +1,18 @@
+id: mart-return-01
+npc: cashier
+level: A2
+title: It Doesn't Work
+intro: The umbrella you bought yesterday is broken. Return it and get a refund.
+goals:
+  - id: explain
+    desc: Explain the problem with the umbrella
+  - id: receipt
+    desc: Say you have the receipt
+  - id: refund
+    desc: Ask for a refund
+  - id: thank
+    desc: Thank the cashier
+target_vocab: [broken, refund, receipt, exchange, yesterday]
+target_phrases: ["I bought this…", "It doesn't work", "Can I get a refund?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

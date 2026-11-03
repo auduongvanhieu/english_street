@@ -1,0 +1,16 @@
+id: info-directions-01
+npc: guide
+level: A1
+title: Which Way to the Bank?
+intro: Ask the guide how to get to the bank and how long it takes.
+goals:
+  - id: ask_way
+    desc: Ask how to get to the bank
+  - id: ask_time
+    desc: Ask how long it takes to walk
+  - id: confirm
+    desc: Repeat the directions back to confirm
+target_vocab: [left, right, straight, opposite, next to]
+target_phrases: ["How do I get to…?", "Is it far?", "So I go…"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

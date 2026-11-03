@@ -1,0 +1,18 @@
+id: info-museum-01
+npc: guide
+level: A2
+title: A Day at the Museum
+intro: Plan a museum visit. Find out opening hours, ticket price, and how to get there by bus.
+goals:
+  - id: hours
+    desc: Ask about opening hours
+  - id: price
+    desc: Ask the ticket price
+  - id: bus
+    desc: Ask which bus goes there
+  - id: closed
+    desc: Find out which day it's closed
+target_vocab: [opening hours, ticket, bus stop, closed, every]
+target_phrases: ["What time does it open?", "How much are tickets?", "Which bus…?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

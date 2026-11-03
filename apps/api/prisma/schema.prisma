@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+}
+
+enum QuestAttemptStatus {
+  active
+  completed
+  failed
+  abandoned
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  name         String
+  passwordHash String?
+  cefrLevel    CefrLevel @default(A1)
+  xp           Int      @default(0)
+  coins        Int      @default(0)
+  streak       Int      @default(0)
+  lastActiveAt DateTime @default(now())
+  avatarConfig Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  attempts QuestAttempt[]
+  vocab    VocabEntry[]
+}
+
+model QuestAttempt {
+  id          String             @id @default(cuid())
+  userId      String
+  questId     String
+  npcId       String
+  status      QuestAttemptStatus @default(active)
+  score       Int?
+  turns       Int                @default(0)
+  goalsDone   String[]           @default([])
+  transcript  Json               @default("[]")
+  corrections Json               @default("[]")
+  startedAt   DateTime           @default(now())
+  finishedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, questId])
+}
+
+model VocabEntry {
+  id           String   @id @default(cuid())
+  userId       String
+  word         String
+  meaningVi    String
+  example      String
+  ease         Float    @default(2.5)
+  intervalDays Int      @default(0)
+  nextReviewAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, word])
+  @@index([userId, nextReviewAt])
+}

@@ -1,0 +1,18 @@
+id: cafe-order-01
+npc: barista
+level: A1
+title: Morning Coffee
+intro: You're at Sunny Side café. Order a drink and a snack, then pay.
+goals:
+  - id: greet
+    desc: Greet the barista
+  - id: order_drink
+    desc: Order a drink (any size)
+  - id: order_food
+    desc: Order something to eat
+  - id: pay
+    desc: Pay and say goodbye
+target_vocab: [latte, croissant, small, medium, large, receipt]
+target_phrases: ["Can I have…", "I'd like…", "Here you go"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

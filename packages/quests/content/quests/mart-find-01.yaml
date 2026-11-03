@@ -1,0 +1,18 @@
+id: mart-find-01
+npc: cashier
+level: A1
+title: Where Is the Milk?
+intro: You need milk and toothpaste. Ask the cashier where to find them, then buy them.
+goals:
+  - id: ask_milk
+    desc: Ask where the milk is
+  - id: ask_toothpaste
+    desc: Ask where the toothpaste is
+  - id: buy
+    desc: Buy both items
+  - id: bag
+    desc: Ask for (or refuse) a bag
+target_vocab: [aisle, milk, toothpaste, bag, receipt]
+target_phrases: ["Where can I find…?", "Excuse me…", "No bag, thanks"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

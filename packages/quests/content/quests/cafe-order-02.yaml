@@ -1,0 +1,18 @@
+id: cafe-order-02
+npc: barista
+level: A2
+title: Oat Milk, Please
+intro: Order a latte with a different milk, ask the price, and ask about the loyalty card.
+goals:
+  - id: order_custom
+    desc: Order a latte with oat or almond milk
+  - id: ask_price
+    desc: Ask how much it costs
+  - id: ask_loyalty
+    desc: Ask about the loyalty card
+  - id: pay
+    desc: Pay by card
+target_vocab: [oat milk, almond milk, loyalty card, total, card]
+target_phrases: ["Could I get…", "How much is that?", "Do you have…?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }
