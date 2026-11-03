@@ -278,3 +278,8 @@ english-street/
 Mã nguồn: `/root/session_manager_workspaces/english-street/` (bản sao thiết kế tại `docs/GDD.md`). Hướng dẫn deploy: `docs/DEPLOY.md`.
 
 **Việc còn lại sau giai đoạn 6 (tuỳ chọn):** Google OAuth, TURN server cho voice chat qua NAT khó, chấm phát âm, STT server (Deepgram) cho trình duyệt không hỗ trợ Web Speech, nhiều instance game-server (redis-presence), thêm nội dung quest.
+
+
+## 9. Step 2 (2026-11-03 → 2026-11-04)
+
+Mobile HUD + PWA, cài đặt/phụ đề VI/IPA, Request to talk + Shout, NPC người theo nghề, chó mèo/hoa cỏ/âm thanh, app Flutter Android/iOS. Chi tiết và tiến độ: `/root/session_manager_workspaces/plans/english-street-step2.md`; tài liệu: `README.md`, `docs/PERF.md`, `docs/MOBILE.md`.
