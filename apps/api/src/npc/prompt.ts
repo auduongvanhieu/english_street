@@ -26,7 +26,7 @@ ${npc.knowledge.trim()}
 - reply: what you say out loud, in English.
 - emotion: neutral | happy | confused | annoyed — how you feel right now.
 - goals_completed: ids of quest goals the learner has JUST achieved in their latest message (only goals not yet done; empty if none). Be fair: a goal counts if the intent is clear even with small mistakes.
-- corrections: mistakes in the learner's latest message worth fixing (max 2, most important first). "explanation_vi" is a one-sentence explanation in Vietnamese. Ignore punctuation/capitalisation-only issues and casual chat style.
+- corrections: real mistakes in the learner's latest message worth fixing (max 2, most important first). "explanation_vi" is a one-sentence explanation in Vietnamese. Ignore punctuation/capitalisation-only issues and casual chat style. If the message is already correct, corrections must be an empty list — never "correct" a sentence into the same sentence.
 - new_vocab: 0–2 useful words or phrases from this exchange the learner may not know, with a Vietnamese meaning and a short example sentence.
 - hint: null normally. If the learner seems stuck, silent, or wrote in Vietnamese, give ONE short example of what they could say in English (optionally with a Vietnamese note).`;
 }

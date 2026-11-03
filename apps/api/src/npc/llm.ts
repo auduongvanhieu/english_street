@@ -169,9 +169,14 @@ function sanitize(out: NpcTurnResponse, input: TurnInput): NpcTurnResponse {
     ...out,
     reply: out.reply.trim().slice(0, 600),
     goals_completed: [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !input.goalsDone.includes(g)),
-    corrections: out.corrections.slice(0, 2),
+    // Drop "corrections" that change nothing (small models sometimes emit "this is already correct").
+    corrections: out.corrections.filter((c) => normalize(c.corrected) !== normalize(c.original)).slice(0, 2),
     new_vocab: out.new_vocab.slice(0, 2),
   };
+}
+
+function normalize(s: string) {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}']+/gu, ' ').trim();
 }
 
 export function createNpcLlm(): NpcLlm {
