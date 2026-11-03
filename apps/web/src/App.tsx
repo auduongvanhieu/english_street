@@ -91,7 +91,7 @@ export default function App() {
   }
 
   if (conn !== 'connected') {
-    return <AuthScreen initialName={draft} onPlay={(n) => void join(n)} connecting={conn === 'connecting'} connError={conn === 'error'} />;
+    return <AuthScreen initialName={draft} onPlay={(n) => void join(n)} connecting={conn === 'connecting'} connError={conn === 'error' ? (useGame.getState().connError ?? 'connect_failed') : null} />;
   }
 
   return (

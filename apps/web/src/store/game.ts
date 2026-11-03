@@ -36,6 +36,9 @@ interface GameState {
   setPlayerName: (n: string) => void;
   conn: ConnStatus;
   setConn: (c: ConnStatus) => void;
+  /** Server-side reason of the last failed join (e.g. beta_pass_required). */
+  connError: string | null;
+  setConnError: (m: string | null) => void;
   sessionId: string | null;
   setSessionId: (id: string | null) => void;
   players: Record<string, RemotePlayer>;
@@ -69,6 +72,8 @@ export const useGame = create<GameState>((set) => ({
   },
   conn: 'idle',
   setConn: (conn) => set({ conn }),
+  connError: null,
+  setConnError: (connError) => set({ connError }),
   sessionId: null,
   setSessionId: (sessionId) => set({ sessionId }),
   players: {},

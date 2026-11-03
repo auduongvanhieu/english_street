@@ -37,6 +37,7 @@ export function getRoom() {
 export async function connect(opts: JoinOptions): Promise<Room<StreetStateLike>> {
   const g = useGame.getState();
   g.setConn('connecting');
+  g.setConnError(null);
   try {
     const client = new Client(WS_URL);
     room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
@@ -46,6 +47,7 @@ export async function connect(opts: JoinOptions): Promise<Room<StreetStateLike>>
     return room;
   } catch (err) {
     console.error('[net] connect failed', err);
+    g.setConnError((err as Error)?.message ?? 'connect_failed');
     g.setConn('error');
     throw err;
   }

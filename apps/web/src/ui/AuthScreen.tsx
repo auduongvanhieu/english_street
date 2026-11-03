@@ -5,7 +5,7 @@ import { getBetaPass, setBetaPass } from '../net/player';
 
 type Mode = 'guest' | 'login' | 'register';
 
-export function AuthScreen({ initialName, onPlay, connecting, connError }: { initialName: string; onPlay: (name: string) => void; connecting: boolean; connError: boolean }) {
+export function AuthScreen({ initialName, onPlay, connecting, connError }: { initialName: string; onPlay: (name: string) => void; connecting: boolean; connError: string | null }) {
   const { loggedIn, profile, login, register, logout } = useProfile();
   const [mode, setMode] = useState<Mode>(loggedIn ? 'login' : 'guest');
   const [name, setName] = useState(initialName);
@@ -20,6 +20,14 @@ export function AuthScreen({ initialName, onPlay, connecting, connError }: { ini
       .then((c) => setBetaGate(c.betaGate))
       .catch(() => undefined);
   }, []);
+  // The game server refused us for lack of a beta pass: the stored pass (if any) is stale, ask for a code.
+  const gateRefused = !!connError && connError.includes('beta_pass_required');
+  useEffect(() => {
+    if (gateRefused) {
+      setBetaPass(null);
+      setBetaGate(true);
+    }
+  }, [gateRefused]);
   const needCode = betaGate && !getBetaPass() && !loggedIn;
 
   async function submit(e: FormEvent) {
@@ -99,7 +107,9 @@ export function AuthScreen({ initialName, onPlay, connecting, connError }: { ini
           {connecting ? 'Connecting…' : busy ? 'Please wait…' : mode === 'register' && !loggedIn ? 'Create account & play' : 'Enter the street'}
         </button>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-        {connError && <p className="mt-2 text-sm text-red-600">Cannot reach the game server. Is it running?</p>}
+        {connError && !error && (
+          <p className="mt-2 text-sm text-red-600">{gateRefused ? 'English Street is in closed beta — please enter your invite code.' : 'Cannot reach the game server. Is it running?'}</p>
+        )}
       </form>
     </div>
   );
