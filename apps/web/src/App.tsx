@@ -16,6 +16,8 @@ import { initTalkMessaging, useTalk } from './store/talk';
 import { PlayerPopup, ShoutButton, TalkBox, TalkToast } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
 import { setAmbientVolume } from './audio/ambient';
+import { exposeSession, isNativeApp, onNative } from './native/bridge';
+import { API_URL, post } from './net/api';
 import { useSettings } from './store/settings';
 import { isTouchDevice } from './input/joystick';
 import { attachCameraGestures, cameraOrbit } from './input/camera';
@@ -47,6 +49,10 @@ export default function App() {
   // Load NPC definitions once; subscribe to pair-quest relay messages.
   useEffect(() => {
     initAnalytics();
+    exposeSession(() => ({ playerId: getPlayerId(), token: getToken(), apiUrl: API_URL, name: useGame.getState().playerName }));
+    const offNative = onNative((e) => {
+      if (e.type === 'push.token') void post('/me/push-token', { playerId: getPlayerId(), token: e.token, platform: e.platform }).catch(() => undefined);
+    });
     fetchNpcs()
       .then((n) => useGame.getState().setNpcs(n))
       .catch(() => setNpcError(true));
@@ -57,6 +63,7 @@ export default function App() {
       off();
       offTalk();
       offWatch();
+      offNative();
     };
   }, []);
 
@@ -106,7 +113,7 @@ export default function App() {
     await prof.refresh();
     const avatar = JSON.stringify({ color: useProfile.getState().profile?.avatar.color ?? '#4a90e2' });
     await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }).catch(() => undefined);
-    track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch });
+    track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp() });
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {

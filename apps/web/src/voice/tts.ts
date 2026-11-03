@@ -1,7 +1,33 @@
-/** Text-to-speech via the browser SpeechSynthesis API. */
+import { nativeCall, nativeHas, onNative } from '../native/bridge';
+
+/** Text-to-speech via the browser SpeechSynthesis API, or the Flutter shell's native engine inside the app. */
 
 export function ttsSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  if (typeof window === 'undefined') return false;
+  return nativeHas('tts') || ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window);
+}
+
+let nativeSeq = 0;
+function speakNative(text: string, opts: SpeakOptions): () => void {
+  const id = ++nativeSeq;
+  let ended = false;
+  const end = () => {
+    if (ended) return;
+    ended = true;
+    off();
+    opts.onEnd?.();
+  };
+  const off = onNative((e) => {
+    if (e.type === 'tts.start' && e.id === id) opts.onStart?.();
+    else if (e.type === 'tts.end' && e.id === id) end();
+  });
+  void nativeCall('tts.speak', { id, text, lang: opts.lang ?? 'en-US', rate: opts.rate ?? 0.95 });
+  const guard = window.setTimeout(end, 2000 + text.length * 90);
+  return () => {
+    window.clearTimeout(guard);
+    void nativeCall('tts.stop');
+    end();
+  };
 }
 
 let voicesCache: SpeechSynthesisVoice[] = [];
@@ -41,7 +67,12 @@ export interface SpeakOptions {
 
 /** Speak `text`; returns a cancel function. Any ongoing speech is cancelled first. */
 export function speak(text: string, opts: SpeakOptions = {}): () => void {
-  if (!ttsSupported() || !text.trim()) {
+  if (!text.trim()) {
+    opts.onEnd?.();
+    return () => undefined;
+  }
+  if (nativeHas('tts')) return speakNative(text, opts);
+  if (!ttsSupported()) {
     opts.onEnd?.();
     return () => undefined;
   }
@@ -80,5 +111,6 @@ export function speak(text: string, opts: SpeakOptions = {}): () => void {
 }
 
 export function stopSpeaking() {
-  if (ttsSupported()) window.speechSynthesis.cancel();
+  if (nativeHas('tts')) void nativeCall('tts.stop');
+  else if (ttsSupported()) window.speechSynthesis.cancel();
 }

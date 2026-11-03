@@ -4,6 +4,7 @@ import { onTalk, sendTalk } from '../net/client';
 import { track } from '../net/analytics';
 import { useGame } from './game';
 import { useVoiceChat } from '../net/voicechat';
+import { haptic } from '../native/bridge';
 
 export interface TalkLine {
   from: 'me' | 'them';
@@ -98,7 +99,7 @@ export function initTalkMessaging() {
       case 'request':
         if (s.partner || s.incoming) return; // busy: the server will tell them when they try again
         useTalk.setState({ incoming: { from: m.from, name: m.name } });
-        if ('vibrate' in navigator) navigator.vibrate?.(120);
+        haptic('medium');
         return;
       case 'decline':
         if (s.pendingTo?.id === m.from) {

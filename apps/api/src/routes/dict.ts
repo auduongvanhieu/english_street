@@ -10,6 +10,7 @@ import { budget } from '../npc/budget';
 import { playerIdFrom } from '../auth';
 
 const TranslateSchema = z.object({ text: z.string().min(1).max(300), playerId: z.string().min(8).max(64).optional() });
+const PushTokenSchema = z.object({ playerId: z.string().min(8).max(64).optional(), token: z.string().min(10).max(512), platform: z.string().max(16).default('') });
 const AddVocabSchema = z.object({ playerId: z.string().min(8).max(64).optional(), word: z.string().min(1).max(40), meaningVi: z.string().min(1).max(200), example: z.string().max(300).default('') });
 
 /**
@@ -41,6 +42,16 @@ export function dictRoutes(llm: NpcLlm, cache: KeyedStore<{ vi: string }>, repo:
       const vi = await llm.translate(text);
       await cache.set(key, { vi });
       return { vi, cached: false };
+    });
+
+    // Mobile app: register the device for reminders (streak, daily quest). Sending is done by a separate job.
+    app.post('/me/push-token', async (req, reply) => {
+      const body = PushTokenSchema.safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const pid = playerIdFrom(req, body.data.playerId);
+      if (!pid) return reply.code(401).send({ error: 'unauthorized' });
+      await repo.savePushToken(pid, body.data.token, body.data.platform);
+      return reply.code(201).send({ ok: true });
     });
 
     app.post('/me/vocab', async (req, reply) => {

@@ -168,3 +168,10 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
 - **Ambient sound** (`audio/ambient.ts`): procedural wind/traffic noise bed + bird chirps and critter voices via WebAudio
   (no audio files). Follows the ⚙️ ambient slider; default 40 % on desktop, off on phones.
 - Draw calls after this phase: high 286 (budget 450), low 133 (budget 250).
+
+## Mobile app (Step 2 / phase 12)
+
+`apps/mobile` is a Flutter shell (Android + iOS) around the web game: WebView + native speech recognition /
+TTS bridge (needed on iOS), microphone permission for voice chat, haptics, offline Notebook, app settings,
+push-token registration (`POST /me/push-token`). Build with `flutter build apk --release`; CI builds APK/AAB
+in `.github/workflows/mobile.yml`. Details, store checklist and the bridge protocol: `docs/MOBILE.md`.

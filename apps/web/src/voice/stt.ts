@@ -1,5 +1,8 @@
+import { nativeCall, nativeHas, onNative } from '../native/bridge';
+
 /**
- * Speech-to-text via the browser Web Speech API (Chrome/Edge/Safari).
+ * Speech-to-text via the browser Web Speech API (Chrome/Edge/Safari), or the Flutter shell's native
+ * recogniser when the page runs inside the app (iOS WKWebView has no Web Speech API).
  * Minimal typings: lib.dom does not ship SpeechRecognition.
  */
 interface SRAlternative {
@@ -39,7 +42,8 @@ function ctor(): SRCtor | null {
 }
 
 export function sttSupported(): boolean {
-  return typeof window !== 'undefined' && ctor() !== null;
+  if (typeof window === 'undefined') return false;
+  return nativeHas('stt') || ctor() !== null;
 }
 
 export interface SttHandle {
@@ -58,6 +62,7 @@ export interface SttOptions {
 }
 
 export function startStt(opts: SttOptions): SttHandle | null {
+  if (nativeHas('stt')) return startNativeStt(opts);
   const C = ctor();
   if (!C) return null;
   const rec = new C();
@@ -87,4 +92,35 @@ export function startStt(opts: SttOptions): SttHandle | null {
     return null;
   }
   return { stop: () => rec.stop(), abort: () => rec.abort() };
+}
+
+function startNativeStt(opts: SttOptions): SttHandle {
+  let done = false;
+  const off = onNative((e) => {
+    if (done) return;
+    if (e.type === 'stt.interim') opts.onInterim(e.text);
+    else if (e.type === 'stt.final') opts.onFinal(e.text);
+    else if (e.type === 'stt.error') opts.onError(e.code);
+    else if (e.type === 'stt.end') {
+      done = true;
+      off();
+      opts.onEnd();
+    }
+  });
+  void nativeCall('stt.start', { lang: opts.lang ?? 'en-US' }).then((ok) => {
+    if (ok === false && !done) {
+      done = true;
+      off();
+      opts.onError('not-allowed');
+      opts.onEnd();
+    }
+  });
+  return {
+    stop: () => void nativeCall('stt.stop'),
+    abort: () => {
+      done = true;
+      off();
+      void nativeCall('stt.abort');
+    },
+  };
 }

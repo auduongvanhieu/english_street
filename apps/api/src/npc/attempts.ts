@@ -103,6 +103,9 @@ export interface AttemptRepo {
   countUsers(): Promise<{ total: number; registered: number; activeSince: (d: Date) => Promise<number> }>;
   createFeedback(f: FeedbackInput): Promise<void>;
   listFeedback(limit: number): Promise<(FeedbackInput & { createdAt: Date })[]>;
+  /** Mobile app push token (upsert; one row per device token). */
+  savePushToken(playerId: string, token: string, platform: string): Promise<void>;
+  listPushTokens(playerId: string): Promise<{ token: string; platform: string }[]>;
 }
 
 function bumpStreak(u: { streak: number; lastActiveAt: Date }, now = new Date()) {
@@ -249,6 +252,13 @@ export class MemoryAttemptRepo implements AttemptRepo {
   async listFeedback(limit: number) {
     return this.feedback.slice(-limit).reverse();
   }
+  pushTokens = new Map<string, { playerId: string; platform: string }>();
+  async savePushToken(playerId: string, token: string, platform: string) {
+    this.pushTokens.set(token, { playerId, platform });
+  }
+  async listPushTokens(playerId: string) {
+    return [...this.pushTokens.entries()].filter(([, v]) => v.playerId === playerId).map(([token, v]) => ({ token, platform: v.platform }));
+  }
 }
 
 // ---------------------------------------------------------------- postgres
@@ -363,6 +373,12 @@ export class PrismaAttemptRepo implements AttemptRepo {
   async listFeedback(limit: number) {
     const rows = await prisma.feedback.findMany({ orderBy: { createdAt: 'desc' }, take: limit });
     return rows.map((r) => ({ ...r, meta: r.meta as Record<string, unknown> }));
+  }
+  async savePushToken(playerId: string, token: string, platform: string) {
+    await prisma.pushToken.upsert({ where: { token }, create: { token, playerId, platform }, update: { playerId, platform } });
+  }
+  async listPushTokens(playerId: string) {
+    return prisma.pushToken.findMany({ where: { playerId }, select: { token: true, platform: true } });
   }
 }
 

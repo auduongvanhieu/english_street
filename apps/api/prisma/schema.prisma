@@ -112,3 +112,14 @@ model Feedback {
   meta      Json     @default("{}")
   createdAt DateTime @default(now())
 }
+
+/// Device push tokens registered by the mobile app (FCM / APNs via FCM). Used by the reminder job.
+model PushToken {
+  token     String   @id
+  playerId  String
+  platform  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([playerId])
+}
