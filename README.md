@@ -114,3 +114,8 @@ docker compose --env-file .env -f infra/docker-compose.prod.yml up -d --build
 ```
 
 Load test game-server: `BOTS=50 SECONDS=30 pnpm --filter @es/game-server load:bots` (50 bot: p95 45 ms, CPU 12 %).
+
+## Mobile
+
+The web client has a touch HUD (joystick, Talk button, bottom sheets, keyboard-safe inputs) and is installable
+as a PWA (Add to Home Screen). See `docs/PERF.md` for the layout notes and draw-call budget.

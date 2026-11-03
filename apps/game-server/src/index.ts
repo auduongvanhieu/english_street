@@ -1,8 +1,10 @@
 import { config as loadDotenv } from 'dotenv';
 import { findRootEnv } from '@es/shared/loadEnv';
 import { createServer } from 'node:http';
-import { Server, matchMaker } from 'colyseus';
-import { WebSocketTransport } from '@colyseus/ws-transport';
+// WebSocketTransport comes from the `colyseus` meta-package on purpose: importing it from
+// `@colyseus/ws-transport` directly can resolve a second copy of @colyseus/core under pnpm, and then
+// the matchmaker and the transport no longer share the room registry (every join fails with 4002).
+import { Server, WebSocketTransport, matchMaker } from 'colyseus';
 import { STREET_ROOM } from '@es/shared';
 import { StreetRoom } from './rooms/StreetRoom';
 

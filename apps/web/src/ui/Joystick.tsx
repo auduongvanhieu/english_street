@@ -1,7 +1,7 @@
 import { useRef, type PointerEvent } from 'react';
 import { joystick } from '../input/joystick';
 
-const SIZE = 128;
+const SIZE = 124;
 const KNOB = 52;
 const RANGE = (SIZE - KNOB) / 2;
 
@@ -20,7 +20,7 @@ export function Joystick() {
       dy = (dy / len) * RANGE;
     }
     joystick.x = dx / RANGE;
-    joystick.y = dy / RANGE; // screen down = world +Z (toward camera)
+    joystick.y = dy / RANGE; // screen down = toward the camera
     joystick.active = true;
     knob.current!.style.transform = `translate(${dx}px, ${dy}px)`;
   }
@@ -36,7 +36,8 @@ export function Joystick() {
   return (
     <div
       ref={base}
-      className="absolute bottom-6 left-6 touch-none select-none rounded-full bg-black/25 backdrop-blur-sm"
+      data-ui
+      className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[max(1.25rem,env(safe-area-inset-left))] touch-none select-none rounded-full bg-black/25 backdrop-blur-sm"
       style={{ width: SIZE, height: SIZE }}
       onPointerDown={(e) => {
         pointerId.current = e.pointerId;
@@ -49,11 +50,7 @@ export function Joystick() {
       onPointerUp={end}
       onPointerCancel={end}
     >
-      <div
-        ref={knob}
-        className="absolute rounded-full bg-white/80 shadow"
-        style={{ width: KNOB, height: KNOB, left: (SIZE - KNOB) / 2, top: (SIZE - KNOB) / 2 }}
-      />
+      <div ref={knob} className="absolute rounded-full bg-white/80 shadow" style={{ width: KNOB, height: KNOB, left: (SIZE - KNOB) / 2, top: (SIZE - KNOB) / 2 }} />
     </div>
   );
 }

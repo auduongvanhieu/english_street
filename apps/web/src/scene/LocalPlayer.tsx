@@ -8,13 +8,13 @@ import { useVoiceChat } from '../net/voicechat';
 import { useProfile } from '../store/profile';
 import { useGame } from '../store/game';
 import { joystick } from '../input/joystick';
+import { cameraOrbit } from '../input/camera';
 import { buildBlockers, resolveMove } from '../world/layout';
 import { Character } from './Character';
 import { NameTag } from './NameTag';
 
 export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 
-const CAM_OFFSET = new THREE.Vector3(0, 5.5, 8.5);
 /** Live local position (mutable, read by RemotePlayers for distance culling without React churn). */
 export const localPos = new THREE.Vector3(0, 0, 4);
 const SPAWN = new THREE.Vector3(0, 0, 4);
@@ -59,7 +59,10 @@ export function LocalPlayer({ name }: { name: string }) {
         run = Math.hypot(ix, iz) > 0.85;
       }
     }
-    dir.set(ix, 0, iz);
+    // Input is screen-relative; rotate it by the camera yaw so "up" always means away from the camera.
+    const cy = Math.cos(cameraOrbit.yaw);
+    const sy = Math.sin(cameraOrbit.yaw);
+    dir.set(ix * cy + iz * sy, 0, -ix * sy + iz * cy);
     const mag = Math.min(1, dir.length());
 
     // --- movement with collision ---
@@ -82,7 +85,8 @@ export function LocalPlayer({ name }: { name: string }) {
     localPos.copy(g.position);
 
     // --- third-person camera ---
-    camTarget.copy(g.position).add(CAM_OFFSET);
+    const back = cameraOrbit.dist * 0.84;
+    camTarget.set(g.position.x + sy * back, g.position.y + cameraOrbit.dist * 0.55, g.position.z + cy * back);
     camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
     camera.lookAt(g.position.x, g.position.y + 1.2, g.position.z);
 

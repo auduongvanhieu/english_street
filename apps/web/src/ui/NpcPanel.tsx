@@ -7,6 +7,7 @@ import { useVoice } from '../store/voice';
 import { startStt, type SttHandle } from '../voice/stt';
 import { usePair } from '../store/pair';
 import { INTERACT_RADIUS, PROXIMITY_RADIUS } from '@es/shared';
+import { Sheet, SheetHeader } from './Sheet';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -33,9 +34,8 @@ export function NpcPanel() {
   };
 
   return (
-    <div className="absolute inset-0 flex items-end justify-center bg-black/25 p-3 sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl">
-        <header className="flex items-start justify-between border-b px-5 py-3">
+    <Sheet onClose={() => void close()} label={`Talking to ${npc.name}`}>
+        <SheetHeader>
           <div>
             <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
             <p className="text-xs text-gray-500">{npc.role}</p>
@@ -52,11 +52,11 @@ export function NpcPanel() {
                 {voice.muted ? '🔇' : '🔊'}
               </button>
             )}
-            <button type="button" onClick={close} className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+            <button type="button" onClick={close} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
               ✕ <span className="hidden sm:inline">Esc</span>
             </button>
           </div>
-        </header>
+        </SheetHeader>
 
         {conv.summary ? (
           <Summary onClose={() => { conv.reset(); closePanel(); }} />
@@ -65,8 +65,7 @@ export function NpcPanel() {
         ) : (
           <Menu npcId={npc.id} greeting={npc.greeting} quests={npc.quests} pairQuests={npc.pairQuests} playerName={playerName} />
         )}
-      </div>
-    </div>
+    </Sheet>
   );
 }
 
@@ -80,7 +79,7 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
   const me = useGame((s) => (s.sessionId ? s.players[s.sessionId] : null));
   const nearby = me ? Object.values(players).filter((p) => p.id !== me.id && Math.hypot(p.x - me.x, p.z - me.z) <= PROXIMITY_RADIUS + INTERACT_RADIUS) : [];
   return (
-    <div className="p-5">
+    <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
       <p className="mb-4 rounded-xl bg-blue-50 px-4 py-3 text-blue-900">“{greeting}”</p>
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Quests</h3>
       <ul className="space-y-2">
@@ -90,7 +89,7 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
               <span className="mr-2 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">{q.level}</span>
               {q.title}
             </span>
-            <button type="button" disabled={loading} onClick={() => start(npcId, q.id, playerName)} className="rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
+            <button type="button" disabled={loading} onClick={() => start(npcId, q.id, playerName)} className="min-h-10 rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
               Start
             </button>
           </li>
@@ -247,7 +246,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
         </div>
       )}
 
-      <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3" style={{ minHeight: 240 }}>
+      <div ref={listRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3" style={{ minHeight: 160 }}>
         {state.messages.map((m, i) => (
           <Bubble key={i} m={m} onReplay={m.role === 'assistant' && voice.ttsSupported ? () => useVoice.getState().speakAs(npcId, m.content, lang) : undefined} />
         ))}
@@ -276,7 +275,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             disabled={loading || state.finished}
             aria-label="Hold to talk"
             title="Hold to talk (release to stop)"
-            className={`select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-50`}
+            className={`min-h-11 min-w-11 select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-50`}
           >
             🎤
           </button>
@@ -291,9 +290,10 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
           placeholder={state.finished ? 'Conversation finished' : voice.listening ? 'Listening…' : voice.sttSupported ? 'Type, or hold 🎤 to speak…' : 'Type in English…'}
           disabled={loading || state.finished}
           maxLength={500}
-          className="flex-1 rounded-lg border px-3 py-2 text-sm disabled:bg-gray-50"
+          enterKeyHint="send"
+          className="min-h-11 flex-1 rounded-lg border px-3 py-2 text-base disabled:bg-gray-50 sm:text-sm"
         />
-        <button type="submit" disabled={loading || state.finished || !text.trim()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+        <button type="submit" disabled={loading || state.finished || !text.trim()} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           Send
         </button>
       </form>
@@ -341,7 +341,7 @@ function Summary({ onClose }: { onClose: () => void }) {
   if (!summary) return null;
   const title = summary.status === 'completed' ? '🎉 Quest complete!' : summary.status === 'failed' ? '⏱️ Out of turns' : '👋 Quest left';
   return (
-    <div className="space-y-4 overflow-y-auto p-5">
+    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
       <div className="text-center">
         <h3 className="text-xl font-bold">{title}</h3>
         <div className="mt-1 text-4xl font-black text-blue-600">{summary.score}</div>
@@ -375,7 +375,7 @@ function Summary({ onClose }: { onClose: () => void }) {
           </ul>
         </section>
       )}
-      <button type="button" onClick={onClose} className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
+      <button type="button" onClick={onClose} className="min-h-12 w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
         Back to the street
       </button>
     </div>

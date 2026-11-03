@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@colyseus/schema": "^5.0.43",
-    "@colyseus/ws-transport": "^0.18.4",
     "@es/shared": "workspace:*",
     "colyseus": "^0.18.10",
     "dotenv": "^18.0.9",

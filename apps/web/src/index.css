@@ -1,4 +1,6 @@
 @import "tailwindcss";
 
 html, body, #root { height: 100%; }
+#root { height: 100dvh; }
+body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 canvas { display: block; touch-action: none; }

@@ -1,17 +1,39 @@
 import { useEffect, useState } from 'react';
 import { AVATAR_COLORS, BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
 import { useGame } from '../store/game';
+import { Sheet, SheetHeader } from './Sheet';
 import { useProfile } from '../store/profile';
 import { buyItem, fetchPlacement, fetchVocab, reviewVocab, setAvatarColor, submitPlacement } from '../net/api';
 
-export function ProfileHud() {
+export function ProfileHud({ compact }: { compact?: boolean }) {
   const p = useProfile((s) => s.profile);
   const open = useGame((s) => s.setUiPanel);
   if (!p) return null;
   const prevLevelXp = 50 * (p.level - 1) * (p.level - 1);
   const pct = Math.min(100, Math.round(((p.xp - prevLevelXp) / Math.max(1, p.nextLevelXp - prevLevelXp)) * 100));
+  if (compact) {
+    return (
+      <button
+        type="button"
+        data-ui
+        onClick={() => open('profile')}
+        className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-11 items-center gap-2 rounded-full bg-black/50 px-3 text-xs text-white backdrop-blur-sm"
+        aria-label="Profile"
+      >
+        <span className="max-w-24 truncate font-semibold">{p.name}</span>
+        <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono">{p.cefrLevel}</span>
+        <span className="flex items-center gap-1">
+          Lv {p.level}
+          <span className="h-1.5 w-10 rounded bg-white/20">
+            <span className="block h-1.5 rounded bg-yellow-400" style={{ width: `${pct}%` }} />
+          </span>
+        </span>
+        {!p.placementDone && <span className="rounded bg-yellow-400 px-1.5 py-0.5 font-medium text-black">🎯</span>}
+      </button>
+    );
+  }
   return (
-    <div className="absolute right-3 top-3 w-64 rounded-xl bg-black/50 p-3 text-xs text-white">
+    <div data-ui className="absolute right-3 top-3 w-64 rounded-xl bg-black/50 p-3 text-xs text-white">
       <div className="flex items-center justify-between">
         <span className="font-semibold">{p.name}</span>
         <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono">{p.cefrLevel}</span>
@@ -49,20 +71,59 @@ export function ProfileHud() {
   );
 }
 
+/** Phone-only profile sheet: stats plus the buttons the desktop card shows inline. */
+function ProfilePanel() {
+  const p = useProfile((s) => s.profile);
+  const open = useGame((s) => s.setUiPanel);
+  if (!p) return null;
+  const prevLevelXp = 50 * (p.level - 1) * (p.level - 1);
+  const pct = Math.min(100, Math.round(((p.xp - prevLevelXp) / Math.max(1, p.nextLevelXp - prevLevelXp)) * 100));
+  const Item = ({ to, children }: { to: 'daily' | 'notebook' | 'avatar' | 'placement'; children: React.ReactNode }) => (
+    <button type="button" onClick={() => open(to)} className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-base">
+      {children}
+    </button>
+  );
+  return (
+    <Panel title={`${p.name} · ${p.cefrLevel}`}>
+      <div className="mb-3 flex items-center gap-2 text-sm">
+        <span>Lv {p.level}</span>
+        <div className="h-2 flex-1 rounded bg-gray-200">
+          <div className="h-2 rounded bg-yellow-400" style={{ width: `${pct}%` }} />
+        </div>
+        <span>{p.xp} XP</span>
+      </div>
+      <div className="mb-4 flex justify-between text-sm text-gray-700">
+        <span>🪙 {p.coins}</span>
+        <span>🔥 {p.streak} day{p.streak === 1 ? '' : 's'}</span>
+        <span>🏅 {p.badges.length}</span>
+        {p.quota && <span title="NPC conversation turns left today">💬 {p.quota.turnsLeftToday} left</span>}
+      </div>
+      <div className="space-y-2">
+        {!p.placementDone && (
+          <button type="button" onClick={() => open('placement')} className="flex min-h-12 w-full items-center rounded-xl bg-yellow-400 px-4 text-left text-base font-medium text-black">
+            🎯 Take the 2-minute level test
+          </button>
+        )}
+        <Item to="daily">📋 Today's quests &amp; badges</Item>
+        <Item to="notebook">📓 Notebook</Item>
+        <Item to="avatar">🎨 Avatar &amp; shop</Item>
+      </div>
+    </Panel>
+  );
+}
+
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   const close = useGame((s) => s.setUiPanel);
   return (
-    <div className="absolute inset-0 flex items-end justify-center bg-black/25 p-3 sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button type="button" onClick={() => close(null)} className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
-            ✕
-          </button>
-        </header>
-        <div className="overflow-y-auto p-5">{children}</div>
-      </div>
-    </div>
+    <Sheet onClose={() => close(null)} label={title}>
+      <SheetHeader>
+        <h2 className="text-lg font-bold">{title}</h2>
+        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+          ✕
+        </button>
+      </SheetHeader>
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{children}</div>
+    </Sheet>
   );
 }
 
@@ -72,6 +133,7 @@ export function UiPanels() {
   if (which === 'notebook') return <NotebookPanel />;
   if (which === 'avatar') return <AvatarPanel />;
   if (which === 'placement') return <PlacementPanel />;
+  if (which === 'profile') return <ProfilePanel />;
   return null;
 }
 

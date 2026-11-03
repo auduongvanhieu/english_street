@@ -40,7 +40,13 @@ export async function connect(opts: JoinOptions): Promise<Room<StreetStateLike>>
   g.setConnError(null);
   try {
     const client = new Client(WS_URL);
-    room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
+    try {
+      room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
+    } catch (err) {
+      // Slow devices/networks can miss the matchmaking seat window; one retry fixes almost all of these.
+      if (!/seat reservation expired/i.test((err as Error)?.message ?? '')) throw err;
+      room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
+    }
     g.setSessionId(room.sessionId);
     g.setConn('connected');
     bindRoom(room);

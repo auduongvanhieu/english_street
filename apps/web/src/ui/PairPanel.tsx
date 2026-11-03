@@ -3,6 +3,7 @@ import type { PairLine } from '@es/shared';
 import { usePair } from '../store/pair';
 import { useGame } from '../store/game';
 import { getPlayerId } from '../net/player';
+import { Sheet, SheetHeader } from './Sheet';
 
 /** Two-player role-play: role card, shared transcript with per-line feedback, and the final summary. */
 export function PairPanel() {
@@ -33,20 +34,19 @@ export function PairPanel() {
   }
 
   return (
-    <div className="absolute inset-0 flex items-end justify-center bg-black/25 p-3 sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-xl flex-col rounded-2xl bg-white shadow-2xl">
-        <header className="flex items-start justify-between border-b px-5 py-3">
+    <Sheet wide label="Pair quest">
+        <SheetHeader>
           <div>
             <h2 className="text-lg font-bold leading-tight">👥 {s ? `with ${partner?.name ?? '…'}` : 'Starting…'}</h2>
             <p className="text-xs text-gray-500">{npc ? `${npc.name} is watching and will give feedback` : ''}</p>
           </div>
-          <button type="button" onClick={() => void pair.leave()} className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Leave pair quest">
+          <button type="button" onClick={() => void pair.leave()} className="min-h-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Leave pair quest">
             ✕ Leave
           </button>
-        </header>
+        </SheetHeader>
 
         {summary ? (
-          <div className="space-y-3 overflow-y-auto p-5">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
             <div className="text-center">
               <h3 className="text-xl font-bold">{summary.status === 'completed' ? '🎉 Well done!' : summary.status === 'failed' ? '⏱️ Out of lines' : '👋 Quest left'}</h3>
               <div className="mt-1 text-4xl font-black text-blue-600">{summary.score}</div>
@@ -106,16 +106,16 @@ export function PairPanel() {
                 disabled={pair.loading || s.finished || myTurns >= s.maxTurns || pair.partnerLeft}
                 maxLength={500}
                 autoFocus
-                className="flex-1 rounded-lg border px-3 py-2 text-sm disabled:bg-gray-50"
+                enterKeyHint="send"
+                className="min-h-11 flex-1 rounded-lg border px-3 py-2 text-base disabled:bg-gray-50 sm:text-sm"
               />
-              <button type="submit" disabled={pair.loading || s.finished || !text.trim()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+              <button type="submit" disabled={pair.loading || s.finished || !text.trim()} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
                 Send
               </button>
             </form>
           </>
         )}
-      </div>
-    </div>
+    </Sheet>
   );
 }
 
