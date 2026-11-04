@@ -30,3 +30,17 @@ Real-device FPS should be checked with the ⚡/✨ quality toggle; the `perf` an
 - Camera: one-finger drag (or mouse drag) orbits, pinch / wheel zooms (`input/camera.ts`); movement input is
   rotated by the camera yaw so "up" on the joystick is always "away from the camera".
 - PWA: `vite-plugin-pwa` precaches the app shell and caches `/models/*.glb` on first use (`es-models` cache).
+
+## Step 3 — 100 players per zone (2026-11-04, dev VPS, 6 GB)
+
+`BOTS=101 SECONDS=40 pnpm --filter @es/game-server load:bots` (every bot moves every tick = worst case):
+
+| Metric | Value |
+|---|---|
+| Rooms during the run | 2 (Main Street 100/100 + Main Street 2 1/100 — overflow works) |
+| Game-server CPU / RSS | 16 % / 121 MB |
+| Join time p50 / p95 | 7 ms / 30 ms |
+| Input→patch round-trip p50 / p95 | 23 ms / 46 ms |
+| Downstream per browser client (100 players, 20 Hz patches) | 19.3 KB/s, 21 frames/s |
+
+Decision: full-room state sync stays (no per-radius `StateView`); the threshold for revisiting is ~60 KB/s per client.

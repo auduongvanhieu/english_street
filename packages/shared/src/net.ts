@@ -13,6 +13,8 @@ export const MSG = {
   TALK: 'talk',
   /** client -> server: text heard within SHOUT_RADIUS; server -> client as a CHAT message with shout: true */
   SHOUT: 'shout',
+  /** server -> client on join: which zone this room is (ZoneMeta + id) */
+  ZONE: 'zone',
   /** server -> client on join: { now } server epoch ms, so every client can run the same deterministic street life clock */
   TIME: 'time',
 } as const;
@@ -25,7 +27,27 @@ export interface JoinOptions {
   /** Closed beta: invite pass from POST /beta/verify, or the account token (either satisfies the gate). */
   betaPass?: string;
   token?: string;
+  /** Zone selection: 'main' joins/creates a public Main Street (room filter key), 'custom' creates a named zone. */
+  zoneKind?: 'main' | 'custom';
+  /** Custom zone name (create) — ZONE_NAME_MIN..ZONE_NAME_MAX chars, profanity-checked. */
+  zoneName?: string;
+  /** Private zone code: required to join a locked zone, set when creating one. */
+  zoneCode?: string;
 }
+
+/** Public room metadata (visible in the zone list) + what the server sends on join (MSG.ZONE). */
+export interface ZoneMeta {
+  name: string;
+  kind: 'main' | 'custom';
+  /** Needs a code to enter. */
+  locked: boolean;
+}
+export interface ZoneInfo extends ZoneMeta {
+  id: string;
+  clients: number;
+  maxClients: number;
+}
+export type ZoneSelection = { mode: 'main' } | { mode: 'create'; name: string; code?: string } | { mode: 'join'; id: string; code?: string };
 
 export interface InputMessage {
   x: number;

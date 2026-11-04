@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 // `@colyseus/ws-transport` directly can resolve a second copy of @colyseus/core under pnpm, and then
 // the matchmaker and the transport no longer share the room registry (every join fails with 4002).
 import { Server, WebSocketTransport, matchMaker } from 'colyseus';
-import { STREET_ROOM } from '@es/shared';
+import { STREET_ROOM, type ZoneInfo } from '@es/shared';
 import { StreetRoom } from './rooms/StreetRoom';
 
 const envPath = findRootEnv(process.cwd());
@@ -22,6 +22,18 @@ let lastCpuAt = Date.now();
 const gameServer = new Server({
   transport: new WebSocketTransport({ server: httpServer }),
   express: (app) => {
+    // Zone list for the picker (the 0.18 SDK has no room listing call). Private codes never leave the room.
+    app.get('/zones', async (_req, res) => {
+      const rooms = await matchMaker.query({ name: STREET_ROOM });
+      const zones: ZoneInfo[] = rooms
+        .map((r) => {
+          const m = (r.metadata ?? {}) as Partial<ZoneInfo>;
+          return { id: r.roomId, name: m.name ?? '?', kind: m.kind === 'custom' ? 'custom' : 'main', locked: !!m.locked, clients: r.clients, maxClients: r.maxClients } as ZoneInfo;
+        })
+        .sort((a, b) => (a.kind === b.kind ? b.clients - a.clients : a.kind === 'main' ? -1 : 1));
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ zones });
+    });
     app.get('/health', (_req, res) => {
       const stats = matchMaker.stats.local;
       const cpu = process.cpuUsage(lastCpu);
@@ -34,7 +46,8 @@ const gameServer = new Server({
   },
 });
 
-gameServer.define(STREET_ROOM, StreetRoom);
+// joinOrCreate({ zoneKind: 'main' }) only matches public Main Street rooms, never custom zones.
+gameServer.define(STREET_ROOM, StreetRoom).filterBy(['zoneKind']);
 
 gameServer.listen(port).then(() => {
   console.log(`[game-server] listening on ws://localhost:${port}${process.env.BETA_CODES ? ' (closed beta: invite pass required)' : ''}`);

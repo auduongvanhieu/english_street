@@ -165,6 +165,12 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
 - **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh
   (9 draw calls); density 5+8 per tile on high, 2+3 on low. Textures were downsized to 256² WebP by the model build.
+- **Zones** (Step 3): every zone is a Colyseus room of the `street` type with up to 100 players. "Enter the street"
+  joins or creates a public *Main Street* (`joinOrCreate` filtered by `zoneKind: 'main'`; a full one spawns *Main Street 2*).
+  "Choose or create a zone…" opens the picker (`ui/ZoneScreen.tsx`): join a listed zone, create a named one (optionally
+  private with a 4–8 character code checked in `onJoin`), or follow an invite link `?zone=<id>[&code=…]`. The list comes
+  from `GET /zones` on the game server (`/ws/zones` behind nginx); custom zones auto-dispose when empty. The zone chip in
+  the HUD shows name + head count, copies the invite link and switches zones.
 - **Jump** (Step 3): Space on desktop, the ⤒ button next to the joystick on phones. Vertical motion is simulated on the
   client (`JUMP_SPEED`/`GRAVITY` in `@es/shared`), sent as `y` with each input and clamped by the server; remote players
   interpolate `y` and play the robot's one-shot `Jump` clip.

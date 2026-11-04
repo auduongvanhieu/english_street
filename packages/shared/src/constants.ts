@@ -4,7 +4,12 @@ export type CefrLevel = (typeof CEFR_LEVELS)[number];
 /** Colyseus room name for the main street. */
 export const STREET_ROOM = 'street';
 /** Max players per street instance before a new one is spawned. */
-export const STREET_ROOM_MAX_CLIENTS = 50;
+export const STREET_ROOM_MAX_CLIENTS = 100;
+/** Zone (room) names and private codes, validated on both sides. */
+export const ZONE_NAME_MIN = 3;
+export const ZONE_NAME_MAX = 24;
+export const ZONE_CODE_RE = /^[A-Za-z0-9]{4,8}$/;
+export const MAIN_ZONE_NAME = 'Main Street';
 /** Jump physics (client-simulated, server clamps y to MAX_JUMP_Y). */
 export const JUMP_SPEED = 6.2;
 export const GRAVITY = 22;

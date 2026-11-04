@@ -1,5 +1,5 @@
 import { Client, getStateCallbacks, type Room } from '@colyseus/sdk';
-import { MSG, STREET_ROOM, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage } from '@es/shared';
+import { MSG, STREET_ROOM, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -42,18 +42,51 @@ export function getRoom() {
 let clockOffset = 0;
 export const serverNow = () => Date.now() - clockOffset;
 
-export async function connect(opts: JoinOptions): Promise<Room<StreetStateLike>> {
+/** Zones = Colyseus rooms of the street type; the listing carries our metadata (name, kind, locked). */
+export async function listZones(): Promise<ZoneInfo[]> {
+  const res = await fetch(`${WS_URL.replace(/^ws/, 'http')}/zones`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`zones ${res.status}`);
+  return ((await res.json()) as { zones: ZoneInfo[] }).zones;
+}
+
+function joinZone(client: Client, opts: JoinOptions, zone: ZoneSelection) {
+  if (zone.mode === 'create') return client.create<StreetStateLike>(STREET_ROOM, { ...opts, zoneKind: 'custom', zoneName: zone.name, zoneCode: zone.code || undefined });
+  if (zone.mode === 'join') return client.joinById<StreetStateLike>(zone.id, { ...opts, zoneCode: zone.code || undefined });
+  return client.joinOrCreate<StreetStateLike>(STREET_ROOM, { ...opts, zoneKind: 'main' });
+}
+
+export function leaveRoom() {
+  const r = room;
+  room = null;
+  if (r) void r.leave(true);
+  const g = useGame.getState();
+  g.resetRoom();
+  g.setSessionId(null);
+  g.setConn('idle');
+}
+
+/** In-flight join, so a double call (React StrictMode effects, impatient taps) never opens two seats. */
+let connecting: Promise<Room<StreetStateLike>> | null = null;
+
+export function connect(opts: JoinOptions, zone: ZoneSelection = { mode: 'main' }): Promise<Room<StreetStateLike>> {
+  if (connecting) return connecting;
+  if (room) leaveRoom();
+  connecting = doConnect(opts, zone).finally(() => (connecting = null));
+  return connecting;
+}
+
+async function doConnect(opts: JoinOptions, zone: ZoneSelection): Promise<Room<StreetStateLike>> {
   const g = useGame.getState();
   g.setConn('connecting');
   g.setConnError(null);
   try {
     const client = new Client(WS_URL);
     try {
-      room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
+      room = await joinZone(client, opts, zone);
     } catch (err) {
       // Slow devices/networks can miss the matchmaking seat window; one retry fixes almost all of these.
       if (!/seat reservation expired/i.test((err as Error)?.message ?? '')) throw err;
-      room = await client.joinOrCreate<StreetStateLike>(STREET_ROOM, opts);
+      room = await joinZone(client, opts, zone);
     }
     g.setSessionId(room.sessionId);
     g.setConn('connected');
@@ -95,6 +128,7 @@ function bindRoom(r: Room<StreetStateLike>) {
   $(r.state).players.onRemove((_p, id) => g.removePlayer(id));
 
   r.onMessage<ChatDelivery>(MSG.CHAT, (m) => g.pushChat(m));
+  r.onMessage<ZoneInfo>(MSG.ZONE, (z) => g.setZone({ ...z, clients: 0, maxClients: 0 }));
   r.onMessage<{ now: number }>(MSG.TIME, (m) => {
     if (typeof m?.now === 'number') clockOffset = Date.now() - m.now;
   });
@@ -102,9 +136,11 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
   r.onLeave(() => {
-    g.setConn('idle');
-    g.setSessionId(null);
+    if (room !== r) return; // we left on purpose (leaveRoom already reset the store)
     room = null;
+    g.resetRoom();
+    g.setSessionId(null);
+    g.setConn('idle');
   });
 }
 

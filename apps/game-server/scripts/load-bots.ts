@@ -20,6 +20,21 @@ interface PlayerLike {
   x: number;
   z: number;
 }
+/** Bytes received by all bots (state patches + messages), to size per-client bandwidth. */
+let bytesIn = 0;
+{
+  const Native = globalThis.WebSocket;
+  class CountingSocket extends Native {
+    constructor(url: string | URL, protocols?: string | string[]) {
+      super(url, protocols);
+      this.addEventListener('message', (e) => {
+        const d = (e as MessageEvent).data;
+        bytesIn += typeof d === 'string' ? d.length : d instanceof ArrayBuffer ? d.byteLength : (d as Blob).size ?? 0;
+      });
+    }
+  }
+  globalThis.WebSocket = CountingSocket as typeof WebSocket;
+}
 const joinMs: number[] = [];
 const rtt: number[] = [];
 let patches = 0;
@@ -29,7 +44,7 @@ let errors = 0;
 async function bot(i: number) {
   const client = new Client(WS_URL);
   const t0 = performance.now();
-  const room = await client.joinOrCreate<{ players: Map<string, PlayerLike> }>(STREET_ROOM, { name: `Bot${i}`, avatar: '{}', playerId: `load-bot-${String(i).padStart(6, '0')}`, betaPass: process.env.BETA_PASS });
+  const room = await client.joinOrCreate<{ players: Map<string, PlayerLike> }>(STREET_ROOM, { name: `Bot${i}`, avatar: '{}', zoneKind: 'main', playerId: `load-bot-${String(i).padStart(6, '0')}`, betaPass: process.env.BETA_PASS });
   joinMs.push(performance.now() - t0);
   let x = (Math.random() - 0.5) * 60;
   let z = Math.random() * 10 - 3;
@@ -97,6 +112,8 @@ console.log(`\nbots joined: ${joined}/${BOTS}   errors: ${errors}`);
 console.log(`join time  ms: p50 ${pct(joinMs, 50)} · p95 ${pct(joinMs, 95)} · max ${pct(joinMs, 100)}`);
 console.log(`input→patch round-trip ms: p50 ${pct(rtt, 50)} · p95 ${pct(rtt, 95)} · max ${pct(rtt, 100)}  (${rtt.length} samples)`);
 console.log(`state patches received: ${patches} (~${Math.round(patches / SECONDS / Math.max(1, joined))}/s per bot) · chat messages: ${chats}`);
+console.log(`downstream: ${(bytesIn / 1024).toFixed(0)} KB total · ${(bytesIn / 1024 / SECONDS / Math.max(1, joined)).toFixed(1)} KB/s per bot`);
+console.log('zones:', JSON.stringify(((await (await fetch(WS_URL.replace(/^ws/, 'http') + '/zones')).json()) as { zones: { name: string; clients: number }[] }).zones.map((z) => [z.name, z.clients])));
 console.log(`server: before ${JSON.stringify(before)}\n        during ${JSON.stringify(during)}\n        after  ${JSON.stringify(after)}`);
 const ok = joined === BOTS && errors === 0 && (pct(rtt, 95) ?? 9999) < 250;
 console.log(ok ? '\nOK' : '\nPROBLEMS (see above)');

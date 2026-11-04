@@ -1,4 +1,4 @@
-import { Room, type Client } from 'colyseus';
+import { Room, ServerError, matchMaker, type Client } from 'colyseus';
 import {
   INTERACT_RADIUS,
   MSG,
@@ -7,8 +7,15 @@ import {
   SHOUT_RADIUS,
   STREET_ROOM_MAX_CLIENTS,
   TALK_DROP_RADIUS,
-  MAX_JUMP_Y, WORLD_BOUNDS,
+  MAX_JUMP_Y,
+  MAIN_ZONE_NAME,
+  STREET_ROOM,
+  WORLD_BOUNDS,
+  ZONE_CODE_RE,
+  ZONE_NAME_MAX,
+  ZONE_NAME_MIN,
   maskProfanity,
+  type ZoneMeta,
   type InputMessage,
   type JoinOptions,
   type PairMessage,
@@ -31,6 +38,10 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Pending talk requests: target sessionId -> requester sessionId. */
   private talkRequests = new Map<string, string>();
   private lastShoutAt = new Map<string, number>();
+  /** Zone identity (also published as room metadata for the zone list). */
+  private zone: ZoneMeta = { name: MAIN_ZONE_NAME, kind: 'main', locked: false };
+  /** Private zone code (never in metadata). */
+  private code = '';
 
   /** Closed beta: a player needs a beta pass or a signed-in token (both minted by the API with the shared AUTH_SECRET). */
   static async onAuth(_token: string, options: Partial<JoinOptions>) {
@@ -39,8 +50,22 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     throw new Error('beta_pass_required');
   }
 
-  onCreate() {
+  async onCreate(options: Partial<JoinOptions> = {}) {
     this.setState(new StreetState());
+    if (options.zoneKind === 'custom') {
+      const name = sanitizeZoneName(options.zoneName);
+      if (!name) throw new ServerError(4101, 'zone_name_invalid');
+      const code = typeof options.zoneCode === 'string' ? options.zoneCode.trim() : '';
+      if (code && !ZONE_CODE_RE.test(code)) throw new ServerError(4102, 'zone_code_invalid');
+      this.code = code;
+      this.zone = { name, kind: 'custom', locked: !!code };
+    } else {
+      // Public Main Street rooms are numbered by how many already exist (joinOrCreate spawns the next one when full).
+      const mains = (await matchMaker.query({ name: STREET_ROOM })).filter((r) => r.metadata?.kind === 'main').length;
+      this.zone = { name: mains === 0 ? MAIN_ZONE_NAME : `${MAIN_ZONE_NAME} ${mains + 1}`, kind: 'main', locked: false };
+    }
+    await this.setMetadata({ ...this.zone, zoneKind: this.zone.kind });
+    console.log(`[street] zone "${this.zone.name}" created (${this.zone.kind}${this.zone.locked ? ', locked' : ''})`);
     this.setPatchRate(50); // 20 Hz state patches
 
     this.onMessage<InputMessage>(MSG.INPUT, (client, msg) => {
@@ -184,6 +209,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
 
   onJoin(client: Client, options: Partial<JoinOptions>) {
+    if (this.code && options?.zoneCode !== this.code) throw new ServerError(4103, 'zone_code_required');
     const p = new Player();
     p.id = client.sessionId;
     p.pid = typeof options?.playerId === 'string' ? options.playerId.slice(0, 64) : '';
@@ -194,6 +220,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     p.z = SPAWN.z + (Math.random() - 0.5) * 2;
     this.state.players.set(client.sessionId, p);
     client.send(MSG.TIME, { now: Date.now() });
+    client.send(MSG.ZONE, { id: this.roomId, ...this.zone });
     console.log(`[street] ${p.name} joined (${this.clients.length}/${this.maxClients})`);
   }
 
@@ -235,4 +262,14 @@ function sanitizeName(n: unknown): string | undefined {
   if (typeof n !== 'string') return undefined;
   const s = maskProfanity(n.replace(/[^\w\- ]/g, '').trim().slice(0, 20));
   return s.length >= 2 ? s : undefined;
+}
+
+/** Zone names: trimmed, 3–24 chars, letters/digits/spaces/basic punctuation, no profanity. */
+function sanitizeZoneName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const name = raw.replace(/\s+/g, ' ').trim();
+  if (name.length < ZONE_NAME_MIN || name.length > ZONE_NAME_MAX) return null;
+  if (!/^[\p{L}\p{N} '\-!?.]+$/u.test(name)) return null;
+  if (maskProfanity(name) !== name) return null;
+  return name;
 }

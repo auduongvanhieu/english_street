@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { EMOTES } from '@es/shared';
 // The 3D scene (three.js + models) loads only after sign-in, keeping the first paint small.
 const Scene = lazy(() => import('./scene/Scene'));
-import { connect } from './net/client';
+import { connect, leaveRoom } from './net/client';
+import { ZoneChip, ZoneScreen } from './ui/ZoneScreen';
+import type { ZoneSelection } from '@es/shared';
 import { fetchNpcs } from './net/api';
 import { getBetaPass, getPlayerId, getToken } from './net/player';
 import { initAnalytics, track } from './net/analytics';
@@ -41,6 +43,14 @@ export default function App() {
   const [draft] = useState(playerName);
   const [npcError, setNpcError] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  // Zone picker shown between the name screen and the street (also after "Change zone").
+  const [picker, setPicker] = useState(false);
+  // ?zone=<id>[&code=…] deep link from a shared invite: join that zone straight away (code prompt if needed).
+  const [deepLink] = useState(() => {
+    const q = new URLSearchParams(location.search);
+    const id = q.get('zone');
+    return id ? { id, code: q.get('code') ?? undefined } : undefined;
+  });
   const touch = isTouchDevice();
   const stage = useRef<HTMLDivElement>(null);
   const busy = useGame((s) => s.panelNpc !== null || s.uiPanel !== null);
@@ -113,13 +123,18 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  async function join(name: string) {
+  async function join(name: string, zone: ZoneSelection = { mode: 'main' }) {
     setPlayerName(name);
     const prof = useProfile.getState();
     await prof.refresh();
     const avatar = JSON.stringify({ color: useProfile.getState().profile?.avatar.color ?? '#4a90e2' });
-    await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }).catch(() => undefined);
-    track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp() });
+    const ok = await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }, zone)
+      .then(() => true)
+      .catch(() => false);
+    if (!ok) return;
+    setPicker(false);
+    if (deepLink) history.replaceState(null, '', location.pathname);
+    track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
@@ -129,7 +144,19 @@ export default function App() {
   }
 
   if (conn !== 'connected') {
-    return <AuthScreen initialName={draft} onPlay={(n) => void join(n)} connecting={conn === 'connecting'} connError={conn === 'error' ? (useGame.getState().connError ?? 'connect_failed') : null} />;
+    const connError = conn === 'error' ? (useGame.getState().connError ?? 'connect_failed') : null;
+    if (picker && playerName) {
+      return <ZoneScreen initial={deepLink} onJoin={(z) => void join(playerName, z)} onBack={() => setPicker(false)} connecting={conn === 'connecting'} connError={connError} />;
+    }
+    return (
+      <AuthScreen
+        initialName={draft}
+        onPlay={(n) => (deepLink ? (setPlayerName(n), setPicker(true)) : void join(n))}
+        onZones={(n) => (setPlayerName(n), setPicker(true))}
+        connecting={conn === 'connecting'}
+        connError={connError}
+      />
+    );
   }
 
   const hudHidden = busy || inPair;
@@ -179,6 +206,7 @@ export default function App() {
       )}
 
       <ProfileHud compact={touch} />
+      <ZoneChip compact={touch} onChange={() => { setPicker(true); leaveRoom(); }} />
       <InviteToast />
       <TalkToast />
       {!hudHidden && <PlayerPopup />}

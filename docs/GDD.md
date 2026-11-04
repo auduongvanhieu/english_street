@@ -68,7 +68,7 @@ Mở rộng sau: nhà hàng, khách sạn, hiệu thuốc, tiệm cắt tóc, tr
 - **Tiến trình**: XP, level, streak hàng ngày, huy hiệu theo chủ đề ("Café Regular", "Job Hunter").
 
 ### 2.5 Đa người chơi
-- Tất cả người chơi trong cùng **room** (một con phố, tối đa ~50 người/room, tự động tạo room mới khi đầy).
+- Tất cả người chơi trong cùng **room** (một con phố, tối đa 100 người/khu (Step 3), tự động tạo khu mới khi đầy, người chơi tự tạo khu riêng được).
 - Thấy nhau di chuyển, tên trên đầu, emote.
 - **Chat gần (proximity chat)**: text bubble + voice chat (WebRTC) chỉ nghe được người trong bán kính N mét.
 - **Nhiệm vụ cặp đôi**: 2 người nhận 2 vai (khách – nhân viên) trong một gian hàng; NPC đóng vai "giám khảo" đánh giá cả hai.

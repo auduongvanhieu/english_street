@@ -1,3 +1,4 @@
+import type { ZoneInfo } from '@es/shared';
 import { create } from 'zustand';
 
 export interface RemotePlayer {
@@ -43,6 +44,11 @@ interface GameState {
   connError: string | null;
   setConnError: (m: string | null) => void;
   sessionId: string | null;
+  /** Zone (room) we are in, from the server's ZONE message. */
+  zone: ZoneInfo | null;
+  setZone: (z: ZoneInfo | null) => void;
+  /** Forget everything tied to the previous room (players, chat, selections) when leaving it. */
+  resetRoom: () => void;
   setSessionId: (id: string | null) => void;
   players: Record<string, RemotePlayer>;
   upsertPlayer: (p: RemotePlayer) => void;
@@ -85,6 +91,9 @@ export const useGame = create<GameState>((set) => ({
   setConnError: (connError) => set({ connError }),
   sessionId: null,
   setSessionId: (sessionId) => set({ sessionId }),
+  zone: null,
+  setZone: (zone) => set({ zone }),
+  resetRoom: () => set({ players: {}, chatLog: [], selectedPlayer: null, selectedCritter: null, interactTarget: null, zone: null }),
   players: {},
   upsertPlayer: (p) => set((s) => ({ players: { ...s.players, [p.id]: p } })),
   removePlayer: (id) =>

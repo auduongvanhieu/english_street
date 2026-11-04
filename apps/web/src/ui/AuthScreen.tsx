@@ -5,7 +5,7 @@ import { getBetaPass, setBetaPass } from '../net/player';
 
 type Mode = 'guest' | 'login' | 'register';
 
-export function AuthScreen({ initialName, onPlay, connecting, connError }: { initialName: string; onPlay: (name: string) => void; connecting: boolean; connError: string | null }) {
+export function AuthScreen({ initialName, onPlay, onZones, connecting, connError }: { initialName: string; onPlay: (name: string) => void; onZones?: (name: string) => void; connecting: boolean; connError: string | null }) {
   const { loggedIn, profile, login, register, logout } = useProfile();
   const [mode, setMode] = useState<Mode>(loggedIn ? 'login' : 'guest');
   const [name, setName] = useState(initialName);
@@ -30,6 +30,10 @@ export function AuthScreen({ initialName, onPlay, connecting, connError }: { ini
   }, [gateRefused]);
   const needCode = betaGate && !getBetaPass() && !loggedIn;
 
+  /** 'play' enters Main Street right away; 'zones' opens the zone picker (join a friend's zone or create one). */
+  const [intent, setIntent] = useState<'play' | 'zones'>('play');
+  const go = (n: string) => (intent === 'zones' && onZones ? onZones(n) : onPlay(n));
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -44,16 +48,16 @@ export function AuthScreen({ initialName, onPlay, connecting, connError }: { ini
       }
       setBusy(false);
     }
-    if (loggedIn && profile) return onPlay(profile.name);
+    if (loggedIn && profile) return go(profile.name);
     if (mode === 'guest') {
       if (name.trim().length < 2) return setError('Name must be at least 2 characters.');
-      return onPlay(name.trim());
+      return go(name.trim());
     }
     setBusy(true);
     try {
       if (mode === 'login') await login(email, password);
       else await register(email, password, name.trim());
-      onPlay(useProfile.getState().profile?.name ?? name.trim());
+      go(useProfile.getState().profile?.name ?? name.trim());
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -103,9 +107,14 @@ export function AuthScreen({ initialName, onPlay, connecting, connError }: { ini
           <input value={invite} onChange={(e) => setInvite(e.target.value)} placeholder="Invite code (closed beta)" maxLength={64} autoComplete="off" className="mb-2 w-full rounded-lg border border-purple-300 bg-purple-50 px-3 py-2" />
         )}
 
-        <button type="submit" disabled={connecting || busy} className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white disabled:opacity-50">
+        <button type="submit" onClick={() => setIntent('play')} disabled={connecting || busy} className="w-full rounded-lg bg-blue-600 py-2 font-semibold text-white disabled:opacity-50">
           {connecting ? 'Connecting…' : busy ? 'Please wait…' : mode === 'register' && !loggedIn ? 'Create account & play' : 'Enter the street'}
         </button>
+        {onZones && (
+          <button type="submit" onClick={() => setIntent('zones')} disabled={connecting || busy} className="mt-2 w-full rounded-lg border border-blue-200 bg-blue-50 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50">
+            Choose or create a zone…
+          </button>
+        )}
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         {connError && !error && (
           <p className="mt-2 text-sm text-red-600">{gateRefused ? 'English Street is in closed beta — please enter your invite code.' : 'Cannot reach the game server. Is it running?'}</p>
