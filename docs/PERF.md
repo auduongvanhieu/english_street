@@ -44,3 +44,12 @@ Real-device FPS should be checked with the ⚡/✨ quality toggle; the `perf` an
 | Downstream per browser client (100 players, 20 Hz patches) | 19.3 KB/s, 21 frames/s |
 
 Decision: full-room state sync stays (no per-radius `StateView`); the threshold for revisiting is ~60 KB/s per client.
+
+## Step 3 — horizon (2026-11-04, headless swiftshader, draw calls from `PerfProbe`)
+
+| View | Before | After |
+|---|---|---|
+| Desktop 1100×650, high | 286 | 322 (≈ +36: 7 backdrop instanced models, water, rims, 2 bridges, 2 boats, ducks, fences, hay, fields, 7 clouds) |
+| iPhone 390×760, low | 133 | 146 |
+
+Budget: high ≤ 320 is slightly exceeded on the widest desktop view (322); low stays under 150.

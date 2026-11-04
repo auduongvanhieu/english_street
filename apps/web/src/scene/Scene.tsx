@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { KeyboardControls, Sky } from '@react-three/drei';
-import { Ground } from './Ground';
+import { HORIZON_COLOR, Horizon } from './Horizon';
 import { City } from './City';
 import { LocalPlayer, type Controls } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
@@ -33,6 +33,8 @@ export default function Scene({ playerName }: { playerName: string }) {
         gl={{ antialias: !low, powerPreference: 'high-performance' }}
       >
         <Sky sunPosition={[50, 40, 20]} />
+        {/* Fog in the horizon colour: the fields fade out instead of ending at the camera's far plane. */}
+        <fog attach="fog" args={[HORIZON_COLOR, 70, 150]} />
         <hemisphereLight args={['#dff3ff', '#6b8f4e', low ? 0.9 : 0.6]} />
         <directionalLight
           position={[30, 40, 20]}
@@ -46,7 +48,6 @@ export default function Scene({ playerName }: { playerName: string }) {
           shadow-camera-top={30}
           shadow-camera-bottom={-30}
         />
-        <Ground />
         <Suspense fallback={null}>
           <City />
           <Npcs />
@@ -55,6 +56,7 @@ export default function Scene({ playerName }: { playerName: string }) {
         </Suspense>
         {/* Decoration loads after the street itself so the first frame is never held back by flowers. */}
         <Suspense fallback={null}>
+          <Horizon />
           <Flora />
           <Critters />
         </Suspense>
