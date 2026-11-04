@@ -5,7 +5,7 @@ export function NameTag({
   sub,
   bubble,
   badge,
-  y = 2.1,
+  y = 2.0,
 }: {
   name: string;
   sub?: string;

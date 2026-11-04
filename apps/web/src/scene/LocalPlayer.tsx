@@ -159,7 +159,7 @@ export function LocalPlayer({ name }: { name: string }) {
     const back = cameraOrbit.dist * 0.84;
     camTarget.set(g.position.x + sy * back, cameraOrbit.dist * 0.55, g.position.z + cy * back);
     camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
-    camera.lookAt(g.position.x, 1.2 + g.position.y * 0.3, g.position.z);
+    camera.lookAt(g.position.x, 0.95 + g.position.y * 0.3, g.position.z);
 
     // --- network ---
     sendAcc.current += dt;

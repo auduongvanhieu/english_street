@@ -6,7 +6,9 @@ import {
   AVATAR_BAGS,
   AVATAR_BODIES,
   AVATAR_GLASSES,
+  AVATAR_HAIRSTYLES,
   AVATAR_HATS,
+  HAIRSTYLE_LABELS,
   AvatarSchema,
   BAG_ITEMS,
   BODY_LABELS,
@@ -42,9 +44,11 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'clothes', label: 'Clothes' },
   { id: 'extras', label: 'Extras' },
 ];
-const BODY_ICON: Record<AvatarBody, string> = { tee: '👕', hoodie: '🧥', suit: '🤵', girl: '👚', dress: '👗', robot: '🤖' };
+const BODY_ICON: Record<AvatarBody, string> = { tee: '👕', hoodie: '🧥', suit: '🤵', girl: '👖', dress: '👗', robot: '🤖' };
 const HAT_ICON: Record<string, string> = { none: '🚫', cap: '🧢', beanie: '🧶', sunhat: '👒', tophat: '🎩', crown: '👑' };
 const GLASSES_ICON: Record<string, string> = { none: '🚫', round: '👓', sun: '🕶️' };
+const HAIR_ICON: Record<string, string> = { short: '👦', spiky: '⚡', curly: '🌀', bob: '👧', long: '👩', ponytail: '🎀', buns: '🍡', bald: '🥚' };
+const HAIRSTYLE_ITEMS = Object.fromEntries(AVATAR_HAIRSTYLES.map((k) => [k, { id: `hair:${k}`, label: HAIRSTYLE_LABELS[k], price: 0 }])) as Record<(typeof AVATAR_HAIRSTYLES)[number], ShopItem>;
 const BAG_ICON: Record<string, string> = { none: '🚫', backpack: '🎒' };
 
 const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)]!;
@@ -58,6 +62,7 @@ function randomLook(): AvatarLook {
     body: pick(AVATAR_BODIES.filter((b) => b !== 'robot')),
     skin: pick(free(SKIN_TONES)),
     hair: pick(free(HAIR_COLORS)),
+    hairStyle: pick(AVATAR_HAIRSTYLES),
     top: pick(cloth),
     bottom: pick(cloth),
     shoes: pick(cloth),
@@ -155,11 +160,12 @@ export function AvatarCreator() {
         )}
         {tab === 'looks' &&
           (look.body === 'robot' ? (
-            <p className="text-sm text-gray-500">Robots have no skin or hair 🤖 — pick a body colour under Clothes.</p>
+            <p className="text-sm text-gray-500">Robots have no skin or hair 🤖 — pick their colours under Clothes. The antenna light uses the hat colour.</p>
           ) : (
             <>
               <Swatches title="Skin" list={SKIN_TONES} value={look.skin} owned={owned} onPick={(skin) => set({ skin })} />
-              <Swatches title="Hair" list={HAIR_COLORS} value={look.hair} owned={owned} onPick={(hair) => set({ hair })} />
+              <Items title="Hairstyle" keys={AVATAR_HAIRSTYLES} items={HAIRSTYLE_ITEMS} icons={HAIR_ICON} value={look.hairStyle} owned={owned} onPick={(hairStyle) => set({ hairStyle })} />
+              <Swatches title="Hair colour" list={HAIR_COLORS} value={look.hair} owned={owned} onPick={(hair) => set({ hair })} />
             </>
           ))}
         {tab === 'clothes' && (
@@ -172,13 +178,9 @@ export function AvatarCreator() {
         {tab === 'extras' && (
           <>
             <Items title="Hat" keys={AVATAR_HATS} items={HAT_ITEMS} icons={HAT_ICON} value={look.hat} owned={owned} onPick={(hat) => set({ hat })} />
-            {look.hat !== 'none' && look.hat !== 'crown' && <Swatches title="Hat colour" list={CLOTH_COLORS} value={look.hatColor} owned={owned} onPick={(hatColor) => set({ hatColor })} />}
-            {look.body !== 'robot' && (
-              <>
-                <Items title="Glasses" keys={AVATAR_GLASSES} items={GLASSES_ITEMS} icons={GLASSES_ICON} value={look.glasses} owned={owned} onPick={(glasses) => set({ glasses })} />
-                <Items title="Bag" keys={AVATAR_BAGS} items={BAG_ITEMS} icons={BAG_ICON} value={look.bag} owned={owned} onPick={(bag) => set({ bag })} />
-              </>
-            )}
+            {(look.body === 'robot' || (look.hat !== 'none' && look.hat !== 'crown')) && <Swatches title="Hat colour" list={CLOTH_COLORS} value={look.hatColor} owned={owned} onPick={(hatColor) => set({ hatColor })} />}
+            <Items title="Glasses" keys={AVATAR_GLASSES} items={GLASSES_ITEMS} icons={GLASSES_ICON} value={look.glasses} owned={owned} onPick={(glasses) => set({ glasses })} />
+            {look.body !== 'robot' && <Items title="Bag" keys={AVATAR_BAGS} items={BAG_ITEMS} icons={BAG_ICON} value={look.bag} owned={owned} onPick={(bag) => set({ bag })} />}
             <p className="mt-1 text-xs text-gray-500">Items with 🪙 can be tried on for free — you only pay when you save. Earn coins by finishing quests.</p>
           </>
         )}
@@ -208,7 +210,7 @@ export function AvatarCreator() {
 
 function Preview({ look, wave, head }: { look: AvatarLook; wave: number; head: boolean }) {
   return (
-    <Canvas dpr={[1, 1.5]} camera={{ position: [0, 1.2, 2.6], fov: 32 }} gl={{ antialias: true }} onCreated={({ camera }) => camera.lookAt(0, 1.0, 0)}>
+    <Canvas dpr={[1, 1.5]} camera={{ position: [0, 1.05, 2.7], fov: 32 }} gl={{ antialias: true }} onCreated={({ camera }) => camera.lookAt(0, 0.78, 0)}>
       <hemisphereLight args={['#ffffff', '#8aa08a', 1.6]} />
       <directionalLight position={[2, 4, 3]} intensity={1.6} />
       <Suspense fallback={null}>
@@ -218,7 +220,7 @@ function Preview({ look, wave, head }: { look: AvatarLook; wave: number; head: b
         <circleGeometry args={[0.7, 32]} />
         <meshStandardMaterial color="#9fcf9a" />
       </mesh>
-      <OrbitControls makeDefault target={[0, 1.0, 0]} enablePan={false} minDistance={0.8} maxDistance={3.2} minPolarAngle={Math.PI / 3} maxPolarAngle={1.58} autoRotate autoRotateSpeed={1.2} />
+      <OrbitControls makeDefault target={[0, 0.78, 0]} enablePan={false} minDistance={0.8} maxDistance={3.2} minPolarAngle={Math.PI / 3} maxPolarAngle={1.58} autoRotate autoRotateSpeed={1.2} />
       <Focus head={head} />
     </Canvas>
   );
@@ -228,10 +230,10 @@ function Preview({ look, wave, head }: { look: AvatarLook; wave: number; head: b
 function Focus({ head }: { head: boolean }) {
   const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update: () => void } | null;
   const camera = useThree((s) => s.camera);
-  const goal = useRef({ y: 1.0, d: 2.6, polar: 1.43, t: 0 });
+  const goal = useRef({ y: 0.78, d: 2.7, polar: 1.43, t: 0 });
   useEffect(() => {
     // Eye level for the face (from above, hat brims would hide the eyes); slightly from above for the body.
-    goal.current = head ? { y: 1.5, d: 1.15, polar: 1.53, t: 1.2 } : { y: 1.0, d: 2.6, polar: 1.43, t: 1.2 };
+    goal.current = head ? { y: 1.15, d: 1.9, polar: 1.5, t: 1.2 } : { y: 0.78, d: 2.7, polar: 1.43, t: 1.2 };
   }, [head]);
   useFrame((_, dt) => {
     const g = goal.current;

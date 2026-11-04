@@ -1,13 +1,8 @@
 import { useGame, type NpcInfo } from '../store/game';
 import { useVoice } from '../store/voice';
-import { Character } from './Character';
-import { Human, preloadHuman } from './Human';
-import { NPC_LOOK } from './npcLook';
+import { Chibi } from './chibi/Chibi';
+import { NPC_CHIBI, NPC_CHIBI_DEFAULT } from './npcLook';
 import { NameTag } from './NameTag';
-
-/** Fallback tint for NPCs without a configured human look (robot model). */
-const NPC_TINT: Record<string, string> = { barista: '#f08a5d', cashier: '#6bcb77', guide: '#f9d56e' };
-for (const look of Object.values(NPC_LOOK)) preloadHuman(look.model);
 
 export function Npcs() {
   const npcs = useGame((s) => s.npcs);
@@ -25,10 +20,9 @@ function Npc({ npc }: { npc: NpcInfo }) {
   const talking = useGame((s) => s.panelNpc === npc.id);
   const speaking = useVoice((s) => s.speakingNpc === npc.id);
   const anim = speaking ? 'talk' : talking ? 'idle' : near ? 'wave' : 'idle';
-  const look = NPC_LOOK[npc.id];
   return (
     <group position={npc.position} rotation={[0, 0, 0]}>
-      {look ? <Human look={look} anim={anim} /> : <Character anim={anim} tint={NPC_TINT[npc.id] ?? '#cccccc'} />}
+      <Chibi spec={NPC_CHIBI[npc.id] ?? NPC_CHIBI_DEFAULT} anim={anim} />
       <NameTag name={npc.name} sub={npc.role} />
       {near ? (
         <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>

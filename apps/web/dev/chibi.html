@@ -1,0 +1,28 @@
+<!doctype html><html><body style="margin:0">
+<!-- Dev-only: chibi lineup for screenshots. ?set=bodies|hair|hats|npcs&rot=0.25 -->
+<script type="module">
+import * as THREE from 'three';
+import { chibiParts, chibiMaterial, chibiOutline, JOINTS, CHIBI_SCALE } from '../src/scene/chibi/buildChibi.ts';
+import { NPC_CHIBI } from '../src/scene/npcLook.ts';
+const q = new URLSearchParams(location.search);
+const W=innerWidth,H=innerHeight; const r=new THREE.WebGLRenderer({antialias:true}); r.setSize(W,H); document.body.appendChild(r.domElement);
+const s=new THREE.Scene(); s.background=new THREE.Color('#bfe3f5'); s.add(new THREE.HemisphereLight(0xffffff,0x9fbf8f,1.6)); const d=new THREE.DirectionalLight(0xffffff,1.8); d.position.set(2,4,3); s.add(d);
+const base={ body:'tee', skin:'#e0ac80', hair:'#3a2618', hairStyle:'short', top:'#4a90e2', bottom:'#24365c', shoes:'#f2f2f2', hat:'none', hatColor:'#c8443a', glasses:'none', bag:'none' };
+let specs;
+const set=q.get('set')||'bodies';
+if (set==='bodies') specs=[['tee',{}],['hoodie',{top:'#43b86a'}],['suit',{top:'#24365c',bottom:'#c8443a'}],['girl',{hairStyle:'bob',top:'#f3d14a',bottom:'#4a6488'}],['dress',{hairStyle:'long',top:'#ef8fb0',bottom:'#f2f2f2'}],['robot',{top:'#8a8f98',bottom:'#2a9d8f'}]].map(([b,o])=>({...base,body:b,...o}));
+if (set==='hair') specs=['short','spiky','curly','bob','long','ponytail','buns','bald'].map((h,i)=>({...base,hairStyle:h,hair:['#1c1410','#a0682f','#3a2618','#d9b25c','#6b4226','#c2402e','#e86fa8','#3a2618'][i], skin:['#f6d7c3','#eec1a0','#8a5634','#e0ac80','#c98e62','#f6d7c3','#e0ac80','#a86e45'][i]}));
+if (set==='hats') specs=['cap','beanie','sunhat','tophat','crown'].map((h,i)=>({...base,hat:h,hairStyle:['short','bob','long','curly','ponytail'][i],glasses:i%2?'round':'sun',bag:i===2?'backpack':'none'}));
+if (set==='npcs') specs=Object.values(NPC_CHIBI);
+const n=specs.length, sp=0.85;
+specs.forEach((sp_,i)=>{
+  const p=chibiParts(sp_); const root=new THREE.Group(); root.scale.setScalar(CHIBI_SCALE);
+  const add=(parent,g,pos)=>{ const grp=new THREE.Group(); if(pos) grp.position.set(...pos); grp.add(new THREE.Mesh(g,chibiMaterial())); grp.add(new THREE.Mesh(g,chibiOutline())); parent.add(grp); return grp; };
+  const hips=new THREE.Group(); hips.position.set(...JOINTS.hips); root.add(hips);
+  add(hips,p.legL,JOINTS.legL); add(hips,p.legR,JOINTS.legR); const torso=add(hips,p.torso);
+  const al=add(torso,p.armL,JOINTS.armL); al.rotation.z=0.22; const ar=add(torso,p.armR,JOINTS.armR); ar.rotation.z=-0.22; add(torso,p.head,JOINTS.head);
+  root.position.x=(i-(n-1)/2)*sp; root.rotation.y=Number(q.get('rot')||0.25); s.add(root);
+});
+const cam=new THREE.PerspectiveCamera(30,W/H,0.1,50); cam.position.set(0,0.9,n*0.8+1.4); cam.lookAt(0,0.7,0);
+r.render(s,cam); window.done=true;
+</script></body></html>

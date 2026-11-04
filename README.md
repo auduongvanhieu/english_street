@@ -154,7 +154,7 @@ Each shopkeeper is a Quaternius CC0 human (`public/models/characters/*.glb`, 7 b
 to a model plus **material recolours** (the stock outfit becomes a uniform: white coat, green store vest, grey suit…)
 and **procedural accessories** attached to bones (`scene/Human.tsx`): barista cap, postal cap, sun hat, name badge,
 stethoscope, bow tie, apron. Bone-space objects are scaled by the inverse bone world scale (the rigs use ~95×).
-Players use the same pipeline for their own characters (see *Character creator* below).
+Since Step 4 the game draws chibi characters instead (see *Character creator*); this pipeline remains for the dev preview.
 Preview any look without joining the game: `http://localhost:5173/dev/preview.html?npcs=barista,doctor` (dev only).
 
 ## Street life (Step 2 / phase 11)
@@ -208,23 +208,29 @@ TTS bridge (needed on iOS), microphone permission for voice chat, haptics, offli
 push-token registration (`POST /me/push-token`). Build with `flutter build apk --release`; CI builds APK/AAB
 in `.github/workflows/mobile.yml`. Details, store checklist and the bridge protocol: `docs/MOBILE.md`.
 
-## Character creator (Step 4)
+## Character creator (Step 4) — chibi characters
 
-Players design their own character by picking, no art skills needed (🎨 **Character** in the HUD; it opens by itself on
-the first visit, after the level test). The look (`packages/shared/src/avatar.ts`) is:
+Every character (players and shopkeepers) is an original **chibi** built in code (`apps/web/src/scene/chibi/`): big round
+head, round body, short limbs, big eyes with highlights, rosy cheeks, toon shading (3-step gradient) and an
+inverted-hull outline on high quality. No GLB, no skeleton: `buildChibi.ts` merges each body part (head + face + hair +
+hat + glasses, torso + outfit details + bag, each arm, each leg) into one vertex-coloured geometry, cached per look, so a
+character is 6 draw calls (+6 outline) whatever it wears. `Chibi.tsx` animates the joints procedurally (idle breathing,
+walk/run cycle, wave, talk/yes nod, no shake, thumbs up, dance, jump pose). Height ≈ 1.5 m (`CHIBI_SCALE`).
+Lineup page for screenshots (dev only): `http://localhost:5173/dev/chibi.html?set=bodies|hair|hats|npcs`.
 
-- **Body**: T-shirt, Hoodie, Suit, Casual, Dress (Quaternius humans) or the classic Robot.
-- **Colours** from fixed palettes: 8 skin tones, 10 hair colours, 18 clothes colours for top / trousers (tie on the suit,
-  belt on the dress) / shoes. `scene/playerLook.ts` maps each slot to the model's material names (found by colour-coding
-  every material); the dress shares one material for hair and shoes.
-- **Extras** built from primitives on the head / chest bones (`scene/Human.tsx`): cap, beanie, sun hat, top hat, crown,
-  glasses, sunglasses, backpack.
+Players design theirs by picking (🎨 **Character** in the HUD; it opens by itself on the first visit, after the level
+test). The look (`packages/shared/src/avatar.ts`):
+
+- **Outfit**: T-shirt & shorts, Hoodie, Suit (+ tie colour), Overalls, Dress (+ belt colour), or Robot.
+- **Skin** (8 tones), **hairstyle** (short, spiky, curly, bob, long, ponytail, buns, bald) and **hair colour** (10).
+- **Clothes colours** from an 18-colour palette for top / bottom / shoes.
+- **Extras**: cap, beanie, sun hat, top hat, crown, glasses, sunglasses, backpack.
 - Some items cost coins (sun hat 40, top hat 80, crown 150, sunglasses 40, backpack 30, 2 hair colours, 3 clothes colours).
-  Everything can be tried on in the preview; **Buy & save** pays only when saving. The old robot colour shop carries over
-  (`{ color, owned }` saves become the top colour, bought colours stay owned).
+  Everything can be tried on in the preview; **Buy & save** pays only when saving. Old robot-colour saves migrate
+  (`{ color, owned }` → top colour, bought colours stay owned).
 
-The preview is a second small R3F canvas (drag to turn, pinch/scroll to zoom; the camera glides to eye level on the
+Shopkeeper uniforms are `NPC_CHIBI` in `scene/npcLook.ts` (apron, badge, stethoscope, bow tie, paper hat extras).
+The preview is a second small R3F canvas (drag to turn, pinch/scroll to zoom; the camera glides to the face on the
 *Skin & hair* and *Extras* tabs). Saving calls `POST /me/avatar` (every colour must be in its palette, paid items must be
 owned → 402 `not_owned`), then sends `MSG.AVATAR` so the room updates `Player.avatar` live (server re-validates with
-`parseLook`, max one change per 0.8 s). Other players draw it through `scene/PlayerAvatar.tsx`.
-
+`parseLook`, max one change per 0.8 s).

@@ -7,7 +7,12 @@ import { z } from 'zod';
  */
 export const AVATAR_BODIES = ['tee', 'hoodie', 'suit', 'girl', 'dress', 'robot'] as const;
 export type AvatarBody = (typeof AVATAR_BODIES)[number];
-export const BODY_LABELS: Record<AvatarBody, string> = { tee: 'T-shirt', hoodie: 'Hoodie', suit: 'Suit', girl: 'Casual', dress: 'Dress', robot: 'Robot' };
+/** Outfit styles of the chibi characters (ids kept from the first character version). */
+export const BODY_LABELS: Record<AvatarBody, string> = { tee: 'T-shirt', hoodie: 'Hoodie', suit: 'Suit', girl: 'Overalls', dress: 'Dress', robot: 'Robot' };
+
+export const AVATAR_HAIRSTYLES = ['short', 'spiky', 'curly', 'bob', 'long', 'ponytail', 'buns', 'bald'] as const;
+export type AvatarHairStyle = (typeof AVATAR_HAIRSTYLES)[number];
+export const HAIRSTYLE_LABELS: Record<AvatarHairStyle, string> = { short: 'Short', spiky: 'Spiky', curly: 'Curly', bob: 'Bob', long: 'Long', ponytail: 'Ponytail', buns: 'Buns', bald: 'Bald' };
 
 export const AVATAR_HATS = ['none', 'cap', 'beanie', 'sunhat', 'tophat', 'crown'] as const;
 export const AVATAR_GLASSES = ['none', 'round', 'sun'] as const;
@@ -74,6 +79,7 @@ const AvatarBase = z.object({
   body: z.enum(AVATAR_BODIES).catch('tee').default('tee'),
   skin: hex.catch('#e0ac80').default('#e0ac80'),
   hair: hex.catch('#3a2618').default('#3a2618'),
+  hairStyle: z.enum(AVATAR_HAIRSTYLES).catch('short').default('short'),
   top: hex.catch('#4a90e2').default('#4a90e2'),
   bottom: hex.catch('#24365c').default('#24365c'),
   shoes: hex.catch('#f2f2f2').default('#f2f2f2'),

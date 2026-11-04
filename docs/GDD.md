@@ -292,8 +292,9 @@ vô tận, sương mù, mây); người đạp xe qua đường theo lịch tấ
 
 ## 11. Step 4 — Bộ tạo nhân vật
 
-Plan: `/root/session_manager_workspaces/plans/english-street-avatar-creator.md`. Người chơi tự tạo nhân vật bằng cách bấm chọn:
-6 dáng (5 người Quaternius + robot), bảng màu da / tóc / áo / quần / giày, mũ (lưỡi trai, len, rộng vành, chóp, vương miện),
+Plan: `/root/session_manager_workspaces/plans/english-street-avatar-creator.md`. Toàn bộ nhân vật (người chơi và NPC) đổi sang kiểu chibi hoạt hình tự dựng bằng code: đầu to tròn, thân tròn, chân tay ngắn,
+mắt to, má hồng, đổ bóng toon + viền. Người chơi tự tạo nhân vật bằng cách bấm chọn:
+6 trang phục (áo phông, hoodie, vest, yếm, váy, robot), 8 kiểu tóc, bảng màu da / tóc / áo / quần / giày, mũ (lưỡi trai, len, rộng vành, chóp, vương miện),
 kính, kính râm, balo; xem trước 3D xoay được, thử đồ trả phí miễn phí, chỉ trả xu khi lưu; người khác trong khu thấy ngay.
 Mở tự động lần đầu vào game. Chi tiết kỹ thuật: README mục *Character creator*.
 
