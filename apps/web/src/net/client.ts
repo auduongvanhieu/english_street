@@ -40,7 +40,10 @@ export function getRoom() {
 
 /** Server clock: Date.now() - offset ≈ the game server's Date.now() (set from the TIME message on join). */
 let clockOffset = 0;
-export const serverNow = () => Date.now() - clockOffset;
+/** Dev/e2e only: pin the server clock so schedule-driven things (critters, cyclists, boats) hold still for screenshots. */
+let frozenNow: number | null = null;
+export const freezeClock = (t: number | null) => (frozenNow = t);
+export const serverNow = () => frozenNow ?? Date.now() - clockOffset;
 
 /** Zones = Colyseus rooms of the street type; the listing carries our metadata (name, kind, locked). */
 export async function listZones(): Promise<ZoneInfo[]> {

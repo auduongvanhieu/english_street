@@ -79,8 +79,28 @@ export function hopSound(volume = 0.5) {
   o.stop(t + 0.13);
 }
 
-/** Short critter voice: a meow (gliding tone) or a woof (low burst). */
-export function critterSound(kind: 'meow' | 'woof', volume = 0.5) {
+/** Bicycle bell: two bright pings. */
+export function bellSound(volume = 0.5) {
+  if (!ensure() || volume <= 0) return;
+  void ctx!.resume();
+  const t = ctx!.currentTime;
+  for (const start of [t, t + 0.14]) {
+    const o = ctx!.createOscillator();
+    const g = ctx!.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(2300, start);
+    g.gain.setValueAtTime(0, start);
+    g.gain.linearRampToValueAtTime(0.18 * volume, start + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+    o.connect(g).connect(ctx!.destination);
+    o.start(start);
+    o.stop(start + 0.26);
+  }
+}
+
+/** Short critter voice: a meow (gliding tone), a woof (low burst) or a bicycle bell. */
+export function critterSound(kind: 'meow' | 'woof' | 'bell', volume = 0.5) {
+  if (kind === 'bell') return bellSound(volume);
   if (!ensure() || volume <= 0) return;
   void ctx!.resume();
   const t = ctx!.currentTime;

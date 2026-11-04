@@ -8,6 +8,7 @@ import { LocalPlayer, type Controls } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
 import { Critters } from './Critters';
+import { Cyclists } from './Cyclists';
 import { Flora } from './Flora';
 import { PerfProbe } from './PerfProbe';
 import { useSettings } from '../store/settings';
@@ -59,6 +60,7 @@ export default function Scene({ playerName }: { playerName: string }) {
           <Horizon />
           <Flora />
           <Critters />
+          <Cyclists />
         </Suspense>
         <PerfProbe />
       </Canvas>

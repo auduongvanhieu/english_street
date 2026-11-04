@@ -283,3 +283,9 @@ Mã nguồn: `/root/session_manager_workspaces/english-street/` (bản sao thi�
 ## 9. Step 2 (2026-11-03 → 2026-11-04)
 
 Mobile HUD + PWA, cài đặt/phụ đề VI/IPA, Request to talk + Shout, NPC người theo nghề, chó mèo/hoa cỏ/âm thanh, app Flutter Android/iOS. Chi tiết và tiến độ: `/root/session_manager_workspaces/plans/english-street-step2.md`; tài liệu: `README.md`, `docs/PERF.md`, `docs/MOBILE.md`.
+
+## 10. Step 3
+
+Plan và tiến độ: `/root/session_manager_workspaces/plans/english-street-step3.md`. Tóm tắt: nhảy (Space / nút ⤒), khu (zone)
+= room Colyseus tối đa 100 người với màn chọn khu, tạo khu riêng có mã, link mời; chân trời mới (dãy nhà nền, sông, cánh đồng
+vô tận, sương mù, mây); người đạp xe qua đường theo lịch tất định. Chi tiết kỹ thuật trong README mục Step 3.

@@ -165,6 +165,12 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
 - **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh
   (9 draw calls); density 5+8 per tile on high, 2+3 on low. Textures were downsized to 256² WebP by the model build.
+- **Cyclists** (Step 3, `world/cyclists.ts` + `scene/Cyclists.tsx`): three riders pass along the road on fixed periods
+  (58/73/91 s), evaluated from the server clock like the critters, so all clients see the same pass and the server does
+  nothing. Bike and rider are primitives merged into one mesh each; wheels, cranks, thighs and shins are shared
+  InstancedMeshes posed per frame (2-link leg IK onto the pedals) — about 7 draw calls for all three. Passing within 6 m
+  rings a bell (WebAudio) and shows "On your left!"; tapping a rider opens the same card as the critters (sentence, word
+  saved to the notebook, TTS). Low quality shows one rider.
 - **Horizon** (Step 3, `scene/Horizon.tsx`): replaces the flat green plane. North: two rows of backdrop houses (instanced
   Kenney buildings with per-instance colour multipliers) and gardens; south: a river with a cheap analytic-ripple water shader
   (fog-aware, no reflections), ducks, two sail boats and footbridges; all around: endless farmland painted by the ground
