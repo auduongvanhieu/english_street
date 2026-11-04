@@ -17,6 +17,8 @@ export interface RemotePlayer {
   /** JSON-encoded avatar config from the join options */
   avatar: string;
   bubble: string;
+  /** critter id they are hugging ('' = none) */
+  holding: string;
 }
 
 export interface NpcInfo {
@@ -60,6 +62,9 @@ interface GameState {
   setSelectedPlayer: (id: string | null) => void;
   /** Cat / dog tapped in the scene (shows the critter card). */
   selectedCritter: string | null;
+  /** Nearest cat/dog within hugging reach (set by LocalPlayer). */
+  nearCritter: string | null;
+  setNearCritter: (id: string | null) => void;
   setSelectedCritter: (id: string | null) => void;
   /** Local one-shot emote (anim name) and when it ends. */
   emote: { name: string; until: number } | null;
@@ -105,6 +110,8 @@ export const useGame = create<GameState>((set) => ({
   pushChat: (m) => set((s) => ({ chatLog: [...s.chatLog.slice(-49), { ...m, at: Date.now() }] })),
   selectedPlayer: null,
   setSelectedPlayer: (selectedPlayer) => set({ selectedPlayer, ...(selectedPlayer ? { selectedCritter: null } : {}) }),
+  nearCritter: null,
+  setNearCritter: (nearCritter) => set({ nearCritter }),
   selectedCritter: null,
   setSelectedCritter: (selectedCritter) => set({ selectedCritter, ...(selectedCritter ? { selectedPlayer: null } : {}) }),
   emote: null,

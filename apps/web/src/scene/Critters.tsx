@@ -9,6 +9,7 @@ import { localPos } from './LocalPlayer';
 import { NameTag } from './NameTag';
 import { livePos, pushAway, sidestep } from '../world/avoid';
 import { playerPoints } from './players';
+import { heldCritters, holderOf } from '../world/hold';
 import { buildCritter, coatFor, type CritterParts } from './chibi/buildCritter';
 import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
@@ -47,6 +48,25 @@ function CritterView({ c }: { c: Critter }) {
     const g = group.current;
     if (!g) return;
     let state: 'walk' | 'idle' | 'nap' | 'react' = 'idle';
+    // In someone's arms: the holder's avatar draws it (PlayerAvatar → HeldCritter); here it just follows the holder
+    // so that, once put down, it walks back to its schedule from where it was dropped.
+    const holder = holderOf(c.id);
+    if (holder) {
+      heldCritters.add(c.id);
+      const s = useGame.getState();
+      const hp = holder === s.sessionId ? localPos : s.players[holder];
+      if (hp) {
+        g.position.x = hp.x;
+        g.position.z = hp.z;
+      }
+      g.visible = false;
+      livePos.delete(c.id);
+      return;
+    }
+    if (heldCritters.delete(c.id)) {
+      g.visible = true;
+      reactUntil.current = Date.now() + 1500; // a happy wag after being put down
+    }
     const reacting = reactUntil.current > Date.now();
     const pose = poseAt(c, serverNow());
     // Step around players standing on the route (each client computes the same detour from the same player positions).
@@ -231,4 +251,34 @@ function animateRabbit(r: RigRefs, parts: CritterParts, state: string, m: { t: n
   r.head!.rotation.y = state === 'idle' ? Math.sin(m.t * 0.5) * 0.4 * Math.max(0, Math.sin(m.t * 0.19)) : 0;
   r.head!.rotation.z = m.react * Math.sin(m.t * 2.5) * 0.3;
   r.tail!.rotation.y = Math.sin(m.t * 9) * 0.15;
+}
+
+// ------------------------------------------------------------------------------------------------ hugged critter
+/** A cat or dog cradled sideways in a player's arms (child of the player's avatar group, player space in metres). */
+export function HeldCritter({ id }: { id: string }) {
+  const c = CRITTERS.find((x) => x.id === id);
+  const parts = useMemo(() => (c ? buildCritter(c.kind, coatFor(c.id)) : null), [c]);
+  useEffect(() => () => void (parts && Object.values(parts).forEach((g) => (g as THREE.BufferGeometry | null)?.dispose?.())), [parts]);
+  const rig = useRef<RigRefs>({ legs: [] });
+  const m = useRef({ t: 0 });
+  useFrame((_, dt) => {
+    const r = rig.current;
+    if (!r.body || !r.head || !r.tail) return;
+    const t = (m.current.t += Math.min(dt, 0.1));
+    // happy in your arms: legs dangle and paddle a little, tail wags, head looks at you / around, a slow purr-sway
+    r.body.rotation.z = Math.sin(t * 2) * 0.05;
+    r.legs.forEach((g, i) => (g.rotation.x = (i < 2 ? -0.5 : 0.7) + Math.sin(t * 5 + i) * 0.15));
+    r.tail.rotation.y = Math.sin(t * 14) * 0.55;
+    r.head.rotation.y = -0.9 + Math.sin(t * 0.8) * 0.35;
+    r.head.rotation.z = Math.sin(t * 1.6) * 0.2;
+    r.head.rotation.x = -0.15;
+  });
+  if (!c || !parts) return null;
+  const sc = SCALE[c.kind] * (c.kind === 'cat' ? 0.85 : 0.75);
+  // cradled sideways against the chest: body centre at hand height, just in front of the round torso
+  return (
+    <group position={[0.05, 0.68 - parts.rig.height * sc, 0.36]} rotation={[0, Math.PI / 2, 0]}>
+      <CritterBody parts={parts} rig={rig} scale={sc} />
+    </group>
+  );
 }

@@ -164,10 +164,15 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
   so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
+- **Hug a cat or dog** (`world/hold.ts`): walk up to one (≤ 1.7 m) and press **F** / tap 🤗 *Hug*. `MSG.HOLD` sets
+  `Player.holding` (server keeps one holder per critter); every client then hides that critter's scheduled body and draws
+  it cradled in the holder's arms (`HeldCritter` in the avatar group: dangling paws, fast wag, looking at you), and the
+  chibi wraps its arms around it while still walking. Put it down (F again) and it hops back to its route.
 - **Ducks and rabbits** (same system as the cats and dogs, so they are tappable with a sentence + notebook word and a
   WebAudio quack / squeak): two duck families swim loops on the river (`DUCK_Y`, ducklings share the mother's loop with a
   smaller time offset so they paddle in a line; head dips under now and then), four rabbits hop around the meadow beyond
   the far bank and the grass outside both end fences (hopping arcs, nose/ear twitch, naps).
+- **Shop signs** sit at most 3.1 m up (just above the door), so the tall buildings' signs stay in the camera view.
 - **Street beyond the fences** (`Horizon.tsx` backdrop): the same road / lamp-post / pavement / park tiles continue past
   both end fences up to tx ±38 (±32 on low), so the street runs to the horizon instead of ending in a blank strip.
 - **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh

@@ -19,6 +19,7 @@ interface PlayerLike {
   talkWith: string;
   avatar: string;
   bubble: string;
+  holding?: string;
 }
 interface StreetStateLike {
   players: Map<string, PlayerLike>;
@@ -122,6 +123,7 @@ function bindRoom(r: Room<StreetStateLike>) {
       talkWith: p.talkWith,
       avatar: p.avatar,
       bubble: p.bubble,
+      holding: p.holding ?? '',
     });
 
   $(r.state).players.onAdd((p, id) => {
@@ -149,6 +151,11 @@ function bindRoom(r: Room<StreetStateLike>) {
 
 export function sendInput(x: number, y: number, z: number, rot: number, anim: string, voice: boolean, shouting = false) {
   room?.send(MSG.INPUT, { x, y, z, rot, anim, voice, shouting });
+}
+
+/** Pick up a cat/dog by id, or put it down with ''. */
+export function sendHold(id: string) {
+  room?.send(MSG.HOLD, id);
 }
 
 /** Tell the room about new clothes (the server re-validates and rate limits). */

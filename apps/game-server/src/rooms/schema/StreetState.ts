@@ -20,6 +20,8 @@ export class Player extends Schema {
   /** Last chat bubble text and when it was sent (ms epoch). */
   @type('string') bubble = '';
   @type('number') bubbleAt = 0;
+  /** Critter id this player is hugging ('' = none). One holder per critter. */
+  @type('string') holding = '';
 }
 
 export class StreetState extends Schema {

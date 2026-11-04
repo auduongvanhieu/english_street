@@ -32,6 +32,8 @@ import { CRITTERS, poseAt } from './world/critters';
 import { livePos } from './world/avoid';
 import { freezeClock, serverNow } from './net/client';
 import { InteractPrompt } from './ui/InteractPrompt';
+import { HugButton } from './ui/HugButton';
+import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
 import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
@@ -120,6 +122,8 @@ export default function App() {
         // Edge-triggered here (not polled per frame) so a quick tap still registers on slow devices; no auto-repeat.
         if (!e.repeat) requestJump();
         e.preventDefault();
+      } else if (!typing && (e.key === 'f' || e.key === 'F') && !s.panelNpc) {
+        toggleHug();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
       } else if (!typing && /^[1-5]$/.test(e.key)) {
@@ -193,6 +197,7 @@ export default function App() {
           {!hudHidden && !chatOpen && !inTalk && (
             <div data-ui className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] flex flex-col items-end gap-3">
               <TalkButton />
+              <HugButton touch />
               <HudButton big onClick={requestJump} title="Jump">⤒</HudButton>
               <EmoteBar compact />
               <ShoutButton compact />
@@ -213,6 +218,9 @@ export default function App() {
           </div>
           <ChatBox compact={false} open onClose={() => undefined} />
           <InteractPrompt touch={false} />
+          <div className="pointer-events-none absolute bottom-44 left-1/2 -translate-x-1/2">
+            <HugButton touch={false} />
+          </div>
         </>
       )}
 

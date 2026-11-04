@@ -19,7 +19,12 @@ export const MSG = {
   TIME: 'time',
   /** client -> server: JSON AvatarLook after the player changed clothes (rate limited); shows up in Player.avatar */
   AVATAR: 'avatar',
+  /** client -> server: id of the cat/dog the player picks up ('' = put it down); shows up in Player.holding */
+  HOLD: 'hold',
 } as const;
+
+/** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
+export const HOLDABLE_RE = /^(cat|dog)-\d{1,2}$/;
 
 export interface JoinOptions {
   name: string;

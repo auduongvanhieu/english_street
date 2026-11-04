@@ -118,7 +118,7 @@ export function HintToast({ touch }: { touch: boolean }) {
   if (!show) return null;
   return (
     <div className={`pointer-events-none absolute left-1/2 z-10 max-w-[90vw] -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-center text-xs text-white ${touch ? 'top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)]' : 'bottom-3'}`}>
-      {touch ? 'Joystick to move · drag to look around · walk up to a shop and tap Talk' : 'WASD / arrows to move · Shift to run · E to talk · Enter to chat · 1-5 emotes · drag to look around'}
+      {touch ? 'Joystick to move · drag to look around · walk up to a shop and tap Talk' : 'WASD / arrows to move · Shift to run · E to talk · F to hug a cat or dog · Enter to chat · 1-5 emotes · drag to look around'}
     </div>
   );
 }

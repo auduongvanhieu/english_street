@@ -101,6 +101,9 @@ function InstancedPart({ geometry, material, local, placements, castShadow }: { 
   return <primitive object={mesh} />;
 }
 
+/** Highest sign position (m): above the ground-floor door, where the street camera always sees it. */
+const SIGN_MAX_Y = 3.1;
+
 function Shop({ shop }: { shop: ShopDef }) {
   const { scene } = useGLTF(MODEL_URL(shop.model));
   // Clone with tinted materials so each shop looks distinct while sharing geometry.
@@ -124,8 +127,8 @@ function Shop({ shop }: { shop: ShopDef }) {
   return (
     <group position={[x, 0, z]}>
       <primitive object={tinted} position={[0, TILE_Y, 0]} scale={TILE} />
-      {/* Sign board on the front face */}
-      <group position={[0, top + 0.5, TILE / 2 + 0.05]}>
+      {/* Sign board on the front face, just above the door: tall buildings would put it out of the camera's view */}
+      <group position={[0, Math.min(top + 0.5, SIGN_MAX_Y), TILE / 2 + 0.08]}>
         <mesh position={[0, 0, -0.03]}>
           <planeGeometry args={[Math.max(2.4, shop.label.length * 0.32), 0.8]} />
           <meshStandardMaterial color="#2b2b2b" />

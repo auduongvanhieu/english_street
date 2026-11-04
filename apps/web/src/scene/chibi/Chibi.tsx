@@ -18,7 +18,7 @@ interface Rig {
  * A chibi character with procedural animation (no skeleton, no clips): joints are plain groups rotated every
  * frame toward a pose picked from `anim`. Cheap, and every look animates the same way.
  */
-export const Chibi = memo(function Chibi({ spec, anim }: { spec: ChibiSpec; anim: string }) {
+export const Chibi = memo(function Chibi({ spec, anim, hug = false }: { spec: ChibiSpec; anim: string; hug?: boolean }) {
   const parts = useMemo(() => chibiParts(spec), [spec]);
   const quality = useSettings((s) => s.quality);
   const outline = quality === 'high';
@@ -39,7 +39,7 @@ export const Chibi = memo(function Chibi({ spec, anim }: { spec: ChibiSpec; anim
       st.animT = 0;
     }
     st.animT += dt;
-    pose(r, anim, st, dt);
+    pose(r, anim, st, dt, hug);
   });
 
   const mat = chibiMaterial();
@@ -180,8 +180,15 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
 }
 
 const cur = new WeakMap<Rig, Pose>();
-function pose(r: Rig, anim: string, st: { t: number; phase: number; animT: number }, dt: number) {
+function pose(r: Rig, anim: string, st: { t: number; phase: number; animT: number }, dt: number, hug = false) {
   const goal = target(anim, st, dt);
+  if (hug) {
+    // arms wrapped around the pet in front of the chest (legs keep walking)
+    goal.armLX = goal.armRX = -1.25;
+    goal.armLZ = -0.45;
+    goal.armRZ = 0.45;
+    goal.headX += 0.12;
+  }
   let c = cur.get(r);
   if (!c) cur.set(r, (c = { ...goal }));
   const fast = anim === 'walk' || anim === 'run' || anim === 'wave' || anim === 'dance' || anim === 'no' || anim === 'talk' || anim === 'yes';

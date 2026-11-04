@@ -16,6 +16,7 @@ import {
   ZONE_NAME_MIN,
   maskProfanity,
   parseLook,
+  HOLDABLE_RE,
   type ZoneMeta,
   type InputMessage,
   type JoinOptions,
@@ -109,6 +110,20 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (now - (this.lastAvatarAt.get(client.sessionId) ?? 0) < AVATAR_COOLDOWN_MS) return;
       this.lastAvatarAt.set(client.sessionId, now);
       p.avatar = JSON.stringify(parseLook(json));
+    });
+
+    // Pick up / put down a cat or dog. Critters live on the clients' shared clock, so the server only makes sure
+    // that one critter has at most one holder.
+    this.onMessage<string>(MSG.HOLD, (client, id) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || typeof id !== 'string') return;
+      if (id === '') {
+        p.holding = '';
+        return;
+      }
+      if (!HOLDABLE_RE.test(id)) return;
+      for (const q of this.state.players.values()) if (q !== p && q.holding === id) return;
+      p.holding = id;
     });
 
     // One-to-one talk: the server is the referee (distance, busy state, who is allowed to message whom).

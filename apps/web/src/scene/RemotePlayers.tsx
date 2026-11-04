@@ -66,7 +66,7 @@ function Remote({ p }: { p: RemotePlayer }) {
         select(selected ? null : p.id);
       }}
     >
-      {near ? <PlayerAvatar anim={p.anim} look={look} /> : null}
+      {near ? <PlayerAvatar anim={p.anim} look={look} holding={p.holding} /> : null}
       {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} /> : null}
       {selected ? (
         <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>

@@ -35,6 +35,7 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
   const now = serverNow();
   // Critters and cyclists: where they are drawn (after steering around people), falling back to the schedule.
   for (const c of CRITTERS) {
+    if (heldCritters.has(c.id)) continue; // in someone's arms
     const q = livePos.get(c.id) ?? poseAt(c, now);
     if (near(q.x, q.z)) out.push({ x: q.x, z: q.z, ...CRITTER_SIZE[c.kind] });
   }
@@ -46,6 +47,7 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
   return out;
 }
 import { PlayerAvatar } from './PlayerAvatar';
+import { HUG_RADIUS, heldCritters, holdable, myHolding } from '../world/hold';
 import { avatarLook, AvatarSchema } from '@es/shared';
 import { NameTag } from './NameTag';
 
@@ -74,6 +76,7 @@ export function LocalPlayer({ name }: { name: string }) {
   const [animState, setAnimState] = useState('idle');
   const interactAcc = useRef(0);
   const avatar = useProfile((s) => s.profile?.avatar);
+  const holding = useGame((s) => (s.sessionId && s.players[s.sessionId]?.holding) || '');
   const look = useMemo(() => avatarLook(avatar ?? AvatarSchema.parse({})), [avatar]);
   const vy = useRef(0);
   const airborne = useRef(false);
@@ -186,12 +189,28 @@ export function LocalPlayer({ name }: { name: string }) {
         }
       }
       if (best !== s.interactTarget) s.setInteractTarget(best);
+      // nearest cat/dog within hugging reach (none while already hugging one)
+      let hug: string | null = null;
+      if (!myHolding()) {
+        let hugD = HUG_RADIUS * HUG_RADIUS;
+        for (const c of CRITTERS) {
+          if (!holdable(c.id) || heldCritters.has(c.id)) continue;
+          const q = livePos.get(c.id);
+          if (!q) continue;
+          const d = (q.x - g.position.x) ** 2 + (q.z - g.position.z) ** 2;
+          if (d < hugD) {
+            hugD = d;
+            hug = c.id;
+          }
+        }
+      }
+      if (hug !== s.nearCritter) s.setNearCritter(hug);
     }
   });
 
   return (
     <group ref={ref} position={SPAWN}>
-      <PlayerAvatar anim={animState} look={look} />
+      <PlayerAvatar anim={animState} look={look} holding={holding} />
       <NameTag name={name} />
     </group>
   );
