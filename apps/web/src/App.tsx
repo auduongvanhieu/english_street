@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { EMOTES } from '@es/shared';
+import { AvatarSchema, EMOTES, avatarLook } from '@es/shared';
+import { AVATAR_INTRO_KEY } from './ui/AvatarCreator';
 // The 3D scene (three.js + models) loads only after sign-in, keeping the first paint small.
 const Scene = lazy(() => import('./scene/Scene'));
 import { connect, leaveRoom } from './net/client';
@@ -134,7 +135,7 @@ export default function App() {
     setPlayerName(name);
     const prof = useProfile.getState();
     await prof.refresh();
-    const avatar = JSON.stringify({ color: useProfile.getState().profile?.avatar.color ?? '#4a90e2' });
+    const avatar = JSON.stringify(avatarLook(useProfile.getState().profile?.avatar ?? AvatarSchema.parse({})));
     const ok = await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }, zone)
       .then(() => true)
       .catch(() => false);
@@ -147,6 +148,9 @@ export default function App() {
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
       useGame.getState().setUiPanel('placement');
       localStorage.setItem('es:placement-skipped', '1');
+    } else if (p && !localStorage.getItem(AVATAR_INTRO_KEY)) {
+      // First visit (or first since characters exist): open the character creator once.
+      useGame.getState().setUiPanel('avatar');
     }
   }
 

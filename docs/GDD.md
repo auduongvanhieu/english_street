@@ -289,3 +289,11 @@ Mobile HUD + PWA, cài đặt/phụ đề VI/IPA, Request to talk + Shout, NPC n
 Plan và tiến độ: `/root/session_manager_workspaces/plans/english-street-step3.md`. Tóm tắt: nhảy (Space / nút ⤒), khu (zone)
 = room Colyseus tối đa 100 người với màn chọn khu, tạo khu riêng có mã, link mời; chân trời mới (dãy nhà nền, sông, cánh đồng
 vô tận, sương mù, mây); người đạp xe qua đường theo lịch tất định. Chi tiết kỹ thuật trong README mục Step 3.
+
+## 11. Step 4 — Bộ tạo nhân vật
+
+Plan: `/root/session_manager_workspaces/plans/english-street-avatar-creator.md`. Người chơi tự tạo nhân vật bằng cách bấm chọn:
+6 dáng (5 người Quaternius + robot), bảng màu da / tóc / áo / quần / giày, mũ (lưỡi trai, len, rộng vành, chóp, vương miện),
+kính, kính râm, balo; xem trước 3D xoay được, thử đồ trả phí miễn phí, chỉ trả xu khi lưu; người khác trong khu thấy ngay.
+Mở tự động lần đầu vào game. Chi tiết kỹ thuật: README mục *Character creator*.
+

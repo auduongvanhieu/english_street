@@ -5,5 +5,6 @@ export * from './schemas/npc';
 export * from './schemas/session';
 export * from './schemas/pair';
 export * from './profanity';
+export * from './avatar';
 export * from './progression';
 export * from './net';

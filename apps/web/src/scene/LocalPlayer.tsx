@@ -45,7 +45,8 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
   }
   return out;
 }
-import { Character } from './Character';
+import { PlayerAvatar } from './PlayerAvatar';
+import { avatarLook, AvatarSchema } from '@es/shared';
 import { NameTag } from './NameTag';
 
 export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
@@ -72,7 +73,8 @@ export function LocalPlayer({ name }: { name: string }) {
   const anim = useRef('idle');
   const [animState, setAnimState] = useState('idle');
   const interactAcc = useRef(0);
-  const tint = useProfile((s) => s.profile?.avatar.color ?? '#4a90e2');
+  const avatar = useProfile((s) => s.profile?.avatar);
+  const look = useMemo(() => avatarLook(avatar ?? AvatarSchema.parse({})), [avatar]);
   const vy = useRef(0);
   const airborne = useRef(false);
 
@@ -189,7 +191,7 @@ export function LocalPlayer({ name }: { name: string }) {
 
   return (
     <group ref={ref} position={SPAWN}>
-      <Character anim={animState} tint={tint} />
+      <PlayerAvatar anim={animState} look={look} />
       <NameTag name={name} />
     </group>
   );

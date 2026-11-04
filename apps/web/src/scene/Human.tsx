@@ -6,7 +6,7 @@ import { HUMAN_MODEL_URL, type Accessory, type Hat, type NpcLook } from './npcLo
 
 const TARGET_HEIGHT = 1.72;
 /** Game animation → clip name in the Quaternius character GLBs (pruned by scripts/build-models.mjs). */
-const CLIP: Record<string, string> = { idle: 'Idle', walk: 'Walk', run: 'Run', wave: 'Wave', talk: 'Interact', dance: 'Wave', thumbsup: 'Wave', yes: 'Idle_Neutral', no: 'Idle_Neutral' };
+const CLIP: Record<string, string> = { idle: 'Idle', walk: 'Walk', run: 'Run', wave: 'Wave', talk: 'Interact', dance: 'Wave', thumbsup: 'Wave', yes: 'Idle_Neutral', no: 'Idle_Neutral', jump: 'Idle_Neutral' };
 
 /**
  * A Quaternius human (NPC) with per-instance outfit colours and bone-attached accessories.
@@ -96,6 +96,8 @@ function attachAccessories(root: THREE.Object3D, look: NpcLook) {
     else if (a === 'bowtie' && neck) attach(neck, obj, a);
     else if (a === 'badge' && chest) attach(chest, obj, a);
     else if (a === 'apron' && chest) attach(chest, obj, a);
+    else if ((a === 'glasses' || a === 'sunglasses') && head) attach(head, obj, a);
+    else if (a === 'backpack' && chest) attach(chest, obj, a);
   }
 }
 
@@ -115,6 +117,37 @@ function makeHat(kind: Hat, color: string): THREE.Object3D {
     const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.015, 20), m);
     brim.position.y = 0.16;
     g.add(crown, brim);
+  } else if (kind === 'beanie') {
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 9, 0, Math.PI * 2, 0, Math.PI / 2), m);
+    crown.scale.y = 1.15;
+    crown.position.y = 0.13;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.05, 16), m);
+    band.position.y = 0.14;
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), mat('#f4f4f4'));
+    pom.position.y = 0.31;
+    g.add(crown, band, pom);
+  } else if (kind === 'tophat') {
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.22, 16), m);
+    crown.position.y = 0.3;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.112, 0.112, 0.035, 16), mat('#1a1a1a'));
+    band.position.y = 0.21;
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.015, 20), m);
+    brim.position.y = 0.19;
+    g.add(crown, band, brim);
+  } else if (kind === 'crown') {
+    const gold = new THREE.MeshStandardMaterial({ color: '#f2c41d', metalness: 0.6, roughness: 0.35 });
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.06, 14, 1, true), gold);
+    ring.position.y = 0.24;
+    g.add(ring);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.07, 4), gold);
+      spike.position.set(Math.sin(a) * 0.115, 0.3, Math.cos(a) * 0.115);
+      g.add(spike);
+    }
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.022), mat(color));
+    gem.position.set(0, 0.24, 0.125);
+    g.add(gem);
   } else {
     const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.16, 12), m);
     hat.position.y = 0.24;
@@ -123,6 +156,10 @@ function makeHat(kind: Hat, color: string): THREE.Object3D {
   g.traverse((o) => ((o as THREE.Mesh).castShadow = true));
   return g;
 }
+
+/** Eye height / face depth in head-bone space (tuned on the Quaternius heads). */
+const GLASSES_Y = 0.1;
+const GLASSES_Z = 0.15;
 
 function makeAccessory(kind: Accessory): THREE.Object3D | null {
   const g = new THREE.Group();
@@ -147,6 +184,40 @@ function makeAccessory(kind: Accessory): THREE.Object3D | null {
     const b = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.04, 0.01), mat('#ffffff'));
     b.position.set(-0.08, 0.1, 0.16);
     g.add(b);
+  } else if (kind === 'glasses' || kind === 'sunglasses') {
+    const sun = kind === 'sunglasses';
+    const frame = mat(sun ? '#111111' : '#2b2b2b');
+    const lensMat = sun ? new THREE.MeshStandardMaterial({ color: '#101820', roughness: 0.2, metalness: 0.4 }) : null;
+    for (const x of [-0.05, 0.05]) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.006, 6, 16), frame);
+      rim.position.set(x, GLASSES_Y, GLASSES_Z);
+      g.add(rim);
+      if (lensMat) {
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.032, 16), lensMat);
+        lens.position.set(x, GLASSES_Y, GLASSES_Z + 0.001);
+        g.add(lens);
+      }
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.008, 0.008), frame);
+    bridge.position.set(0, GLASSES_Y + 0.006, GLASSES_Z);
+    g.add(bridge);
+    for (const x of [-0.083, 0.083]) {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.008, 0.12), frame);
+      arm.position.set(x, GLASSES_Y, GLASSES_Z - 0.06);
+      g.add(arm);
+    }
+  } else if (kind === 'backpack') {
+    const m = mat('#c8443a');
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.36, 0.14), m);
+    body.position.set(0, -0.08, -0.2);
+    const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.05), mat('#a3332b'));
+    pocket.position.set(0, -0.16, -0.29);
+    g.add(body, pocket);
+    for (const x of [-0.09, 0.09]) {
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.2, 0.02), mat('#3a3a3a'));
+      strap.position.set(x, 0.04, 0.15);
+      g.add(strap);
+    }
   } else if (kind === 'apron') {
     // Hangs from the chest bone down to the knees, slightly in front of the body.
     const a = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 0.015), mat('#3d2b1f'));

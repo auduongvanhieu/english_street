@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGame, type RemotePlayer } from '../store/game';
-import { Character } from './Character';
+import { PlayerAvatar } from './PlayerAvatar';
+import { parseLook } from '@es/shared';
 import { localPos } from './LocalPlayer';
 import { useSettings } from '../store/settings';
 import { NameTag } from './NameTag';
@@ -35,6 +36,7 @@ function Remote({ p }: { p: RemotePlayer }) {
   const [tag, setTag] = useState(true);
   const acc = useRef(Math.random());
   const quality = useSettings((s) => s.quality);
+  const look = useMemo(() => parseLook(p.avatar), [p.avatar]);
   // Interpolate toward the last known server position for smooth motion.
   useFrame((_, dt) => {
     const g = ref.current;
@@ -64,7 +66,7 @@ function Remote({ p }: { p: RemotePlayer }) {
         select(selected ? null : p.id);
       }}
     >
-      {near ? <Character anim={p.anim} tint={avatarColor(p.avatar, '#e2a04a')} /> : null}
+      {near ? <PlayerAvatar anim={p.anim} look={look} /> : null}
       {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} /> : null}
       {selected ? (
         <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>
@@ -81,13 +83,4 @@ function shortestAngle(from: number, to: number) {
   if (d > Math.PI) d -= Math.PI * 2;
   if (d < -Math.PI) d += Math.PI * 2;
   return d;
-}
-
-export function avatarColor(json: string, fallback: string): string {
-  try {
-    const c = (JSON.parse(json) as { color?: string }).color;
-    return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : fallback;
-  } catch {
-    return fallback;
-  }
 }

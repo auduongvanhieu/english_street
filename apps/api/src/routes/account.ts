@@ -2,8 +2,11 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
-  AVATAR_COLORS,
-  AvatarConfigV2Schema,
+  CLOTH_COLORS,
+  avatarLook,
+  checkLook,
+  itemPrice,
+  AvatarSchema,
   BADGES,
   CEFR_LEVELS,
   LoginRequestSchema,
@@ -59,7 +62,7 @@ export function accountRoutes(repo: AttemptRepo) {
       nextLevelXp: xpForLevel(level + 1),
       coins: u.coins,
       streak: u.streak,
-      avatar: AvatarConfigV2Schema.parse(u.avatarConfig ?? {}),
+      avatar: AvatarSchema.parse(u.avatarConfig ?? {}),
       stats: { questsCompleted: completed.length, reviewsDone: u.reviewsDone },
       badges,
       daily,
@@ -144,35 +147,37 @@ export function accountRoutes(repo: AttemptRepo) {
       return toDto(v);
     });
 
+    // Save the whole character look. Every colour must come from the palettes and paid items must be owned.
     app.post('/me/avatar', async (req, reply) => {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
-      const body = z.object({ color: z.string() }).safeParse(req.body);
-      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!req.body || typeof req.body !== 'object') return reply.code(400).send({ error: 'bad_request' });
       const u = await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
-      const avatar = AvatarConfigV2Schema.parse(u.avatarConfig ?? {});
-      const c = AVATAR_COLORS.find((x) => x.id === body.data.color);
-      if (!c) return reply.code(400).send({ error: 'unknown_color' });
-      if (c.price > 0 && !avatar.owned.includes(c.id)) return reply.code(402).send({ error: 'not_owned' });
-      avatar.color = c.hex;
-      await repo.updateUser(id, { avatarConfig: avatar });
-      return avatar;
+      const current = AvatarSchema.parse(u.avatarConfig ?? {});
+      // Old clients send { color: 'gold' } (a palette id): treat it as the top colour.
+      const raw = req.body as Record<string, unknown>;
+      const legacy = typeof raw.color === 'string' && !raw.color.startsWith('#') ? CLOTH_COLORS.find((c) => c.id === raw.color)?.hex : undefined;
+      const next = AvatarSchema.parse({ ...avatarLook(current), ...raw, ...(legacy ? { top: legacy } : {}), owned: current.owned });
+      const bad = checkLook(avatarLook(next), next.owned);
+      if (bad) return reply.code(bad.error === 'not_owned' ? 402 : 400).send(bad);
+      await repo.updateUser(id, { avatarConfig: next });
+      return next;
     });
 
     app.post('/me/shop/buy', async (req, reply) => {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
-      const body = z.object({ item: z.string() }).safeParse(req.body);
+      const body = z.object({ item: z.string().max(40) }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const u = await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
-      const avatar = AvatarConfigV2Schema.parse(u.avatarConfig ?? {});
-      const c = AVATAR_COLORS.find((x) => x.id === body.data.item);
-      if (!c) return reply.code(400).send({ error: 'unknown_item' });
-      if (avatar.owned.includes(c.id)) return reply.code(409).send({ error: 'already_owned' });
-      if (u.coins < c.price) return reply.code(402).send({ error: 'not_enough_coins' });
-      avatar.owned.push(c.id);
-      await repo.updateUser(id, { avatarConfig: avatar, coins: u.coins - c.price });
-      return { avatar, coins: u.coins - c.price };
+      const avatar = AvatarSchema.parse(u.avatarConfig ?? {});
+      const price = itemPrice(body.data.item);
+      if (price === null) return reply.code(400).send({ error: 'unknown_item' });
+      if (price === 0 || avatar.owned.includes(body.data.item)) return reply.code(409).send({ error: 'already_owned' });
+      if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
+      avatar.owned.push(body.data.item);
+      await repo.updateUser(id, { avatarConfig: avatar, coins: u.coins - price });
+      return { avatar, coins: u.coins - price };
     });
 
   };

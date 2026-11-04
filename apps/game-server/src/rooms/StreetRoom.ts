@@ -15,6 +15,7 @@ import {
   ZONE_NAME_MAX,
   ZONE_NAME_MIN,
   maskProfanity,
+  parseLook,
   type ZoneMeta,
   type InputMessage,
   type JoinOptions,
@@ -27,6 +28,7 @@ import { Player, StreetState } from './schema/StreetState';
 
 const SPAWN = { x: 0, y: 0, z: 4 };
 const BUBBLE_TTL_MS = 5000;
+const AVATAR_COOLDOWN_MS = 800;
 /** Relay (voice signalling, pair quests) only works between players reasonably close to each other. */
 const RELAY_RADIUS = PROXIMITY_RADIUS * 2;
 
@@ -38,6 +40,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Pending talk requests: target sessionId -> requester sessionId. */
   private talkRequests = new Map<string, string>();
   private lastShoutAt = new Map<string, number>();
+  private lastAvatarAt = new Map<string, number>();
   /** Zone identity (also published as room metadata for the zone list). */
   private zone: ZoneMeta = { name: MAIN_ZONE_NAME, kind: 'main', locked: false };
   /** Private zone code (never in metadata). */
@@ -96,6 +99,16 @@ export class StreetRoom extends Room<{ state: StreetState }> {
         const q = this.state.players.get(other.sessionId);
         if (q && dist2(p, q) <= SHOUT_RADIUS * SHOUT_RADIUS) other.send(MSG.CHAT, { from: p.id, pid: p.pid, name: p.name, text: clean, shout: true });
       }
+    });
+
+    // New clothes: re-validated into a clean look so a client can only send catalogue values.
+    this.onMessage<string>(MSG.AVATAR, (client, json) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || typeof json !== 'string' || json.length > 1024) return;
+      const now = Date.now();
+      if (now - (this.lastAvatarAt.get(client.sessionId) ?? 0) < AVATAR_COOLDOWN_MS) return;
+      this.lastAvatarAt.set(client.sessionId, now);
+      p.avatar = JSON.stringify(parseLook(json));
     });
 
     // One-to-one talk: the server is the referee (distance, busy state, who is allowed to message whom).
@@ -214,7 +227,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     p.id = client.sessionId;
     p.pid = typeof options?.playerId === 'string' ? options.playerId.slice(0, 64) : '';
     p.name = sanitizeName(options?.name) ?? `Guest-${client.sessionId.slice(0, 4)}`;
-    p.avatar = typeof options?.avatar === 'string' ? options.avatar.slice(0, 512) : '{}';
+    p.avatar = JSON.stringify(parseLook(typeof options?.avatar === 'string' ? options.avatar.slice(0, 1024) : '{}'));
     p.x = SPAWN.x + (Math.random() - 0.5) * 4;
     p.y = SPAWN.y;
     p.z = SPAWN.z + (Math.random() - 0.5) * 2;
@@ -229,6 +242,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);
     this.lastShoutAt.delete(client.sessionId);
+    this.lastAvatarAt.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
     console.log(`[street] ${p?.name ?? client.sessionId} left`);
   }

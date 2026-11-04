@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CEFR_LEVELS } from './constants';
+import { AvatarSchema, type Avatar } from './avatar';
 
 /** Level curve: level n needs 50·(n-1)² XP. */
 export function levelForXp(xp: number): number {
@@ -20,21 +21,9 @@ export const BADGES = [
 ] as const;
 export type BadgeId = (typeof BADGES)[number]['id'];
 
-export const AvatarConfigV2Schema = z.object({
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#4a90e2'),
-  owned: z.array(z.string()).default([]),
-});
-export type AvatarConfigV2 = z.infer<typeof AvatarConfigV2Schema>;
-
-export const AVATAR_COLORS: { id: string; hex: string; price: number }[] = [
-  { id: 'blue', hex: '#4a90e2', price: 0 },
-  { id: 'green', hex: '#43b86a', price: 0 },
-  { id: 'orange', hex: '#f08a3c', price: 0 },
-  { id: 'purple', hex: '#8e5bd8', price: 0 },
-  { id: 'gold', hex: '#f2c41d', price: 50 },
-  { id: 'crimson', hex: '#d93a4a', price: 50 },
-  { id: 'midnight', hex: '#1f2a44', price: 80 },
-];
+/** @deprecated kept as an alias: the avatar is now a full character look (see avatar.ts). */
+export const AvatarConfigV2Schema = AvatarSchema;
+export type AvatarConfigV2 = Avatar;
 
 // ---------------------------------------------------------------- auth
 export const RegisterRequestSchema = z.object({
@@ -57,7 +46,7 @@ export const ProfileSchema = z.object({
   nextLevelXp: z.number().int(),
   coins: z.number().int(),
   streak: z.number().int(),
-  avatar: AvatarConfigV2Schema,
+  avatar: AvatarSchema,
   stats: z.object({ questsCompleted: z.number().int(), reviewsDone: z.number().int() }),
   badges: z.array(z.string()),
   daily: z.array(z.object({ questId: z.string(), title: z.string(), npcId: z.string(), level: z.string(), done: z.boolean(), bonusXp: z.number().int() })),

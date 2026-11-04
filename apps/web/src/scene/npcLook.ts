@@ -3,8 +3,8 @@
  * outfit into a work uniform, and procedural accessories attached to bones (hats, badge, stethoscope…).
  * Material names come from the GLBs (see scripts/build-models.mjs → `mats`), e.g. "Suit", "White", "Tie".
  */
-export type Hat = 'cap' | 'brim' | 'paperhat';
-export type Accessory = 'stethoscope' | 'bowtie' | 'badge' | 'apron';
+export type Hat = 'cap' | 'brim' | 'paperhat' | 'beanie' | 'tophat' | 'crown';
+export type Accessory = 'stethoscope' | 'bowtie' | 'badge' | 'apron' | 'glasses' | 'sunglasses' | 'backpack';
 
 export interface NpcLook {
   model: 'business' | 'casual' | 'hoodie' | 'worker' | 'farmer' | 'woman-casual' | 'woman-formal';

@@ -1,5 +1,5 @@
 import { Client, getStateCallbacks, type Room } from '@colyseus/sdk';
-import { MSG, STREET_ROOM, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -149,6 +149,11 @@ function bindRoom(r: Room<StreetStateLike>) {
 
 export function sendInput(x: number, y: number, z: number, rot: number, anim: string, voice: boolean, shouting = false) {
   room?.send(MSG.INPUT, { x, y, z, rot, anim, voice, shouting });
+}
+
+/** Tell the room about new clothes (the server re-validates and rate limits). */
+export function sendAvatar(look: AvatarLook) {
+  room?.send(MSG.AVATAR, JSON.stringify(look));
 }
 
 export function sendChat(text: string) {

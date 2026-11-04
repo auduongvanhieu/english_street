@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { AVATAR_COLORS, BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
+import { BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
 import { useGame } from '../store/game';
 import { Sheet, SheetHeader } from './Sheet';
 import { SettingsPanel } from './SettingsPanel';
 import { useProfile } from '../store/profile';
-import { buyItem, fetchPlacement, fetchVocab, reviewVocab, setAvatarColor, submitPlacement } from '../net/api';
+import { fetchPlacement, fetchVocab, reviewVocab, submitPlacement } from '../net/api';
+import { AVATAR_INTRO_KEY, AvatarCreator } from './AvatarCreator';
 
 export function ProfileHud({ compact }: { compact?: boolean }) {
   const p = useProfile((s) => s.profile);
@@ -60,7 +61,7 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
           📓 Notebook
         </button>
         <button type="button" onClick={() => open('avatar')} className="flex-1 rounded bg-white/15 py-1 hover:bg-white/30">
-          🎨 Avatar
+          🎨 Character
         </button>
       </div>
       {!p.placementDone && (
@@ -107,7 +108,7 @@ function ProfilePanel() {
         )}
         <Item to="daily">📋 Today's quests &amp; badges</Item>
         <Item to="notebook">📓 Notebook</Item>
-        <Item to="avatar">🎨 Avatar &amp; shop</Item>
+        <Item to="avatar">🎨 Character &amp; shop</Item>
       </div>
     </Panel>
   );
@@ -132,7 +133,7 @@ export function UiPanels() {
   const which = useGame((s) => s.uiPanel);
   if (which === 'daily') return <DailyPanel />;
   if (which === 'notebook') return <NotebookPanel />;
-  if (which === 'avatar') return <AvatarPanel />;
+  if (which === 'avatar') return <AvatarCreator />;
   if (which === 'placement') return <PlacementPanel />;
   if (which === 'profile') return <ProfilePanel />;
   if (which === 'settings') return <SettingsPanel />;
@@ -264,58 +265,6 @@ function NotebookPanel() {
   );
 }
 
-// ---------------------------------------------------------------- avatar + shop
-function AvatarPanel() {
-  const p = useProfile((s) => s.profile);
-  const refresh = useProfile((s) => s.refresh);
-  const [error, setError] = useState<string | null>(null);
-  if (!p) return null;
-  async function pick(id: string) {
-    setError(null);
-    try {
-      await setAvatarColor(id);
-      await refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-  async function buy(id: string) {
-    setError(null);
-    try {
-      await buyItem(id);
-      await setAvatarColor(id);
-      await refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-  return (
-    <Panel title="🎨 Avatar">
-      <p className="mb-3 text-sm text-gray-600">Choose your colour. Premium colours cost coins — earn them by finishing quests. You have 🪙 {p.coins}.</p>
-      <div className="grid grid-cols-4 gap-3">
-        {AVATAR_COLORS.map((c) => {
-          const owned = c.price === 0 || p.avatar.owned.includes(c.id);
-          const selected = p.avatar.color.toLowerCase() === c.hex.toLowerCase();
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => (owned ? pick(c.id) : buy(c.id))}
-              className={`flex flex-col items-center rounded-xl border-2 p-2 text-xs ${selected ? 'border-blue-600' : 'border-transparent hover:border-gray-300'}`}
-              aria-label={`${c.id}${owned ? '' : ` (${c.price} coins)`}`}
-            >
-              <span className="h-10 w-10 rounded-full shadow-inner" style={{ background: c.hex }} />
-              <span className="mt-1 capitalize">{c.id}</span>
-              <span className="text-[10px] text-gray-500">{owned ? (selected ? 'selected' : 'owned') : `🪙 ${c.price}`}</span>
-            </button>
-          );
-        })}
-      </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-    </Panel>
-  );
-}
-
 // ---------------------------------------------------------------- placement test
 function PlacementPanel() {
   const [qs, setQs] = useState<Omit<PlacementQuestion, 'answer'>[] | null>(null);
@@ -334,8 +283,8 @@ function PlacementPanel() {
         <div className="text-center">
           <div className="text-5xl font-black text-blue-600">{result.level}</div>
           <p className="mt-2 text-sm text-gray-600">{result.correct}/{result.total} correct. NPCs will now adapt to this level. You can retake the test any time from your profile.</p>
-          <button type="button" onClick={() => close(null)} className="mt-4 w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
-            Start playing
+          <button type="button" onClick={() => close(localStorage.getItem(AVATAR_INTRO_KEY) ? null : 'avatar')} className="mt-4 w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
+            {localStorage.getItem(AVATAR_INTRO_KEY) ? 'Start playing' : 'Next: create your character'}
           </button>
         </div>
       </Panel>

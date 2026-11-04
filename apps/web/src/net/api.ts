@@ -1,4 +1,4 @@
-import type { AttemptSummary, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
+import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
 import { authHeaders, getPlayerId } from './player';
 
@@ -13,6 +13,8 @@ export const ERROR_TEXT: Record<string, string> = {
   invalid_credentials: 'Wrong email or password.',
   email_taken: 'An account with this email already exists.',
   not_enough_coins: 'Not enough coins yet.',
+  not_owned: 'Buy that item first.',
+  bad_color: 'That colour is not available.',
   beta_pass_required: 'English Street is in closed beta. Please enter an invite code.',
   invalid_invite_code: 'That invite code is not valid.',
 };
@@ -48,8 +50,8 @@ export const fetchPlacement = () => get<Omit<PlacementQuestion, 'answer'>[]>('/p
 export const submitPlacement = (answers: number[]) => post<{ correct: number; total: number; level: string }>(`/me/placement${q()}`, { answers });
 export const fetchVocab = () => get<VocabEntryDto[]>(`/me/vocab${q()}`);
 export const reviewVocab = (id: string, grade: ReviewGrade) => post<VocabEntryDto>(`/me/vocab/review${q()}`, { id, grade });
-export const setAvatarColor = (color: string) => post<{ color: string; owned: string[] }>(`/me/avatar${q()}`, { color });
-export const buyItem = (item: string) => post<{ avatar: { color: string; owned: string[] }; coins: number }>(`/me/shop/buy${q()}`, { item });
+export const saveAvatar = (look: AvatarLook) => post<Avatar>(`/me/avatar${q()}`, look);
+export const buyItem = (item: string) => post<{ avatar: Avatar; coins: number }>(`/me/shop/buy${q()}`, { item });
 
 export interface ClientConfig {
   betaGate: boolean;

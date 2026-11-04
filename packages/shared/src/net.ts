@@ -17,11 +17,13 @@ export const MSG = {
   ZONE: 'zone',
   /** server -> client on join: { now } server epoch ms, so every client can run the same deterministic street life clock */
   TIME: 'time',
+  /** client -> server: JSON AvatarLook after the player changed clothes (rate limited); shows up in Player.avatar */
+  AVATAR: 'avatar',
 } as const;
 
 export interface JoinOptions {
   name: string;
-  avatar: string; // JSON-encoded AvatarConfig
+  avatar: string; // JSON-encoded AvatarLook
   /** Anonymous/API player id (maps the Colyseus session to quest progress). */
   playerId: string;
   /** Closed beta: invite pass from POST /beta/verify, or the account token (either satisfies the gate). */
