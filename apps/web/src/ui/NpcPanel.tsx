@@ -318,7 +318,7 @@ function Bubble({ m, onReplay, lang, npcId }: { m: ChatMessage; onReplay?: () =>
     <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%]">
         <div className={`flex items-start gap-1 rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
-          {mine ? <span>{m.content}</span> : <Subtitled text={m.content} vi={m.content_vi ?? viFallback} showVi={showVi} lang={lang} npcId={npcId} />}
+          {mine ? <span>{m.content}</span> : <Subtitled text={m.content} vi={m.content_vi ?? viFallback} showVi={showVi} lang={lang} npcId={npcId} onTranslate={() => void translate(m.content)} />}
           {onReplay && (
             <button type="button" onClick={onReplay} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label="Replay" title="Listen again">
               🔊

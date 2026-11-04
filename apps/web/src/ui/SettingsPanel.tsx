@@ -72,10 +72,10 @@ export function SettingsPanel() {
       <div className="min-h-0 flex-1 divide-y overflow-y-auto px-4 sm:px-5">
         <section className="py-2">
           <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Learning</h3>
-          <Row label="Phụ đề tiếng Việt" hint={`Vietnamese subtitles under NPC lines · auto = on for A1–A2 (now ${effective ? 'on' : 'off'})`}>
-            <Segmented<Tri> value={s.subtitlesVi} options={[{ id: 'auto', label: 'Auto' }, { id: 'on', label: 'On' }, { id: 'off', label: 'Off' }]} onChange={(v) => s.set({ subtitlesVi: v })} />
+          <Row label="Luôn hiện phụ đề tiếng Việt" hint={`Off: tap "Dịch" on a line to translate it (now ${effective ? 'always on' : 'per line'})`}>
+            <Segmented<Tri> value={s.subtitlesVi === 'on' ? 'on' : 'off'} options={[{ id: 'off', label: 'Off' }, { id: 'on', label: 'On' }]} onChange={(v) => s.set({ subtitlesVi: v })} />
           </Row>
-          <Row label="IPA pronunciation" hint="Show /ˈkɒfi/ under NPC lines; tap any word for details">
+          <Row label="Always show IPA" hint='Off: tap "IPA" on a line; tap any word for details'>
             <Toggle on={s.ipa} onChange={(v) => s.set({ ipa: v })} label="IPA" />
           </Row>
         </section>

@@ -37,7 +37,8 @@ export interface Settings {
 
 export const useSettings = create<Settings>((set) => ({
   quality: initialQuality(),
-  subtitlesVi: read<Tri>('es:subs', 'auto', (v) => v === 'auto' || v === 'on' || v === 'off'),
+  // Off by default: each NPC line has its own Dịch / IPA buttons. 'On' = always show (new key, so the old 'auto' default resets).
+  subtitlesVi: read<Tri>('es:subs2', 'off', (v) => v === 'on' || v === 'off'),
   ipa: read<boolean>('es:ipa', false, (v) => typeof v === 'boolean'),
   ttsRate: read<number>('es:ttsRate', 0.95, (v) => typeof v === 'number' && v >= 0.5 && v <= 1.5),
   ambientVolume: read<number>('es:ambient', matchMedia('(pointer: coarse)').matches ? 0 : 0.4, (v) => typeof v === 'number' && v >= 0 && v <= 1),
@@ -47,7 +48,7 @@ export const useSettings = create<Settings>((set) => ({
     set({ quality });
   },
   set: (patch) => {
-    if (patch.subtitlesVi !== undefined) localStorage.setItem('es:subs', JSON.stringify(patch.subtitlesVi));
+    if (patch.subtitlesVi !== undefined) localStorage.setItem('es:subs2', JSON.stringify(patch.subtitlesVi));
     if (patch.ipa !== undefined) localStorage.setItem('es:ipa', JSON.stringify(patch.ipa));
     if (patch.ttsRate !== undefined) localStorage.setItem('es:ttsRate', JSON.stringify(patch.ttsRate));
     if (patch.ambientVolume !== undefined) localStorage.setItem('es:ambient', JSON.stringify(patch.ambientVolume));

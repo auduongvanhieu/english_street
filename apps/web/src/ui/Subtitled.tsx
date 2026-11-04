@@ -25,8 +25,14 @@ async function ipaForWords(words: string[]): Promise<void> {
  * An NPC line with tappable words, an optional IPA line and an optional Vietnamese subtitle.
  * `vi` comes from the structured turn (reply_vi) or the cached /translate endpoint.
  */
-export function Subtitled({ text, vi, showVi, lang, npcId }: { text: string; vi?: string; showVi: boolean; lang: string; npcId: string }) {
-  const ipaOn = useSettings((s) => s.ipa);
+export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text: string; vi?: string; showVi: boolean; lang: string; npcId: string; onTranslate?: () => void }) {
+  const ipaAlways = useSettings((s) => s.ipa);
+  // Per-line toggles; the global settings only decide whether they start open.
+  const [viOpen, setViOpen] = useState(showVi);
+  const [ipaOpen, setIpaOpen] = useState(ipaAlways);
+  useEffect(() => setViOpen(showVi), [showVi]);
+  useEffect(() => setIpaOpen(ipaAlways), [ipaAlways]);
+  const ipaOn = ipaOpen;
   const [, bump] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const words = useMemo(() => text.match(WORD_RE) ?? [], [text]);
@@ -71,7 +77,33 @@ export function Subtitled({ text, vi, showVi, lang, npcId }: { text: string; vi?
         )}
       </span>
       {ipaLine && <span className="mt-0.5 block font-mono text-xs text-gray-500">{ipaLine}</span>}
-      {showVi && <span className="mt-0.5 block text-xs text-blue-800/80">{vi ?? '…'}</span>}
+      {viOpen && <span className="mt-0.5 block text-xs text-blue-800/80">{vi ?? '…'}</span>}
+      <span className="mt-1 flex gap-1.5">
+        <button
+          type="button"
+          aria-pressed={viOpen}
+          onClick={() => {
+            const next = !viOpen;
+            setViOpen(next);
+            if (next && !vi) onTranslate?.();
+            if (next) track('translate_line', { npcId });
+          }}
+          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${viOpen ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
+        >
+          Dịch
+        </button>
+        <button
+          type="button"
+          aria-pressed={ipaOpen}
+          onClick={() => {
+            setIpaOpen(!ipaOpen);
+            if (!ipaOpen) track('ipa_line', { npcId });
+          }}
+          className={`rounded-full border px-2 py-0.5 font-mono text-[11px] font-semibold ${ipaOpen ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
+        >
+          IPA
+        </button>
+      </span>
       {picked && <WordCard word={picked} lang={lang} onClose={() => setPicked(null)} />}
     </span>
   );

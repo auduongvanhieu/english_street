@@ -7,7 +7,7 @@ import { allowTelemetry } from '../npc/ratelimit';
 import type { AttemptRepo } from '../npc/attempts';
 
 /** Client-side event names we accept (anything else is dropped). */
-const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full']);
+const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line']);
 
 const EventsSchema = z.object({
   playerId: z.string().min(8).max(64).optional(),
