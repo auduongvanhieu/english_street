@@ -157,6 +157,22 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  /** 🚪 Exit: close whatever is open, leave the room and go back to the zone picker (progress is saved). */
+  function exitGame() {
+    track('exit_game');
+    const g = useGame.getState();
+    g.closePanel();
+    g.setUiPanel(null);
+    if (usePair.getState().state) void usePair.getState().leave();
+    if (useRestaurant.getState().seat) useRestaurant.getState().stand();
+    useArea.getState().setCurrent(null);
+    useFarm.getState().visit(null);
+    useVoiceChat.getState().disable();
+    leaveRoom();
+    setChatOpen(false);
+    setPicker(true);
+  }
+
   async function join(name: string, zone: ZoneSelection = { mode: 'main' }) {
     setPlayerName(name);
     const prof = useProfile.getState();
@@ -216,6 +232,7 @@ export default function App() {
             <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
             <SettingsButton compact />
             <FeedbackButton compact />
+            <HudButton onClick={exitGame} title={t('Exit to zone list')}>🚪</HudButton>
           </div>
           {/* bottom-right: actions */}
           {!hudHidden && !chatOpen && !inTalk && (
@@ -243,6 +260,9 @@ export default function App() {
             </button>
             <SettingsButton />
             <FeedbackButton />
+            <button type="button" onClick={exitGame} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-red-600/80" title={t('Exit to zone list')}>
+              🚪 {t('Exit')}
+            </button>
           </div>
           <ChatBox compact={false} open onClose={() => undefined} />
           <InteractPrompt touch={false} />

@@ -7,7 +7,7 @@ import { allowTelemetry } from '../npc/ratelimit';
 import type { AttemptRepo } from '../npc/attempts';
 
 /** Client-side event names we accept (anything else is dropped). */
-const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line', 'avatar_save', 'critter_hug', 'lang_change', 'area_enter', 'area_panel_open', 'word_card_open', 'quiz_done', 'farm_action', 'restaurant_order', 'shopping_done', 'shopping_start', 'bus_ride', 'restaurant_sit', 'garden_visit', 'translation_report']);
+const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line', 'avatar_save', 'critter_hug', 'lang_change', 'area_enter', 'area_panel_open', 'word_card_open', 'quiz_done', 'farm_action', 'restaurant_order', 'shopping_done', 'shopping_start', 'bus_ride', 'restaurant_sit', 'garden_visit', 'translation_report', 'exit_game']);
 
 const EventsSchema = z.object({
   playerId: z.string().min(8).max(64).optional(),
