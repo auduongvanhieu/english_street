@@ -356,7 +356,11 @@ export function AuthScreen({
           <p className="mt-2 text-sm text-red-600">
             {gateRefused
               ? t('English Street is in closed beta — please enter your invite code.')
-              : t('Cannot reach the game server. Is it running?')}
+              : connError.includes('too_many_guests')
+                ? t('Too many guests from your network right now. Sign in to play, or try again later.')
+                : humanRefused
+                  ? t('Please do the security check again.')
+                  : t('Cannot reach the game server. Is it running?')}
           </p>
         )}
       </form>

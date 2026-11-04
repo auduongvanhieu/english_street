@@ -37,6 +37,15 @@ const RELAY_RADIUS = PROXIMITY_RADIUS * 2;
 
 const AUTH_SECRET = process.env.AUTH_SECRET ?? 'dev-secret-change-me';
 const BETA_GATE = (process.env.BETA_CODES ?? '').trim().length > 0;
+/** Guests (not signed in) playing at the same time from one IP, over all rooms of this server. */
+const MAX_GUESTS_PER_IP = Math.max(1, Number(process.env.MAX_GUESTS_PER_IP) || 6);
+const guestsByIp = new Map<string, number>();
+
+/** What onAuth hands to onJoin (client.auth). */
+interface JoinAuth {
+  ip: string;
+  guest: boolean;
+}
 
 export class StreetRoom extends Room<{ state: StreetState }> {
   maxClients = STREET_ROOM_MAX_CLIENTS;
@@ -53,12 +62,18 @@ export class StreetRoom extends Room<{ state: StreetState }> {
    * Every player is a signed-in account (token) or a guest who passed a captcha (human pass); in the closed
    * beta guests also need a beta pass. All are minted by the API with the shared AUTH_SECRET.
    */
-  static async onAuth(_token: string, options: Partial<JoinOptions>) {
-    if (verifyToken(AUTH_SECRET, options?.token) && !isBetaPass(AUTH_SECRET, options?.token) && !isHumanPass(AUTH_SECRET, options?.token)) return true;
+  static async onAuth(_token: string, options: Partial<JoinOptions>, context?: { ip?: string }): Promise<JoinAuth> {
+    const ip = context?.ip ?? 'unknown';
+    if (verifyToken(AUTH_SECRET, options?.token) && !isBetaPass(AUTH_SECRET, options?.token) && !isHumanPass(AUTH_SECRET, options?.token)) return { ip, guest: false };
     if (BETA_GATE && !isBetaPass(AUTH_SECRET, options?.betaPass)) throw new Error('beta_pass_required');
     if (!isHumanPass(AUTH_SECRET, options?.humanPass)) throw new Error('human_check_required');
-    return true;
+    // refuse early (before a seat is reserved) when this network already has its share of guests
+    if ((guestsByIp.get(ip) ?? 0) >= MAX_GUESTS_PER_IP) throw new Error('too_many_guests');
+    return { ip, guest: true };
   }
+
+  /** Guests counted per IP while they are in a room (released in onLeave). */
+  private countedGuests = new Map<string, string>();
 
   async onCreate(options: Partial<JoinOptions> = {}) {
     this.setState(new StreetState());
@@ -256,6 +271,13 @@ export class StreetRoom extends Room<{ state: StreetState }> {
 
   onJoin(client: Client, options: Partial<JoinOptions>) {
     if (this.code && options?.zoneCode !== this.code) throw new ServerError(4103, 'zone_code_required');
+    const auth = client.auth as JoinAuth | undefined;
+    if (auth?.guest) {
+      const n = guestsByIp.get(auth.ip) ?? 0;
+      if (n >= MAX_GUESTS_PER_IP) throw new ServerError(4104, 'too_many_guests');
+      guestsByIp.set(auth.ip, n + 1);
+      this.countedGuests.set(client.sessionId, auth.ip);
+    }
     const p = new Player();
     p.id = client.sessionId;
     p.pid = typeof options?.playerId === 'string' ? options.playerId.slice(0, 64) : '';
@@ -271,6 +293,13 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
 
   onLeave(client: Client) {
+    const ip = this.countedGuests.get(client.sessionId);
+    if (ip !== undefined) {
+      this.countedGuests.delete(client.sessionId);
+      const n = (guestsByIp.get(ip) ?? 1) - 1;
+      if (n > 0) guestsByIp.set(ip, n);
+      else guestsByIp.delete(ip);
+    }
     const p = this.state.players.get(client.sessionId);
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);

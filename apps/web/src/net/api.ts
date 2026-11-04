@@ -15,6 +15,7 @@ export const ERROR_TEXT: Record<string, string> = {
   invalid_credentials: tk('Wrong email or password.'),
   email_taken: tk('An account with this email already exists.'),
   human_check_required: tk('Please do the security check again.'),
+  too_many_guests: tk('Too many guests from your network right now. Sign in to play, or try again later.'),
   captcha_failed: tk('The security code was wrong or expired. Try the new one.'),
   not_enough_coins: tk('Not enough coins yet.'),
   not_owned: tk('Buy that item first.'),

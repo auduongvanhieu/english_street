@@ -107,6 +107,9 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = z.object({ turnstileToken: z.string().max(4096).optional(), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      // guest passes per IP: a few per hour and per day (a school or café shares one IP, so not too strict)
+      if (!(await limiter.allow(`guestpass:h:${req.ip}`, env.GUEST_PASSES_PER_IP_HOUR, 3600)) || !(await limiter.allow(`guestpass:d:${req.ip}`, env.GUEST_PASSES_PER_IP_DAY, 86400)))
+        return reply.code(429).send({ error: 'too_many_guests' });
       if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       await repo.logEvent({ name: 'guest_pass', props: {} });
       return { pass: signShared(env.AUTH_SECRET, 'human', HUMAN_PASS_TTL_S) };

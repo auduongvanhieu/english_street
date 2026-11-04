@@ -43,6 +43,7 @@ export function ZoneScreen({ onJoin, onBack, connecting, connError, initial }: {
   const err = (() => {
     if (!connError) return error;
     if (connError.includes('zone_code_required')) return t('Wrong code for that zone.');
+    if (connError.includes('too_many_guests')) return t('Too many guests from your network right now. Sign in to play, or try again later.');
     if (connError.includes('zone_name_invalid')) return t('Pick another zone name (3–24 letters, no bad words).');
     if (connError.includes('zone_code_invalid')) return t('Codes are 4–8 letters or digits.');
     if (/full|locked/i.test(connError)) return t('That zone is full.');
