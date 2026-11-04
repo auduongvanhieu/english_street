@@ -59,6 +59,7 @@ export function BusPanel() {
 }
 
 const MAP_W = 340;
+const MAP_LABEL: Record<AreaId, string> = { zoo: 'Zoo', farm: 'Farm', supermarket: 'Supermarket', restaurant: 'Restaurant' };
 const X0 = -STREET_END_X;
 const sx = (x: number) => ((x - X0) / (2 * STREET_END_X)) * MAP_W;
 const sz = (z: number) => ((z + 32) / 52) * 110; // z -32…20 → 0…110
@@ -96,8 +97,8 @@ export function MapPanel() {
               <text x={sx((a.x0 + a.x1) / 2)} y={sz(-19)} fontSize={10} textAnchor="middle">
                 {a.icon}
               </text>
-              <text x={sx((a.x0 + a.x1) / 2)} y={sz(-10)} fontSize={5} textAnchor="middle" fill="#fff" fontWeight={700}>
-                {a.name}
+              <text x={sx((a.x0 + a.x1) / 2)} y={sz(-10)} fontSize={5.5} textAnchor="middle" fill="#fff" fontWeight={700}>
+                {MAP_LABEL[a.id]}
               </text>
             </g>
           ))}
