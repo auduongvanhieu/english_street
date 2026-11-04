@@ -169,6 +169,10 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   `road-straight-lightposts` tiles), NPCs, critters, cyclists and other players (`LocalPlayer` collects the ones within 4 m
   each frame). A circle only blocks a step that moves closer to it, so nothing can trap you; glancing contact slides around
   it; cats and dogs can be jumped over; movement is sub-stepped (≤ 0.15 m) so slow frames cannot tunnel through a post.
+- **Critters and cyclists avoid players** (Step 3, `world/avoid.ts`): each client offsets the scheduled pose away from
+  players it can see (local + remote server positions). Walking critters side-step perpendicular to their path, resting
+  ones shuffle aside, cyclists swerve laterally (up to 2.6 m, steering into it) for anyone within 7 m ahead. The drawn
+  positions go to `livePos`, which the local player's collision uses, so you bump into what you see.
 - **Per-line Dịch / IPA** (Step 3): NPC lines no longer auto-translate. Each line has a *Dịch* button (translation via the
   cached `/translate`, only when tapped) and an *IPA* button; ⚙️ keeps "always show" switches, both off by default.
 - **Cyclists** (Step 3, `world/cyclists.ts` + `scene/Cyclists.tsx`): three riders pass along the road on fixed periods

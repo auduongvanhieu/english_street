@@ -27,6 +27,8 @@ import { Joystick } from './ui/Joystick';
 import { requestJump } from './input/joystick';
 import { localPos } from './scene/LocalPlayer';
 import { CYCLISTS, cyclistAt } from './world/cyclists';
+import { CRITTERS, poseAt } from './world/critters';
+import { livePos } from './world/avoid';
 import { freezeClock, serverNow } from './net/client';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { NpcPanel } from './ui/NpcPanel';
@@ -37,7 +39,7 @@ import { useKeyboardInset } from './ui/useKeyboardInset';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos };
 }
 
 export default function App() {

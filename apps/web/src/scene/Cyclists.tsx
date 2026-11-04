@@ -9,6 +9,13 @@ import { useSettings } from '../store/settings';
 import { bellSound } from '../audio/ambient';
 import { localPos } from './LocalPlayer';
 import { END_FENCE_X } from '../world/layout';
+import { livePos } from '../world/avoid';
+import { playerPoints } from './players';
+
+/** Swerve: pass people at least this far to the side; react to people up to SEE_AHEAD m in front. */
+const PASS_GAP = 1.35;
+const SEE_AHEAD = 7;
+const MAX_SWERVE = 2.6;
 import { NameTag } from './NameTag';
 
 /**
@@ -88,6 +95,7 @@ export function Cyclists() {
   const bodies = useRef<(THREE.Mesh | null)[]>([]);
   const tags = useRef<(THREE.Group | null)[]>([]);
   const rung = useRef<number[]>(riders.map(() => -1));
+  const swerve = useRef<number[]>(riders.map(() => 0));
   const [greet, setGreet] = useState<Record<string, number>>({});
   const select = useGame((s) => s.setSelectedCritter);
   const selected = useGame((s) => s.selectedCritter);
@@ -117,6 +125,7 @@ export function Cyclists() {
     [riders],
   );
   useEffect(() => () => Object.values(geos).flat().forEach((g) => g.dispose()), [geos]);
+  useEffect(() => () => riders.forEach((c) => livePos.delete(c.id)), [riders]);
   useLayoutEffect(() => {
     const a = arms.current;
     if (!a) return;
@@ -175,8 +184,9 @@ export function Cyclists() {
     return out.set(hip.x + Math.cos(base + alpha) * THIGH, hip.y + Math.sin(base + alpha) * THIGH, (hip.z + foot.z) / 2);
   }
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const now = serverNow();
+    const people = playerPoints();
     const W = wheels.current;
     const T = thighs.current;
     const S = shins.current;
@@ -194,11 +204,36 @@ export function Cyclists() {
           m.setMatrixAt(i * 2 + 1, t.hidden);
         }
         C.setMatrixAt(i, t.hidden);
+        livePos.delete(c.id);
         if (bike) bike.visible = false;
         if (body) body.visible = false;
         if (tag) tag.visible = false;
         return;
       }
+      // Swerve around people on the road ahead: pick the side away from the person, strongest for the closest one.
+      let want = 0;
+      let weight = 0;
+      for (const p of people) {
+        const ahead = c.dir * (p.x - pose.x);
+        if (ahead < -1.2 || ahead > SEE_AHEAD) continue;
+        const dz = p.z - pose.z;
+        if (Math.abs(dz) >= PASS_GAP) continue;
+        const w = ahead < 3 ? 1 : 1 - (ahead - 3) / (SEE_AHEAD - 3);
+        // go to the side with more road (towards the centre line when the person is on our lane edge)
+        const side = Math.abs(dz) < 0.05 ? -Math.sign(pose.z) : -Math.sign(dz);
+        const target = THREE.MathUtils.clamp(p.z + side * PASS_GAP - pose.z, -MAX_SWERVE, MAX_SWERVE);
+        if (w > weight) {
+          weight = w;
+          want = target * w;
+        }
+      }
+      const prev = swerve.current[i]!;
+      const cur = prev + (want - prev) * (1 - Math.pow(0.05, dt));
+      swerve.current[i] = cur;
+      pose.z += cur;
+      // steer into the swerve a little
+      pose.rot -= c.dir * THREE.MathUtils.clamp((want - cur) * 0.35, -0.3, 0.3);
+      livePos.set(c.id, { x: pose.x, z: pose.z });
       const k = pose.carry;
       const ly = k * LIFT_H;
       // Cyclist frame: +X forward, at road level; a little wobble while pedalling.

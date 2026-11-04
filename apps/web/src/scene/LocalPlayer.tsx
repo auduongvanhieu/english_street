@@ -13,8 +13,9 @@ import { hopSound } from '../audio/ambient';
 import { cameraOrbit } from '../input/camera';
 import { buildBlockers, buildLampPosts, resolveMove, type Circle } from '../world/layout';
 import { CRITTERS, poseAt } from '../world/critters';
-import { CYCLISTS, cyclistAt } from '../world/cyclists';
+import { CYCLISTS } from '../world/cyclists';
 import { serverNow } from '../net/client';
+import { livePos } from '../world/avoid';
 
 const CRITTER_SIZE = { cat: { r: 0.28, h: 0.45 }, shiba: { r: 0.4, h: 0.62 }, husky: { r: 0.45, h: 0.72 } } as const;
 const NEAR = 4; // only obstacles this close are tested each frame
@@ -32,13 +33,15 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
     if (near(p.x, p.z)) out.push({ x: p.x, z: p.z, r: 0.35, h: 1.6 + p.y });
   }
   const now = serverNow();
+  // Critters and cyclists: where they are drawn (after steering around people), falling back to the schedule.
   for (const c of CRITTERS) {
-    const q = poseAt(c, now);
+    const q = livePos.get(c.id) ?? poseAt(c, now);
     if (near(q.x, q.z)) out.push({ x: q.x, z: q.z, ...CRITTER_SIZE[c.kind] });
   }
+  // Only riders that are actually drawn (low quality shows one) and currently on the road.
   for (const c of CYCLISTS) {
-    const q = cyclistAt(c, now);
-    if (q.visible && near(q.x, q.z)) out.push({ x: q.x, z: q.z, r: 0.55, h: 1.7 });
+    const q = livePos.get(c.id);
+    if (q && near(q.x, q.z)) out.push({ x: q.x, z: q.z, r: 0.55, h: 1.7 });
   }
   return out;
 }
