@@ -164,6 +164,7 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
   so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
+- **Pet labels**: within 4 m (or when tapped) every animal shows its English word and name above it, e.g. `dog - Luna`.
 - **Hug a pet** (`world/hold.ts`): cats, dogs, rabbits and ducks (two rabbits live in the park; Daisy's duck family swims
   along the near bank and the walkable area now reaches the grass bank, z ≤ 17.2, ducks within 2.6 m). Walk up to one
   (≤ 1.7 m) and press **F** / tap 🤗 *Hug*. `MSG.HOLD` sets

@@ -19,6 +19,9 @@ const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2, 
 const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2, duck: 2.0, duckling: 1.1, rabbit: 1.9 };
 const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85, duck: 0.8, duckling: 0.4, rabbit: 1.0 };
 const BASE_Y: Partial<Record<CritterKind, number>> = { duck: DUCK_Y, duckling: DUCK_Y };
+/** English word shown with the critter's name when you are close ("dog - Luna"). */
+const KIND_WORD: Record<CritterKind, string> = { cat: 'cat', shiba: 'dog', husky: 'dog', duck: 'duck', duckling: 'duckling', rabbit: 'rabbit' };
+const LABEL_RADIUS = 4;
 /** After being put down a critter stays put this long before heading back to its route. */
 const STAY_MS = 20000;
 /** Water starts here (Horizon.tsx RIVER_NEAR_Z). */
@@ -43,6 +46,8 @@ function CritterView({ c }: { c: Critter }) {
   const rig = useRef<RigRefs>({ legs: [] });
   const motion = useRef({ t: Math.random() * 10, phase: 0, nap: 0, react: 0, hop: 0 });
   const [near, setNear] = useState(true);
+  /** Player within LABEL_RADIUS: show "dog - Luna" above it. */
+  const [close, setClose] = useState(false);
   const reactUntil = useRef(0);
   const selected = useGame((s) => s.selectedCritter === c.id);
   const select = useGame((s) => s.setSelectedCritter);
@@ -133,8 +138,11 @@ function CritterView({ c }: { c: Critter }) {
     acc.current += dt;
     if (acc.current > 0.3) {
       acc.current = 0;
-      const n = Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z) < DRAW_RADIUS[c.kind];
+      const dist = Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z);
+      const n = dist < DRAW_RADIUS[c.kind];
       if (n !== near) setNear(n);
+      const cl = dist < LABEL_RADIUS && g.visible;
+      if (cl !== close) setClose(cl);
     }
   });
   useEffect(() => {
@@ -153,7 +161,7 @@ function CritterView({ c }: { c: Critter }) {
       }}
     >
       {near ? <CritterBody parts={parts} rig={rig} scale={SCALE[c.kind]} /> : null}
-      {near && selected ? <NameTag name={c.name} sub={c.kind === 'shiba' || c.kind === 'husky' ? 'dog' : c.kind} y={HEIGHT[c.kind] + 0.5} /> : null}
+      {near && (selected || close) ? <NameTag name={`${KIND_WORD[c.kind]} - ${c.name}`} y={HEIGHT[c.kind] + 0.5} /> : null}
     </group>
   );
 }
