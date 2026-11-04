@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { memo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { KeyboardControls, Sky } from '@react-three/drei';
@@ -21,7 +21,8 @@ const KEYMAP: { name: Controls; keys: string[] }[] = [
   { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
 ];
 
-export default function Scene({ playerName }: { playerName: string }) {
+/** Memoised: HUD state changes in App must never re-render (and re-diff) the whole 3D tree. */
+export default memo(function Scene({ playerName }: { playerName: string }) {
   const quality = useSettings((s) => s.quality);
   const low = quality === 'low';
   return (
@@ -66,4 +67,4 @@ export default function Scene({ playerName }: { playerName: string }) {
       </Canvas>
     </KeyboardControls>
   );
-}
+});

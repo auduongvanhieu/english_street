@@ -43,7 +43,10 @@ if (import.meta.env.DEV) {
 }
 
 export default function App() {
-  const { playerName, setPlayerName, conn } = useGame();
+  // Narrow selectors: subscribing to the whole store re-rendered the app (and the 3D tree) on every position patch.
+  const playerName = useGame((s) => s.playerName);
+  const setPlayerName = useGame((s) => s.setPlayerName);
+  const conn = useGame((s) => s.conn);
   const [draft] = useState(playerName);
   const [npcError, setNpcError] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);

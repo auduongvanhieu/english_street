@@ -53,3 +53,14 @@ Decision: full-room state sync stays (no per-radius `StateView`); the threshold 
 | iPhone 390×760, low | 133 | 146 |
 
 Budget: high ≤ 320 is slightly exceeded on the widest desktop view (322); low stays under 150.
+
+## Fix: whole-store subscription in App (2026-11-04)
+
+`App` used `useGame()` without a selector, so every player-position patch (≈20 Hz while anyone moves, including your own
+echo) re-rendered the HUD **and** the entire R3F tree (horizon, flora, critters…). Players felt it as stutter while
+walking, most noticeably near animals. Now App uses narrow selectors and `Scene` is `memo`-ised.
+
+CDP CPU profile, headless, 3 s of walking (low quality): JS busy time ≈ 1.87 s → 0.78 s (far), ≈ 1.45 s → 0.40 s
+(walking into a cat); React (`jsxDEV`/`createElement`/`diffProps`) dropped out of the top samples entirely.
+Rule: never call a Zustand store hook without a selector in a component that renders the scene or large UI.
+
