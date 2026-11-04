@@ -15,7 +15,7 @@ export const CHIBI_SCALE = 1.3;
 export const CHIBI_HEIGHT = 1.17 * CHIBI_SCALE;
 
 export type ChibiExtra = 'apron' | 'stethoscope' | 'bowtie' | 'badge';
-export type ChibiHat = AvatarLook['hat'] | 'paperhat';
+export type ChibiHat = AvatarLook['hat'] | 'paperhat' | 'helmet';
 export interface ChibiSpec extends Omit<AvatarLook, 'hat'> {
   hat: ChibiHat;
   /** NPC uniforms. */
@@ -45,14 +45,14 @@ export const JOINTS = {
 const HC = new THREE.Vector3(0, 0.27, 0);
 const HEAD_R = 0.3;
 
-type V3 = [number, number, number];
+export type V3 = [number, number, number];
 interface Xf {
   p?: V3;
   r?: V3;
   s?: V3 | number;
 }
 
-class Part {
+export class Part {
   private list: THREE.BufferGeometry[] = [];
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
@@ -87,12 +87,12 @@ class Part {
   }
 }
 
-const sphere = (r: number, thetaStart = 0, thetaLen = Math.PI, phiStart = 0, phiLen = Math.PI * 2, w = 20, h = 14) => new THREE.SphereGeometry(r, w, h, phiStart, phiLen, thetaStart, thetaLen);
-const cyl = (rt: number, rb: number, h: number, seg = 16, open = false, ts = 0, tl = Math.PI * 2) => new THREE.CylinderGeometry(rt, rb, h, seg, 1, open, ts, tl);
-const capsule = (r: number, len: number) => new THREE.CapsuleGeometry(r, len, 4, 12);
-const box = (x: number, y: number, z: number) => new THREE.BoxGeometry(x, y, z);
+export const sphere = (r: number, thetaStart = 0, thetaLen = Math.PI, phiStart = 0, phiLen = Math.PI * 2, w = 20, h = 14) => new THREE.SphereGeometry(r, w, h, phiStart, phiLen, thetaStart, thetaLen);
+export const cyl = (rt: number, rb: number, h: number, seg = 16, open = false, ts = 0, tl = Math.PI * 2) => new THREE.CylinderGeometry(rt, rb, h, seg, 1, open, ts, tl);
+export const capsule = (r: number, len: number) => new THREE.CapsuleGeometry(r, len, 4, 12);
+export const box = (x: number, y: number, z: number) => new THREE.BoxGeometry(x, y, z);
 
-function shade(hex: string, f: number): string {
+export function shade(hex: string, f: number): string {
   const c = new THREE.Color(hex);
   if (f < 1) c.multiplyScalar(f);
   else c.lerp(new THREE.Color('#ffffff'), f - 1);
@@ -256,6 +256,13 @@ function addHat(h: Part, s: ChibiSpec) {
         h.add(new THREE.ConeGeometry(0.04, 0.09, 4), gold, { p: [Math.sin(a) * 0.205, top + 0.085, Math.cos(a) * 0.205] });
         h.add(sphere(0.018), i % 2 ? '#e53e5a' : '#3f7fd6', { p: [Math.sin(a) * 0.212, top, Math.cos(a) * 0.212] });
       }
+      return;
+    }
+    case 'helmet': {
+      // bike helmet: rounded shell with a light stripe and a little visor
+      h.add(sphere(0.35 * big, 0, 1.3, 0, Math.PI * 2, 20, 10), c, { p: [0, y + 0.02, -0.01], s: [1, 0.95, 1.08] });
+      h.add(new THREE.TorusGeometry(0.2, 0.025, 6, 20, Math.PI), '#ffffff', { p: [0, y + 0.13, -0.01], r: [0, Math.PI / 2, 0], s: [1, 1.15, 1.05] });
+      h.add(cyl(0.16, 0.16, 0.02, 14, false, -Math.PI / 2, Math.PI), shade(c, 0.8), { p: [0, y + 0.12, 0.22], r: [0.3, 0, 0], s: [1, 1, 0.9] });
       return;
     }
     case 'paperhat':

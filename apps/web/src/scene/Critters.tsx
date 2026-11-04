@@ -1,30 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useAnimations, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { SkeletonUtils } from 'three/examples/jsm/Addons.js';
 import { CRITTERS, poseAt, type Critter, type CritterKind } from '../world/critters';
 import { serverNow } from '../net/client';
 import { useGame } from '../store/game';
+import { useSettings } from '../store/settings';
 import { localPos } from './LocalPlayer';
 import { NameTag } from './NameTag';
 import { livePos, pushAway, sidestep } from '../world/avoid';
 import { playerPoints } from './players';
+import { COATS, buildCritter, type CritterParts } from './chibi/buildCritter';
+import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
 /** Critter keeps this far from players' centres (player radius 0.4 + its own size + a little room). */
 const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2 };
-
-const URL = (k: CritterKind) => `/models/critters/${k}.glb`;
-const HEIGHT: Record<CritterKind, number> = { cat: 0.45, shiba: 0.62, husky: 0.72 };
-/** game clip → model clip (cat and dogs use different Quaternius rigs) */
-const CLIPS: Record<CritterKind, Record<string, string>> = {
-  cat: { walk: 'Walk', idle: 'Idle', nap: 'Idle_Eating', react: 'Idle_Eating' },
-  shiba: { walk: 'Walk', idle: 'Idle', nap: 'Idle_2_HeadLow', react: 'Idle_2' },
-  husky: { walk: 'Walk', idle: 'Idle', nap: 'Idle_2_HeadLow', react: 'Idle_2' },
-};
+/** Chibi animals are drawn a bit bigger than life so their faces read from the street camera. */
+const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2 };
+const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85 };
 /** Critters beyond this distance are not animated/drawn (they are tiny anyway). */
 const DRAW_RADIUS = 36;
-(['cat', 'shiba', 'husky'] as CritterKind[]).forEach((k) => useGLTF.preload(URL(k), false, true));
 
 export function Critters() {
   return (
@@ -37,47 +31,21 @@ export function Critters() {
 }
 
 function CritterView({ c }: { c: Critter }) {
-  const { scene, animations } = useGLTF(URL(c.kind), false, true);
-  const model = useMemo(() => {
-    const m = SkeletonUtils.clone(scene);
-    m.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(m);
-    const s = HEIGHT[c.kind] / Math.max(box.max.y - box.min.y, 0.001);
-    m.scale.setScalar(s);
-    m.position.y = -box.min.y * s;
-    m.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.castShadow = true;
-        mesh.frustumCulled = false;
-      }
-    });
-    return m;
-  }, [scene, c.kind]);
+  const parts = useMemo(() => buildCritter(c.kind, COATS[c.id] ?? COATS['cat-1']!), [c.kind, c.id]);
+  useEffect(() => () => Object.values(parts).forEach((g) => (g as THREE.BufferGeometry).dispose?.()), [parts]);
   const group = useRef<THREE.Group>(null);
-  const { actions } = useAnimations(animations, group);
-  const current = useRef<string>('');
+  const rig = useRef<RigRefs>({ legs: [] });
+  const motion = useRef({ t: Math.random() * 10, phase: 0, nap: 0, react: 0, hop: 0 });
   const [near, setNear] = useState(true);
   const reactUntil = useRef(0);
   const selected = useGame((s) => s.selectedCritter === c.id);
   const select = useGame((s) => s.setSelectedCritter);
   const acc = useRef(0);
   const off = useRef(new THREE.Vector2());
-
-  function play(name: string) {
-    const clip = CLIPS[c.kind][name] ?? CLIPS[c.kind].idle!;
-    if (clip === current.current) return;
-    const next = actions[clip];
-    if (!next) return;
-    const prev = current.current ? actions[current.current] : null;
-    prev?.fadeOut(0.3);
-    next.reset().fadeIn(0.3).play();
-    current.current = clip;
-  }
-
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
+    let state: 'walk' | 'idle' | 'nap' | 'react' = 'idle';
     const reacting = reactUntil.current > Date.now();
     const pose = poseAt(c, serverNow());
     // Step around players standing on the route (each client computes the same detour from the same player positions).
@@ -98,13 +66,14 @@ function CritterView({ c }: { c: Critter }) {
       // face where it is actually going while detouring
       const heading = pose.clip === 'walk' && Math.hypot(mx, mz) > 0.02 ? Math.atan2(mx, mz) : pose.rot;
       g.rotation.y += shortestAngle(g.rotation.y, heading) * k;
-      play(pose.clip === 'walk' ? 'walk' : pose.pauseT > 0.25 ? 'nap' : 'idle');
+      state = pose.clip === 'walk' ? 'walk' : pose.pauseT > 0.25 ? 'nap' : 'idle';
     } else {
       // Face the player while reacting.
       g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(localPos.x - g.position.x, localPos.z - g.position.z)) * 0.1;
-      play('react');
+      state = 'react';
     }
     livePos.set(c.id, { x: g.position.x, z: g.position.z });
+    if (near) animate(rig.current, parts, state, motion.current, dt, c.speed);
     acc.current += dt;
     if (acc.current > 0.3) {
       acc.current = 0;
@@ -127,7 +96,7 @@ function CritterView({ c }: { c: Critter }) {
         select(selected ? null : c.id);
       }}
     >
-      {near ? <primitive object={model} /> : null}
+      {near ? <CritterBody parts={parts} rig={rig} scale={SCALE[c.kind]} /> : null}
       {near && selected ? <NameTag name={c.name} sub={c.kind === 'cat' ? 'cat' : 'dog'} y={HEIGHT[c.kind] + 0.5} /> : null}
     </group>
   );
@@ -138,4 +107,79 @@ function shortestAngle(from: number, to: number) {
   if (d > Math.PI) d -= Math.PI * 2;
   if (d < -Math.PI) d += Math.PI * 2;
   return d;
+}
+
+// ------------------------------------------------------------------------------------------------ chibi body + motion
+interface RigRefs {
+  body?: THREE.Group;
+  head?: THREE.Group;
+  tail?: THREE.Group;
+  legs: THREE.Group[];
+}
+
+function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.RefObject<RigRefs>; scale: number }) {
+  const outline = useSettings((s) => s.quality) === 'high';
+  const mat = chibiMaterial();
+  const ol = chibiOutline();
+  const part = (g: THREE.BufferGeometry) => (
+    <>
+      <mesh geometry={g} material={mat} castShadow />
+      {outline ? <mesh geometry={g} material={ol} /> : null}
+    </>
+  );
+  const r = parts.rig;
+  return (
+    <group scale={scale}>
+      <group ref={(g) => void (g && (rig.current.body = g))}>
+        {part(parts.body)}
+        <group ref={(g) => void (g && (rig.current.head = g))} position={r.head}>
+          {part(parts.head)}
+        </group>
+        <group ref={(g) => void (g && (rig.current.tail = g))} position={r.tail}>
+          {part(parts.tail)}
+        </group>
+      </group>
+      {r.legs.map((p, i) => (
+        <group key={i} ref={(g) => void (g && (rig.current.legs[i] = g))} position={p}>
+          {part(parts.leg)}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+/** Procedural gait: diagonal leg pairs, body bob, wagging tail; naps lie down with the head low; react = head tilt + happy wag (+ a hop for dogs). */
+function animate(r: RigRefs, parts: CritterParts, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number) {
+  if (!r.body || !r.head || !r.tail || r.legs.length < 4) return;
+  const d = Math.min(dt, 0.1);
+  m.t += d;
+  const k = 1 - Math.exp(-d * 6);
+  m.nap += ((state === 'nap' ? 1 : 0) - m.nap) * k;
+  m.react += ((state === 'react' ? 1 : 0) - m.react) * k;
+  const walking = state === 'walk';
+  if (walking) m.phase += d * (5 + speed * 4);
+  const swing = walking ? Math.sin(m.phase) * 0.7 : 0;
+  const dog = parts.rig.legs[0]![0] > 0.07;
+  m.hop = state === 'react' && dog ? Math.abs(Math.sin(m.t * 6)) * 0.04 : m.hop * (1 - k);
+  const lie = m.nap;
+  const hip = parts.rig.legs[0]![1];
+  // body: bob while walking, lowered to the ground for naps, tiny breathing
+  r.body.position.y = (walking ? Math.abs(Math.cos(m.phase)) * 0.015 : 0) - lie * hip * 0.8 + m.hop + Math.sin(m.t * 2.4) * 0.004;
+  r.body.rotation.x = walking ? Math.sin(m.phase * 2) * 0.03 : 0;
+  // legs: walking swings diagonal pairs; lying folds them forward/back under the body
+  const legRot = [swing, -swing, -swing, swing];
+  r.legs.forEach((g, i) => {
+    const fold = i < 2 ? -1.35 : 1.35;
+    g.rotation.x = legRot[i]! * (1 - lie) + fold * lie;
+    g.position.y = parts.rig.legs[i]![1] - lie * hip * 0.8 + m.hop;
+  });
+  // head: looks around when idle, bobs while walking, rests low when napping, tilts when you tap it
+  r.head.rotation.x = (walking ? Math.sin(m.phase * 2) * 0.06 : 0) + lie * 0.35 - m.react * 0.15;
+  r.head.rotation.y = state === 'idle' ? Math.sin(m.t * 0.6) * 0.5 * Math.max(0, Math.sin(m.t * 0.23)) : 0;
+  r.head.rotation.z = m.react * Math.sin(m.t * 2) * 0.3;
+  r.head.position.y = parts.rig.head[1] - lie * 0.05;
+  // tail: wag speed by mood; curled down when sleeping
+  const wag = state === 'react' ? 16 : walking ? 9 : 3;
+  r.tail.rotation.y = Math.sin(m.t * wag) * (state === 'react' ? 0.6 : 0.35) * (1 - lie);
+  r.tail.rotation.x = lie * 0.9;
 }

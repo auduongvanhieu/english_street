@@ -159,7 +159,8 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
 
 ## Street life (Step 2 / phase 11)
 
-- **Cats and dogs** (`world/critters.ts`, `scene/Critters.tsx`): 3 cats + 2 dogs (Quaternius CC0) follow fixed waypoint
+- **Cats and dogs** (`world/critters.ts`, `scene/Critters.tsx`): 3 cats + 2 dogs (chibi animals built in code, `scene/chibi/buildCritter.ts`: round body, big head and eyes,
+  own fur colours, procedural walk / idle / nap / happy-wag animation, 7 draw calls each) follow fixed waypoint
   loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
   so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
@@ -177,11 +178,12 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   cached `/translate`, only when tapped) and an *IPA* button; ⚙️ keeps "always show" switches, both off by default.
 - **Cyclists** (Step 3, `world/cyclists.ts` + `scene/Cyclists.tsx`): three riders pass along the road on fixed periods
   (58/73/91 s), evaluated from the server clock like the critters, so all clients see the same pass and the server does
-  nothing. Bike and rider are primitives merged into one mesh each; wheels, cranks, thighs and shins are shared
-  InstancedMeshes posed per frame (2-link leg IK onto the pedals) — about 7 draw calls for all three. Passing within 6 m
+  nothing. Riders are chibi characters with bike helmets (same builder as the players) on a small chunky cartoon bike
+  (`BS` = 0.66 of the old adult bike, front basket); the bike is one merged mesh, wheels and cranks are shared
+  InstancedMeshes, the rider is a jointed rig posed per frame (pedalling legs, arms on the bars). Passing within 6 m
   rings a bell (WebAudio) and shows "On your left!"; tapping a rider opens the same card as the critters (sentence, word
   saved to the notebook, TTS). Low quality shows one rider. The road is closed by a fence at each end
-  (`END_FENCE_X`): riders stop, get off, lift the bike over while stepping across, then ride on (`pose.carry` in the schedule).
+  (`END_FENCE_X`): riders stop, get off, hold the bike up beside them and hop over the rail, then ride on (`pose.carry` in the schedule).
 - **Horizon** (Step 3, `scene/Horizon.tsx`): replaces the flat green plane. North: two rows of backdrop houses (instanced
   Kenney buildings with per-instance colour multipliers) and gardens; south: a river with a cheap analytic-ripple water shader
   (fog-aware, no reflections), ducks, two sail boats and footbridges; all around: endless farmland painted by the ground

@@ -17,7 +17,6 @@ mkdirSync(cache, { recursive: true });
 
 /** name → { url, polyPizza, title, dir, keepClips } — all CC0 1.0 by Quaternius (https://poly.pizza/u/Quaternius). */
 const HUMAN_CLIPS = ['Idle', 'Idle_Neutral', 'Walk', 'Run', 'Wave', 'Interact'];
-const ANIMAL_CLIPS = ['Idle', 'Idle_2', 'Idle_2_HeadLow', 'Walk', 'Gallop', 'Eating', 'Idle_Eating', 'Run'];
 const MODELS = {
   'business': { url: null, polyPizza: 'JFrLIKqvCH', title: 'Business Man', dir: 'characters', keep: HUMAN_CLIPS },
   'casual': { url: null, polyPizza: 'kZ3DmIoGip', title: 'Casual Character', dir: 'characters', keep: HUMAN_CLIPS },
@@ -26,9 +25,6 @@ const MODELS = {
   'farmer': { url: null, polyPizza: '7pn3R6hPvE', title: 'Farmer', dir: 'characters', keep: HUMAN_CLIPS },
   'woman-casual': { url: null, polyPizza: 'qJ2gsTUBHL', title: 'Animated Woman (casual)', dir: 'characters', keep: HUMAN_CLIPS },
   'woman-formal': { url: null, polyPizza: 'nIItLV9nxS', title: 'Animated Woman (formal)', dir: 'characters', keep: HUMAN_CLIPS },
-  'cat': { url: null, polyPizza: 'qKICY6xla2', title: 'Cat', dir: 'critters', keep: ANIMAL_CLIPS },
-  'shiba': { url: null, polyPizza: 'y4wdQpg767', title: 'Shiba Inu', dir: 'critters', keep: ANIMAL_CLIPS },
-  'husky': { url: null, polyPizza: 'wcWiuEqwzq', title: 'Husky', dir: 'critters', keep: ANIMAL_CLIPS },
   'flowers': { url: null, polyPizza: 'NBUxHir6FJ', title: 'Flowers', dir: 'flora', keep: [] },
   'grass': { url: null, polyPizza: 'UGTOzcO3P2', title: 'Grass', dir: 'flora', keep: [] },
 };

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { chibiParts, chibiMaterial, chibiOutline, JOINTS, CHIBI_SCALE } from '../src/scene/chibi/buildChibi.ts';
 import { NPC_CHIBI } from '../src/scene/npcLook.ts';
+import { buildCritter, COATS } from '../src/scene/chibi/buildCritter.ts';
 const q = new URLSearchParams(location.search);
 const W=innerWidth,H=innerHeight; const r=new THREE.WebGLRenderer({antialias:true}); r.setSize(W,H); document.body.appendChild(r.domElement);
 const s=new THREE.Scene(); s.background=new THREE.Color('#bfe3f5'); s.add(new THREE.HemisphereLight(0xffffff,0x9fbf8f,1.6)); const d=new THREE.DirectionalLight(0xffffff,1.8); d.position.set(2,4,3); s.add(d);
@@ -14,6 +15,15 @@ if (set==='bodies') specs=[['tee',{}],['hoodie',{top:'#43b86a'}],['suit',{top:'#
 if (set==='hair') specs=['short','spiky','curly','bob','long','ponytail','buns','bald'].map((h,i)=>({...base,hairStyle:h,hair:['#1c1410','#a0682f','#3a2618','#d9b25c','#6b4226','#c2402e','#e86fa8','#3a2618'][i], skin:['#f6d7c3','#eec1a0','#8a5634','#e0ac80','#c98e62','#f6d7c3','#e0ac80','#a86e45'][i]}));
 if (set==='hats') specs=['cap','beanie','sunhat','tophat','crown'].map((h,i)=>({...base,hat:h,hairStyle:['short','bob','long','curly','ponytail'][i],glasses:i%2?'round':'sun',bag:i===2?'backpack':'none'}));
 if (set==='npcs') specs=Object.values(NPC_CHIBI);
+if (set==='critters') {
+  const ids=['cat-1','cat-2','cat-3','dog-1','dog-2']; const kinds=['cat','cat','cat','shiba','husky'];
+  ids.forEach((id,i)=>{ const p=buildCritter(kinds[i],COATS[id]); const g=new THREE.Group(); g.scale.setScalar(kinds[i]==='cat'?1.25:1.2);
+    const add=(geo,pos)=>{ const grp=new THREE.Group(); if(pos) grp.position.set(...pos); grp.add(new THREE.Mesh(geo,chibiMaterial())); grp.add(new THREE.Mesh(geo,chibiOutline())); return grp; };
+    const body=add(p.body); g.add(body); body.add(add(p.head,p.rig.head)); body.add(add(p.tail,p.rig.tail)); p.rig.legs.forEach(l=>g.add(add(p.leg,l)));
+    g.position.x=(i-2)*0.75; g.rotation.y=Number(q.get('rot')||0.5); s.add(g); });
+  const cam=new THREE.PerspectiveCamera(30,W/H,0.1,50); cam.position.set(0,0.9,4.2); cam.lookAt(0,0.3,0); r.render(s,cam); window.done=true;
+  throw 0;
+}
 const n=specs.length, sp=0.85;
 specs.forEach((sp_,i)=>{
   const p=chibiParts(sp_); const root=new THREE.Group(); root.scale.setScalar(CHIBI_SCALE);
