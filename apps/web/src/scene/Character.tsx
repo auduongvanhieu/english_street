@@ -17,7 +17,10 @@ const CLIP: Record<string, string> = {
   thumbsup: 'ThumbsUp',
   yes: 'Yes',
   no: 'No',
+  jump: 'Jump',
 };
+/** Clips that play once and hold their last frame instead of looping. */
+const ONCE = new Set(['Jump']);
 
 export function Character({ anim, tint }: { anim: string; tint?: string }) {
   const { scene, animations } = useGLTF(CHARACTER_URL);
@@ -54,7 +57,11 @@ export function Character({ anim, tint }: { anim: string; tint?: string }) {
     const next = actions[CLIP[anim] ?? 'Idle'];
     if (!next || next === current.current) return;
     current.current?.fadeOut(0.2);
-    next.reset().fadeIn(0.2).play();
+    if (ONCE.has(next.getClip().name)) {
+      next.setLoop(THREE.LoopOnce, 1);
+      next.clampWhenFinished = true;
+    }
+    next.reset().fadeIn(0.1).play();
     current.current = next;
   }, [anim, actions]);
 

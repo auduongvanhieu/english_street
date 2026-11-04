@@ -5,6 +5,10 @@ export type CefrLevel = (typeof CEFR_LEVELS)[number];
 export const STREET_ROOM = 'street';
 /** Max players per street instance before a new one is spawned. */
 export const STREET_ROOM_MAX_CLIENTS = 50;
+/** Jump physics (client-simulated, server clamps y to MAX_JUMP_Y). */
+export const JUMP_SPEED = 6.2;
+export const GRAVITY = 22;
+export const MAX_JUMP_Y = 3;
 /** Client input send rate (Hz). */
 export const INPUT_RATE_HZ = 20;
 /** Player walk speed (world units / second). */

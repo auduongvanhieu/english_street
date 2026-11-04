@@ -7,7 +7,7 @@ import {
   SHOUT_RADIUS,
   STREET_ROOM_MAX_CLIENTS,
   TALK_DROP_RADIUS,
-  WORLD_BOUNDS,
+  MAX_JUMP_Y, WORLD_BOUNDS,
   maskProfanity,
   type InputMessage,
   type JoinOptions,
@@ -49,6 +49,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       // Server is authoritative: clamp to world bounds. Speed checks can be added later.
       p.x = clamp(Number(msg.x) || 0, WORLD_BOUNDS.minX, WORLD_BOUNDS.maxX);
       p.z = clamp(Number(msg.z) || 0, WORLD_BOUNDS.minZ, WORLD_BOUNDS.maxZ);
+      p.y = clamp(Number(msg.y) || 0, 0, MAX_JUMP_Y);
       p.rot = Number(msg.rot) || 0;
       p.anim = typeof msg.anim === 'string' ? msg.anim.slice(0, 16) : 'idle';
       p.voice = msg.voice === true;

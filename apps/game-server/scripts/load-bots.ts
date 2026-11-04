@@ -53,7 +53,8 @@ async function bot(i: number) {
     x = Math.min(WORLD_BOUNDS.maxX, Math.max(WORLD_BOUNDS.minX, x + Math.sin(heading) * 0.15));
     z = Math.min(WORLD_BOUNDS.maxZ, Math.max(WORLD_BOUNDS.minZ, z + Math.cos(heading) * 0.15));
     if (!pending) pending = { x, at: performance.now() };
-    room.send(MSG.INPUT, { x, z, rot: heading, anim: 'walk', voice: false });
+    const hop = Math.random() < 0.03;
+    room.send(MSG.INPUT, { x, y: hop ? 0.8 : 0, z, rot: heading, anim: hop ? 'jump' : 'walk', voice: false });
     if (Math.random() < 0.01) room.send(MSG.CHAT, `hello from bot ${i}`);
     if (Math.random() < SHOUT_RATE) room.send(MSG.SHOUT, `anyone want to practise? bot ${i}`);
   }, 1000 / INPUT_RATE_HZ);

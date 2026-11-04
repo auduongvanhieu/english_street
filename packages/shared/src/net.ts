@@ -29,6 +29,8 @@ export interface JoinOptions {
 
 export interface InputMessage {
   x: number;
+  /** Height above ground while jumping (0 on the ground). */
+  y?: number;
   z: number;
   rot: number;
   anim: string;

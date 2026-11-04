@@ -61,6 +61,24 @@ export function setAmbientVolume(v: number) {
   if (!chirpTimer) scheduleChirps();
 }
 
+/** Soft "hop" for the local player's jump; follows the ambient volume slider (0 = silent). */
+export function hopSound(volume = 0.5) {
+  if (volume <= 0 || !ensure()) return;
+  void ctx!.resume();
+  const t = ctx!.currentTime;
+  const o = ctx!.createOscillator();
+  const g = ctx!.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(260, t);
+  o.frequency.exponentialRampToValueAtTime(520, t + 0.09);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.12 * volume, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  o.connect(g).connect(ctx!.destination);
+  o.start(t);
+  o.stop(t + 0.13);
+}
+
 /** Short critter voice: a meow (gliding tone) or a woof (low burst). */
 export function critterSound(kind: 'meow' | 'woof', volume = 0.5) {
   if (!ensure() || volume <= 0) return;

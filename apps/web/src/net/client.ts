@@ -108,8 +108,8 @@ function bindRoom(r: Room<StreetStateLike>) {
   });
 }
 
-export function sendInput(x: number, z: number, rot: number, anim: string, voice: boolean, shouting = false) {
-  room?.send(MSG.INPUT, { x, z, rot, anim, voice, shouting });
+export function sendInput(x: number, y: number, z: number, rot: number, anim: string, voice: boolean, shouting = false) {
+  room?.send(MSG.INPUT, { x, y, z, rot, anim, voice, shouting });
 }
 
 export function sendChat(text: string) {

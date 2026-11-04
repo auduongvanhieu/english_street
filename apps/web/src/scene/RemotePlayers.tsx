@@ -41,6 +41,7 @@ function Remote({ p }: { p: RemotePlayer }) {
     if (!g) return;
     const k = 1 - Math.pow(0.0001, dt);
     g.position.x += (p.x - g.position.x) * k;
+    g.position.y += (p.y - g.position.y) * Math.min(1, k * 1.6);
     g.position.z += (p.z - g.position.z) * k;
     g.rotation.y += shortestAngle(g.rotation.y, p.rot) * k;
     // Distance culling, checked ~4x/s (staggered so players don't all re-render on the same frame).

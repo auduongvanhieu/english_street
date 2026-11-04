@@ -22,6 +22,8 @@ import { useSettings } from './store/settings';
 import { isTouchDevice } from './input/joystick';
 import { attachCameraGestures, cameraOrbit } from './input/camera';
 import { Joystick } from './ui/Joystick';
+import { requestJump } from './input/joystick';
+import { localPos } from './scene/LocalPlayer';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
@@ -31,7 +33,7 @@ import { useKeyboardInset } from './ui/useKeyboardInset';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos };
 }
 
 export default function App() {
@@ -96,6 +98,10 @@ export default function App() {
         if (s.uiPanel) s.setUiPanel(null);
         else if (s.panelNpc) s.closePanel();
         else (document.activeElement as HTMLElement | null)?.blur();
+      } else if (!typing && e.code === 'Space' && !s.panelNpc) {
+        // Edge-triggered here (not polled per frame) so a quick tap still registers on slow devices; no auto-repeat.
+        if (!e.repeat) requestJump();
+        e.preventDefault();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
       } else if (!typing && /^[1-5]$/.test(e.key)) {
@@ -149,6 +155,7 @@ export default function App() {
           {!hudHidden && !chatOpen && !inTalk && (
             <div data-ui className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] flex flex-col items-end gap-3">
               <TalkButton />
+              <HudButton big onClick={requestJump} title="Jump">⤒</HudButton>
               <EmoteBar compact />
               <ShoutButton compact />
               <HudButton onClick={() => setChatOpen(true)} title="Nearby chat">💬</HudButton>
