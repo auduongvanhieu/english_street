@@ -21,7 +21,8 @@ export const WALK_SPEED = 3;
 /** Distance within which chat bubbles / voice are heard. */
 export const PROXIMITY_RADIUS = 8;
 /** Walkable world bounds (world units). Street runs along X; shops are north (negative Z). */
-export const WORLD_BOUNDS = { minX: -41, maxX: 41, minZ: -5.5, maxZ: 13.5 } as const;
+/** maxZ reaches the river's grass bank (water starts at z = 18) so you can pick up a duck. */
+export const WORLD_BOUNDS = { minX: -41, maxX: 41, minZ: -5.5, maxZ: 17.2 } as const;
 /** Distance from an NPC within which the player can start talking. */
 export const INTERACT_RADIUS = 2.6;
 /** Distance within which a shout (text or voice) is heard. */

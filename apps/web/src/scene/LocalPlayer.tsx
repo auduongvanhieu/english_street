@@ -47,7 +47,7 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
   return out;
 }
 import { PlayerAvatar } from './PlayerAvatar';
-import { HUG_RADIUS, heldCritters, holdable, myHolding } from '../world/hold';
+import { heldCritters, holdable, hugRadius, myHolding } from '../world/hold';
 import { avatarLook, AvatarSchema } from '@es/shared';
 import { NameTag } from './NameTag';
 
@@ -55,6 +55,8 @@ export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 
 /** Live local position (mutable, read by RemotePlayers for distance culling without React churn). */
 export const localPos = new THREE.Vector3(0, 0, 4);
+/** Local player's facing (rotation.y), for things placed in front of them. */
+export const localHeading = { y: 0 };
 const SPAWN = new THREE.Vector3(0, 0, 4);
 const dir = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -157,6 +159,7 @@ export function LocalPlayer({ name }: { name: string }) {
     if (anim.current !== animState) setAnimState(anim.current);
 
     localPos.copy(g.position);
+    localHeading.y = g.rotation.y;
 
     // --- third-person camera ---
     const back = cameraOrbit.dist * 0.84;
@@ -192,13 +195,13 @@ export function LocalPlayer({ name }: { name: string }) {
       // nearest cat/dog within hugging reach (none while already hugging one)
       let hug: string | null = null;
       if (!myHolding()) {
-        let hugD = HUG_RADIUS * HUG_RADIUS;
+        let hugD = Infinity;
         for (const c of CRITTERS) {
           if (!holdable(c.id) || heldCritters.has(c.id)) continue;
           const q = livePos.get(c.id);
           if (!q) continue;
-          const d = (q.x - g.position.x) ** 2 + (q.z - g.position.z) ** 2;
-          if (d < hugD) {
+          const d = Math.hypot(q.x - g.position.x, q.z - g.position.z);
+          if (d < hugRadius(c.id) && d < hugD) {
             hugD = d;
             hug = c.id;
           }

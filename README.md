@@ -164,10 +164,12 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
   so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
-- **Hug a cat or dog** (`world/hold.ts`): walk up to one (≤ 1.7 m) and press **F** / tap 🤗 *Hug*. `MSG.HOLD` sets
+- **Hug a pet** (`world/hold.ts`): cats, dogs, rabbits and ducks (two rabbits live in the park; Daisy's duck family swims
+  along the near bank and the walkable area now reaches the grass bank, z ≤ 17.2, ducks within 2.6 m). Walk up to one
+  (≤ 1.7 m) and press **F** / tap 🤗 *Hug*. `MSG.HOLD` sets
   `Player.holding` (server keeps one holder per critter); every client then hides that critter's scheduled body and draws
   it cradled in the holder's arms (`HeldCritter` in the avatar group: dangling paws, fast wag, looking at you), and the
-  chibi wraps its arms around it while still walking. Put it down (F again) and it hops back to its route.
+  chibi wraps its arms around it while still walking. Put it down (F again): it lands in front of you, stays there for 20 s, then walks / hops / paddles back to its route at its own speed (ducks stand on the grass when carried ashore).
 - **Ducks and rabbits** (same system as the cats and dogs, so they are tappable with a sentence + notebook word and a
   WebAudio quack / squeak): two duck families swim loops on the river (`DUCK_Y`, ducklings share the mother's loop with a
   smaller time offset so they paddle in a line; head dips under now and then), four rabbits hop around the meadow beyond

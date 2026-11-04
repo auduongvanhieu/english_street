@@ -225,6 +225,8 @@ export const COATS: Record<string, Coat> = {
   'rabbit-2': { fur: '#fafafa', light: '#ffffff', dark: '#e0e0e0', iris: '#ff8fa3' },
   'rabbit-3': { fur: '#d6b48a', light: '#fbf0de', dark: '#a8835a' },
   'rabbit-4': { fur: '#8a6248', light: '#e9d6c0', dark: '#5f412e' },
+  'rabbit-5': { fur: '#fafafa', light: '#ffffff', dark: '#e0e0e0', iris: '#ff8fa3' },
+  'rabbit-6': { fur: '#c98a52', light: '#fbefe0', dark: '#9a6438' },
 };
 /** Coat for an id (ducklings are all fluffy yellow). */
 export function coatFor(id: string): Coat {

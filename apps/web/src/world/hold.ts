@@ -9,8 +9,9 @@ import { track } from '../net/analytics';
 /** Critters currently in someone's arms (refreshed every frame by Critters.tsx). */
 export const heldCritters = new Set<string>();
 
-/** Hug reach (m) from the player's centre to the critter's centre. */
+/** Hug reach (m) from the player's centre to the critter's centre (ducks: reach into the water from the bank). */
 export const HUG_RADIUS = 1.7;
+export const hugRadius = (id: string) => (id.startsWith('duck') ? 2.6 : HUG_RADIUS);
 
 export const holdable = (id: string) => HOLDABLE_RE.test(id);
 

@@ -24,7 +24,7 @@ export const MSG = {
 } as const;
 
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
-export const HOLDABLE_RE = /^(cat|dog)-\d{1,2}$/;
+export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling)-\d{1,2}$/;
 
 export interface JoinOptions {
   name: string;

@@ -5,7 +5,7 @@ import { CRITTERS, DUCK_Y, poseAt, type Critter, type CritterKind } from '../wor
 import { serverNow } from '../net/client';
 import { useGame } from '../store/game';
 import { useSettings } from '../store/settings';
-import { localPos } from './LocalPlayer';
+import { localHeading, localPos } from './LocalPlayer';
 import { NameTag } from './NameTag';
 import { livePos, pushAway, sidestep } from '../world/avoid';
 import { playerPoints } from './players';
@@ -19,6 +19,10 @@ const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2, 
 const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2, duck: 2.0, duckling: 1.1, rabbit: 1.9 };
 const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85, duck: 0.8, duckling: 0.4, rabbit: 1.0 };
 const BASE_Y: Partial<Record<CritterKind, number>> = { duck: DUCK_Y, duckling: DUCK_Y };
+/** After being put down a critter stays put this long before heading back to its route. */
+const STAY_MS = 20000;
+/** Water starts here (Horizon.tsx RIVER_NEAR_Z). */
+const RIVER_EDGE_Z = 18;
 /** Critters beyond this distance are not animated/drawn (they are tiny anyway); river and meadow animals are seen from further. */
 const DRAW_RADIUS: Record<CritterKind, number> = { cat: 36, shiba: 36, husky: 36, duck: 60, duckling: 50, rabbit: 70 };
 
@@ -44,6 +48,8 @@ function CritterView({ c }: { c: Critter }) {
   const select = useGame((s) => s.setSelectedCritter);
   const acc = useRef(0);
   const off = useRef(new THREE.Vector2());
+  /** Put down somewhere: stay there a while, then walk (not glide) back to the scheduled route. */
+  const drop = useRef<{ until: number } | null>(null);
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
@@ -54,10 +60,14 @@ function CritterView({ c }: { c: Critter }) {
     if (holder) {
       heldCritters.add(c.id);
       const s = useGame.getState();
-      const hp = holder === s.sessionId ? localPos : s.players[holder];
+      const mine = holder === s.sessionId;
+      const hp = mine ? localPos : s.players[holder];
       if (hp) {
-        g.position.x = hp.x;
-        g.position.z = hp.z;
+        // keep it just in front of the holder, so it is put down there (not under their feet)
+        const rot = mine ? localHeading.y : s.players[holder]!.rot;
+        g.position.x = hp.x + Math.sin(rot) * 0.75;
+        g.position.z = hp.z + Math.cos(rot) * 0.75;
+        g.rotation.y = rot + Math.PI; // looking back at them
       }
       g.visible = false;
       livePos.delete(c.id);
@@ -66,7 +76,12 @@ function CritterView({ c }: { c: Critter }) {
     if (heldCritters.delete(c.id)) {
       g.visible = true;
       reactUntil.current = Date.now() + 1500; // a happy wag after being put down
+      drop.current = { until: Date.now() + STAY_MS };
     }
+    // ducks float on the river but stand on the grass when carried ashore
+    const water = (c.kind === 'duck' || c.kind === 'duckling') && g.position.z > RIVER_EDGE_Z;
+    const baseY = c.kind === 'duck' || c.kind === 'duckling' ? (water ? DUCK_Y : 0.08) : 0;
+    g.position.y += (baseY - g.position.y) * Math.min(1, dt * 6);
     const reacting = reactUntil.current > Date.now();
     const pose = poseAt(c, serverNow());
     // Step around players standing on the route (each client computes the same detour from the same player positions).
@@ -75,7 +90,25 @@ function CritterView({ c }: { c: Critter }) {
     const ko = 1 - Math.pow(0.002, dt);
     off.current.x += (push.x - off.current.x) * ko;
     off.current.y += (push.z - off.current.y) * ko;
-    if (!reacting) {
+    if (drop.current && !reacting) {
+      const d = drop.current;
+      if (Date.now() < d.until) {
+        state = 'idle'; // stays where it was put down
+      } else {
+        // walk/hop/paddle back to where its schedule is now, at its own pace
+        const mx = pose.x + off.current.x - g.position.x;
+        const mz = pose.z + off.current.y - g.position.z;
+        const dist = Math.hypot(mx, mz);
+        if (dist < 0.3) drop.current = null;
+        else {
+          const step = Math.min(dist, c.speed * 1.15 * dt);
+          g.position.x += (mx / dist) * step;
+          g.position.z += (mz / dist) * step;
+          g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(mx, mz)) * (1 - Math.pow(0.002, dt));
+          state = 'walk';
+        }
+      }
+    } else if (!reacting) {
       // Ease toward the scheduled pose so joining mid-walk never snaps.
       const k = 1 - Math.pow(0.001, dt);
       const tx = pose.x + off.current.x;
@@ -254,6 +287,8 @@ function animateRabbit(r: RigRefs, parts: CritterParts, state: string, m: { t: n
 }
 
 // ------------------------------------------------------------------------------------------------ hugged critter
+/** Size in the arms relative to the street size (big ducks and rabbits are drawn large to read from afar). */
+const HOLD_SCALE: Record<CritterKind, number> = { cat: 0.85, shiba: 0.75, husky: 0.75, rabbit: 0.6, duck: 0.55, duckling: 0.9 };
 /** A cat or dog cradled sideways in a player's arms (child of the player's avatar group, player space in metres). */
 export function HeldCritter({ id }: { id: string }) {
   const c = CRITTERS.find((x) => x.id === id);
@@ -274,7 +309,7 @@ export function HeldCritter({ id }: { id: string }) {
     r.head.rotation.x = -0.15;
   });
   if (!c || !parts) return null;
-  const sc = SCALE[c.kind] * (c.kind === 'cat' ? 0.85 : 0.75);
+  const sc = SCALE[c.kind] * HOLD_SCALE[c.kind];
   // cradled sideways against the chest: body centre at hand height, just in front of the round torso
   return (
     <group position={[0.05, 0.68 - parts.rig.height * sc, 0.36]} rotation={[0, Math.PI / 2, 0]}>
