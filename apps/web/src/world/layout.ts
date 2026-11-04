@@ -120,9 +120,29 @@ export const BOUNDS: Aabb = { ...WORLD_BOUNDS };
 
 export const PLAYER_RADIUS = 0.4;
 
+/** Round obstacle: lamp post, NPC, critter, cyclist or another player. `h` = height (jump over it when higher). */
+export interface Circle {
+  x: number;
+  z: number;
+  r: number;
+  h: number;
+}
+
+/** Lamp posts of the `road-straight-lightposts` tiles (even tx): shafts at local x = ±0.45 tile, rotated onto the road edges. */
+export function buildLampPosts(): Circle[] {
+  const out: Circle[] = [];
+  for (let tx = TX_MIN; tx <= TX_MAX; tx++) {
+    if (tx % 2 !== 0) continue;
+    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * 0.45 * TILE, r: 0.18, h: 5 });
+  }
+  return out;
+}
+
 /**
  * Move from (x,z) by (dx,dz), sliding along obstacles and clamping to the world bounds.
- * Axis-separated so the player slides along walls instead of sticking.
+ * Axis-separated so the player slides along walls instead of sticking. Circles only block a step that
+ * gets *closer* to them, so a critter or player that walks into you never traps you. `y` is the player's
+ * height above ground: circles lower than that (cats, dogs) can be jumped over.
  */
 export function resolveMove(
   x: number,
@@ -130,14 +150,44 @@ export function resolveMove(
   dx: number,
   dz: number,
   blockers: Aabb[],
+  circles: Circle[] = [],
+  y = 0,
 ): [number, number] {
+  // Glancing contact with a round obstacle: drop the part of the step that points into it, keep the tangential part (slide around).
+  for (const c of circles) {
+    if (y > c.h) continue;
+    const rr = c.r + PLAYER_RADIUS;
+    const ex = x + dx - c.x;
+    const ez = z + dz - c.z;
+    const d = Math.hypot(ex, ez);
+    if (d >= rr || d < 1e-6) continue;
+    const nxv = ex / d;
+    const nzv = ez / d;
+    const into = dx * nxv + dz * nzv;
+    if (into < 0) {
+      dx -= into * nxv;
+      dz -= into * nzv;
+    }
+  }
   let nx = x + dx;
-  if (collides(nx, z, blockers)) nx = x;
+  if (collides(nx, z, blockers) || hitsCircle(nx, z, x, z, circles, y)) nx = x;
   let nz = z + dz;
-  if (collides(nx, nz, blockers)) nz = z;
+  if (collides(nx, nz, blockers) || hitsCircle(nx, nz, nx, z, circles, y)) nz = z;
   nx = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, nx));
   nz = Math.min(BOUNDS.maxZ, Math.max(BOUNDS.minZ, nz));
   return [nx, nz];
+}
+
+function hitsCircle(nx: number, nz: number, ox: number, oz: number, circles: Circle[], y: number) {
+  for (const c of circles) {
+    if (y > c.h) continue;
+    const rr = c.r + PLAYER_RADIUS;
+    const dNew = (nx - c.x) ** 2 + (nz - c.z) ** 2;
+    if (dNew >= rr * rr) continue;
+    const dOld = (ox - c.x) ** 2 + (oz - c.z) ** 2;
+    if (dNew < dOld) return true;
+  }
+  return false;
 }
 
 function collides(x: number, z: number, blockers: Aabb[]) {

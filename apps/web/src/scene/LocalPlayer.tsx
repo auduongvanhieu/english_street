@@ -11,7 +11,37 @@ import { useSettings } from '../store/settings';
 import { joystick, jumpInput } from '../input/joystick';
 import { hopSound } from '../audio/ambient';
 import { cameraOrbit } from '../input/camera';
-import { buildBlockers, resolveMove } from '../world/layout';
+import { buildBlockers, buildLampPosts, resolveMove, type Circle } from '../world/layout';
+import { CRITTERS, poseAt } from '../world/critters';
+import { CYCLISTS, cyclistAt } from '../world/cyclists';
+import { serverNow } from '../net/client';
+
+const CRITTER_SIZE = { cat: { r: 0.28, h: 0.45 }, shiba: { r: 0.4, h: 0.62 }, husky: { r: 0.45, h: 0.72 } } as const;
+const NEAR = 4; // only obstacles this close are tested each frame
+
+/** Everything round the player can bump into right now (static posts + NPCs + moving critters, cyclists, players). */
+function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
+  out.length = 0;
+  const near = (x: number, z: number) => Math.abs(x - px) < NEAR && Math.abs(z - pz) < NEAR;
+  for (const c of posts) if (near(c.x, c.z)) out.push(c);
+  const s = useGame.getState();
+  for (const n of s.npcs) if (near(n.position[0], n.position[2])) out.push({ x: n.position[0], z: n.position[2], r: 0.35, h: 1.7 });
+  for (const id in s.players) {
+    if (id === s.sessionId) continue;
+    const p = s.players[id]!;
+    if (near(p.x, p.z)) out.push({ x: p.x, z: p.z, r: 0.35, h: 1.6 + p.y });
+  }
+  const now = serverNow();
+  for (const c of CRITTERS) {
+    const q = poseAt(c, now);
+    if (near(q.x, q.z)) out.push({ x: q.x, z: q.z, ...CRITTER_SIZE[c.kind] });
+  }
+  for (const c of CYCLISTS) {
+    const q = cyclistAt(c, now);
+    if (q.visible && near(q.x, q.z)) out.push({ x: q.x, z: q.z, r: 0.55, h: 1.7 });
+  }
+  return out;
+}
 import { Character } from './Character';
 import { NameTag } from './NameTag';
 
@@ -33,6 +63,8 @@ export function LocalPlayer({ name }: { name: string }) {
   const [, get] = useKeyboardControls<Controls>();
   const camera = useThree((s) => s.camera);
   const blockers = useMemo(buildBlockers, []);
+  const posts = useMemo(buildLampPosts, []);
+  const circles = useRef<Circle[]>([]);
   const sendAcc = useRef(0);
   const anim = useRef('idle');
   const [animState, setAnimState] = useState('idle');
@@ -76,9 +108,15 @@ export function LocalPlayer({ name }: { name: string }) {
     if (mag > 0.05) {
       dir.normalize();
       const speed = WALK_SPEED * (run ? 2 : 1) * mag;
-      const [nx, nz] = resolveMove(g.position.x, g.position.z, dir.x * speed * dt, dir.z * speed * dt, blockers);
-      g.position.x = nx;
-      g.position.z = nz;
+      nearbyCircles(g.position.x, g.position.z, posts, circles.current);
+      // Sub-steps of ≤ 0.15 m so a long frame on a slow phone cannot tunnel through a thin lamp post.
+      const total = speed * dt;
+      const steps = Math.max(1, Math.ceil(total / 0.15));
+      for (let i = 0; i < steps; i++) {
+        const [nx, nz] = resolveMove(g.position.x, g.position.z, (dir.x * total) / steps, (dir.z * total) / steps, blockers, circles.current, g.position.y);
+        g.position.x = nx;
+        g.position.z = nz;
+      }
       g.rotation.y = Math.atan2(dir.x, dir.z);
       anim.current = run ? 'run' : 'walk';
     } else {
