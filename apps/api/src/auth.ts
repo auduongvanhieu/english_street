@@ -21,7 +21,11 @@ export async function verifyPassword(pw: string, stored: string): Promise<boolea
 }
 
 export const signToken = (userId: string) => signShared(env.AUTH_SECRET, userId, TOKEN_TTL_S);
-export const verifyToken = (token: string) => verifyShared(env.AUTH_SECRET, token)?.sub ?? null;
+/** User id of a sign-in token (beta / human passes are not accounts). */
+export const verifyToken = (token: string) => {
+  const sub = verifyShared(env.AUTH_SECRET, token)?.sub;
+  return sub && sub !== 'beta' && sub !== 'human' ? sub : null;
+};
 
 declare module 'fastify' {
   interface FastifyRequest {

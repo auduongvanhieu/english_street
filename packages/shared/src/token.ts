@@ -31,3 +31,7 @@ export function verifyToken(secret: string, token: unknown): { sub: string; exp:
 /** Invite passes for the closed beta: minted when a player enters a valid code. */
 export const BETA_PASS_TTL_S = 90 * 24 * 3600;
 export const isBetaPass = (secret: string, token: unknown) => verifyToken(secret, token)?.sub === 'beta';
+
+/** Human pass: minted by POST /auth/guest after a captcha, lets a guest join the street and use the API. */
+export const HUMAN_PASS_TTL_S = 30 * 24 * 3600;
+export const isHumanPass = (secret: string, token: unknown) => verifyToken(secret, token)?.sub === 'human';

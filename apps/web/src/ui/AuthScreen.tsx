@@ -1,7 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useProfile } from '../store/profile';
-import { fetchCaptcha, fetchConfig, verifyBetaCode, type CaptchaAnswer } from '../net/api';
-import { getBetaPass, setBetaPass } from '../net/player';
+import {
+  fetchCaptcha,
+  fetchConfig,
+  guestPass,
+  verifyBetaCode,
+  type CaptchaAnswer,
+} from '../net/api';
+import { getBetaPass, getHumanPass, setBetaPass, setHumanPass } from '../net/player';
 import { useT } from '../i18n';
 import { LanguagePicker } from './SettingsPanel';
 import { Turnstile } from './Turnstile';
@@ -34,7 +40,9 @@ export function AuthScreen({
   const [showPw, setShowPw] = useState(false);
   const [cap, setCap] = useState<{ id: string; svg: string } | null>(null);
   const [capAnswer, setCapAnswer] = useState('');
-  const needCaptcha = !loggedIn && mode !== 'guest';
+  // Sign-in / sign-up always; guests once, then their human pass (30 days) is enough.
+  const [hasPass, setHasPass] = useState(() => !!getHumanPass());
+  const needCaptcha = !loggedIn && (mode !== 'guest' || !hasPass);
   // Cloudflare Turnstile when configured; the built-in image captcha when not, or when Turnstile can't load here.
   const [siteKey, setSiteKey] = useState('');
   const [tsFailed, setTsFailed] = useState(false);
@@ -72,10 +80,32 @@ export function AuthScreen({
     }
   }, [gateRefused]);
   const needCode = betaGate && !getBetaPass() && !loggedIn;
+  // The street refused a missing / expired guest pass: show the security check again.
+  const humanRefused = !!connError && connError.includes('human_check_required');
+  useEffect(() => {
+    if (humanRefused) setHasPass(false);
+  }, [humanRefused]);
 
   /** 'play' enters Main Street right away; 'zones' opens the zone picker (join a friend's zone or create one). */
   const [intent, setIntent] = useState<'play' | 'zones'>('play');
   const go = (n: string) => (intent === 'zones' && onZones ? onZones(n) : onPlay(n));
+
+  /** The filled-in human check, or null (with an error shown) when it isn't done yet. */
+  function humanAnswer(): CaptchaAnswer | null {
+    if (useTs) {
+      if (tsToken) return { turnstileToken: tsToken };
+      setError(t('Please complete the security check.'));
+      return null;
+    }
+    if (cap && capAnswer.trim()) return { captchaId: cap.id, captchaAnswer: capAnswer.trim() };
+    setError(t('Please type the security code.'));
+    return null;
+  }
+  /** Every Turnstile token / image code can be checked once: get a fresh one after a failed attempt. */
+  function resetCheck() {
+    if (useTs) setTsReset((n) => n + 1);
+    else void newCaptcha();
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -94,32 +124,36 @@ export function AuthScreen({
     if (loggedIn && profile) return go(profile.name);
     if (mode === 'guest') {
       if (name.trim().length < 2) return setError(t('Name must be at least 2 characters.'));
+      if (!getHumanPass()) {
+        const c = humanAnswer();
+        if (!c) return;
+        setBusy(true);
+        try {
+          setHumanPass((await guestPass(c)).pass);
+          setHasPass(true);
+        } catch (err) {
+          setError((err as Error).message);
+          resetCheck();
+          return;
+        } finally {
+          setBusy(false);
+        }
+      }
       return go(name.trim());
     }
     setBusy(true);
     try {
-      let c: CaptchaAnswer;
-      if (useTs) {
-        if (!tsToken) {
-          setBusy(false);
-          return setError(t('Please complete the security check.'));
-        }
-        c = { turnstileToken: tsToken };
-      } else {
-        if (!cap || !capAnswer.trim()) {
-          setBusy(false);
-          return setError(t('Please type the security code.'));
-        }
-        c = { captchaId: cap.id, captchaAnswer: capAnswer.trim() };
+      const c = humanAnswer();
+      if (!c) {
+        setBusy(false);
+        return;
       }
       if (mode === 'login') await login(email, password, c);
       else await register(email, password, name.trim(), c);
       go(useProfile.getState().profile?.name ?? name.trim());
     } catch (err) {
       setError((err as Error).message);
-      // every token / code can be checked once
-      if (useTs) setTsReset((n) => n + 1);
-      else void newCaptcha();
+      resetCheck();
     } finally {
       setBusy(false);
     }
@@ -220,6 +254,10 @@ export function AuthScreen({
                     <EyeIcon open={!showPw} />
                   </button>
                 </div>
+              </>
+            )}
+            {needCaptcha && (
+              <>
                 {useTs ? (
                   <Turnstile
                     siteKey={siteKey}

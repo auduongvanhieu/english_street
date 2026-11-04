@@ -30,6 +30,7 @@ import { allowAuth, limiter } from '../npc/ratelimit';
 import { areaStats } from './play';
 import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
+import { HUMAN_PASS_TTL_S, signToken as signShared } from '@es/shared/token';
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -99,6 +100,16 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await limiter.allow(`captcha:${req.ip}`, 30))) return reply.code(429).send({ error: 'rate_limited' });
       reply.header('cache-control', 'no-store');
       return captcha.create();
+    });
+
+    // Guests: a captcha (Turnstile or the image code) buys a 30-day human pass for the street and the API.
+    app.post('/auth/guest', async (req, reply) => {
+      if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ turnstileToken: z.string().max(4096).optional(), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional() }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
+      await repo.logEvent({ name: 'guest_pass', props: {} });
+      return { pass: signShared(env.AUTH_SECRET, 'human', HUMAN_PASS_TTL_S) };
     });
 
     app.post('/auth/register', async (req, reply) => {

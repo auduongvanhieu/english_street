@@ -28,7 +28,29 @@ export function authHeaders(): Record<string, string> {
   if (t) h.authorization = `Bearer ${t}`;
   const b = localStorage.getItem('es:beta');
   if (b) h['x-beta-pass'] = b;
+  const hp = getHumanPass();
+  if (hp) h['x-human-pass'] = hp;
   return h;
+}
+
+/** Guest human pass (POST /auth/guest after a captcha); null when missing or expired. */
+export function getHumanPass(): string | null {
+  const p = localStorage.getItem('es:human');
+  if (!p) return null;
+  try {
+    const { exp } = JSON.parse(atob(p.split('.')[0]!.replace(/-/g, '+').replace(/_/g, '/'))) as {
+      exp: number;
+    };
+    if (exp * 1000 > Date.now() + 60_000) return p;
+  } catch {
+    /* malformed */
+  }
+  localStorage.removeItem('es:human');
+  return null;
+}
+export function setHumanPass(pass: string | null) {
+  if (pass) localStorage.setItem('es:human', pass);
+  else localStorage.removeItem('es:human');
 }
 
 /** Closed-beta invite pass (from POST /beta/verify). */

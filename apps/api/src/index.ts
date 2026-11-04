@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { isBetaPass } from '@es/shared/token';
+import { isBetaPass, isHumanPass } from '@es/shared/token';
 import { env, isProd, webOrigins } from './env';
 import { healthRoutes } from './routes/health';
 import { contentRoutes } from './routes/content';
@@ -43,11 +43,23 @@ registerAuth(app);
 
 // Closed beta: every write except sign-in needs a beta pass (x-beta-pass) or a signed-in account.
 if (env.BETA_CODES.length > 0) {
-  const open = new Set(['/auth/login', '/beta/verify', '/events', '/feedback']);
+  const open = new Set(['/auth/login', '/auth/guest', '/beta/verify', '/events', '/feedback']);
   app.addHook('onRequest', async (req, reply) => {
     if (req.method !== 'POST' || open.has(req.url.split('?')[0]!)) return;
     if (req.authPlayerId || isBetaPass(env.AUTH_SECRET, req.headers['x-beta-pass'])) return;
     return reply.code(403).send({ error: 'beta_pass_required' });
+  });
+}
+
+// Anti-spam: writes need a signed-in account or a guest human pass (captcha), so bots can't burn the
+// NPC budget or fill the database. Sign-in / sign-up / the guest pass itself carry their own captcha.
+{
+  const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/beta/verify', '/events', '/me/push-token']);
+  app.addHook('onRequest', async (req, reply) => {
+    const path = req.url.split('?')[0]!;
+    if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin')) return;
+    if (req.authPlayerId || isHumanPass(env.AUTH_SECRET, req.headers['x-human-pass'])) return;
+    return reply.code(403).send({ error: 'human_check_required' });
   });
 }
 

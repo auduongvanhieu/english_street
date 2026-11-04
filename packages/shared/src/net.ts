@@ -40,6 +40,8 @@ export interface JoinOptions {
   playerId: string;
   /** Closed beta: invite pass from POST /beta/verify, or the account token (either satisfies the gate). */
   betaPass?: string;
+  /** Guest's human pass (POST /auth/guest after a captcha); signed-in players send `token` instead. */
+  humanPass?: string;
   token?: string;
   /** Zone selection: 'main' joins/creates a public Main Street (room filter key), 'custom' creates a named zone. */
   zoneKind?: 'main' | 'custom';

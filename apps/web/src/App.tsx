@@ -7,7 +7,7 @@ import { connect, leaveRoom } from './net/client';
 import { ZoneChip, ZoneScreen } from './ui/ZoneScreen';
 import type { ZoneSelection } from '@es/shared';
 import { fetchNpcs } from './net/api';
-import { getBetaPass, getPlayerId, getToken } from './net/player';
+import { getBetaPass, getHumanPass, getPlayerId, getToken, setHumanPass } from './net/player';
 import { initAnalytics, track } from './net/analytics';
 import { useProfile } from './store/profile';
 import { AuthScreen } from './ui/AuthScreen';
@@ -206,10 +206,17 @@ export default function App() {
     await prof.refresh();
     void useArea.getState().syncLearned();
     const avatar = JSON.stringify(avatarLook(useProfile.getState().profile?.avatar ?? AvatarSchema.parse({})));
-    const ok = await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }, zone)
+    const ok = await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, humanPass: getHumanPass() ?? undefined, token: getToken() ?? undefined }, zone)
       .then(() => true)
       .catch(() => false);
-    if (!ok) return;
+    if (!ok) {
+      // guest pass missing or expired: back to the first screen for a new security check
+      if ((useGame.getState().connError ?? '').includes('human_check_required')) {
+        setHumanPass(null);
+        setPicker(false);
+      }
+      return;
+    }
     setPicker(false);
     if (deepLink) history.replaceState(null, '', location.pathname);
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });

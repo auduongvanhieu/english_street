@@ -14,6 +14,7 @@ export const ERROR_TEXT: Record<string, string> = {
   session_finished: tk('This conversation has ended.'),
   invalid_credentials: tk('Wrong email or password.'),
   email_taken: tk('An account with this email already exists.'),
+  human_check_required: tk('Please do the security check again.'),
   captcha_failed: tk('The security code was wrong or expired. Try the new one.'),
   not_enough_coins: tk('Not enough coins yet.'),
   not_owned: tk('Buy that item first.'),
@@ -48,6 +49,7 @@ export const endSession = (sessionId: string) => post<{ summary: AttemptSummary 
 
 /** Human check sent with sign-in / sign-up: a Turnstile token, or the built-in image captcha answer. */
 export type CaptchaAnswer = { turnstileToken: string } | { captchaId: string; captchaAnswer: string };
+export const guestPass = (c: CaptchaAnswer) => post<{ pass: string }>('/auth/guest', c);
 export const fetchCaptcha = () => get<{ id: string; svg: string }>('/auth/captcha');
 export const register = (email: string, password: string, name: string, guestId: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/register', { email, password, name, guestId, ...c });
 export const login = (email: string, password: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/login', { email, password, ...c });

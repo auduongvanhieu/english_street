@@ -26,7 +26,7 @@ import {
   type RtcSignal,
   type TalkMessage,
 } from '@es/shared';
-import { isBetaPass, verifyToken } from '@es/shared/token';
+import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { Player, StreetState } from './schema/StreetState';
 
 const SPAWN = { x: 0, y: 0, z: 4 };
@@ -49,11 +49,15 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Private zone code (never in metadata). */
   private code = '';
 
-  /** Closed beta: a player needs a beta pass or a signed-in token (both minted by the API with the shared AUTH_SECRET). */
+  /**
+   * Every player is a signed-in account (token) or a guest who passed a captcha (human pass); in the closed
+   * beta guests also need a beta pass. All are minted by the API with the shared AUTH_SECRET.
+   */
   static async onAuth(_token: string, options: Partial<JoinOptions>) {
-    if (!BETA_GATE) return true;
-    if (isBetaPass(AUTH_SECRET, options?.betaPass) || verifyToken(AUTH_SECRET, options?.token)) return true;
-    throw new Error('beta_pass_required');
+    if (verifyToken(AUTH_SECRET, options?.token) && !isBetaPass(AUTH_SECRET, options?.token) && !isHumanPass(AUTH_SECRET, options?.token)) return true;
+    if (BETA_GATE && !isBetaPass(AUTH_SECRET, options?.betaPass)) throw new Error('beta_pass_required');
+    if (!isHumanPass(AUTH_SECRET, options?.humanPass)) throw new Error('human_check_required');
+    return true;
   }
 
   async onCreate(options: Partial<JoinOptions> = {}) {
