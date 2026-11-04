@@ -102,7 +102,7 @@ export function SettingsPanel() {
           <Row label="Graphics quality" hint="Low = no shadows, smoother on phones">
             <Segmented value={s.quality} options={[{ id: 'low' as const, label: '⚡ Low' }, { id: 'high' as const, label: '✨ High' }]} onChange={(v) => s.setQuality(v)} />
           </Row>
-          <Row label="Ambient sound" hint={s.ambientVolume === 0 ? 'off' : `${Math.round(s.ambientVolume * 100)}%`}>
+          <Row label="Bird sounds" hint={s.ambientVolume === 0 ? 'off' : `${Math.round(s.ambientVolume * 100)}%`}>
             <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label="Ambient volume" />
           </Row>
         </section>

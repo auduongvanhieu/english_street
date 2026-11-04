@@ -165,7 +165,7 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
 - **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh
   (9 draw calls); density 5+8 per tile on high, 2+3 on low. Textures were downsized to 256² WebP by the model build.
-- **Ambient sound** (`audio/ambient.ts`): procedural wind/traffic noise bed + bird chirps and critter voices via WebAudio
+- **Ambient sound** (`audio/ambient.ts`): occasional procedural bird chirps (no continuous noise bed) and critter voices via WebAudio
   (no audio files). Follows the ⚙️ ambient slider; default 40 % on desktop, off on phones.
 - Draw calls after this phase: high 286 (budget 450), low 133 (budget 250).
 

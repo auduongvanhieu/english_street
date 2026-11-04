@@ -1,7 +1,7 @@
 /**
- * Procedural ambient sound (no audio assets): a soft filtered-noise bed (wind / distant traffic) with
- * occasional bird chirps. Starts on the first user gesture (autoplay policy) and follows the
- * ambientVolume setting; 0 = fully silent so phones save battery.
+ * Procedural ambient sound (no audio assets): occasional bird chirps only, no continuous noise bed
+ * (the filtered-noise "wind" layer was removed because it sounded like static). Starts on the first
+ * user gesture (autoplay policy) and follows the ambientVolume setting; 0 = fully silent.
  */
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -15,25 +15,6 @@ function ensure(): boolean {
   master = ctx.createGain();
   master.gain.value = 0;
   master.connect(ctx.destination);
-  const seconds = 4;
-  const buf = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < data.length; i++) {
-    const white = Math.random() * 2 - 1;
-    last = (last + 0.02 * white) / 1.02; // brown-ish noise
-    data[i] = last * 3.5;
-  }
-  const bed = ctx.createBufferSource();
-  bed.buffer = buf;
-  bed.loop = true;
-  const lp = ctx.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 420;
-  const bedGain = ctx.createGain();
-  bedGain.gain.value = 0.35;
-  bed.connect(lp).connect(bedGain).connect(master);
-  bed.start();
   return true;
 }
 
@@ -63,7 +44,7 @@ function scheduleChirps() {
   chirpTimer = window.setTimeout(() => {
     chirp();
     scheduleChirps();
-  }, 2500 + Math.random() * 6000);
+  }, 8000 + Math.random() * 14000);
 }
 
 /** Apply the volume setting (0..1). Needs a prior user gesture to actually produce sound. */
