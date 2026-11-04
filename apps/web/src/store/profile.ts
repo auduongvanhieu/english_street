@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Profile } from '@es/shared';
-import { fetchMe, login as apiLogin, register as apiRegister, saveLang } from '../net/api';
+import { fetchMe, login as apiLogin, register as apiRegister, saveLang, type CaptchaAnswer } from '../net/api';
 import { isLang } from '@es/shared';
 import { onLangChange, useLang } from '../i18n';
 import { track } from '../net/analytics';
@@ -10,8 +10,8 @@ interface ProfileStore {
   profile: (Profile & { quota?: { turnsLeftToday: number } }) | null;
   loggedIn: boolean;
   refresh: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string, captcha: CaptchaAnswer) => Promise<void>;
+  register: (email: string, password: string, name: string, captcha: CaptchaAnswer) => Promise<void>;
   logout: () => void;
 }
 
@@ -39,14 +39,14 @@ export const useProfile = create<ProfileStore>((set) => ({
       /* API down: HUD stays empty */
     }
   },
-  async login(email, password) {
-    const r = await apiLogin(email, password);
+  async login(email, password, captcha) {
+    const r = await apiLogin(email, password, captcha);
     setSession(r.token, r.profile.id);
     set({ profile: r.profile, loggedIn: true });
     syncLang(r.profile);
   },
-  async register(email, password, name) {
-    const r = await apiRegister(email, password, name, getGuestId());
+  async register(email, password, name, captcha) {
+    const r = await apiRegister(email, password, name, getGuestId(), captcha);
     setSession(r.token, r.profile.id);
     set({ profile: r.profile, loggedIn: true });
   },

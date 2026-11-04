@@ -26,8 +26,9 @@ import { getQuest, loadPairQuests, loadPlacement, loadQuests } from '@es/quests'
 import { hashPassword, playerIdFrom, signToken, verifyPassword } from '../auth';
 import { DAILY_BONUS_XP, type AttemptRepo, type UserRecord } from '../npc/attempts';
 import { budget } from '../npc/budget';
-import { allowAuth } from '../npc/ratelimit';
+import { allowAuth, limiter } from '../npc/ratelimit';
 import { areaStats } from './play';
+import { captcha } from '../captcha';
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -92,10 +93,18 @@ export function accountRoutes(repo: AttemptRepo) {
 
   return async function routes(app: FastifyInstance) {
     // ---- auth ----
+    // Image captcha for sign-in / sign-up (one check per challenge, 5 minutes).
+    app.get('/auth/captcha', async (req, reply) => {
+      if (!(await limiter.allow(`captcha:${req.ip}`, 30))) return reply.code(429).send({ error: 'rate_limited' });
+      reply.header('cache-control', 'no-store');
+      return captcha.create();
+    });
+
     app.post('/auth/register', async (req, reply) => {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = RegisterRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
+      if (!(await captcha.verify(body.data.captchaId, body.data.captchaAnswer))) return reply.code(400).send({ error: 'captcha_failed' });
       if (await repo.getUserByEmail(body.data.email)) return reply.code(409).send({ error: 'email_taken' });
       const u = await repo.createUser({ id: randomUUID(), email: body.data.email, name: body.data.name, passwordHash: await hashPassword(body.data.password) });
       if (body.data.guestId) await repo.transferGuest(body.data.guestId, u.id);
@@ -108,6 +117,7 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = LoginRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!(await captcha.verify(body.data.captchaId, body.data.captchaAnswer))) return reply.code(400).send({ error: 'captcha_failed' });
       const u = await repo.getUserByEmail(body.data.email);
       if (!u?.passwordHash || !(await verifyPassword(body.data.password, u.passwordHash))) return reply.code(401).send({ error: 'invalid_credentials' });
       await repo.ensureUser(u.id, u.name); // streak

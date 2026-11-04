@@ -40,8 +40,11 @@ export const RegisterRequestSchema = z.object({
   name: z.string().min(2).max(20),
   /** Guest id whose progress should be moved to the new account. */
   guestId: z.string().max(64).optional(),
+  /** Image captcha (GET /auth/captcha). */
+  captchaId: z.string().max(64).optional(),
+  captchaAnswer: z.string().max(16).optional(),
 });
-export const LoginRequestSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
+export const LoginRequestSchema = z.object({ email: z.string().email(), password: z.string().min(1), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional() });
 
 export const ProfileSchema = z.object({
   id: z.string(),

@@ -19,6 +19,7 @@ import { connectRedis, createStore, type Session } from './npc/store';
 import { createAttemptRepo } from './npc/attempts';
 import { NpcService } from './npc/service';
 import { budget } from './npc/budget';
+import { captcha } from './captcha';
 import { limiter } from './npc/ratelimit';
 
 // forceCloseConnections: a restart (tsx watch, systemd) must free the port immediately instead of waiting for keep-alive sockets.
@@ -30,6 +31,7 @@ const pairs = createStore<PairSession>(redis, 'pair');
 const translations = createStore<{ text?: string; vi?: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
 budget.useRedis(redis);
 limiter.useRedis(redis);
+captcha.useRedis(redis);
 const llm = createNpcLlm();
 app.log.info({ llm: llm.name, sessions: sessions.name, attempts: attempts.name, betaGate: env.BETA_CODES.length > 0 }, 'npc backend');
 if (llm.name === 'mock') app.log.warn('NPC provider is MOCK — set ANTHROPIC_API_KEY (and NPC_PROVIDER=claude) for real conversations');

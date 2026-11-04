@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useProfile } from '../store/profile';
-import { fetchConfig, verifyBetaCode } from '../net/api';
+import { fetchCaptcha, fetchConfig, verifyBetaCode } from '../net/api';
 import { getBetaPass, setBetaPass } from '../net/player';
 import { useT } from '../i18n';
 import { LanguagePicker } from './SettingsPanel';
@@ -18,6 +18,22 @@ export function AuthScreen({ initialName, onPlay, onZones, connecting, connError
   const [busy, setBusy] = useState(false);
   const [betaGate, setBetaGate] = useState(false);
   const [invite, setInvite] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [cap, setCap] = useState<{ id: string; svg: string } | null>(null);
+  const [capAnswer, setCapAnswer] = useState('');
+  const needCaptcha = !loggedIn && mode !== 'guest';
+  async function newCaptcha() {
+    setCapAnswer('');
+    try {
+      setCap(await fetchCaptcha());
+    } catch {
+      setCap(null);
+    }
+  }
+  useEffect(() => {
+    if (needCaptcha && !cap) void newCaptcha();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needCaptcha]);
   useEffect(() => {
     fetchConfig()
       .then((c) => setBetaGate(c.betaGate))
@@ -58,11 +74,17 @@ export function AuthScreen({ initialName, onPlay, onZones, connecting, connError
     }
     setBusy(true);
     try {
-      if (mode === 'login') await login(email, password);
-      else await register(email, password, name.trim());
+      if (!cap || !capAnswer.trim()) {
+        setBusy(false);
+        return setError(t('Please type the security code.'));
+      }
+      const c = { captchaId: cap.id, captchaAnswer: capAnswer.trim() };
+      if (mode === 'login') await login(email, password, c);
+      else await register(email, password, name.trim(), c);
       go(useProfile.getState().profile?.name ?? name.trim());
     } catch (err) {
       setError((err as Error).message);
+      void newCaptcha(); // every code can be checked once
     } finally {
       setBusy(false);
     }
@@ -104,7 +126,21 @@ export function AuthScreen({ initialName, onPlay, onZones, connecting, connError
             {mode !== 'guest' && (
               <>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('Email')} autoComplete="email" className="mb-2 w-full rounded-lg border px-3 py-2" />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('Password (6+ characters)')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className="mb-2 w-full rounded-lg border px-3 py-2" />
+                <div className="relative mb-2">
+                  <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('Password (6+ characters)')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className="w-full rounded-lg border py-2 pe-11 ps-3" />
+                  <button type="button" onClick={() => setShowPw(!showPw)} aria-label={showPw ? t('Hide password') : t('Show password')} title={showPw ? t('Hide password') : t('Show password')} aria-pressed={showPw} className="absolute inset-y-0 end-0 flex w-11 items-center justify-center text-gray-500 hover:text-gray-800">
+                    <EyeIcon open={!showPw} />
+                  </button>
+                </div>
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="flex h-[60px] w-[170px] shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-slate-50" aria-label={t('Security code image')}>
+                    {cap ? <img src={`data:image/svg+xml;utf8,${encodeURIComponent(cap.svg)}`} alt={t('Security code image')} width={170} height={60} draggable={false} /> : <span className="text-xs text-gray-400">…</span>}
+                  </div>
+                  <button type="button" onClick={() => void newCaptcha()} title={t('New code')} aria-label={t('New code')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-lg hover:bg-gray-50">
+                    ↻
+                  </button>
+                </div>
+                <input value={capAnswer} onChange={(e) => setCapAnswer(e.target.value.toUpperCase())} placeholder={t('Type the code above')} maxLength={8} autoComplete="off" autoCapitalize="characters" spellCheck={false} className="mb-2 w-full rounded-lg border px-3 py-2 font-mono tracking-widest" />
               </>
             )}
             {mode === 'guest' && <p className="mb-2 text-xs text-gray-500">{t('Guest progress stays in this browser. Sign up later to keep it.')}</p>}
@@ -128,5 +164,16 @@ export function AuthScreen({ initialName, onPlay, onZones, connecting, connError
         )}
       </form>
     </div>
+  );
+}
+
+/** Eye (show password) / crossed eye (hide it). */
+function EyeIcon({ open }: { open: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {!open && <path d="M3 3l18 18" />}
+    </svg>
   );
 }
