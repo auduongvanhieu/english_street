@@ -36,7 +36,8 @@ export interface AreaDef {
 }
 
 export const AREAS: AreaDef[] = [
-  { id: 'zoo', icon: '🦁', name: 'Sunny Hills Zoo', x0: 50, x1: 106, doorX: 78, doorW: 6, color: '#f2a93b', stopX: 78 },
+  // extra: the petting corner across the road (zooLayout.ts PETTING)
+  { id: 'zoo', icon: '🦁', name: 'Sunny Hills Zoo', x0: 50, x1: 106, doorX: 78, doorW: 6, color: '#f2a93b', stopX: 78, extra: [{ minX: 84, maxX: 100, minZ: 7, maxZ: 14.8 }] },
   { id: 'farm', icon: '🐄', name: 'Green Valley Farm', x0: 110, x1: 166, doorX: 128, doorW: 6, color: '#8bc34a', stopX: 138, extra: [{ minX: 112, maxX: 164, minZ: 6.5, maxZ: 15.5 }] },
   { id: 'supermarket', icon: '🛒', name: 'FreshWay Supermarket', x0: -106, x1: -50, doorX: -78, doorW: 5, color: '#38b2ac', stopX: -78 },
   { id: 'restaurant', icon: '🍽️', name: 'The Grand Garden Restaurant', x0: -166, x1: -110, doorX: -138, doorW: 4, color: '#e05f5f', stopX: -138 },

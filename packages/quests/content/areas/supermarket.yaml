@@ -421,6 +421,230 @@ items:
     level: A2
   - en: The big pack is better value for money.
     level: B1
+- id: oranges
+  en: "orange"
+  plural: "oranges"
+  icon: "🍊"
+  category: "fruit-veg"
+  unit: "a bag of"
+  price: 3
+  note: "a bag of oranges"
+  sentences:
+    - { en: "The oranges are sweet.", level: A1 }
+    - { en: "I need a bag of oranges.", level: A2 }
+    - { en: "Oranges are full of vitamin C, so they're good for you in winter.", level: B1 }
+- id: tomatoes
+  en: "tomato"
+  plural: "tomatoes"
+  icon: "🍅"
+  category: "fruit-veg"
+  unit: "a kilo of"
+  price: 2.5
+  note: "a kilo of tomatoes"
+  sentences:
+    - { en: "The tomatoes are red.", level: A1 }
+    - { en: "A kilo of tomatoes, please.", level: A2 }
+    - { en: "Keep tomatoes out of the fridge if you want them to taste better.", level: B1 }
+- id: carrots
+  en: "carrot"
+  plural: "carrots"
+  icon: "🥕"
+  category: "fruit-veg"
+  unit: "a bag of"
+  price: 1.5
+  note: "a bag of carrots"
+  sentences:
+    - { en: "I eat carrots.", level: A1 }
+    - { en: "Can you get a bag of carrots?", level: A2 }
+    - { en: "Carrots stay fresh for weeks if you keep them in the fridge.", level: B1 }
+- id: potatoes
+  en: "potato"
+  plural: "potatoes"
+  icon: "🥔"
+  category: "fruit-veg"
+  unit: "a bag of"
+  price: 2.5
+  note: "a bag of potatoes"
+  sentences:
+    - { en: "We need potatoes.", level: A1 }
+    - { en: "A bag of potatoes, please.", level: A2 }
+    - { en: "Big potatoes are best for baking, and small ones are best for boiling.", level: B1 }
+- id: muffins
+  en: "muffin"
+  plural: "muffins"
+  icon: "🧁"
+  category: "bakery"
+  price: 1.5
+  sentences:
+    - { en: "The muffin is sweet.", level: A1 }
+    - { en: "Can I have two chocolate muffins?", level: A2 }
+    - { en: "The muffins are half price at the end of the day.", level: B1 }
+- id: flour
+  en: "flour"
+  icon: "🌾"
+  category: "bakery"
+  unit: "a bag of"
+  price: 1.5
+  note: "Uncountable: a bag of flour."
+  sentences:
+    - { en: "I need flour.", level: A1 }
+    - { en: "We need a bag of flour for the cake.", level: A2 }
+    - { en: "You can't make bread without flour.", level: B1 }
+- id: sugar
+  en: "sugar"
+  icon: "🧂"
+  category: "bakery"
+  unit: "a bag of"
+  price: 2
+  note: "Uncountable: a bag of sugar."
+  sentences:
+    - { en: "The sugar is white.", level: A1 }
+    - { en: "Could you get a bag of sugar?", level: A2 }
+    - { en: "Brown sugar is a little more expensive than white sugar.", level: B1 }
+- id: butter
+  en: "butter"
+  icon: "🧈"
+  category: "dairy"
+  unit: "a pack of"
+  price: 2.5
+  note: "Uncountable: a pack of butter."
+  sentences:
+    - { en: "I like butter on bread.", level: A1 }
+    - { en: "A pack of butter, please.", level: A2 }
+    - { en: "Butter gets soft quickly if you leave it out of the fridge.", level: B1 }
+- id: pasta
+  en: "pasta"
+  icon: "🍝"
+  category: "snacks"
+  unit: "a pack of"
+  price: 1.5
+  note: "Uncountable: a pack of pasta."
+  sentences:
+    - { en: "We eat pasta.", level: A1 }
+    - { en: "Where can I find the pasta?", level: A2 }
+    - { en: "Dried pasta lasts much longer than fresh pasta.", level: B1 }
+- id: cereal
+  en: "cereal"
+  icon: "🌽"
+  category: "snacks"
+  unit: "a box of"
+  price: 3.5
+  note: "a box of cereal"
+  sentences:
+    - { en: "I eat cereal for breakfast.", level: A1 }
+    - { en: "A box of cereal, please.", level: A2 }
+    - { en: "Some cereals for children contain a lot of sugar.", level: B1 }
+- id: honey
+  en: "honey"
+  icon: "🍯"
+  category: "snacks"
+  unit: "a bottle of"
+  price: 4
+  note: "a bottle of honey (or a jar of honey)"
+  sentences:
+    - { en: "Honey is sweet.", level: A1 }
+    - { en: "I'd like a bottle of honey, please.", level: A2 }
+    - { en: "Local honey is more expensive, but many people say it tastes better.", level: B1 }
+- id: cookies
+  en: "cookie"
+  plural: "cookies"
+  icon: "🍪"
+  category: "snacks"
+  unit: "a pack of"
+  price: 2
+  note: "a pack of cookies (British English: biscuits)"
+  sentences:
+    - { en: "I like cookies.", level: A1 }
+    - { en: "Can we buy a pack of cookies?", level: A2 }
+    - { en: "These cookies are on offer: buy one pack and get one free.", level: B1 }
+- id: coffee
+  en: "coffee"
+  icon: "☕"
+  category: "drinks"
+  unit: "a bag of"
+  price: 5
+  note: "a bag of coffee"
+  sentences:
+    - { en: "I drink coffee.", level: A1 }
+    - { en: "A bag of coffee, please.", level: A2 }
+    - { en: "Do you want ground coffee or coffee beans?", level: B1 }
+- id: tea
+  en: "tea"
+  icon: "🍵"
+  category: "drinks"
+  unit: "a box of"
+  price: 3
+  note: "a box of tea (tea bags)"
+  sentences:
+    - { en: "I drink tea.", level: A1 }
+    - { en: "We need a box of tea.", level: A2 }
+    - { en: "There are a hundred tea bags in this box.", level: B1 }
+- id: beef
+  en: "beef"
+  icon: "🥩"
+  category: "meat-fish"
+  unit: "a pack of"
+  price: 7
+  note: "Uncountable: some beef. Meat from a cow."
+  sentences:
+    - { en: "I cook beef.", level: A1 }
+    - { en: "A pack of beef, please.", level: A2 }
+    - { en: "Minced beef is good for burgers and spaghetti sauce.", level: B1 }
+- id: ham
+  en: "ham"
+  icon: "🥓"
+  category: "meat-fish"
+  unit: "a pack of"
+  price: 3
+  note: "Uncountable: a pack of ham, a slice of ham."
+  sentences:
+    - { en: "I like ham.", level: A1 }
+    - { en: "Can I have a pack of ham for sandwiches?", level: A2 }
+    - { en: "Sliced ham must be eaten within three days of opening.", level: B1 }
+- id: frozen-pizza
+  en: "frozen pizza"
+  plural: "frozen pizzas"
+  icon: "🍕"
+  category: "frozen"
+  price: 4
+  sentences:
+    - { en: "I want a pizza.", level: A1 }
+    - { en: "Let's buy two frozen pizzas for dinner.", level: A2 }
+    - { en: "Frozen pizza is quick to cook when you don't have much time.", level: B1 }
+- id: fish-fingers
+  en: "fish fingers"
+  icon: "🐠"
+  category: "frozen"
+  unit: "a box of"
+  price: 3.5
+  note: "a box of fish fingers (American English: fish sticks)"
+  sentences:
+    - { en: "I like fish fingers.", level: A1 }
+    - { en: "A box of fish fingers, please.", level: A2 }
+    - { en: "Fish fingers are called fish sticks in American English.", level: B1 }
+- id: shampoo
+  en: "shampoo"
+  icon: "🧴"
+  category: "household"
+  unit: "a bottle of"
+  price: 4
+  note: "a bottle of shampoo"
+  sentences:
+    - { en: "I need shampoo.", level: A1 }
+    - { en: "A bottle of shampoo, please.", level: A2 }
+    - { en: "This shampoo is for dry hair.", level: B1 }
+- id: tissues
+  en: "tissue"
+  plural: "tissues"
+  icon: "🤧"
+  category: "household"
+  unit: "a box of"
+  price: 1.5
+  note: "a box of tissues"
+  sentences:
+    - { en: "I need tissues.", level: A1 }
+    - { en: "Can you get a box of tissues?", level: A2 }
+    - { en: "Always keep a box of tissues at home when you have a cold.", level: B1 }
 phrases:
 - en: Excuse me, where can I find the milk?
   level: A1
@@ -470,3 +694,6 @@ phrases:
 - en: Is this the cheapest one you have?
   level: B1
   group: deals
+- { en: "The pasta is next to the rice.", level: A1, group: finding }
+- { en: "We need two bags of potatoes.", level: A2, group: amounts }
+- { en: "Buy two, get the third one half price.", level: B1, group: deals }

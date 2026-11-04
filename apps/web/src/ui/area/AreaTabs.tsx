@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CROPS, CROP_PRICE, GROW_MS, plotStage, type AreaContentDto, type Crop } from '@es/shared';
 import { useFarm } from '../../store/farm';
+import { useGame } from '../../store/game';
+import { areaAt } from '../../world/areas';
 import { useRestaurant } from '../../store/restaurant';
 import { useShopping } from '../../store/shopping';
 import { useArea } from '../../store/area';
@@ -19,6 +21,43 @@ const ERR: Record<string, string> = {
 };
 
 /** 🌱 My garden (6 plots), basket + market, animal chores. */
+/** Other players at the farm who have something planted: visit = their crops show on the plots. */
+function Neighbours() {
+  const t = useT();
+  const visiting = useFarm((s) => s.visiting);
+  const visit = useFarm((s) => s.visit);
+  const setPanel = useArea((s) => s.setPanel);
+  const me = useGame((s) => s.sessionId);
+  const players = useGame((s) => s.players);
+  const list = Object.entries(players).filter(([id, p]) => id !== me && /[a-z]/.test(p.garden ?? '') && areaAt(p.x, p.z) === 'farm');
+  if (!list.length && !visiting) return null;
+  return (
+    <section className="rounded-lg border border-green-200 bg-green-50/60 px-3 py-2">
+      <h3 className="mb-1.5 text-sm font-semibold">👀 {t("Neighbours' gardens")}</h3>
+      <div className="flex flex-wrap gap-1.5">
+        {visiting && (
+          <button type="button" onClick={() => visit(null)} className="rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white">
+            ← {t('Back to my garden')}
+          </button>
+        )}
+        {list.map(([id, p]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              visit(id);
+              setPanel(false);
+            }}
+            className={`rounded-full border px-3 py-1 text-xs ${visiting === id ? 'border-green-700 bg-white font-semibold' : 'bg-white'}`}
+          >
+            🌱 {p.name}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function FarmTab({ content }: { content: AreaContentDto }) {
   const t = useT();
   const { farm, skew, act, busy, last, plot, setPlot } = useFarm();
@@ -46,6 +85,7 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
           )}
         </div>
       ) : null}
+      <Neighbours />
       <section>
         <h3 className="mb-2 text-sm font-semibold">🌱 {t('My garden')}</h3>
         <div className="grid grid-cols-3 gap-2">

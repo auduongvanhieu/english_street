@@ -14,7 +14,7 @@ import { join, resolve } from 'node:path';
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
-import { AREA_IDS, LANGS, areaTrKeys, langName, type LangCode } from '@es/shared';
+import { AREA_IDS, LANGS, areaTrKeys, langName, type LangCode, BADGES } from '@es/shared';
 import { AREA_I18N_DIR, getArea } from '@es/quests';
 import { env } from '../src/env';
 
@@ -42,6 +42,8 @@ function extract(): string[] {
     const src = readFileSync(file, 'utf8');
     for (const m of src.matchAll(KEY_RE)) keys.add(m[2]!.replace(/\\(['"\\])/g, '$1').replace(/\\n/g, '\n'));
   }
+  // badge names and descriptions come from the shared table (shown with t(b.name) / t(b.desc))
+  for (const b of BADGES) keys.add(b.name).add(b.desc);
   return [...keys].filter((k) => k.trim()).sort();
 }
 

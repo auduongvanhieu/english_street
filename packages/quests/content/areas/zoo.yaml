@@ -6,6 +6,9 @@ categories:
   - { id: cats, label: Big cats }
   - { id: birds, label: Birds }
   - { id: others, label: Other animals }
+  - { id: parts, label: "Animal body parts" }
+  - { id: places, label: "Around the zoo" }
+  - { id: petting, label: "Petting corner" }
 groups:
   - { id: look, label: Looking at animals }
   - { id: describe, label: Describing animals }
@@ -135,6 +138,189 @@ items:
       - { en: The flamingo is standing on one leg., level: A2 }
       - { en: Flamingos get their pink colour from the food they eat., level: B1 }
     fact: Baby flamingos are grey, not pink.
+  - id: tail
+    en: "tail"
+    plural: "tails"
+    icon: "🐿️"
+    category: "parts"
+    fact: "Kangaroos use their strong tail like a fifth leg."
+    sentences:
+      - { en: "The monkey has a long tail.", level: A1 }
+      - { en: "The dog is wagging its tail.", level: A2 }
+      - { en: "Some lizards can grow a new tail if they lose one.", level: B1 }
+  - id: wing
+    en: "wing"
+    plural: "wings"
+    icon: "🪽"
+    category: "parts"
+    sentences:
+      - { en: "Birds have two wings.", level: A1 }
+      - { en: "The eagle opens its wings and flies away.", level: A2 }
+      - { en: "Although penguins have wings, they use them to swim, not to fly.", level: B1 }
+  - id: feather
+    en: "feather"
+    plural: "feathers"
+    icon: "🪶"
+    category: "parts"
+    fact: "Only birds have feathers."
+    sentences:
+      - { en: "The feather is soft.", level: A1 }
+      - { en: "Peacocks have beautiful blue and green feathers.", level: A2 }
+      - { en: "Birds lose their old feathers and grow new ones every year.", level: B1 }
+  - id: fur
+    en: "fur"
+    icon: "🐻‍❄️"
+    category: "parts"
+    note: "Uncountable: some fur, thick fur."
+    sentences:
+      - { en: "The bear has thick fur.", level: A1 }
+      - { en: "Its fur keeps it warm in winter.", level: A2 }
+      - { en: "Polar bears' fur looks white, but each hair is actually clear.", level: B1 }
+  - id: paw
+    en: "paw"
+    plural: "paws"
+    icon: "🐾"
+    category: "parts"
+    note: "A dog's or cat's foot is a paw."
+    sentences:
+      - { en: "The cat has soft paws.", level: A1 }
+      - { en: "The bear is washing its face with its paw.", level: A2 }
+      - { en: "A lion's paws are so big that it can knock down an animal with one hit.", level: B1 }
+  - id: beak
+    en: "beak"
+    plural: "beaks"
+    icon: "🦜"
+    category: "parts"
+    sentences:
+      - { en: "The parrot has a strong beak.", level: A1 }
+      - { en: "Birds use their beaks to eat and build nests.", level: A2 }
+      - { en: "You can often guess what a bird eats from the shape of its beak.", level: B1 }
+  - id: horn
+    en: "horn"
+    plural: "horns"
+    icon: "🦏"
+    category: "parts"
+    sentences:
+      - { en: "The rhino has a horn on its nose.", level: A1 }
+      - { en: "Goats have two horns on their heads.", level: A2 }
+      - { en: "A rhino's horn is made of the same material as our hair and nails.", level: B1 }
+  - id: trunk
+    en: "trunk"
+    plural: "trunks"
+    icon: "🦣"
+    category: "parts"
+    note: "An elephant's nose is called a trunk."
+    sentences:
+      - { en: "The elephant has a long trunk.", level: A1 }
+      - { en: "Elephants use their trunks to drink and to say hello.", level: A2 }
+      - { en: "An elephant's trunk has thousands of muscles, but no bones.", level: B1 }
+  - id: claw
+    en: "claw"
+    plural: "claws"
+    icon: "🦀"
+    category: "parts"
+    sentences:
+      - { en: "The crab has two big claws.", level: A1 }
+      - { en: "The bear uses its claws to climb trees.", level: A2 }
+      - { en: "Cats can pull their claws in when they don't need them.", level: B1 }
+  - id: mane
+    en: "mane"
+    plural: "manes"
+    icon: "🐴"
+    category: "parts"
+    note: "the long hair on a lion's or a horse's neck"
+    sentences:
+      - { en: "The lion has a big mane.", level: A1 }
+      - { en: "The horse's mane is long and brown.", level: A2 }
+      - { en: "A darker mane often shows that a male lion is strong and healthy.", level: B1 }
+  - id: enclosure
+    en: "enclosure"
+    plural: "enclosures"
+    icon: "🏞️"
+    category: "places"
+    note: "the area where zoo animals live (old word: cage)"
+    sentences:
+      - { en: "This is the lion enclosure.", level: A1 }
+      - { en: "The zebras have a big enclosure with grass.", level: A2 }
+      - { en: "Modern zoos build large enclosures that look like the animals' natural homes.", level: B1 }
+  - id: zookeeper
+    en: "zookeeper"
+    plural: "zookeepers"
+    icon: "🧑‍🌾"
+    category: "places"
+    sentences:
+      - { en: "The zookeeper feeds the animals.", level: A1 }
+      - { en: "The zookeeper is cleaning the penguin pool.", level: A2 }
+      - { en: "Zookeepers know every animal by name and notice when one is sick.", level: B1 }
+  - id: ticket
+    en: "ticket"
+    plural: "tickets"
+    icon: "🎟️"
+    category: "places"
+    sentences:
+      - { en: "Here is my ticket.", level: A1 }
+      - { en: "How much is a ticket for children?", level: A2 }
+      - { en: "You can save money if you buy your tickets online.", level: B1 }
+  - id: zoo-map
+    en: "map"
+    plural: "maps"
+    icon: "🗺️"
+    category: "places"
+    sentences:
+      - { en: "Can I have a map?", level: A1 }
+      - { en: "Let's look at the map to find the pandas.", level: A2 }
+      - { en: "According to the map, the gift shop is next to the exit.", level: B1 }
+  - id: gift-shop
+    en: "gift shop"
+    plural: "gift shops"
+    icon: "🛍️"
+    category: "places"
+    sentences:
+      - { en: "Let's go to the gift shop.", level: A1 }
+      - { en: "I bought a toy panda in the gift shop.", level: A2 }
+      - { en: "The money from the gift shop helps to protect wild animals.", level: B1 }
+  - id: kid
+    en: "baby goat"
+    plural: "baby goats"
+    icon: "🐐"
+    category: "petting"
+    note: "A baby goat is called a kid."
+    fact: "Baby goats love to climb on everything."
+    sentences:
+      - { en: "The baby goat is small and cute.", level: A1 }
+      - { en: "The baby goats are jumping and playing.", level: A2 }
+      - { en: "A baby goat can stand up just a few minutes after it is born.", level: B1 }
+  - id: lamb
+    en: "lamb"
+    plural: "lambs"
+    icon: "🐑"
+    category: "petting"
+    note: "a baby sheep"
+    fact: "A lamb can recognise its mother's voice."
+    sentences:
+      - { en: "The lamb is soft and white.", level: A1 }
+      - { en: "Can I give the lamb a hug?", level: A2 }
+      - { en: "Lambs stay close to their mothers for the first few months.", level: B1 }
+  - id: bunny
+    en: "bunny"
+    plural: "bunnies"
+    icon: "🐰"
+    category: "petting"
+    note: "a child's word for a rabbit"
+    sentences:
+      - { en: "The bunny has long ears.", level: A1 }
+      - { en: "The bunny is eating a carrot.", level: A2 }
+      - { en: "If you hold a bunny gently, it will feel safe and stay calm.", level: B1 }
+  - id: guinea-pig
+    en: "guinea pig"
+    plural: "guinea pigs"
+    icon: "🐹"
+    category: "petting"
+    fact: "Guinea pigs are not pigs and they don't come from Guinea."
+    sentences:
+      - { en: "The guinea pig is small and brown.", level: A1 }
+      - { en: "Guinea pigs make funny squeaking sounds.", level: A2 }
+      - { en: "Guinea pigs are friendly, but they need to be handled carefully.", level: B1 }
 phrases:
   - { en: "Look at the elephant!", level: A1, group: look }
   - { en: "What's that animal called?", level: A1, group: look }
@@ -151,3 +337,8 @@ phrases:
   - { en: "What time is feeding time?", level: A2, group: visit }
   - { en: "Are we allowed to feed the animals?", level: B1, group: visit }
   - { en: "Please don't tap on the glass.", level: A2, group: visit }
+  - { en: "Can I stroke the bunny?", level: A1, group: visit }
+  - { en: "Be gentle with the lamb.", level: A2, group: visit }
+  - { en: "Where is the gift shop?", level: A1, group: visit }
+  - { en: "It has a long tail and soft fur.", level: A2, group: describe }
+  - { en: "The penguin's wings are shorter than the eagle's.", level: B1, group: compare }

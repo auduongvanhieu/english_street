@@ -14,20 +14,20 @@ import { buildCritter, coatFor, type CritterParts } from './chibi/buildCritter';
 import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
 /** Critter keeps this far from players' centres (player radius 0.4 + its own size + a little room). */
-const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2, duck: 0.6, duckling: 0.4, rabbit: 1.0 };
+const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2, duck: 0.6, duckling: 0.4, rabbit: 1.0, kid: 1.05, lamb: 1.05, guineapig: 0.8 };
 /** Chibi animals are drawn a bit bigger than life so their faces read from the street camera. */
-const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2, duck: 2.0, duckling: 1.1, rabbit: 1.9 };
-const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85, duck: 0.8, duckling: 0.4, rabbit: 1.0 };
+const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2, duck: 2.0, duckling: 1.1, rabbit: 1.9, kid: 1.7, lamb: 1.7, guineapig: 2.0 };
+const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85, duck: 0.8, duckling: 0.4, rabbit: 1.0, kid: 1.0, lamb: 1.0, guineapig: 0.5 };
 const BASE_Y: Partial<Record<CritterKind, number>> = { duck: DUCK_Y, duckling: DUCK_Y };
 /** English word shown with the critter's name when you are close ("dog - Luna"). */
-const KIND_WORD: Record<CritterKind, string> = { cat: 'cat', shiba: 'dog', husky: 'dog', duck: 'duck', duckling: 'duckling', rabbit: 'rabbit' };
+const KIND_WORD: Record<CritterKind, string> = { cat: 'cat', shiba: 'dog', husky: 'dog', duck: 'duck', duckling: 'duckling', rabbit: 'rabbit', kid: 'baby goat', lamb: 'lamb', guineapig: 'guinea pig' };
 const LABEL_RADIUS = 4;
 /** After being put down a critter stays put this long before heading back to its route. */
 const STAY_MS = 20000;
 /** Water starts here (Horizon.tsx RIVER_NEAR_Z). */
 const RIVER_EDGE_Z = 18;
 /** Critters beyond this distance are not animated/drawn (they are tiny anyway); river and meadow animals are seen from further. */
-const DRAW_RADIUS: Record<CritterKind, number> = { cat: 36, shiba: 36, husky: 36, duck: 60, duckling: 50, rabbit: 70 };
+const DRAW_RADIUS: Record<CritterKind, number> = { cat: 36, shiba: 36, husky: 36, duck: 60, duckling: 50, rabbit: 70, kid: 40, lamb: 40, guineapig: 30 };
 
 export function Critters() {
   return (
@@ -309,7 +309,7 @@ function animateRabbit(r: RigRefs, parts: CritterParts, state: string, m: { t: n
 
 // ------------------------------------------------------------------------------------------------ hugged critter
 /** Size in the arms relative to the street size (big ducks and rabbits are drawn large to read from afar). */
-const HOLD_SCALE: Record<CritterKind, number> = { cat: 0.85, shiba: 0.75, husky: 0.75, rabbit: 0.6, duck: 0.55, duckling: 0.9 };
+const HOLD_SCALE: Record<CritterKind, number> = { cat: 0.85, shiba: 0.75, husky: 0.75, rabbit: 0.6, duck: 0.55, duckling: 0.9, kid: 0.55, lamb: 0.55, guineapig: 0.7 };
 /** A cat or dog cradled sideways in a player's arms (child of the player's avatar group, player space in metres). */
 export function HeldCritter({ id }: { id: string }) {
   const c = CRITTERS.find((x) => x.id === id);

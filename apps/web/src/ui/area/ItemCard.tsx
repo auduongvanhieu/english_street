@@ -65,6 +65,28 @@ function SayIt({ item }: { item: AreaItemDto }) {
   );
 }
 
+/** "⚑ Wrong translation?" → one telemetry event (area, item, language) for the content team to review. */
+function ReportTranslation({ area, item }: { area: string; item: string }) {
+  const t = useT();
+  const [sent, setSent] = useState(false);
+  useEffect(() => setSent(false), [item]);
+  return (
+    <div className="mt-1.5 text-end">
+      <button
+        type="button"
+        disabled={sent}
+        onClick={() => {
+          track('translation_report', { area, item, lang: learnerLang() });
+          setSent(true);
+        }}
+        className="text-[11px] text-gray-400 underline-offset-2 hover:underline disabled:no-underline"
+      >
+        {sent ? t('Thanks! We will check it.') : `⚑ ${t('Wrong translation?')}`}
+      </button>
+    </div>
+  );
+}
+
 /** Full card for one area item: picture, word, IPA, listen, meaning, sentences, fact, say it, save. */
 export function ItemCard() {
   const t = useT();
@@ -142,6 +164,7 @@ export function ItemCard() {
             </div>
           ) : null}
           <SayIt item={item} />
+          {!noTr ? <ReportTranslation area={card.area} item={item.id} /> : null}
           <div className="mt-3 flex gap-2">
             <button type="button" disabled={state === 'saved'} onClick={save} className="min-h-10 flex-1 rounded-lg border text-sm font-medium disabled:opacity-60">
               {state === 'saved' ? t('✓ Saved') : t('📓 Save')}

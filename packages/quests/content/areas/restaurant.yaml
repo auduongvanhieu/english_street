@@ -332,6 +332,184 @@ items:
     level: A2
   - en: Could we have a table by the window?
     level: B1
+- id: soup-of-the-day
+  en: "soup of the day"
+  icon: "🥣"
+  category: "starters"
+  price: 6
+  note: "Ask the waiter. Served with bread."
+  sentences:
+    - { en: "What is the soup of the day?", level: A1 }
+    - { en: "The soup of the day is mushroom soup.", level: A2 }
+    - { en: "The soup of the day changes every day, so ask your waiter.", level: B1 }
+- id: spring-rolls
+  en: "spring rolls"
+  icon: "🥟"
+  category: "starters"
+  price: 6
+  note: "Crispy, with vegetables and chilli sauce. Vegetarian."
+  sentences:
+    - { en: "I like spring rolls.", level: A1 }
+    - { en: "The spring rolls come with a sweet chilli sauce.", level: A2 }
+    - { en: "Our spring rolls are filled with vegetables and fried until they are crispy.", level: B1 }
+- id: chicken-wings
+  en: "chicken wings"
+  icon: "🌶️"
+  category: "starters"
+  price: 8
+  note: "Spicy, with a cool dip."
+  sentences:
+    - { en: "The chicken wings are hot.", level: A1 }
+    - { en: "Can we have a plate of chicken wings to share?", level: A2 }
+    - { en: "The wings are quite spicy, so you might want a drink with them.", level: B1 }
+- id: fried-rice
+  en: "fried rice"
+  icon: "🍚"
+  category: "mains"
+  price: 12
+  note: "With egg, peas and carrots."
+  sentences:
+    - { en: "I want fried rice.", level: A1 }
+    - { en: "The fried rice comes with egg and vegetables.", level: A2 }
+    - { en: "Could you make the fried rice without meat, please?", level: B1 }
+- id: sushi
+  en: "sushi"
+  icon: "🍣"
+  category: "mains"
+  price: 17
+  note: "Eight pieces, with soy sauce."
+  sentences:
+    - { en: "I love sushi.", level: A1 }
+    - { en: "Can I eat sushi with a fork?", level: A2 }
+    - { en: "Sushi is made with rice and is usually served with raw fish.", level: B1 }
+- id: fish-and-chips
+  en: "fish and chips"
+  icon: "🐠"
+  category: "mains"
+  price: 15
+  note: "Fried fish with chips and peas."
+  sentences:
+    - { en: "Fish and chips, please.", level: A1 }
+    - { en: "Fish and chips is a famous British dish.", level: A2 }
+    - { en: "The fish is covered in batter and fried, and it comes with peas.", level: B1 }
+- id: lasagne
+  en: "lasagne"
+  icon: "🫕"
+  category: "mains"
+  price: 14
+  note: "Pasta, beef and cheese, baked in the oven."
+  sentences:
+    - { en: "The lasagne is hot.", level: A1 }
+    - { en: "I'll have the lasagne, please.", level: A2 }
+    - { en: "Our lasagne is baked with layers of pasta, meat and cheese.", level: B1 }
+- id: pancakes
+  en: "pancakes"
+  icon: "🥞"
+  category: "desserts"
+  price: 6
+  note: "With maple syrup and berries."
+  sentences:
+    - { en: "I like pancakes.", level: A1 }
+    - { en: "Can I have pancakes with honey?", level: A2 }
+    - { en: "The pancakes are served warm with fresh fruit and maple syrup.", level: B1 }
+- id: cheesecake
+  en: "cheesecake"
+  icon: "🍮"
+  category: "desserts"
+  price: 7
+  note: "With strawberry sauce."
+  sentences:
+    - { en: "The cheesecake is sweet.", level: A1 }
+    - { en: "A piece of cheesecake, please.", level: A2 }
+    - { en: "The cheesecake is so rich that it's easy to share.", level: B1 }
+- id: apple-pie
+  en: "apple pie"
+  icon: "🥧"
+  category: "desserts"
+  price: 6
+  note: "Warm, with cream or ice cream."
+  sentences:
+    - { en: "I want apple pie.", level: A1 }
+    - { en: "Would you like cream or ice cream with your apple pie?", level: A2 }
+    - { en: "The apple pie is made with apples from the farm down the road.", level: B1 }
+- id: lemonade
+  en: "lemonade"
+  icon: "🍋"
+  category: "drinks"
+  price: 3
+  note: "Homemade, with ice."
+  sentences:
+    - { en: "Lemonade, please.", level: A1 }
+    - { en: "The lemonade is cold and sweet.", level: A2 }
+    - { en: "Our lemonade is homemade with fresh lemons and a little sugar.", level: B1 }
+- id: hot-chocolate
+  en: "hot chocolate"
+  icon: "🍫"
+  category: "drinks"
+  price: 4
+  note: "With cream on top."
+  sentences:
+    - { en: "I want hot chocolate.", level: A1 }
+    - { en: "Can I have a hot chocolate with cream?", level: A2 }
+    - { en: "Be careful, the hot chocolate has just been made and it's very hot.", level: B1 }
+- id: milkshake
+  en: "milkshake"
+  plural: "milkshakes"
+  icon: "🥤"
+  category: "drinks"
+  price: 5
+  note: "Vanilla, chocolate or strawberry."
+  sentences:
+    - { en: "I like milkshakes.", level: A1 }
+    - { en: "A strawberry milkshake, please.", level: A2 }
+    - { en: "You can choose any flavour of ice cream for your milkshake.", level: B1 }
+- id: knife
+  en: "knife"
+  plural: "knives"
+  icon: "🔪"
+  category: "table"
+  note: "Plural: knives."
+  sentences:
+    - { en: "I need a knife.", level: A1 }
+    - { en: "Could I have a sharp knife for the steak?", level: A2 }
+    - { en: "Put your knife and fork together when you have finished eating.", level: B1 }
+- id: spoon
+  en: "spoon"
+  plural: "spoons"
+  icon: "🥄"
+  category: "table"
+  sentences:
+    - { en: "Here is a spoon.", level: A1 }
+    - { en: "Can I have a spoon for the soup?", level: A2 }
+    - { en: "You need a small spoon for your coffee and a big one for your soup.", level: B1 }
+- id: glass
+  en: "glass"
+  plural: "glasses"
+  icon: "🥛"
+  category: "table"
+  sentences:
+    - { en: "A glass of water, please.", level: A1 }
+    - { en: "Could we have two more glasses?", level: A2 }
+    - { en: "This glass is dirty. Could you bring me a clean one?", level: B1 }
+- id: plate
+  en: "plate"
+  plural: "plates"
+  icon: "🍽️"
+  category: "table"
+  sentences:
+    - { en: "The plate is white.", level: A1 }
+    - { en: "Careful, the plate is very hot.", level: A2 }
+    - { en: "Could we have an extra plate so we can share the dessert?", level: B1 }
+- id: tip
+  en: "tip"
+  plural: "tips"
+  icon: "💵"
+  category: "table"
+  note: "Extra money for the waiter."
+  sentences:
+    - { en: "We leave a tip.", level: A1 }
+    - { en: "How much should I leave as a tip?", level: A2 }
+    - { en: "In many countries, people leave a tip of about ten percent.", level: B1 }
 phrases:
 - en: A table for two, please.
   level: A1
@@ -381,3 +559,6 @@ phrases:
 - en: Keep the change.
   level: B1
   group: paying
+- { en: "Could I have a glass of water, please?", level: A1, group: ordering }
+- { en: "Is the tip included?", level: A2, group: paying }
+- { en: "I'm sorry, but this plate is dirty.", level: B1, group: problems }

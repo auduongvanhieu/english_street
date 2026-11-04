@@ -10,6 +10,8 @@ import { AREAS, GATE_X } from '../world/areas';
 const inYard = (x: number, z: number) => z < -4 && z > -33 && AREAS.some((a) => x > a.x0 - 2 && x < a.x1 + 2);
 /** South park rows of the farm are its fields. */
 const inFarmField = (x: number, z: number) => z > 5 && z < 16 && x > 110 && x < 166;
+/** The zoo's petting corner (zooLayout.ts PETTING): plain grass tiles there, no trees. */
+const inPetting = (x: number, z: number) => z > 5 && z < 16 && x > 81 && x < 103;
 import { serverNow } from '../net/client';
 import { useSettings } from '../store/settings';
 
@@ -220,7 +222,8 @@ function backdropPlacements(low: boolean): Placement[] {
   // rows), so inside and outside the fence look like one street running to the horizon.
   const ext = 46;
   const push = (p: Placement) => {
-    if (!inYard(p.x, p.z) && !inFarmField(p.x, p.z)) out.push(p);
+    if (inYard(p.x, p.z) || inFarmField(p.x, p.z)) return;
+    out.push(inPetting(p.x, p.z) && p.model.startsWith('grass') ? { ...p, model: 'grass' } : p);
   };
   for (let tx = -ext; tx <= ext; tx++) {
     if (Math.abs(tx) > 10) {

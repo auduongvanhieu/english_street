@@ -5,6 +5,57 @@ import { useGame } from '../store/game';
 import { getPlayerId } from '../net/player';
 import { Sheet, SheetHeader } from './Sheet';
 import { useT } from '../i18n';
+import type { AreaId } from '@es/shared';
+import { useArea } from '../store/area';
+
+/** Pair quests judged by an area NPC use that area's real menu / price list (both players can read it). */
+const PAIR_AREA: Record<string, AreaId> = { waiter: 'restaurant', chef: 'restaurant', grocer: 'supermarket' };
+const NO_CONTENT = null;
+
+function PairMenu({ area, open: initial }: { area: AreaId; open: boolean }) {
+  const t = useT();
+  const [open, setOpen] = useState(initial);
+  const content = useArea((st) => st.content[area] ?? NO_CONTENT);
+  useEffect(() => {
+    if (open) void useArea.getState().load(area);
+  }, [open, area]);
+  return (
+    <div className="mt-1.5">
+      <button type="button" onClick={() => setOpen(!open)} className="rounded-full border border-blue-300 bg-white px-3 py-0.5 text-xs font-semibold text-blue-800 hover:bg-blue-100">
+        {area === 'restaurant' ? '📋 ' + t('Menu') : '🏷️ ' + t('Prices')} {open ? '▴' : '▾'}
+      </button>
+      {open && (
+        <div className="mt-1.5 max-h-48 overflow-y-auto rounded-lg border bg-white p-2 text-xs text-gray-800">
+          {!content ? (
+            <span className="text-gray-400">…</span>
+          ) : (
+            content.categories.map((c) => {
+              const items = content.items.filter((i) => i.category === c.id && i.price != null);
+              if (!items.length) return null;
+              return (
+                <div key={c.id} className="mb-1.5">
+                  <div className="font-semibold text-gray-500" dir="ltr">
+                    {c.label}
+                  </div>
+                  {items.map((i) => (
+                    <div key={i.id} className="flex items-baseline gap-1.5">
+                      <span>{i.icon}</span>
+                      <span dir="ltr" className="font-medium">
+                        {i.en}
+                      </span>
+                      {i.tr.meaning && <span className="truncate text-gray-500">· {i.tr.meaning}</span>}
+                      <span className="ml-auto font-mono">${i.price}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Two-player role-play: role card, shared transcript with per-line feedback, and the final summary. */
 export function PairPanel() {
@@ -76,7 +127,11 @@ export function PairPanel() {
           <>
             <div className="border-b bg-blue-50 px-4 py-2 text-sm text-blue-900">
               <b>{t('You are the {role}.', { role: myRole?.label ?? '' })}</b> <span dir="ltr">{myRole?.brief}</span>
-              {myRole?.facts && <pre className="mt-1 whitespace-pre-wrap font-sans text-xs text-blue-800" dir="ltr">{myRole.facts}</pre>}
+              {PAIR_AREA[s.npcId] ? (
+                <PairMenu area={PAIR_AREA[s.npcId]!} open={mine?.role === s.roles[1].id} />
+              ) : (
+                myRole?.facts && <pre className="mt-1 whitespace-pre-wrap font-sans text-xs text-blue-800" dir="ltr">{myRole.facts}</pre>
+              )}
             </div>
             <div className="flex flex-wrap gap-1.5 border-b px-4 py-2">
               {myRole?.goals.map((g) => {

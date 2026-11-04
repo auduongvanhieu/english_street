@@ -24,6 +24,8 @@ export class Player extends Schema {
   @type('string') holding = '';
   /** Table prop ('dish:steak' while eating in the restaurant). */
   @type('string') prop = '';
+  /** Garden summary (GARDEN_RE) so others at the farm can visit it. */
+  @type('string') garden = '';
 }
 
 export class StreetState extends Schema {

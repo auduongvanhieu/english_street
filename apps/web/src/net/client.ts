@@ -21,12 +21,15 @@ interface PlayerLike {
   bubble: string;
   holding?: string;
   prop?: string;
+  garden?: string;
 }
 interface StreetStateLike {
   players: Map<string, PlayerLike>;
 }
 
 let room: Room<StreetStateLike> | null = null;
+/** Last garden summary sent to the current room (re-sent after reconnecting). */
+let lastGarden = '';
 
 /** Subscribers for relayed messages (voice chat signalling, pair quests). */
 const rtcHandlers = new Set<(m: RtcSignal & { from: string }) => void>();
@@ -94,6 +97,7 @@ async function doConnect(opts: JoinOptions, zone: ZoneSelection): Promise<Room<S
       room = await joinZone(client, opts, zone);
     }
     g.setSessionId(room.sessionId);
+    lastGarden = '';
     g.setConn('connected');
     bindRoom(room);
     return room;
@@ -126,6 +130,7 @@ function bindRoom(r: Room<StreetStateLike>) {
       bubble: p.bubble,
       holding: p.holding ?? '',
       prop: p.prop ?? '',
+      garden: p.garden ?? '',
     });
 
   $(r.state).players.onAdd((p, id) => {
@@ -161,6 +166,12 @@ export function sendHold(id: string) {
 }
 
 /** Restaurant: the dish on the table in front of me ('dish:steak'), '' = none. */
+export function sendGarden(garden: string) {
+  if (!room || garden === lastGarden) return;
+  lastGarden = garden;
+  room.send(MSG.GARDEN, garden);
+}
+
 export function sendProp(prop: string) {
   room?.send(MSG.PROP, prop);
 }

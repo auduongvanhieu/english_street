@@ -36,6 +36,9 @@ interface LangState {
 }
 
 const first = initialLang();
+/** Page / app description (also the PWA manifest description, see vite.config.ts). */
+const APP_DESCRIPTION = tk('Practise real-life English on a 3D street with AI shopkeepers and other learners.');
+
 export const useLang = create<LangState>((set, get) => ({
   lang: first.lang,
   chosen: first.chosen,
@@ -83,6 +86,10 @@ async function applyUi() {
   const html = document.documentElement;
   html.lang = shown;
   html.dir = isRtl(shown) ? 'rtl' : 'ltr';
+  // page description and the installable app's manifest in the same language (manifest-<code>.webmanifest: vite.config.ts)
+  document.querySelector('meta[name="description"]')?.setAttribute('content', catalog[APP_DESCRIPTION] || APP_DESCRIPTION);
+  const link = document.querySelector('link[rel="manifest"]');
+  if (link) link.setAttribute('href', shown === 'en' ? '/manifest.webmanifest' : `/manifest-${shown}.webmanifest`);
 }
 void applyUi();
 
@@ -95,7 +102,9 @@ export function t(key: string, vars?: Vars): string {
 }
 
 /** Marks a string as an interface key without translating it yet (module-level tables); translate later with t(). */
-export const tk = (s: string) => s;
+export function tk(s: string): string {
+  return s;
+}
 
 /** `const t = useT()` — re-renders the component when the interface language changes. */
 export function useT(): typeof t {

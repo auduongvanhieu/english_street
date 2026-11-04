@@ -3,14 +3,14 @@ import { Part, box, capsule, cyl, sphere } from '../chibi/buildChibi';
 
 /** Supermarket products by shelf category (ids = supermarket.yaml items). */
 export const PRODUCTS_BY_CATEGORY: Record<string, string[]> = {
-  'fruit-veg': ['bananas', 'apples', 'grapes', 'lettuce', 'onions'],
-  bakery: ['bread', 'croissant', 'cake'],
-  snacks: ['chips', 'chocolate', 'rice'],
-  dairy: ['milk', 'cheese', 'eggs', 'yogurt'],
-  drinks: ['juice', 'water', 'soda'],
-  household: ['soap', 'toothpaste', 'toilet-paper'],
-  'meat-fish': ['chicken', 'fish', 'sausages'],
-  frozen: ['ice-cream', 'frozen-peas'],
+  'fruit-veg': ['bananas', 'apples', 'grapes', 'lettuce', 'onions', 'oranges', 'tomatoes', 'carrots', 'potatoes'],
+  bakery: ['bread', 'croissant', 'cake', 'muffins', 'flour', 'sugar'],
+  snacks: ['chips', 'chocolate', 'rice', 'pasta', 'cereal', 'honey', 'cookies'],
+  dairy: ['milk', 'cheese', 'eggs', 'yogurt', 'butter'],
+  drinks: ['juice', 'water', 'soda', 'coffee', 'tea'],
+  household: ['soap', 'toothpaste', 'toilet-paper', 'shampoo', 'tissues'],
+  'meat-fish': ['chicken', 'fish', 'sausages', 'beef', 'ham'],
+  frozen: ['ice-cream', 'frozen-peas', 'frozen-pizza', 'fish-fingers'],
 };
 
 /** One small product built around the origin (bottom at y = 0), roughly 0.15–0.35 m. */
@@ -111,6 +111,90 @@ export function productShape(p: Part, id: string) {
     case 'frozen-peas':
       p.add(box(0.15, 0.2, 0.05), '#5fae4e', { p: [0, 0.1, 0] });
       p.add(sphere(0.03), '#9be07a', { p: [0, 0.12, 0.03] });
+      break;
+    case 'oranges':
+      for (let i = 0; i < 3; i++) p.add(sphere(0.055, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#f39c12', { p: [i * 0.1 - 0.1, 0.055, (i % 2) * 0.04] });
+      break;
+    case 'tomatoes':
+      for (let i = 0; i < 3; i++) {
+        p.add(sphere(0.05, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#e23b2e', { p: [i * 0.1 - 0.1, 0.045, 0], s: [1, 0.85, 1] });
+        p.add(cyl(0.012, 0.012, 0.02, 5), '#3d8b37', { p: [i * 0.1 - 0.1, 0.095, 0] });
+      }
+      break;
+    case 'carrots':
+      for (let i = 0; i < 3; i++) {
+        p.add(new THREE.ConeGeometry(0.025, 0.18, 6), '#f08a2c', { p: [0, 0.03, i * 0.05 - 0.05], r: [0, 0, Math.PI / 2] });
+        p.add(box(0.04, 0.03, 0.03), '#5fae4e', { p: [0.1, 0.03, i * 0.05 - 0.05] });
+      }
+      break;
+    case 'potatoes':
+      for (let i = 0; i < 4; i++) p.add(sphere(0.045, 0, Math.PI, 0, Math.PI * 2, 7, 5), '#b98a55', { p: [(i % 2) * 0.09 - 0.045, 0.04, Math.floor(i / 2) * 0.08 - 0.04], s: [1.3, 0.85, 1] });
+      break;
+    case 'muffins':
+      for (const dx of [-0.06, 0.06]) {
+        p.add(cyl(0.045, 0.035, 0.06, 10), '#f2e6d0', { p: [dx, 0.03, 0] });
+        p.add(sphere(0.05, 0, Math.PI, 0, Math.PI / 2, 10, 5), '#7a4a2a', { p: [dx, 0.06, 0] });
+      }
+      break;
+    case 'flour':
+      p.add(box(0.12, 0.18, 0.07), '#f7f3ea', { p: [0, 0.09, 0] });
+      p.add(box(0.08, 0.05, 0.072), '#d39a52', { p: [0, 0.1, 0] });
+      break;
+    case 'sugar':
+      p.add(box(0.12, 0.16, 0.07), '#ffffff', { p: [0, 0.08, 0] });
+      p.add(box(0.08, 0.05, 0.072), '#e23b4e', { p: [0, 0.09, 0] });
+      break;
+    case 'butter':
+      p.add(box(0.14, 0.05, 0.07), '#f6e27a', { p: [0, 0.025, 0] });
+      p.add(box(0.06, 0.052, 0.072), '#2f80ed', { p: [0, 0.026, 0] });
+      break;
+    case 'pasta':
+      p.add(box(0.1, 0.22, 0.05), '#2f80ed', { p: [0, 0.11, 0] });
+      p.add(box(0.06, 0.1, 0.052), '#f2d38a', { p: [0, 0.12, 0] });
+      break;
+    case 'cereal':
+      p.add(box(0.16, 0.24, 0.06), '#f2c94c', { p: [0, 0.12, 0] });
+      p.add(sphere(0.04, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#e5533d', { p: [0, 0.14, 0.03], s: [1, 1, 0.3] });
+      break;
+    case 'honey':
+      p.add(cyl(0.045, 0.045, 0.1, 10), '#e0a12e', { p: [0, 0.05, 0] });
+      p.add(cyl(0.048, 0.048, 0.025, 10), '#b5552f', { p: [0, 0.112, 0] });
+      break;
+    case 'cookies':
+      p.add(box(0.18, 0.06, 0.08), '#c0392b', { p: [0, 0.03, 0] });
+      for (let i = 0; i < 2; i++) p.add(cyl(0.035, 0.035, 0.012, 10), '#c98a52', { p: [i * 0.08 - 0.04, 0.066, 0] });
+      break;
+    case 'coffee':
+      p.add(box(0.1, 0.2, 0.06), '#4a2c1d', { p: [0, 0.1, 0] });
+      p.add(box(0.06, 0.05, 0.062), '#f2c94c', { p: [0, 0.12, 0] });
+      break;
+    case 'tea':
+      p.add(box(0.14, 0.09, 0.07), '#3d8b37', { p: [0, 0.045, 0] });
+      p.add(box(0.08, 0.04, 0.072), '#ffffff', { p: [0, 0.05, 0] });
+      break;
+    case 'beef':
+      p.add(box(0.2, 0.05, 0.14), '#ffffff', { p: [0, 0.025, 0] });
+      p.add(sphere(0.06, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#a63a2c', { p: [0, 0.06, 0], s: [1.5, 0.5, 1] });
+      break;
+    case 'ham':
+      p.add(box(0.18, 0.04, 0.12), '#ffffff', { p: [0, 0.02, 0] });
+      p.add(cyl(0.05, 0.05, 0.02, 12), '#f2a0a6', { p: [0, 0.05, 0] });
+      break;
+    case 'frozen-pizza':
+      p.add(box(0.22, 0.04, 0.22), '#e5533d', { p: [0, 0.02, 0] });
+      p.add(cyl(0.08, 0.08, 0.005, 12), '#f2c94c', { p: [0, 0.042, 0] });
+      break;
+    case 'fish-fingers':
+      p.add(box(0.18, 0.05, 0.12), '#2f80ed', { p: [0, 0.025, 0] });
+      for (let i = 0; i < 3; i++) p.add(box(0.12, 0.02, 0.025), '#e0a656', { p: [0, 0.06, i * 0.035 - 0.035] });
+      break;
+    case 'shampoo':
+      p.add(cyl(0.04, 0.045, 0.18, 10), '#7b3fa0', { p: [0, 0.09, 0], s: [1, 1, 0.6] });
+      p.add(cyl(0.02, 0.02, 0.03, 8), '#ffffff', { p: [0, 0.195, 0] });
+      break;
+    case 'tissues':
+      p.add(box(0.18, 0.08, 0.1), '#8fd3c8', { p: [0, 0.04, 0] });
+      p.add(box(0.05, 0.03, 0.04), '#ffffff', { p: [0, 0.09, 0] });
       break;
     default:
       p.add(box(0.12, 0.15, 0.08), '#cccccc', { p: [0, 0.075, 0] });

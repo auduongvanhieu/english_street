@@ -23,11 +23,15 @@ export const MSG = {
   HOLD: 'hold',
   /** Something on the table in front of you: 'dish:<menu item id>' while seated in the restaurant, '' = none. */
   PROP: 'prop',
+  /** client -> server: your garden plots (see encodeGarden) so other players at the farm can visit it. */
+  GARDEN: 'garden',
 } as const;
 
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
 export const PROP_RE = /^dish:[a-z-]{2,24}$/;
-export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling)-\d{1,2}$/;
+/** Garden summary: 6 plots "crop:wateredAt" (wateredAt 0 = seeded, not watered yet), empty plots "", joined by "|". */
+export const GARDEN_RE = /^(?:[a-z]{2,12}:\d{1,13})?(?:\|(?:[a-z]{2,12}:\d{1,13})?){5}$/;
+export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling|kid|lamb|guineapig)-\d{1,2}$/;
 
 export interface JoinOptions {
   name: string;

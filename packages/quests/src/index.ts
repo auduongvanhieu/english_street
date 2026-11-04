@@ -39,9 +39,24 @@ export function loadPairQuests(): PairQuest[] {
   pairCache ??= loadDir(join(CONTENT_DIR, 'pair-quests'), (raw, file) => {
     const r = PairQuestSchema.safeParse(raw);
     if (!r.success) throw new Error(`Invalid pair quest ${file}: ${r.error.message}`);
+    // "{{menu:restaurant}}" in a role's facts → the real price list of that area (same as the in-game panel)
+    for (const role of r.data.roles) role.facts = role.facts.replace(/\{\{menu:([a-z]+)\}\}/g, (_, id: string) => priceList(id as AreaId));
     return r.data;
   });
   return pairCache;
+}
+
+/** "Starters: tomato soup $6, …" lines for an area's priced items, grouped by category. */
+function priceList(id: AreaId): string {
+  const a = loadAreas().get(id);
+  if (!a) return '';
+  return a.categories
+    .map((c) => {
+      const items = a.items.filter((i) => i.category === c.id && i.price != null);
+      return items.length ? `${c.label}: ${items.map((i) => `${i.en} $${i.price}`).join(', ')}.` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
 }
 
 export const getNpc = (id: string) => loadNpcs().find((n) => n.id === id);

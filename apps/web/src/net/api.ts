@@ -72,7 +72,9 @@ export const addVocab = (word: string, meaning: string, example = '', lang: Lang
 
 // ---- themed areas
 export const fetchArea = (id: AreaId, lang: string) => get<AreaContentDto>(`/areas/${id}?lang=${encodeURIComponent(lang)}`);
+export const fetchAreaLearned = () => get<{ learned: Record<string, string[]> }>(`/me/areas${q()}`);
+export const sendAreaLearned = (area: AreaId, items: string[]) => post<{ learned: number; badge: string | null }>(`/me/area-learned${q()}`, { playerId: getPlayerId(), area, items });
 export const sendAreaQuiz = (area: AreaId, correct: number, total: number) =>
-  post<{ xp: number; coins: number; capped: boolean }>(`/me/area-quiz${q()}`, { playerId: getPlayerId(), area, correct, total });
+  post<{ xp: number; coins: number; capped: boolean; passed?: boolean; badge?: string | null }>(`/me/area-quiz${q()}`, { playerId: getPlayerId(), area, correct, total });
 export const fetchFarm = () => get<{ farm: FarmState; now: number }>(`/me/farm${q()}`);
 export const farmAction = (a: FarmAction) => post<FarmActionResult & { now: number }>(`/me/farm${q()}`, { ...a, playerId: getPlayerId() });

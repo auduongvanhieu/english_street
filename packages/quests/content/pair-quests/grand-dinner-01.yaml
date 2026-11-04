@@ -1,0 +1,41 @@
+id: grand-dinner-01
+npc: waiter
+level: A2
+title: Dinner at the Grand Garden (pair)
+intro: "One of you is a customer, the other is the waiter. Both of you can open the real menu. Elena watches and gives each of you feedback."
+roles:
+  - id: customer
+    label: Customer
+    brief: >
+      You are having dinner at The Grand Garden Restaurant. You are allergic to nuts and
+      you have about 30 dollars. Read the menu, ask the waiter about one dish, order a
+      starter or a main course and a drink, then ask for the bill and leave a tip.
+    goals:
+      - id: ask_dish
+        desc: "Ask the waiter a question about a dish (what is in it, is it spicy…)"
+      - id: allergy
+        desc: Tell the waiter about the nut allergy
+      - id: order
+        desc: Order food and a drink from the menu
+      - id: bill
+        desc: Ask for the bill
+  - id: waiter
+    label: Waiter
+    brief: >
+      You work at The Grand Garden Restaurant. Greet the customer, answer questions
+      about the menu, take the order, repeat it back, and bring the bill with the
+      correct total.
+    facts: "{{menu:restaurant}}"
+    goals:
+      - id: greet
+        desc: Greet the customer and offer the menu
+      - id: answer
+        desc: Answer a question about a dish
+      - id: confirm
+        desc: Repeat the order back to the customer
+      - id: total
+        desc: Bring the bill and say the correct total
+target_vocab: [allergic, nuts, starter, main course, bill, tip, total]
+target_phrases: ["Are you ready to order?", "What's in the…?", "I'm allergic to…", "Could we have the bill, please?", "That comes to…"]
+max_turns: 9
+reward: { xp: 100, coins: 30 }

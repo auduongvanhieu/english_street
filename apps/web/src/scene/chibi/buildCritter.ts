@@ -78,6 +78,8 @@ export function blush(p: Part, r: number, dx: number, dy: number) {
 export function buildCritter(kind: CritterKind, coat: Coat): CritterParts {
   if (kind === 'duck' || kind === 'duckling') return buildDuck(coat);
   if (kind === 'rabbit') return buildRabbit(coat);
+  if (kind === 'kid' || kind === 'lamb') return buildKid(coat, kind === 'lamb');
+  if (kind === 'guineapig') return buildGuineaPig(coat);
   const d = DIMS[kind];
   const cat = kind === 'cat';
   const bodyY = d.hipY + d.bodyR * 0.55;
@@ -212,6 +214,80 @@ function buildRabbit(coat: Coat): CritterParts {
   };
 }
 
+/**
+ * Petting-corner babies on long wobbly legs: a goat kid (floppy ears, horn nubs, little beard) or a lamb
+ * (woolly puffs on the body and head, dark face and legs when the coat says so).
+ */
+function buildKid(coat: Coat, lamb: boolean): CritterParts {
+  const hip = 0.2;
+  const bodyY = hip + 0.1;
+  const body = new Part();
+  body.add(sphere(0.15, 0, Math.PI, 0, Math.PI * 2, 20, 14), coat.fur, { p: [0, bodyY, 0], s: [0.85, 0.8, 1.25] });
+  if (lamb) {
+    // wool: a ring of puffs over the back and sides
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      body.add(sphere(0.075, 0, Math.PI, 0, Math.PI * 2, 8, 6), coat.fur, { p: [Math.cos(a) * 0.1, bodyY + 0.05 + Math.abs(Math.sin(a)) * 0.03, Math.sin(a) * 0.14] });
+    }
+  } else body.add(sphere(0.12, 0, Math.PI, 0, Math.PI * 2, 14, 10), coat.light, { p: [0, bodyY - 0.04, 0.04], s: [0.75, 0.7, 1] });
+  const r = 0.13;
+  const face = lamb ? coat.dark : coat.fur;
+  const head = new Part();
+  head.add(sphere(r, 0, Math.PI, 0, Math.PI * 2, 20, 14), face, { s: [0.95, 1, 1.05] });
+  head.add(sphere(r * 0.5, 0, Math.PI, 0, Math.PI * 2, 12, 10), coat.light, { p: [0, -r * 0.4, r * 0.72], s: [1.05, 0.8, 0.9] });
+  head.add(sphere(r * 0.08), '#3a2a2e', { p: [0, -r * 0.25, r * 1.12], s: [1.6, 0.8, 0.8] });
+  for (const sx of [-1, 1]) {
+    // floppy ears sticking out sideways
+    head.add(capsule(r * 0.16, r * 0.45), face, { p: [sx * r * 0.95, r * 0.2, -r * 0.05], r: [0, 0, sx * 1.9] });
+    head.add(capsule(r * 0.09, r * 0.35), '#ffc4cf', { p: [sx * r * 0.97, r * 0.17, r * 0.06], r: [0, 0, sx * 1.9] });
+    if (!lamb) head.add(new THREE.ConeGeometry(r * 0.12, r * 0.3, 6), '#e8dcc0', { p: [sx * r * 0.32, r * 0.95, -r * 0.1], r: [-0.3, 0, -sx * 0.2] });
+  }
+  if (lamb) for (const [x, z] of [[0, 0], [-0.04, -0.03], [0.04, -0.03]] as const) head.add(sphere(r * 0.32, 0, Math.PI, 0, Math.PI * 2, 8, 6), coat.light, { p: [x, r * 0.85, z] });
+  else head.add(new THREE.ConeGeometry(r * 0.12, r * 0.35, 6), coat.light, { p: [0, -r * 0.95, r * 0.6], r: [Math.PI, 0, 0] });
+  eyes(head, r, r * 0.4, r * 0.1, r * 0.2, coat.iris);
+  blush(head, r, r * 0.66, -r * 0.2);
+  const tail = new Part();
+  if (lamb) tail.add(sphere(0.05, 0, Math.PI, 0, Math.PI * 2, 8, 6), coat.fur, { p: [0, 0.01, -0.03] });
+  else tail.add(new THREE.ConeGeometry(0.03, 0.09, 6), coat.fur, { p: [0, 0.04, -0.01], r: [-0.5, 0, 0] });
+  const leg = new Part();
+  leg.add(capsule(0.032, hip - 0.06), lamb ? coat.dark : coat.fur, { p: [0, -hip / 2, 0] });
+  leg.add(cyl(0.036, 0.04, 0.035, 8), '#3a2a2e', { p: [0, -hip + 0.017, 0] });
+  return {
+    rig: { head: [0, bodyY + 0.14, 0.17], tail: [0, bodyY + 0.03, -0.18], legs: [[0.07, hip, 0.1], [-0.07, hip, 0.1], [0.07, hip, -0.1], [-0.07, hip, -0.1]], height: bodyY },
+    body: body.build(),
+    head: head.build(),
+    tail: tail.build(),
+    leg: leg.build(),
+  };
+}
+
+/** A round guinea pig: one fluffy loaf with patches, tiny feet, no tail to speak of. */
+function buildGuineaPig(coat: Coat): CritterParts {
+  const body = new Part();
+  body.add(sphere(0.12, 0, Math.PI, 0, Math.PI * 2, 18, 12), coat.fur, { p: [0, 0.09, 0], s: [0.9, 0.75, 1.3] });
+  body.add(sphere(0.07, 0, Math.PI, 0, Math.PI * 2, 10, 8), coat.dark, { p: [0.04, 0.13, -0.05], s: [1, 0.6, 1.2] });
+  body.add(sphere(0.06, 0, Math.PI, 0, Math.PI * 2, 10, 8), coat.light, { p: [-0.05, 0.12, 0.04], s: [1, 0.6, 1] });
+  const r = 0.09;
+  const head = new Part();
+  head.add(sphere(r, 0, Math.PI, 0, Math.PI * 2, 16, 12), coat.fur, { s: [1, 0.9, 1.05] });
+  head.add(sphere(r * 0.45, 0, Math.PI, 0, Math.PI * 2, 10, 8), coat.light, { p: [0, -r * 0.35, r * 0.75], s: [1.1, 0.8, 0.8] });
+  head.add(sphere(r * 0.1), '#ff8fa3', { p: [0, -r * 0.15, r * 1.02], s: [1.3, 0.8, 0.8] });
+  for (const sx of [-1, 1]) head.add(sphere(r * 0.28, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#e8a0a8', { p: [sx * r * 0.7, r * 0.6, -r * 0.1], s: [1, 0.7, 0.35], r: [0, sx * 0.6, 0] });
+  eyes(head, r, r * 0.45, r * 0.12, r * 0.22, coat.iris);
+  blush(head, r, r * 0.68, -r * 0.25);
+  const tail = new Part();
+  tail.add(sphere(0.02), coat.fur);
+  const leg = new Part();
+  leg.add(sphere(1, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#f0b8b8', { p: [0, -0.025, 0.01], s: [0.022, 0.015, 0.03] });
+  return {
+    rig: { head: [0, 0.13, 0.15], tail: [0, 0.08, -0.15], legs: [[0.06, 0.04, 0.08], [-0.06, 0.04, 0.08], [0.06, 0.04, -0.08], [-0.06, 0.04, -0.08]], height: 0.09 },
+    body: body.build(),
+    head: head.build(),
+    tail: tail.build(),
+    leg: leg.build(),
+  };
+}
+
 /** Fur colours per critter (each cat has its own coat). */
 export const COATS: Record<string, Coat> = {
   'cat-1': { fur: '#f6efe4', light: '#ffffff', dark: '#e0a46a', iris: undefined }, // Mochi: cream with ginger tips
@@ -227,6 +303,15 @@ export const COATS: Record<string, Coat> = {
   'rabbit-4': { fur: '#8a6248', light: '#e9d6c0', dark: '#5f412e' },
   'rabbit-5': { fur: '#fafafa', light: '#ffffff', dark: '#e0e0e0', iris: '#ff8fa3' },
   'rabbit-6': { fur: '#c98a52', light: '#fbefe0', dark: '#9a6438' },
+  // petting corner
+  'kid-1': { fur: '#f4f0e8', light: '#ffffff', dark: '#c9b9a0' },
+  'kid-2': { fur: '#8a5a3a', light: '#f2e2cc', dark: '#5a3a26' },
+  'lamb-1': { fur: '#fbf7ef', light: '#ffffff', dark: '#f2e6d6' },
+  'lamb-2': { fur: '#f6f1e6', light: '#ffffff', dark: '#3a3036' },
+  'guineapig-1': { fur: '#d9a066', light: '#fff5e6', dark: '#6b4a32' },
+  'guineapig-2': { fur: '#fafafa', light: '#ffffff', dark: '#3b2f2f' },
+  'rabbit-7': { fur: '#9a9a9a', light: '#f0f0f0', dark: '#6a6a6a' },
+  'rabbit-8': { fur: '#fafafa', light: '#ffffff', dark: '#e0e0e0', iris: '#ff8fa3' },
 };
 /** Coat for an id (ducklings are all fluffy yellow). */
 export function coatFor(id: string): Coat {

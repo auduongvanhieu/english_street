@@ -5,6 +5,9 @@ categories:
   - { id: animals, label: Farm animals }
   - { id: crops, label: Fruit and vegetables }
   - { id: jobs, label: Farm jobs }
+  - { id: tools, label: "Tools and things" }
+  - { id: places, label: "People and places" }
+  - { id: products, label: "Farm products" }
 groups:
   - { id: animals, label: Animals and their sounds }
   - { id: work, label: Working on the farm }
@@ -53,6 +56,154 @@ items:
       sentences: [{ en: "She milks the cow.", level: A1 }, { en: "Have you ever milked a cow?", level: A2 }, { en: "Cows are usually milked early in the morning.", level: B1 }] }
   - { id: collect-eggs, en: collect eggs, icon: 🥚, pos: phrase, category: jobs,
       sentences: [{ en: "I collect the eggs.", level: A1 }, { en: "We collected twelve eggs this morning.", level: A2 }, { en: "The eggs must be collected carefully so they don't break.", level: B1 }] }
+  - id: tractor
+    en: "tractor"
+    plural: "tractors"
+    icon: "🚜"
+    category: "tools"
+    sentences:
+      - { en: "The tractor is red.", level: A1 }
+      - { en: "The farmer drives the tractor to the field.", level: A2 }
+      - { en: "A tractor can pull much heavier loads than a horse.", level: B1 }
+  - id: bucket
+    en: "bucket"
+    plural: "buckets"
+    icon: "🪣"
+    category: "tools"
+    sentences:
+      - { en: "The bucket is full of water.", level: A1 }
+      - { en: "Can you carry this bucket to the pigs?", level: A2 }
+      - { en: "We use a bucket to bring food to the animals.", level: B1 }
+  - id: scarecrow
+    en: "scarecrow"
+    plural: "scarecrows"
+    icon: "👒"
+    category: "tools"
+    sentences:
+      - { en: "The scarecrow has a big hat.", level: A1 }
+      - { en: "The scarecrow stands in the middle of the field.", level: A2 }
+      - { en: "A scarecrow is used to frighten birds away from the crops.", level: B1 }
+  - id: fence
+    en: "fence"
+    plural: "fences"
+    icon: "🚧"
+    category: "tools"
+    sentences:
+      - { en: "The fence is made of wood.", level: A1 }
+      - { en: "The sheep can't jump over the fence.", level: A2 }
+      - { en: "Please close the gate in the fence, or the goats will get out.", level: B1 }
+  - id: hay
+    en: "hay"
+    icon: "🌾"
+    category: "tools"
+    note: "Uncountable: some hay, a bale of hay."
+    sentences:
+      - { en: "The horse eats hay.", level: A1 }
+      - { en: "We keep the hay in the barn.", level: A2 }
+      - { en: "Hay is dried grass that animals eat in winter.", level: B1 }
+  - id: seed
+    en: "seed"
+    plural: "seeds"
+    icon: "🫘"
+    category: "tools"
+    sentences:
+      - { en: "I have some seeds.", level: A1 }
+      - { en: "Put the seeds in the ground and water them.", level: A2 }
+      - { en: "Each seed needs sun, water and good soil to grow.", level: B1 }
+  - id: barn
+    en: "barn"
+    plural: "barns"
+    icon: "🛖"
+    category: "places"
+    sentences:
+      - { en: "The barn is big and red.", level: A1 }
+      - { en: "The cows sleep in the barn at night.", level: A2 }
+      - { en: "The farmer stores the tractor and the hay in the barn.", level: B1 }
+  - id: field
+    en: "field"
+    plural: "fields"
+    icon: "🌄"
+    category: "places"
+    sentences:
+      - { en: "The cows are in the field.", level: A1 }
+      - { en: "There is a field of corn behind the barn.", level: A2 }
+      - { en: "The farmer lets one field rest every few years so the soil stays healthy.", level: B1 }
+  - id: farmer
+    en: "farmer"
+    plural: "farmers"
+    icon: "🧑‍🌾"
+    category: "places"
+    sentences:
+      - { en: "The farmer is working.", level: A1 }
+      - { en: "The farmer gets up very early every day.", level: A2 }
+      - { en: "Farmers have to check the weather before they decide what to do.", level: B1 }
+  - id: orchard
+    en: "orchard"
+    plural: "orchards"
+    icon: "🌳"
+    category: "places"
+    note: "a field of fruit trees"
+    sentences:
+      - { en: "There are apple trees in the orchard.", level: A1 }
+      - { en: "We picked pears in the orchard.", level: A2 }
+      - { en: "In spring, the orchard is full of white and pink flowers.", level: B1 }
+  - id: egg
+    en: "egg"
+    plural: "eggs"
+    icon: "🪺"
+    category: "products"
+    sentences:
+      - { en: "The egg is brown.", level: A1 }
+      - { en: "The hens laid six eggs today.", level: A2 }
+      - { en: "Fresh eggs sink in water, but old ones float.", level: B1 }
+  - id: wool
+    en: "wool"
+    icon: "🧶"
+    category: "products"
+    note: "Uncountable: a ball of wool."
+    sentences:
+      - { en: "Wool is soft and warm.", level: A1 }
+      - { en: "My grandma made this sweater from wool.", level: A2 }
+      - { en: "The wool is washed and spun into yarn before it is used.", level: B1 }
+  - id: honey
+    en: "honey"
+    icon: "🍯"
+    category: "products"
+    note: "Uncountable: a jar of honey."
+    sentences:
+      - { en: "Honey is sweet.", level: A1 }
+      - { en: "The bees make honey in the hive.", level: A2 }
+      - { en: "Honey never goes bad if you keep it in a closed jar.", level: B1 }
+  - id: dig
+    en: "dig"
+    icon: "⛏️"
+    pos: "verb"
+    category: "jobs"
+    note: "dig – dug – dug"
+    sentences:
+      - { en: "I dig a hole.", level: A1 }
+      - { en: "We dug up the potatoes yesterday.", level: A2 }
+      - { en: "The ground was so hard that it took hours to dig.", level: B1 }
+  - id: pick
+    en: "pick"
+    icon: "🍒"
+    pos: "verb"
+    category: "jobs"
+    note: "pick – picked – picked"
+    sentences:
+      - { en: "I pick the apples.", level: A1 }
+      - { en: "We picked strawberries all morning.", level: A2 }
+      - { en: "The cherries should be picked as soon as they are red.", level: B1 }
+  - id: ride
+    en: "ride"
+    icon: "🏇"
+    pos: "verb"
+    category: "jobs"
+    note: "ride – rode – ridden"
+    sentences:
+      - { en: "I ride the horse.", level: A1 }
+      - { en: "Have you ever ridden a donkey?", level: A2 }
+      - { en: "She learned to ride when she was only five years old.", level: B1 }
 phrases:
   - { en: "The cow says moo.", level: A1, group: animals }
   - { en: "How many sheep are there?", level: A1, group: animals }
@@ -69,3 +220,7 @@ phrases:
   - { en: "It's sunny today. The plants will grow fast.", level: A1, group: weather }
   - { en: "We need rain. The ground is very dry.", level: A2, group: weather }
   - { en: "In autumn we harvest the apples.", level: A2, group: weather }
+  - { en: "Let's drive the tractor to the field.", level: A1, group: work }
+  - { en: "Put the hay in the barn, please.", level: A2, group: work }
+  - { en: "The baby sheep is called a lamb.", level: A1, group: animals }
+  - { en: "Do you sell fresh eggs and honey?", level: A2, group: market }

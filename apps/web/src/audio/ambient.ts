@@ -99,11 +99,38 @@ export function bellSound(volume = 0.5) {
 }
 
 /** Short critter voice: a meow (gliding tone), a woof (low burst) or a bicycle bell. */
-export function critterSound(kind: 'meow' | 'woof' | 'bell' | 'quack' | 'squeak', volume = 0.5) {
+export function critterSound(kind: 'meow' | 'woof' | 'bell' | 'quack' | 'squeak' | 'baa', volume = 0.5) {
   if (kind === 'bell') return bellSound(volume);
   if (!ensure() || volume <= 0) return;
   void ctx!.resume();
   const t = ctx!.currentTime;
+  if (kind === 'baa') {
+    // a little bleat: nasal tone with a fast wobble in loudness ("meh-eh-eh")
+    const o = ctx!.createOscillator();
+    const g = ctx!.createGain();
+    const bp = ctx!.createBiquadFilter();
+    const lfo = ctx!.createOscillator();
+    const depth = ctx!.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(560, t);
+    o.frequency.linearRampToValueAtTime(500, t + 0.45);
+    bp.type = 'bandpass';
+    bp.frequency.value = 1300;
+    bp.Q.value = 2;
+    lfo.frequency.value = 22;
+    depth.gain.value = 0.12 * volume;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.22 * volume, t + 0.04);
+    g.gain.setValueAtTime(0.22 * volume, t + 0.35);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    lfo.connect(depth).connect(g.gain);
+    o.connect(bp).connect(g).connect(ctx!.destination);
+    o.start(t);
+    lfo.start(t);
+    o.stop(t + 0.52);
+    lfo.stop(t + 0.52);
+    return;
+  }
   if (kind === 'quack' || kind === 'squeak') {
     // quack: two nasal buzzes through a band-pass; squeak: a tiny high chirp
     const quack = kind === 'quack';

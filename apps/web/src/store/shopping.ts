@@ -15,6 +15,7 @@ export interface ListLine {
 const NUM = ['zero', 'one', 'two', 'three'];
 const UNIT_PLURAL: Record<string, string> = {
   'a bunch of': 'bunches of',
+  'a jar of': 'jars of',
   'a bag of': 'bags of',
   'a head of': 'heads of',
   'a kilo of': 'kilos of',

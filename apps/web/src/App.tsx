@@ -40,7 +40,7 @@ import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, T
 import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
 import { useT } from './i18n';
-import { AreaChip, AreaPanel, FeedingToast, SitButton } from './ui/area/AreaPanel';
+import { AreaChip, AreaPanel, BadgeToast, FeedingToast, GardenVisitChip, SitButton } from './ui/area/AreaPanel';
 import { ShoppingMini } from './ui/area/AreaTabs';
 import { ItemCard } from './ui/area/ItemCard';
 import { BusPanel, MapPanel } from './ui/area/Travel';
@@ -161,6 +161,7 @@ export default function App() {
     setPlayerName(name);
     const prof = useProfile.getState();
     await prof.refresh();
+    void useArea.getState().syncLearned();
     const avatar = JSON.stringify(avatarLook(useProfile.getState().profile?.avatar ?? AvatarSchema.parse({})));
     const ok = await connect({ name, avatar, playerId: getPlayerId(), betaPass: getBetaPass() ?? undefined, token: getToken() ?? undefined }, zone)
       .then(() => true)
@@ -264,6 +265,8 @@ export default function App() {
       <AreaChip />
       {!hudHidden && <ShoppingMini />}
       <FeedingToast />
+      <BadgeToast />
+      <GardenVisitChip />
       <NpcPanel />
       <PairPanel />
       <UiPanels />

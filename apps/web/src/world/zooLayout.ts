@@ -60,6 +60,32 @@ export const ENCLOSURES: Enclosure[] = spec.map(([item, kind, names, habitat], i
   return { id: `zoo-${item}`, item, kind, names, habitat, x0: col[0], x1: col[1], z0: row[0], z1: row[1], signSide: i < 6 ? 'south' : 'south' };
 });
 
+/**
+ * Petting corner on the park side of the road, opposite the zoo gate: a low fence with a gate facing the
+ * road, baby goats, lambs, rabbits and guinea pigs (critters.ts) you can pick up and hug.
+ */
+export const PETTING = { x0: 84, x1: 100, z0: 7.2, z1: 14.6, gateX: 92, gateW: 2.6 };
+/** Hay feeder and the guinea-pig hutch inside the corner. */
+export const PETTING_FEEDER = { x: 96.5, z: 13.4 };
+export const PETTING_HUTCH: Aabb = { minX: 85, maxX: 87.4, minZ: 12.8, maxZ: 14.3 };
+
+function pettingBlockers(): Aabb[] {
+  const t = 0.12;
+  const P = PETTING;
+  const g0 = P.gateX - P.gateW / 2;
+  const g1 = P.gateX + P.gateW / 2;
+  return [
+    { minX: P.x0, maxX: g0, minZ: P.z0 - t, maxZ: P.z0 + t },
+    { minX: g1, maxX: P.x1, minZ: P.z0 - t, maxZ: P.z0 + t },
+    { minX: P.x0, maxX: P.x1, minZ: P.z1 - t, maxZ: P.z1 + t },
+    { minX: P.x0 - t, maxX: P.x0 + t, minZ: P.z0, maxZ: P.z1 },
+    { minX: P.x1 - t, maxX: P.x1 + t, minZ: P.z0, maxZ: P.z1 },
+    { minX: PETTING_FEEDER.x - 0.9, maxX: PETTING_FEEDER.x + 0.9, minZ: PETTING_FEEDER.z - 0.4, maxZ: PETTING_FEEDER.z + 0.4 },
+    PETTING_HUTCH,
+  ];
+}
+registerBlockers(pettingBlockers());
+
 /** Zookeeper hut in the middle of row B. */
 export const HUT: Aabb = { minX: 76, maxX: 80, minZ: -26.5, maxZ: -22.5 };
 

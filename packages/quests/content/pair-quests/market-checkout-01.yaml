@@ -1,0 +1,41 @@
+id: market-checkout-01
+npc: grocer
+level: A1
+title: At the Checkout (pair)
+intro: "One of you is a shopper, the other works at the checkout. Sam listens and gives each of you feedback."
+roles:
+  - id: shopper
+    label: Shopper
+    brief: >
+      You are at the FreshWay Supermarket checkout. You are buying two bottles of water,
+      a loaf of bread and some bananas. Ask where the eggs are (you forgot them), ask the
+      total price, and say how you want to pay.
+    goals:
+      - id: greet
+        desc: Say hello to the cashier
+      - id: ask_where
+        desc: Ask where the eggs are
+      - id: ask_total
+        desc: Ask how much it is
+      - id: pay
+        desc: Say how you want to pay (cash or card)
+  - id: cashier
+    label: Cashier
+    brief: >
+      You work at the FreshWay checkout. Greet the shopper, tell them where things are
+      (eggs are in the dairy aisle, next to the milk), say the total and ask if they
+      need a bag.
+    facts: "{{menu:supermarket}}"
+    goals:
+      - id: greet
+        desc: Greet the shopper
+      - id: directions
+        desc: Tell the shopper where the eggs are
+      - id: total
+        desc: Say the total price
+      - id: bag
+        desc: Ask if the shopper needs a bag
+target_vocab: [checkout, aisle, total, cash, card, bag, receipt]
+target_phrases: ["Where can I find…?", "How much is it?", "Do you need a bag?", "Cash or card?"]
+max_turns: 7
+reward: { xp: 70, coins: 20 }

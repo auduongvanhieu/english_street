@@ -17,7 +17,7 @@ import { CYCLISTS } from '../world/cyclists';
 import { serverNow } from '../net/client';
 import { livePos } from '../world/avoid';
 
-const CRITTER_SIZE = { cat: { r: 0.28, h: 0.45 }, shiba: { r: 0.4, h: 0.62 }, husky: { r: 0.45, h: 0.72 }, duck: { r: 0.3, h: 0.4 }, duckling: { r: 0.15, h: 0.2 }, rabbit: { r: 0.25, h: 0.45 } } as const;
+const CRITTER_SIZE = { cat: { r: 0.28, h: 0.45 }, shiba: { r: 0.4, h: 0.62 }, husky: { r: 0.45, h: 0.72 }, duck: { r: 0.3, h: 0.4 }, duckling: { r: 0.15, h: 0.2 }, rabbit: { r: 0.25, h: 0.45 }, kid: { r: 0.32, h: 0.75 }, lamb: { r: 0.32, h: 0.75 }, guineapig: { r: 0.2, h: 0.3 } } as const;
 const NEAR = 4; // only obstacles this close are tested each frame
 
 /** Everything round the player can bump into right now (static posts + NPCs + moving critters, cyclists, players). */

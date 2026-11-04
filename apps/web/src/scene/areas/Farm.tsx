@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { plotStage, type Crop } from '@es/shared';
+import { decodeGarden, plotStage, type Crop } from '@es/shared';
+import { useGame } from '../../store/game';
 import { BARN, COOP, ORCHARD, PENS, PLOTS, PLOT_SIZE, STALL, WINDMILL } from '../../world/farmLayout';
 import { FRONT_Z, YARD_MIN_Z, areaById } from '../../world/areas';
 import { enclosurePath } from '../../world/zooLayout';
@@ -99,6 +100,9 @@ function Garden() {
   const load = useFarm((s) => s.load);
   const setPlot = useFarm((s) => s.setPlot);
   const openPanel = useArea((s) => s.setPanel);
+  const visiting = useFarm((s) => s.visiting);
+  const visited = useGame((s) => (visiting ? s.players[visiting]?.garden ?? '' : ''));
+  const plots = useMemo(() => (visiting && visited ? decodeGarden(visited) : null), [visiting, visited]);
   useEffect(() => {
     void load();
     const t = setInterval(() => void load(), 30_000);
@@ -114,7 +118,7 @@ function Garden() {
   return (
     <group>
       {PLOTS.map((pl, i) => {
-        const plot = farm.plots[i];
+        const plot = plots ? plots[i] : farm.plots[i];
         const st = plotStage(plot, now);
         return (
           <group
@@ -122,6 +126,7 @@ function Garden() {
             position={[pl.x, 0, pl.z]}
             onClick={(e) => {
               e.stopPropagation();
+              if (plots) return; // someone else's garden: look, don't touch
               setPlot(i);
               openPanel(true, 'farm');
             }}

@@ -20,6 +20,8 @@ export interface RemotePlayer {
   /** critter id they are hugging ('' = none) */
   holding: string;
   prop: string;
+  /** garden summary (GARDEN_RE), '' = none */
+  garden: string;
 }
 
 export interface NpcInfo {

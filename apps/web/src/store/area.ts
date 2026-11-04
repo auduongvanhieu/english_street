@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AreaContentDto, AreaId } from '@es/shared';
-import { fetchArea } from '../net/api';
+import { fetchArea, fetchAreaLearned, sendAreaLearned } from '../net/api';
 import { onLangChange, useLang } from '../i18n';
 import { track } from '../net/analytics';
 
@@ -25,6 +25,33 @@ interface AreaStore {
   setTab: (tab: string) => void;
   openCard: (c: CardRef | null) => void;
   load: (id: AreaId) => Promise<AreaContentDto | null>;
+  /** Badge just earned (toast), cleared after a few seconds. */
+  badge: string | null;
+  showBadge: (id: string | null) => void;
+  /** Merge word cards opened on this device with the ones saved on the server (both ways). */
+  syncLearned: () => Promise<void>;
+}
+
+/** Cards opened but not yet saved on the server, per area (sent in small batches). */
+const pending = new Map<AreaId, Set<string>>();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+function queueLearned(area: AreaId, items: string[]) {
+  const set = pending.get(area) ?? new Set<string>();
+  for (const i of items) set.add(i);
+  pending.set(area, set);
+  if (!flushTimer) flushTimer = setTimeout(flushLearned, 1500);
+}
+async function flushLearned() {
+  flushTimer = null;
+  for (const [area, set] of [...pending]) {
+    pending.delete(area);
+    try {
+      const r = await sendAreaLearned(area, [...set].slice(0, 80));
+      if (r.badge) useArea.getState().showBadge(r.badge);
+    } catch {
+      /* offline: the next sync sends them again */
+    }
+  }
 }
 
 const LS_SEEN = 'es:areasSeen';
@@ -45,6 +72,29 @@ export const useArea = create<AreaStore>((set, get) => ({
   card: null,
   content: {},
   learned: read<Record<string, string[]>>(LS_LEARNED, {}),
+  badge: null,
+  showBadge(id) {
+    set({ badge: id });
+    if (id) setTimeout(() => get().badge === id && set({ badge: null }), 6000);
+  },
+  async syncLearned() {
+    try {
+      const server = (await fetchAreaLearned()).learned;
+      const local = get().learned;
+      const merged: Record<string, string[]> = {};
+      for (const a of new Set([...Object.keys(server), ...Object.keys(local)])) {
+        const s = server[a] ?? [];
+        const l = local[a] ?? [];
+        merged[a] = [...new Set([...s, ...l])];
+        const missing = l.filter((x) => !s.includes(x));
+        if (missing.length) queueLearned(a as AreaId, missing);
+      }
+      localStorage.setItem(LS_LEARNED, JSON.stringify(merged));
+      set({ learned: merged });
+    } catch {
+      /* API down */
+    }
+  },
   setCurrent(a) {
     if (a === get().current) return;
     if (!a) return set({ current: null, panel: false, card: null });
@@ -70,6 +120,7 @@ export const useArea = create<AreaStore>((set, get) => ({
       l[c.area] = [...list, c.item];
       localStorage.setItem(LS_LEARNED, JSON.stringify(l));
       set({ learned: l });
+      queueLearned(c.area, [c.item]);
     }
     void get().load(c.area);
   },

@@ -5,7 +5,7 @@ import { TILE } from './layout';
  * against the shared server clock (net/client.ts serverNow), so everyone sees the cat nap and the dogs
  * trot past at the same moment.
  */
-export type CritterKind = 'cat' | 'shiba' | 'husky' | 'duck' | 'duckling' | 'rabbit';
+export type CritterKind = 'cat' | 'shiba' | 'husky' | 'duck' | 'duckling' | 'rabbit' | 'kid' | 'lamb' | 'guineapig';
 export interface Critter {
   id: string;
   kind: CritterKind;
@@ -20,7 +20,7 @@ export interface Critter {
   /** Learning line shown when tapped. */
   sentence: string;
   word: { en: string; vi: string };
-  sound: 'meow' | 'woof' | 'quack' | 'squeak';
+  sound: 'meow' | 'woof' | 'quack' | 'squeak' | 'baa';
 }
 
 /** Ducks float on the river (Horizon.tsx WATER_Y = -0.3). */
@@ -53,6 +53,19 @@ export const CRITTERS: Critter[] = [
   { id: 'rabbit-4', kind: 'rabbit', name: 'Mocha', path: [[-53, 2 * TILE + 1], [-61, 3 * TILE], [-67, 2 * TILE + 0.5], [-58, 3 * TILE + 1.5]], speed: 1.3, pause: 8, offset: 21, sentence: 'The brown rabbit jumps over the grass.', word: { en: 'jump', vi: 'nhảy' }, sound: 'squeak' },
   { id: 'dog-2', kind: 'husky', name: 'Luna', path: [[-6, 3 * TILE], [6, 3 * TILE], [6, 2 * TILE + 3], [-6, 2 * TILE + 3]], speed: 1.8, pause: 10, offset: 55, sentence: 'A big dog is walking in the park.', word: { en: 'park', vi: 'công viên' }, sound: 'woof' },
 ];
+
+// Petting corner (zooLayout.ts PETTING, x 84…100, z 7.2…14.6): babies wander small loops inside the fence.
+const pen = (pts: [number, number][]): [number, number][] => pts;
+CRITTERS.push(
+  { id: 'kid-1', kind: 'kid', name: 'Pippin', path: pen([[86.5, 9], [91, 10.5], [95, 9], [97.5, 11]]), speed: 1.1, pause: 6, offset: 0, sentence: 'The baby goat is jumping around.', word: { en: 'baby goat', vi: 'dê con' }, sound: 'baa' },
+  { id: 'kid-2', kind: 'kid', name: 'Hazel', path: pen([[95.5, 12], [93, 9], [88.5, 11.5]]), speed: 1.0, pause: 9, offset: 11, sentence: 'Baby goats are called kids.', word: { en: 'baby goat', vi: 'dê con' }, sound: 'baa' },
+  { id: 'lamb-1', kind: 'lamb', name: 'Fluffy', path: pen([[89, 12.8], [92.5, 12.5], [94, 10.2], [90, 9.6]]), speed: 0.8, pause: 12, offset: 5, sentence: 'The lamb has soft, white wool.', word: { en: 'lamb', vi: 'cừu non' }, sound: 'baa' },
+  { id: 'lamb-2', kind: 'lamb', name: 'Shadow', path: pen([[97.5, 9], [94.5, 11.8], [91.5, 8.8]]), speed: 0.8, pause: 14, offset: 23, sentence: 'This lamb has a black face.', word: { en: 'lamb', vi: 'cừu non' }, sound: 'baa' },
+  { id: 'rabbit-7', kind: 'rabbit', name: 'Smokey', path: pen([[86, 10.5], [88.5, 8.6], [90.5, 11]]), speed: 1.2, pause: 8, offset: 3, sentence: 'The bunny is eating a carrot.', word: { en: 'bunny', vi: 'thỏ con' }, sound: 'squeak' },
+  { id: 'rabbit-8', kind: 'rabbit', name: 'Marshmallow', path: pen([[93.5, 13.2], [96.8, 9.5], [98.5, 12.5]]), speed: 1.2, pause: 10, offset: 15, sentence: 'You can hold the bunny gently.', word: { en: 'bunny', vi: 'thỏ con' }, sound: 'squeak' },
+  { id: 'guineapig-1', kind: 'guineapig', name: 'Biscuit', path: pen([[88, 12], [86.3, 11], [87.6, 10.2]]), speed: 0.6, pause: 10, offset: 2, sentence: 'The guinea pig is small and round.', word: { en: 'guinea pig', vi: 'chuột lang' }, sound: 'squeak' },
+  { id: 'guineapig-2', kind: 'guineapig', name: 'Oreo', path: pen([[89.2, 12.3], [88.2, 10.9], [86.4, 12.1]]), speed: 0.6, pause: 13, offset: 9, sentence: 'Guinea pigs squeak when they are happy.', word: { en: 'guinea pig', vi: 'chuột lang' }, sound: 'squeak' },
+);
 
 export interface CritterPose {
   x: number;

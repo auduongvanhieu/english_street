@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AreaContentDto, AreaItemDto } from '@es/shared';
 import { sendAreaQuiz } from '../../net/api';
 import { useProfile } from '../../store/profile';
+import { useArea } from '../../store/area';
 import { useT } from '../../i18n';
 import { say } from './common';
 
@@ -60,6 +61,7 @@ export function Quiz({ content }: { content: AreaContentDto }) {
       try {
         const r = await sendAreaQuiz(content.id, score, qs.length);
         setReward(r);
+        if (r.badge) useArea.getState().showBadge(r.badge);
         void useProfile.getState().refresh();
       } catch {
         /* offline: no reward */

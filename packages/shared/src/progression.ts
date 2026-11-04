@@ -18,8 +18,16 @@ export const BADGES = [
   { id: 'streak-3', name: 'On a Roll', desc: 'Play 3 days in a row', icon: '🔥' },
   { id: 'team-player', name: 'Team Player', desc: 'Finish a pair quest', icon: '👥' },
   { id: 'bookworm', name: 'Bookworm', desc: 'Review 20 flashcards', icon: '📚' },
+  // themed areas: open AREA_BADGE_WORDS word cards there and pass one of its quizzes (≥ 80 %)
+  { id: 'zoo-explorer', name: 'Zoo Explorer', desc: 'Learn 15 words at the zoo and pass a zoo quiz', icon: '🦁' },
+  { id: 'farm-hand', name: 'Farm Hand', desc: 'Learn 15 words at the farm and pass a farm quiz', icon: '🐄' },
+  { id: 'foodie', name: 'Foodie', desc: 'Learn 15 words at the restaurant and pass a restaurant quiz', icon: '🍽️' },
+  { id: 'smart-shopper', name: 'Smart Shopper', desc: 'Learn 15 words at the supermarket and pass a supermarket quiz', icon: '🛒' },
 ] as const;
 export type BadgeId = (typeof BADGES)[number]['id'];
+/** Word cards to open in an area for its badge (with a passed quiz). */
+export const AREA_BADGE_WORDS = 15;
+export const AREA_BADGE = { zoo: 'zoo-explorer', farm: 'farm-hand', restaurant: 'foodie', supermarket: 'smart-shopper' } as const;
 
 /** @deprecated kept as an alias: the avatar is now a full character look (see avatar.ts). */
 export const AvatarConfigV2Schema = AvatarSchema;
@@ -51,6 +59,8 @@ export const ProfileSchema = z.object({
   avatar: AvatarSchema,
   stats: z.object({ questsCompleted: z.number().int(), reviewsDone: z.number().int() }),
   badges: z.array(z.string()),
+  /** Progress per themed area: word cards opened (of total) and whether a quiz was passed. */
+  areas: z.record(z.string(), z.object({ learned: z.number().int(), total: z.number().int(), quiz: z.boolean() })).default({}),
   daily: z.array(z.object({ questId: z.string(), title: z.string(), npcId: z.string(), level: z.string(), done: z.boolean(), bonusXp: z.number().int() })),
 });
 export type Profile = z.infer<typeof ProfileSchema>;

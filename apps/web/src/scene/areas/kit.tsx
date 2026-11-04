@@ -33,7 +33,7 @@ export function Ground({ x0, x1, z0, z1, color, y = 0.012 }: { x0: number; x1: n
 }
 
 /** Wooden or metal fence around a rectangle (posts + 2 rails), merged; gaps = [[x0,x1] on the south side]. */
-export function fenceRect(p: Part, x0: number, x1: number, z0: number, z1: number, color = '#8a6a44', h = 1, gapsSouth: [number, number][] = []) {
+export function fenceRect(p: Part, x0: number, x1: number, z0: number, z1: number, color = '#8a6a44', h = 1, gapsSouth: [number, number][] = [], gapsNorth: [number, number][] = []) {
   const line = (ax: number, az: number, bx: number, bz: number) => {
     const len = Math.hypot(bx - ax, bz - az);
     if (len < 0.05) return;
@@ -52,7 +52,13 @@ export function fenceRect(p: Part, x0: number, x1: number, z0: number, z1: numbe
     x = g1;
   }
   line(x, z1, x1, z1);
-  line(x0, z0, x1, z0);
+  // north side (z0) with gaps
+  x = x0;
+  for (const [g0, g1] of [...gapsNorth].sort((a, b) => a[0] - b[0])) {
+    line(x, z0, g0, z0);
+    x = g1;
+  }
+  line(x, z0, x1, z0);
   line(x0, z0, x0, z1);
   line(x1, z0, x1, z1);
 }

@@ -36,6 +36,22 @@ export function plotStage(p: Plot | undefined, now: number): { stage: PlotStage;
   return k >= 1 ? { stage: 'ready', progress: 1 } : { stage: 'growing', progress: Math.max(0, k) };
 }
 
+/** Compact garden summary for the game server (GARDEN_RE). */
+export function encodeGarden(f: FarmState): string {
+  return Array.from({ length: PLOT_COUNT }, (_, i) => {
+    const p = f.plots[i];
+    return p?.crop ? `${p.crop}:${p.wateredAt}` : '';
+  }).join('|');
+}
+/** Plots of someone else's garden (plantedAt is not shared: 0). */
+export function decodeGarden(s: string): Plot[] {
+  return s.split('|').slice(0, PLOT_COUNT).map((part) => {
+    const [crop, w] = part.split(':');
+    const c = CropSchema.safeParse(crop);
+    return c.success ? { crop: c.data, plantedAt: 0, wateredAt: Number(w) || 0 } : { crop: null, plantedAt: 0, wateredAt: 0 };
+  });
+}
+
 export function emptyFarm(): FarmState {
   return { plots: Array.from({ length: PLOT_COUNT }, () => ({ crop: null, plantedAt: 0, wateredAt: 0 })), basket: {}, sales: [], chores: {} };
 }

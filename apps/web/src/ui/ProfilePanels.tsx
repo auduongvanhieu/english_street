@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AREAS } from '../world/areas';
 import { BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
 import { useGame } from '../store/game';
 import { Sheet, SheetHeader } from './Sheet';
@@ -177,6 +178,30 @@ function DailyPanel() {
             <span className="text-xs text-yellow-700">{t('+{xp} XP bonus', { xp: d.bonusXp })}</span>
           </li>
         ))}
+      </ul>
+      <h3 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Areas')}</h3>
+      <ul className="space-y-1.5">
+        {AREAS.map((a) => {
+          const pr = p.areas?.[a.id];
+          if (!pr) return null;
+          const pct = pr.total ? Math.round((pr.learned / pr.total) * 100) : 0;
+          return (
+            <li key={a.id} className="text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span>
+                  {a.icon} <span dir="ltr">{a.name}</span>
+                </span>
+                <span className="text-xs text-gray-600">
+                  {t('{n}/{total} words', { n: pr.learned, total: pr.total })}
+                  {pr.quiz ? ` · ✓ ${t('quiz')}` : ''}
+                </span>
+              </div>
+              <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: a.color }} />
+              </div>
+            </li>
+          );
+        })}
       </ul>
       <h3 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Badges')}</h3>
       <ul className="grid grid-cols-2 gap-2">

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ENCLOSURES, HUT, enclosurePath, type Enclosure, type Habitat } from '../../world/zooLayout';
+import { ENCLOSURES, HUT, PETTING, PETTING_FEEDER, PETTING_HUTCH, enclosurePath, type Enclosure, type Habitat } from '../../world/zooLayout';
 import { FRONT_Z, YARD_MIN_Z, areaById } from '../../world/areas';
 import { Animal } from './Animal';
 import { Ground, Merged, NearArea, Sign, fenceRect, rock, tree, box, cyl, sphere, type Part } from './kit';
@@ -79,6 +79,19 @@ function ZooStatic() {
           p.add(box(1.8, 0.1, 0.5), '#a0703c', { p: [x, 0.45, -17.8] });
           for (const dx of [-0.75, 0.75]) p.add(box(0.1, 0.45, 0.45), '#555', { p: [x + dx, 0.22, -17.8] });
         }
+        // petting corner across the road: low white fence with a gate, hay feeder, guinea-pig hutch, straw bales
+        const P = PETTING;
+        fenceRect(p, P.x0, P.x1, P.z0, P.z1, '#f4efe4', 0.75, [], [[P.gateX - P.gateW / 2, P.gateX + P.gateW / 2]]);
+        p.add(box(1.8, 0.5, 0.8), '#a0703c', { p: [PETTING_FEEDER.x, 0.4, PETTING_FEEDER.z] });
+        p.add(box(1.6, 0.25, 0.6), '#e8c860', { p: [PETTING_FEEDER.x, 0.72, PETTING_FEEDER.z] });
+        const H = PETTING_HUTCH;
+        const px = (H.minX + H.maxX) / 2;
+        const hz2 = (H.minZ + H.maxZ) / 2;
+        p.add(box(H.maxX - H.minX, 0.7, H.maxZ - H.minZ), '#d98c4a', { p: [px, 0.45, hz2] });
+        p.add(box(H.maxX - H.minX + 0.2, 0.08, H.maxZ - H.minZ + 0.25), '#8a4a2a', { p: [px, 0.84, hz2], r: [0.12, 0, 0] });
+        p.add(box(0.5, 0.35, 0.04), '#3a2a22', { p: [px, 0.32, H.minZ - 0.01] });
+        for (const [x, z] of [[98.6, 8.4], [85.6, 8.2]] as const) p.add(cyl(0.45, 0.45, 0.6, 10), '#e8c860', { p: [x, 0.3, z], r: [0, 0, Math.PI / 2] });
+        tree(p, 101.5, 15.6, 0.8);
         // trees in the corners of the yard
         for (const [x, z] of [[52, -28.5], [104, -28.5], [52, -7.6], [104, -7.6]] as const) tree(p, x, z, 0.9);
       }}
@@ -112,6 +125,8 @@ export function Zoo() {
           <Sign key={e.id} x={(e.x0 + e.x1) / 2 + 2.2} z={e.z1 + 0.45} text={e.item.toUpperCase()} sub={e.names.join(' · ')} color="#2f6b3a" y={1.1} />
         ))}
         <Sign x={78} z={(HUT.maxZ) + 0.6} text="ZOOKEEPER" color="#b5552f" y={1.6} w={2.6} />
+        <Ground x0={PETTING.x0} x1={PETTING.x1} z0={PETTING.z0} z1={PETTING.z1} color="#c9dc8a" y={0.02} />
+        <Sign x={PETTING.gateX + 4} z={PETTING.z0 + 0.35} text="PETTING CORNER" sub="Be gentle!" color="#c2185b" y={1.2} />
         {animals.map((a) => (
           <Animal key={a.key} id={a.key} kind={a.e.kind} name={a.name} word={a.e.item} area="zoo" item={a.e.item} path={a.path} offset={a.offset} speed={a.e.kind === 'crocodile' ? 0.35 : 0.7} pause={a.e.kind === 'crocodile' ? 20 : 7} />
         ))}

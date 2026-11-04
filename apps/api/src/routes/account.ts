@@ -22,11 +22,12 @@ import {
   type Profile,
   type VocabEntryDto,
 } from '@es/shared';
-import { getQuest, loadPlacement, loadQuests } from '@es/quests';
+import { getQuest, loadPairQuests, loadPlacement, loadQuests } from '@es/quests';
 import { hashPassword, playerIdFrom, signToken, verifyPassword } from '../auth';
 import { DAILY_BONUS_XP, type AttemptRepo, type UserRecord } from '../npc/attempts';
 import { budget } from '../npc/budget';
 import { allowAuth } from '../npc/ratelimit';
+import { areaStats } from './play';
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -40,7 +41,8 @@ export function accountRoutes(repo: AttemptRepo) {
     });
     const byNpc = new Map<string, number>();
     for (const a of completed) byNpc.set(a.npcId, (byNpc.get(a.npcId) ?? 0) + 1);
-    const pairDone = completed.some((a) => a.questId.includes('-dinner-') || a.questId.includes('-reception-'));
+    const pairIds = new Set(loadPairQuests().map((q) => q.id));
+    const pairDone = completed.some((a) => pairIds.has(a.questId));
     const badges = BADGES.filter((b) => {
       switch (b.id) {
         case 'first-steps': return completed.length >= 1;
@@ -51,7 +53,10 @@ export function accountRoutes(repo: AttemptRepo) {
         case 'team-player': return pairDone;
         case 'bookworm': return u.reviewsDone >= 20;
       }
-    }).map((b) => b.id);
+      return false;
+    }).map((b) => b.id as string);
+    const area = areaStats(u.gameState);
+    badges.push(...area.badges);
     const level = levelForXp(u.xp);
     return {
       id: u.id,
@@ -68,6 +73,7 @@ export function accountRoutes(repo: AttemptRepo) {
       avatar: AvatarSchema.parse(u.avatarConfig ?? {}),
       stats: { questsCompleted: completed.length, reviewsDone: u.reviewsDone },
       badges,
+      areas: area.areas,
       daily,
     };
   }
