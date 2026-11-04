@@ -35,6 +35,10 @@ const RIVER_FAR_Z = 9.5 * TILE; // 38
 const WATER_Y = -0.3;
 const GROUND_Y = -0.25;
 const TILE_Y = -0.05 * TILE;
+/** Beyond the end fences the riverside road runs on (between fields and the river) to here, lost in the fog. */
+const ROAD_END_X = 85 * TILE;
+/** Outside the end fences: no houses, just the road, its pavements, the river bank and open fields. */
+const outsideFence = (x: number) => Math.abs(x) > END_FENCE_X + 2;
 
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -71,7 +75,11 @@ function Fields() {
         `#include <color_fragment>
         {
           // Keep the plain lawn under and right around the street; paint farmland beyond it.
-          float nearStreet = step(abs(vWp.x), ${(39 * TILE + 2).toFixed(1)}) * step(${(STREET_MIN_Z - 10).toFixed(1)}, vWp.z) * step(vWp.z, ${(RIVER_FAR_Z + 8).toFixed(1)});
+          // Inside the end fences: lawn around the street. Beyond them the lawn is only the river banks of the
+          // riverside road (fields start at the field fence north of its pavement).
+          float inside = step(abs(vWp.x), ${(END_FENCE_X + 2).toFixed(1)}) * step(${(STREET_MIN_Z - 10).toFixed(1)}, vWp.z);
+          float outside = step(${(END_FENCE_X + 2).toFixed(1)}, abs(vWp.x)) * step(${(STREET_MIN_Z + 7.6).toFixed(1)}, vWp.z);
+          float nearStreet = max(inside, outside) * step(abs(vWp.x), ${(ROAD_END_X + 40).toFixed(1)}) * step(vWp.z, ${(RIVER_FAR_Z + 8).toFixed(1)});
           float band = mod(floor(vWp.z / 9.0) + floor(vWp.x / 26.0) * 2.0, 3.0);
           vec3 f1 = vec3(0.50, 0.72, 0.35);
           vec3 f2 = vec3(0.70, 0.78, 0.38);
@@ -88,7 +96,7 @@ function Fields() {
     };
     return m;
   }, []);
-  const SIZE = 700;
+  const SIZE = 900;
   return (
     <group>
       {/* north plane: from far away up to the river's near bank */}
@@ -135,8 +143,10 @@ function Fences() {
       line(sx * GATE_X, STREET_MIN_Z - 2, sx * GATE_X, -6.2);
       line(sx * GATE_X, 6.2, sx * GATE_X, RIVER_NEAR_Z - 1);
     }
+    // outside the end fences: a field fence along the north pavement of the riverside road
+    for (const sx of [-1, 1]) line(sx * (END_FENCE_X + 0.5), STREET_MIN_Z + 7.6, sx * ROAD_END_X, STREET_MIN_Z + 7.6);
     // far bank
-    line(-120, RIVER_FAR_Z + 2, 120, RIVER_FAR_Z + 2);
+    line(-ROAD_END_X, RIVER_FAR_Z + 2, ROAD_END_X, RIVER_FAR_Z + 2);
     return { posts, rails };
   }, []);
   return (
@@ -162,6 +172,7 @@ function HayBales() {
       const z = (r() - 0.5) * 320;
       if (Math.abs(x) < 39 * TILE + 10 && z > STREET_MIN_Z - 12 && z < RIVER_FAR_Z + 10) continue;
       if (z > RIVER_NEAR_Z - 3 && z < RIVER_FAR_Z + 3) continue;
+      if (z > STREET_MIN_Z + 4 && z < RIVER_NEAR_Z) continue; // the riverside road beyond the end fences
       const rot = new THREE.Quaternion().setFromAxisAngle(up, r() * Math.PI).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2));
       out.push(new THREE.Matrix4().compose(new THREE.Vector3(x, GROUND_Y + 0.7, z), rot, new THREE.Vector3(1, 1, 1)));
     }
@@ -220,12 +231,22 @@ function backdropPlacements(low: boolean): Placement[] {
   const out: Placement[] = [];
   // The street continues beyond the end fences with the very same tiles (road, lamp posts, pavements, park
   // rows), so inside and outside the fence look like one street running to the horizon.
-  const ext = 46;
+  const ext = ROAD_END_X / TILE;
   const push = (p: Placement) => {
     if (inYard(p.x, p.z) || inFarmField(p.x, p.z)) return;
     out.push(inPetting(p.x, p.z) && p.model.startsWith('grass') ? { ...p, model: 'grass' } : p);
   };
   for (let tx = -ext; tx <= ext; tx++) {
+    if (outsideFence(tx * TILE)) {
+      // the riverside road: pavements, lamp posts every other tile, a grass bank down to the river
+      push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
+      push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
+      push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 5 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
+      push({ model: 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 7 === 3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: 0, scaleY: 1 });
+      continue;
+    }
     if (Math.abs(tx) > 10) {
       const grassy = (k: number) => (k === 0 ? 'grass-trees-tall' : k === 1 ? 'grass-trees' : 'grass') as TileModel;
       push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
@@ -252,9 +273,9 @@ function backdropPlacements(low: boolean): Placement[] {
     push({ model: r() < 0.3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
   }
   // far bank and the two ends: scattered tree clusters
-  const clusters = low ? 18 : 40;
+  const clusters = low ? 30 : 70;
   for (let i = 0; i < clusters; i++) {
-    const x = (r() - 0.5) * 260;
+    const x = (r() - 0.5) * (ROAD_END_X * 2 - 40);
     const z = RIVER_FAR_Z + 6 + r() * 70;
     out.push({ model: 'grass-trees-tall', x, z, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.6 });
   }
@@ -389,7 +410,7 @@ const waterFrag = /* glsl */ `
   }`;
 
 function River({ low }: { low: boolean }) {
-  const length = 400;
+  const length = ROAD_END_X * 2 + 260;
   const width = RIVER_FAR_Z - RIVER_NEAR_Z;
   const mid = (RIVER_FAR_Z + RIVER_NEAR_Z) / 2;
   const mat = useMemo(() => {

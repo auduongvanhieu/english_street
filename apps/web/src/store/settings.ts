@@ -31,8 +31,10 @@ export interface Settings {
   ttsRate: number;
   /** Ambient street sound volume 0–1 (0 = off). */
   ambientVolume: number;
+  /** Talk mic: 'tap' = tap to start, tap again to stop (default); 'hold' = hold while speaking. */
+  micMode: 'tap' | 'hold';
   setQuality: (q: Quality) => void;
-  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume'>>) => void;
+  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume' | 'micMode'>>) => void;
 }
 
 export const useSettings = create<Settings>((set) => ({
@@ -42,6 +44,7 @@ export const useSettings = create<Settings>((set) => ({
   ipa: read<boolean>('es:ipa', false, (v) => typeof v === 'boolean'),
   ttsRate: read<number>('es:ttsRate', 0.95, (v) => typeof v === 'number' && v >= 0.5 && v <= 1.5),
   ambientVolume: read<number>('es:ambient', matchMedia('(pointer: coarse)').matches ? 0 : 0.4, (v) => typeof v === 'number' && v >= 0 && v <= 1),
+  micMode: read<'tap' | 'hold'>('es:micMode', 'tap', (v) => v === 'tap' || v === 'hold'),
   setQuality: (quality) => {
     localStorage.setItem('es:quality', quality);
     track('settings_change', { key: 'quality', value: quality });
@@ -51,6 +54,7 @@ export const useSettings = create<Settings>((set) => ({
     if (patch.subtitles !== undefined) localStorage.setItem('es:subs2', JSON.stringify(patch.subtitles));
     if (patch.ipa !== undefined) localStorage.setItem('es:ipa', JSON.stringify(patch.ipa));
     if (patch.ttsRate !== undefined) localStorage.setItem('es:ttsRate', JSON.stringify(patch.ttsRate));
+    if (patch.micMode !== undefined) localStorage.setItem('es:micMode', JSON.stringify(patch.micMode));
     if (patch.ambientVolume !== undefined) localStorage.setItem('es:ambient', JSON.stringify(patch.ambientVolume));
     for (const [key, value] of Object.entries(patch)) track('settings_change', { key, value: String(value) });
     set(patch);

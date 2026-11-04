@@ -129,6 +129,11 @@ export function SettingsPanel() {
               </Row>
             </>
           )}
+          {voice.sttSupported && (
+            <Row label={t('Speaking mic')} hint={s.micMode === 'tap' ? t('Tap 🎤 to start, tap again when you finish') : t('Hold 🎤 while you speak, release to stop')}>
+              <Segmented<'tap' | 'hold'> value={s.micMode} options={[{ id: 'tap', label: t('Tap') }, { id: 'hold', label: t('Hold') }]} onChange={(v) => s.set({ micMode: v })} />
+            </Row>
+          )}
           {vc.supported && (
             <Row label={t('Voice chat with players')} hint={t('Microphone, only players near you can hear')}>
               <Toggle on={vc.enabled} onChange={(v) => (v ? void vc.enable() : vc.disable())} label={t('Voice chat')} />

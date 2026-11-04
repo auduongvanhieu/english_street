@@ -203,7 +203,7 @@ export function Farm() {
         {PENS.map((p) => (
           <Ground key={p.id} x0={p.x0} x1={p.x1} z0={p.z0} z1={p.z1} color={p.ground} y={0.014} />
         ))}
-        <Ground x0={112} x1={164} z0={6.5} z1={15.5} color="#9cc96b" y={0.03} />
+        <Ground x0={110} x1={166} z0={6} z1={15.5} color="#9cc96b" y={0.03} />
         <FarmStatic />
         <Sails />
         <Garden />

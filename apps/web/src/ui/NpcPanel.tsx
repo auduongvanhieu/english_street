@@ -201,11 +201,21 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     void send(msg, src);
   }
 
-  // --- push-to-talk ---
+  // --- mic: tap to start / tap again to stop (default), or hold while speaking (Settings) ---
+  const micMode = useSettings((s) => s.micMode);
   function micDown(e: PointerEvent<HTMLButtonElement>) {
+    if (micMode !== 'hold') return;
     e.preventDefault();
     if (stt.current || loading) return;
     e.currentTarget.setPointerCapture(e.pointerId);
+    micStart();
+  }
+  function micClick() {
+    if (micMode !== 'tap') return;
+    if (stt.current) micStop();
+    else if (!loading) micStart();
+  }
+  function micStart() {
     setSttError(null);
     voice.stop(); // don't transcribe the NPC's own voice
     const base = text.trim();
@@ -219,7 +229,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
       },
       onError: (code) => {
         if (code !== 'aborted' && code !== 'no-speech') setSttError(code === 'not-allowed' ? t('Microphone permission denied') : t('Speech recognition error: {code}', { code }));
-        if (code === 'no-speech') setSttError(t('No speech detected. Hold the mic and speak clearly.'));
+        if (code === 'no-speech') setSttError(micMode === 'hold' ? t('No speech detected. Hold the mic and speak clearly.') : t('No speech detected. Tap the mic and speak clearly.'));
       },
       onEnd: () => {
         stt.current = null;
@@ -231,6 +241,9 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     else setSttError(t('Voice input is not supported in this browser (try Chrome or Edge).'));
   }
   function micUp() {
+    if (micMode === 'hold') micStop();
+  }
+  function micStop() {
     stt.current?.stop();
   }
 
@@ -279,9 +292,10 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             onPointerUp={micUp}
             onPointerCancel={micUp}
             onPointerLeave={micUp}
+            onClick={micClick}
             disabled={loading || state.finished}
-            aria-label={t('Hold to talk')}
-            title={t('Hold to talk (release to stop)')}
+            aria-label={micMode === 'hold' ? t('Hold to talk') : voice.listening ? t('Tap to stop') : t('Tap to talk')}
+            title={micMode === 'hold' ? t('Hold to talk (release to stop)') : voice.listening ? t('Tap to stop') : t('Tap to talk, tap again to stop')}
             className={`min-h-11 min-w-11 select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-50`}
           >
             🎤
@@ -294,7 +308,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             setText(e.target.value);
             fromVoice.current = false;
           }}
-          placeholder={state.finished ? t('Conversation finished') : voice.listening ? t('Listening…') : voice.sttSupported ? t('Type, or hold 🎤 to speak…') : t('Type in English…')}
+          placeholder={state.finished ? t('Conversation finished') : voice.listening ? t('Listening…') : voice.sttSupported ? (micMode === 'hold' ? t('Type, or hold 🎤 to speak…') : t('Type, or tap 🎤 to speak…')) : t('Type in English…')}
           disabled={loading || state.finished}
           maxLength={500}
           enterKeyHint="send"
