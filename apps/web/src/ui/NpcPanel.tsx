@@ -188,6 +188,9 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
 
   // Stop any recognition when the chat unmounts.
   useEffect(() => () => stt.current?.abort(), []);
+  /** Current mic run; cleared when a message is sent so late results are ignored. */
+  const sttRun = useRef<object | null>(null);
+  const micMode = useSettings((s) => s.micMode);
 
   if (!state) return null;
 
@@ -195,6 +198,11 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     e.preventDefault();
     const msg = text.trim();
     if (!msg || loading) return;
+    // sending while the mic is on: turn it off and drop anything it would still transcribe
+    if (stt.current) {
+      sttRun.current = null;
+      stt.current.abort();
+    }
     setText('');
     const src = fromVoice.current ? 'voice' : 'text';
     fromVoice.current = false;
@@ -202,7 +210,6 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
   }
 
   // --- mic: tap to start / tap again to stop (default), or hold while speaking (Settings) ---
-  const micMode = useSettings((s) => s.micMode);
   function micDown(e: PointerEvent<HTMLButtonElement>) {
     if (micMode !== 'hold') return;
     e.preventDefault();
@@ -220,14 +227,19 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     voice.stop(); // don't transcribe the NPC's own voice
     const base = text.trim();
     track('stt_used');
+    const run = {};
+    sttRun.current = run;
+    const live = () => sttRun.current === run;
     stt.current = startStt({
       lang: 'en-US',
-      onInterim: (s) => setText(base ? `${base} ${s}` : s),
+      onInterim: (s) => live() && setText(base ? `${base} ${s}` : s),
       onFinal: (s) => {
+        if (!live()) return;
         setText(base ? `${base} ${s}` : s);
         fromVoice.current = true;
       },
       onError: (code) => {
+        if (!live()) return;
         if (code !== 'aborted' && code !== 'no-speech') setSttError(code === 'not-allowed' ? t('Microphone permission denied') : t('Speech recognition error: {code}', { code }));
         if (code === 'no-speech') setSttError(micMode === 'hold' ? t('No speech detected. Hold the mic and speak clearly.') : t('No speech detected. Tap the mic and speak clearly.'));
       },
