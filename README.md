@@ -169,7 +169,7 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   (≤ 1.7 m) and press **F** / tap 🤗 *Hug*. `MSG.HOLD` sets
   `Player.holding` (server keeps one holder per critter); every client then hides that critter's scheduled body and draws
   it cradled in the holder's arms (`HeldCritter` in the avatar group: dangling paws, fast wag, looking at you), and the
-  chibi wraps its arms around it while still walking. Put it down (F again): it lands in front of you, stays there for 20 s, then walks / hops / paddles back to its route at its own speed (ducks stand on the grass when carried ashore).
+  chibi wraps its arms around it while still walking. Put it down (F again): it lands in front of you, stays there for 20 s, then walks / hops back to its route at its own speed; ducks put down on land waddle-run straight back to the river right away.
 - **Ducks and rabbits** (same system as the cats and dogs, so they are tappable with a sentence + notebook word and a
   WebAudio quack / squeak): two duck families swim loops on the river (`DUCK_Y`, ducklings share the mother's loop with a
   smaller time offset so they paddle in a line; head dips under now and then), four rabbits hop around the meadow beyond

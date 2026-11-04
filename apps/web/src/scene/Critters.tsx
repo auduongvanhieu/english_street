@@ -76,7 +76,8 @@ function CritterView({ c }: { c: Critter }) {
     if (heldCritters.delete(c.id)) {
       g.visible = true;
       reactUntil.current = Date.now() + 1500; // a happy wag after being put down
-      drop.current = { until: Date.now() + STAY_MS };
+      // ducks hurry straight back to the river; the others sit a while where they were put down
+      drop.current = { until: Date.now() + (c.kind === 'duck' || c.kind === 'duckling' ? 1200 : STAY_MS) };
     }
     // ducks float on the river but stand on the grass when carried ashore
     const water = (c.kind === 'duck' || c.kind === 'duckling') && g.position.z > RIVER_EDGE_Z;
@@ -101,7 +102,8 @@ function CritterView({ c }: { c: Critter }) {
         const dist = Math.hypot(mx, mz);
         if (dist < 0.3) drop.current = null;
         else {
-          const step = Math.min(dist, c.speed * 1.15 * dt);
+          const pace = water || (c.kind !== 'duck' && c.kind !== 'duckling') ? c.speed * 1.15 : 1.9; // waddle-run on land
+          const step = Math.min(dist, pace * dt);
           g.position.x += (mx / dist) * step;
           g.position.z += (mz / dist) * step;
           g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(mx, mz)) * (1 - Math.pow(0.002, dt));
@@ -127,7 +129,7 @@ function CritterView({ c }: { c: Critter }) {
       state = 'react';
     }
     livePos.set(c.id, { x: g.position.x, z: g.position.z });
-    if (near) animate(rig.current, parts, c.kind, state, motion.current, dt, c.speed);
+    if (near) animate(rig.current, parts, c.kind, state, motion.current, dt, c.speed, !water);
     acc.current += dt;
     if (acc.current > 0.3) {
       acc.current = 0;
@@ -203,9 +205,9 @@ function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.Re
 }
 
 /** Procedural gait: diagonal leg pairs, body bob, wagging tail; naps lie down with the head low; react = head tilt + happy wag (+ a hop for dogs). */
-function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number) {
+function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number, land = false) {
   if (!r.body || !r.head || !r.tail) return;
-  if (kind === 'duck' || kind === 'duckling') return animateDuck(r, parts, state, m, dt);
+  if (kind === 'duck' || kind === 'duckling') return animateDuck(r, parts, state, m, dt, land);
   if (r.legs.length < 4) return;
   if (kind === 'rabbit') return animateRabbit(r, parts, state, m, dt, speed);
   const d = Math.min(dt, 0.1);
@@ -242,11 +244,22 @@ function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'wal
 }
 
 /** Floating: bob and roll on the water, head bobbing while paddling, a dip under now and then, tail wiggle. */
-function animateDuck(r: RigRefs, parts: CritterParts, state: string, m: { t: number; phase: number; react: number }, dt: number) {
+function animateDuck(r: RigRefs, parts: CritterParts, state: string, m: { t: number; phase: number; react: number }, dt: number, land = false) {
   const d = Math.min(dt, 0.1);
   m.t += d;
-  m.phase += d * 5;
+  const waddle = land && state === 'walk';
+  m.phase += d * (waddle ? 14 : 5);
   m.react += ((state === 'react' ? 1 : 0) - m.react) * (1 - Math.exp(-d * 6));
+  if (waddle) {
+    // hurrying back to the water: rock side to side with little bounces
+    r.body!.position.y = Math.abs(Math.sin(m.phase)) * 0.03;
+    r.body!.rotation.z = Math.sin(m.phase) * 0.22;
+    r.body!.rotation.x = 0.12;
+    r.head!.rotation.x = -0.1 + Math.sin(m.phase * 2) * 0.08;
+    r.head!.rotation.z = 0;
+    r.tail!.rotation.y = Math.sin(m.phase) * 0.5;
+    return;
+  }
   r.body!.position.y = Math.sin(m.t * 2.1) * 0.012;
   r.body!.rotation.z = Math.sin(m.t * 1.3) * 0.05;
   r.body!.rotation.x = Math.sin(m.t * 1.7) * 0.03;
