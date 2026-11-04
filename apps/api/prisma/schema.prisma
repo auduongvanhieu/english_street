@@ -35,6 +35,10 @@ model User {
   avatarConfig Json     @default("{}")
   placementDoneAt DateTime?
   reviewsDone  Int      @default(0)
+  /// Learner's own language (BCP-47 from @es/shared LANGS); '' = not chosen yet (legacy users → vi).
+  nativeLang   String   @default("")
+  /// Small per-player game state: farm plots/basket, area quiz reward counters.
+  gameState    Json     @default("{}")
   createdAt    DateTime @default(now())
 
   attempts QuestAttempt[]
@@ -64,7 +68,9 @@ model VocabEntry {
   id           String   @id @default(cuid())
   userId       String
   word         String
-  meaningVi    String
+  meaning      String
+  /// Language of `meaning`.
+  lang         String   @default("vi")
   example      String
   ease         Float    @default(2.5)
   intervalDays Int      @default(0)

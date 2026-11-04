@@ -1,0 +1,383 @@
+id: restaurant
+title: The Grand Garden Restaurant
+intro: Take a seat, read the menu and order your meal from the waiter. Learn food words and the phrases you need from booking a table to paying the bill.
+categories:
+- id: starters
+  label: Starters
+- id: mains
+  label: Main courses
+- id: desserts
+  label: Desserts
+- id: drinks
+  label: Drinks
+- id: table
+  label: On the table
+groups:
+- id: booking
+  label: Booking a table
+- id: ordering
+  label: Ordering
+- id: special
+  label: Special requests
+- id: problems
+  label: Problems
+- id: paying
+  label: Paying
+items:
+- id: tomato-soup
+  en: tomato soup
+  icon: 🍅
+  pos: noun
+  category: starters
+  price: 6
+  note: Served hot with bread.
+  sentences:
+  - en: The tomato soup is hot.
+    level: A1
+  - en: I would like the tomato soup to start.
+    level: A2
+  - en: The soup is made with fresh tomatoes from the farm.
+    level: B1
+- id: garden-salad
+  en: garden salad
+  icon: 🥗
+  pos: noun
+  category: starters
+  price: 7
+  note: Lettuce, cucumber and tomato. Vegetarian.
+  sentences:
+  - en: The salad is fresh.
+    level: A1
+  - en: Could I have the salad without onions?
+    level: A2
+  - en: The dressing is served on the side, so you can add as much as you like.
+    level: B1
+- id: garlic-bread
+  en: garlic bread
+  icon: 🥖
+  pos: noun
+  category: starters
+  price: 4
+  note: Toasted bread with garlic butter.
+  sentences:
+  - en: I love garlic bread.
+    level: A1
+  - en: Can we share the garlic bread?
+    level: A2
+  - en: The garlic bread goes really well with the soup.
+    level: B1
+- id: steak
+  en: steak
+  icon: 🥩
+  pos: noun
+  category: mains
+  plural: steaks
+  price: 22
+  note: Grilled beef with fries. Rare, medium or well done.
+  sentences:
+  - en: The steak is big.
+    level: A1
+  - en: I would like my steak medium, please.
+    level: A2
+  - en: How would you like your steak cooked?
+    level: B1
+- id: grilled-fish
+  en: grilled fish
+  icon: 🐟
+  pos: noun
+  category: mains
+  price: 18
+  note: Fish of the day with rice and lemon.
+  sentences:
+  - en: I want the fish.
+    level: A1
+  - en: The grilled fish comes with rice.
+    level: A2
+  - en: Is the fish fresh today, or was it frozen?
+    level: B1
+- id: roast-chicken
+  en: roast chicken
+  icon: 🍗
+  pos: noun
+  category: mains
+  price: 16
+  note: With potatoes and vegetables.
+  sentences:
+  - en: The chicken is good.
+    level: A1
+  - en: The roast chicken is very popular here.
+    level: A2
+  - en: The chicken is roasted slowly, so it stays juicy.
+    level: B1
+- id: spaghetti
+  en: spaghetti
+  icon: 🍝
+  pos: noun
+  category: mains
+  price: 14
+  note: Pasta with tomato sauce. Vegetarian.
+  sentences:
+  - en: I like spaghetti.
+    level: A1
+  - en: The spaghetti is a little spicy.
+    level: A2
+  - en: Would you like some cheese on your spaghetti?
+    level: B1
+- id: burger
+  en: burger
+  icon: 🍔
+  pos: noun
+  category: mains
+  plural: burgers
+  price: 13
+  note: Beef burger with cheese and fries.
+  sentences:
+  - en: The burger is big.
+    level: A1
+  - en: Can I have the burger without cheese?
+    level: A2
+  - en: The veggie burger is a good choice if you don't eat meat.
+    level: B1
+- id: pizza
+  en: pizza
+  icon: 🍕
+  pos: noun
+  category: mains
+  plural: pizzas
+  price: 12
+  note: Cheese and tomato, baked in a wood oven.
+  sentences:
+  - en: This pizza is hot.
+    level: A1
+  - en: Let's order a pizza to share.
+    level: A2
+  - en: The pizza is cut into eight slices.
+    level: B1
+- id: curry
+  en: vegetable curry
+  icon: 🍛
+  pos: noun
+  category: mains
+  price: 15
+  note: Spicy. Vegan. With rice.
+  sentences:
+  - en: The curry is spicy.
+    level: A1
+  - en: Is the curry very spicy?
+    level: A2
+  - en: I'd like the curry, but could you make it a bit milder?
+    level: B1
+- id: chocolate-cake
+  en: chocolate cake
+  icon: 🍰
+  pos: noun
+  category: desserts
+  price: 7
+  note: Warm, with cream.
+  sentences:
+  - en: The cake is sweet.
+    level: A1
+  - en: Can I have a piece of chocolate cake?
+    level: A2
+  - en: The chocolate cake is our most popular dessert.
+    level: B1
+- id: ice-cream
+  en: ice cream
+  icon: 🍨
+  pos: noun
+  category: desserts
+  price: 5
+  note: Vanilla, chocolate or strawberry.
+  sentences:
+  - en: I want ice cream.
+    level: A1
+  - en: Two scoops of vanilla ice cream, please.
+    level: A2
+  - en: We have ice cream in three flavours today.
+    level: B1
+- id: fruit-salad
+  en: fruit salad
+  icon: 🍇
+  pos: noun
+  category: desserts
+  price: 6
+  note: Fresh seasonal fruit.
+  sentences:
+  - en: The fruit salad is healthy.
+    level: A1
+  - en: I'll have the fruit salad for dessert.
+    level: A2
+  - en: The fruit salad is a lighter option after a big meal.
+    level: B1
+- id: water
+  en: water
+  icon: 💧
+  pos: noun
+  category: drinks
+  price: 2
+  note: Still or sparkling.
+  sentences:
+  - en: Water, please.
+    level: A1
+  - en: Could we have a bottle of sparkling water?
+    level: A2
+  - en: Tap water is free if you ask for it.
+    level: B1
+- id: orange-juice
+  en: orange juice
+  icon: 🧃
+  pos: noun
+  category: drinks
+  price: 4
+  note: Freshly squeezed.
+  sentences:
+  - en: I like orange juice.
+    level: A1
+  - en: A glass of orange juice, please.
+    level: A2
+  - en: The orange juice is freshly squeezed every morning.
+    level: B1
+- id: coffee
+  en: coffee
+  icon: ☕
+  pos: noun
+  category: drinks
+  price: 3
+  note: Espresso, latte or cappuccino.
+  sentences:
+  - en: A coffee, please.
+    level: A1
+  - en: Can I have a coffee after the meal?
+    level: A2
+  - en: Would you like your coffee now or with the dessert?
+    level: B1
+- id: tea
+  en: tea
+  icon: 🍵
+  pos: noun
+  category: drinks
+  price: 3
+  note: Black, green or herbal.
+  sentences:
+  - en: I drink tea.
+    level: A1
+  - en: Could I have some milk with my tea?
+    level: A2
+  - en: Herbal tea doesn't have any caffeine.
+    level: B1
+- id: menu
+  en: menu
+  icon: 📋
+  pos: noun
+  category: table
+  plural: menus
+  sentences:
+  - en: Here is the menu.
+    level: A1
+  - en: Could we see the menu, please?
+    level: A2
+  - en: The menu changes every season.
+    level: B1
+- id: bill
+  en: bill
+  icon: 🧾
+  pos: noun
+  category: table
+  plural: bills
+  note: 'In American English: the check.'
+  sentences:
+  - en: The bill, please.
+    level: A1
+  - en: Can we have the bill, please?
+    level: A2
+  - en: Is service included in the bill?
+    level: B1
+- id: fork
+  en: fork
+  icon: 🍴
+  pos: noun
+  category: table
+  plural: forks
+  note: fork, knife and spoon
+  sentences:
+  - en: I need a fork.
+    level: A1
+  - en: Could I have another fork, please?
+    level: A2
+  - en: I dropped my fork. Could you bring me a clean one?
+    level: B1
+- id: napkin
+  en: napkin
+  icon: 🧻
+  pos: noun
+  category: table
+  plural: napkins
+  sentences:
+  - en: Here is a napkin.
+    level: A1
+  - en: Can I have some napkins?
+    level: A2
+  - en: The napkins are next to the plates.
+    level: B1
+- id: table
+  en: table
+  icon: 🪑
+  pos: noun
+  category: table
+  plural: tables
+  sentences:
+  - en: This table is free.
+    level: A1
+  - en: A table for two, please.
+    level: A2
+  - en: Could we have a table by the window?
+    level: B1
+phrases:
+- en: A table for two, please.
+  level: A1
+  group: booking
+- en: I have a reservation for seven o'clock.
+  level: A2
+  group: booking
+- en: Could we sit outside?
+  level: A2
+  group: booking
+- en: Can I see the menu, please?
+  level: A1
+  group: ordering
+- en: I'd like the grilled fish, please.
+  level: A1
+  group: ordering
+- en: What do you recommend?
+  level: A2
+  group: ordering
+- en: Could I have the same, please?
+  level: A2
+  group: ordering
+- en: I'm vegetarian. Which dishes have no meat?
+  level: A2
+  group: special
+- en: I'm allergic to nuts.
+  level: A2
+  group: special
+- en: Could I have it without onions?
+  level: A2
+  group: special
+- en: Excuse me, this isn't what I ordered.
+  level: B1
+  group: problems
+- en: My soup is cold. Could you warm it up, please?
+  level: B1
+  group: problems
+- en: Could we have the bill, please?
+  level: A1
+  group: paying
+- en: Can I pay by card?
+  level: A1
+  group: paying
+- en: Let's split the bill.
+  level: A2
+  group: paying
+- en: Keep the change.
+  level: B1
+  group: paying

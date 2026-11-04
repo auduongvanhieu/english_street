@@ -9,12 +9,13 @@ const byLevel = <T extends { level: string; title: string }>(a: T, b: T) =>
 /** Static content: NPC list and quests (served from packages/quests YAML). */
 export async function contentRoutes(app: FastifyInstance) {
   app.get('/npcs', async () =>
-    loadNpcs().map(({ id, name, role, shop, position, greeting, voice }) => ({
+    loadNpcs().map(({ id, name, role, shop, position, facing, greeting, voice }) => ({
       id,
       name,
       role,
       shop,
       position,
+      facing,
       greeting,
       voice,
       quests: [...questsForNpc(id)].sort(byLevel).map(({ id, title, level }) => ({ id, title, level })),

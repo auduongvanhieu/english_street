@@ -1,0 +1,153 @@
+id: zoo
+title: Sunny Hills Zoo
+intro: Walk around the zoo, meet the animals and learn their names. Tap an animal to hear it, read about it and practise sentences.
+categories:
+  - { id: big, label: Big animals }
+  - { id: cats, label: Big cats }
+  - { id: birds, label: Birds }
+  - { id: others, label: Other animals }
+groups:
+  - { id: look, label: Looking at animals }
+  - { id: describe, label: Describing animals }
+  - { id: compare, label: Comparing }
+  - { id: visit, label: Visiting the zoo }
+items:
+  - id: lion
+    en: lion
+    plural: lions
+    icon: 🦁
+    category: cats
+    note: A male lion has a mane.
+    sentences:
+      - { en: The lion is sleeping in the sun., level: A1 }
+      - { en: Lions live in groups called prides., level: A2 }
+      - { en: "If you listen carefully, you can hear the lion roar.", level: B1 }
+    fact: A lion's roar can be heard from 8 kilometres away.
+  - id: tiger
+    en: tiger
+    plural: tigers
+    icon: 🐯
+    category: cats
+    sentences:
+      - { en: The tiger has orange fur and black stripes., level: A1 }
+      - { en: Tigers are good swimmers., level: A2 }
+      - { en: No two tigers have the same stripes., level: B1 }
+    fact: Tigers are the biggest cats in the world.
+  - id: elephant
+    en: elephant
+    plural: elephants
+    icon: 🐘
+    category: big
+    note: "trunk, tusks, big ears"
+    sentences:
+      - { en: The elephant is very big., level: A1 }
+      - { en: The elephant is drinking water with its trunk., level: A2 }
+      - { en: Elephants are known for their excellent memory., level: B1 }
+    fact: Elephants can't jump.
+  - id: giraffe
+    en: giraffe
+    plural: giraffes
+    icon: 🦒
+    category: big
+    sentences:
+      - { en: The giraffe has a long neck., level: A1 }
+      - { en: Giraffes eat leaves from tall trees., level: A2 }
+      - { en: A giraffe only needs about two hours of sleep a day., level: B1 }
+    fact: A giraffe's tongue is about 50 centimetres long.
+  - id: zebra
+    en: zebra
+    plural: zebras
+    icon: 🦓
+    category: big
+    sentences:
+      - { en: The zebra is black and white., level: A1 }
+      - { en: Zebras live in big groups called herds., level: A2 }
+      - { en: Scientists think the stripes help to keep flies away., level: B1 }
+    fact: Every zebra has its own pattern of stripes.
+  - id: monkey
+    en: monkey
+    plural: monkeys
+    icon: 🐒
+    category: others
+    sentences:
+      - { en: The monkey is eating a banana., level: A1 }
+      - { en: Monkeys like climbing trees., level: A2 }
+      - { en: Some monkeys use their tails to hold on to branches., level: B1 }
+    fact: Some monkeys wash their food before they eat it.
+  - id: panda
+    en: panda
+    plural: pandas
+    icon: 🐼
+    category: others
+    sentences:
+      - { en: The panda is black and white., level: A1 }
+      - { en: Pandas eat bamboo almost all day., level: A2 }
+      - { en: Giant pandas spend up to 14 hours a day eating., level: B1 }
+    fact: A newborn panda is about the size of a stick of butter.
+  - id: kangaroo
+    en: kangaroo
+    plural: kangaroos
+    icon: 🦘
+    category: others
+    note: A baby kangaroo is called a joey.
+    sentences:
+      - { en: The kangaroo can jump very far., level: A1 }
+      - { en: The baby kangaroo lives in its mother's pouch., level: A2 }
+      - { en: Kangaroos can't walk backwards easily., level: B1 }
+    fact: Kangaroos come from Australia.
+  - id: penguin
+    en: penguin
+    plural: penguins
+    icon: 🐧
+    category: birds
+    sentences:
+      - { en: The penguin is swimming., level: A1 }
+      - { en: Penguins can't fly, but they swim very well., level: A2 }
+      - { en: Penguins slide on their bellies to move faster on ice., level: B1 }
+    fact: Penguins are birds, but they cannot fly.
+  - id: crocodile
+    en: crocodile
+    plural: crocodiles
+    icon: 🐊
+    category: others
+    sentences:
+      - { en: The crocodile has big teeth., level: A1 }
+      - { en: The crocodile is lying in the water., level: A2 }
+      - { en: Crocodiles have lived on Earth since the time of the dinosaurs., level: B1 }
+    fact: A crocodile can't stick its tongue out.
+  - id: bear
+    en: bear
+    plural: bears
+    icon: 🐻
+    category: big
+    sentences:
+      - { en: The bear is brown and big., level: A1 }
+      - { en: Bears love honey and fish., level: A2 }
+      - { en: Many bears sleep through the winter., level: B1 }
+    fact: Polar bears have black skin under their white fur.
+  - id: flamingo
+    en: flamingo
+    plural: flamingos
+    icon: 🦩
+    category: birds
+    sentences:
+      - { en: The flamingo is pink., level: A1 }
+      - { en: The flamingo is standing on one leg., level: A2 }
+      - { en: Flamingos get their pink colour from the food they eat., level: B1 }
+    fact: Baby flamingos are grey, not pink.
+phrases:
+  - { en: "Look at the elephant!", level: A1, group: look }
+  - { en: "What's that animal called?", level: A1, group: look }
+  - { en: "Where are the penguins?", level: A1, group: look }
+  - { en: "It's sleeping. Let's come back later.", level: A2, group: look }
+  - { en: "It has a long neck.", level: A1, group: describe }
+  - { en: "It's black and white.", level: A1, group: describe }
+  - { en: "It can swim, but it can't fly.", level: A2, group: describe }
+  - { en: "It eats leaves and fruit.", level: A2, group: describe }
+  - { en: "The giraffe is taller than the zebra.", level: A2, group: compare }
+  - { en: "The elephant is the biggest animal here.", level: A2, group: compare }
+  - { en: "Tigers are more dangerous than pandas.", level: B1, group: compare }
+  - { en: "Two adult tickets, please.", level: A1, group: visit }
+  - { en: "What time is feeding time?", level: A2, group: visit }
+  - { en: "Are we allowed to feed the animals?", level: B1, group: visit }
+  - { en: "Please don't tap on the glass.", level: A2, group: visit }

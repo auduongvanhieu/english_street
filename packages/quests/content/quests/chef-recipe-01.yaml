@@ -1,0 +1,14 @@
+id: chef-recipe-01
+npc: chef
+level: A2
+title: The Chef's Secret
+intro: Chef Marco agreed to tell you how he makes one of his dishes. Ask about the ingredients and the steps.
+goals:
+  - { id: choose, desc: "Say which dish you want to learn to cook" }
+  - { id: ingredients, desc: "Ask what ingredients you need" }
+  - { id: steps, desc: "Ask about the steps (first, then, how long)" }
+  - { id: thank, desc: "Thank the chef and say if you will try it" }
+target_vocab: [ingredients, boil, fry, bake, minutes, oven]
+target_phrases: ["What do I need?", "What do I do first?", "How long does it take?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

@@ -17,19 +17,19 @@ class NotebookPage extends StatefulWidget {
 }
 
 class _VocabEntry {
-  _VocabEntry({required this.word, required this.meaningVi, required this.example, required this.due});
+  _VocabEntry({required this.word, required this.meaning, required this.example, required this.due});
   final String word;
-  final String meaningVi;
+  final String meaning;
   final String example;
   final bool due;
 
   factory _VocabEntry.fromJson(Map<String, dynamic> j) => _VocabEntry(
         word: j['word']?.toString() ?? '',
-        meaningVi: j['meaningVi']?.toString() ?? '',
+        meaning: (j['meaning'] ?? j['meaningVi'])?.toString() ?? '',
         example: j['example']?.toString() ?? '',
         due: j['due'] == true,
       );
-  Map<String, dynamic> toJson() => {'word': word, 'meaningVi': meaningVi, 'example': example, 'due': due};
+  Map<String, dynamic> toJson() => {'word': word, 'meaning': meaning, 'example': example, 'due': due};
 }
 
 class _NotebookPageState extends State<NotebookPage> {
@@ -129,7 +129,7 @@ class _NotebookPageState extends State<NotebookPage> {
               ),
               if (open) ...[
                 const SizedBox(height: 6),
-                Text(e.meaningVi, style: const TextStyle(color: Color(0xFF1E3A8A))),
+                Text(e.meaning, style: const TextStyle(color: Color(0xFF1E3A8A))),
                 if (e.example.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(e.example, style: const TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))),
               ] else
                 const Padding(padding: EdgeInsets.only(top: 4), child: Text('Tap to see the meaning', style: TextStyle(color: Colors.grey, fontSize: 12))),

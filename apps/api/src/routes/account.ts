@@ -7,6 +7,8 @@ import {
   checkLook,
   itemPrice,
   AvatarSchema,
+  isLang,
+  LangSchema,
   BADGES,
   CEFR_LEVELS,
   LoginRequestSchema,
@@ -57,6 +59,7 @@ export function accountRoutes(repo: AttemptRepo) {
       email: u.email,
       cefrLevel: (CEFR_LEVELS as readonly string[]).includes(u.cefrLevel) ? (u.cefrLevel as Profile['cefrLevel']) : 'A1',
       placementDone: !!u.placementDoneAt,
+      nativeLang: isLang(u.nativeLang) ? u.nativeLang : '',
       xp: u.xp,
       level,
       nextLevelXp: xpForLevel(level + 1),
@@ -69,10 +72,11 @@ export function accountRoutes(repo: AttemptRepo) {
     };
   }
 
-  const toDto = (v: { id: string; word: string; meaningVi: string; example: string; ease: number; intervalDays: number; nextReviewAt: Date }): VocabEntryDto => ({
+  const toDto = (v: { id: string; word: string; meaning: string; lang: string; example: string; ease: number; intervalDays: number; nextReviewAt: Date }): VocabEntryDto => ({
     id: v.id,
     word: v.word,
-    meaningVi: v.meaningVi,
+    meaning: v.meaning,
+    lang: v.lang,
     example: v.example,
     ease: v.ease,
     intervalDays: v.intervalDays,
@@ -145,6 +149,18 @@ export function accountRoutes(repo: AttemptRepo) {
       const v = await repo.reviewVocab(id, body.data.id, body.data.grade);
       if (!v) return reply.code(404).send({ error: 'not_found' });
       return toDto(v);
+    });
+
+    // Learner's own language (translations everywhere). '' is not accepted: pick one, 'en' = no translation.
+    app.post('/me/lang', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      const body = z.object({ lang: LangSchema }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
+      await repo.updateUser(id, { nativeLang: body.data.lang });
+      await repo.logEvent({ name: 'lang_set', playerId: id, props: { lang: body.data.lang } });
+      return { lang: body.data.lang };
     });
 
     // Save the whole character look. Every colour must come from the palettes and paid items must be owned.

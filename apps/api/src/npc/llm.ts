@@ -2,8 +2,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import {
   NpcTurnResponseSchema,
+  langName,
   type CefrLevel,
   type ChatMessage,
+  type LangCode,
   type NpcPersona,
   type NpcTurnResponse,
   type Quest,
@@ -27,8 +29,10 @@ export interface TurnInput {
   /** Prior exchanges (user/assistant alternating, user first). */
   history: ChatMessage[];
   text: string;
-  /** Include a Vietnamese translation of the reply. */
+  /** Include a translation of the reply (reply_tr) in the learner's language. */
   subtitles?: boolean;
+  /** Learner's own language: explanations, meanings, hints, subtitles. */
+  lang: LangCode;
 }
 
 export interface JudgeInput {
@@ -41,6 +45,8 @@ export interface JudgeInput {
   turnsLeft: number;
   transcript: PairLine[];
   text: string;
+  /** The speaker's own language (explanations, meanings). */
+  lang: LangCode;
 }
 
 export interface NpcLlm {
@@ -48,14 +54,14 @@ export interface NpcLlm {
   turn(input: TurnInput): Promise<NpcTurnResponse>;
   /** Pair quests: the NPC evaluates one learner's line as an observer. */
   judge(input: JudgeInput): Promise<NpcTurnResponse>;
-  /** Short English → Vietnamese translation (subtitles for greetings, chat lines, single words). */
-  translate(text: string): Promise<string>;
+  /** Short English → learner-language translation (subtitles for greetings, chat lines, single words). */
+  translate(text: string, to: LangCode): Promise<string>;
 }
 
 /** Said when the model refuses or returns unparseable output, so the game never stalls. */
 export const SAFE_FALLBACK: NpcTurnResponse = {
   reply: "Sorry, I didn't quite catch that. Could you say it another way?",
-  reply_vi: null,
+  reply_tr: null,
   emotion: 'confused',
   goals_completed: [],
   corrections: [],
@@ -97,6 +103,7 @@ export class ClaudeNpcLlm implements NpcLlm {
             goalsTotal: input.quest?.goals.length ?? 0,
             turnsLeft: input.turnsLeft,
             subtitles: input.subtitles,
+            lang: input.lang,
           }),
         },
       ],
@@ -125,6 +132,7 @@ export class ClaudeNpcLlm implements NpcLlm {
             level: input.level,
             goalsDone: input.goalsDone,
             turnsLeft: input.turnsLeft,
+            lang: input.lang,
           }),
         },
       ],
@@ -145,11 +153,11 @@ export class ClaudeNpcLlm implements NpcLlm {
     };
   }
 
-  async translate(text: string): Promise<string> {
+  async translate(text: string, to: LangCode): Promise<string> {
     const res = await this.client.messages.create({
       model: env.NPC_MODEL_BASIC,
       max_tokens: 300,
-      system: 'Translate the user message from English to natural Vietnamese for a language learner. Reply with the translation only — no quotes, no notes. If the message is a single word, give its most common meaning(s) as a short gloss.',
+      system: `Translate the user message from English to natural ${langName(to)} for a language learner. Reply with the translation only — no quotes, no notes. If the message is a single word, give its most common meaning(s) as a short gloss.`,
       messages: [{ role: 'user', content: text }],
     });
     this.usage.requests += 1;
@@ -213,8 +221,8 @@ const VI_RE = /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọ�
 
 export class MockNpcLlm implements NpcLlm {
   readonly name = 'mock';
-  async translate(text: string): Promise<string> {
-    return `[vi] ${text}`;
+  async translate(text: string, to: LangCode): Promise<string> {
+    return `[${to}] ${text}`;
   }
   declare judge: (input: JudgeInput) => Promise<NpcTurnResponse>;
   async turn(input: TurnInput): Promise<NpcTurnResponse> {
@@ -232,7 +240,7 @@ export class MockNpcLlm implements NpcLlm {
       corrections.push({
         original: input.text,
         corrected: input.text.replace(/\bi want\b/i, "I'd like"),
-        explanation_vi: '"I\'d like" lịch sự hơn "I want" khi gọi món hoặc mua hàng.',
+        explanation: '"I\'d like" lịch sự hơn "I want" khi gọi món hoặc mua hàng.',
         type: 'register',
       });
     }
@@ -253,9 +261,9 @@ export class MockNpcLlm implements NpcLlm {
       emotion: vi || silent ? 'confused' : goals.length ? 'happy' : 'neutral',
       goals_completed: goals,
       corrections,
-      new_vocab: goals.includes('order_drink') ? [{ word: 'to go', meaning_vi: 'mang đi', example: 'A latte to go, please.' }] : [],
+      new_vocab: goals.includes('order_drink') ? [{ word: 'to go', meaning: 'mang đi', example: 'A latte to go, please.' }] : [],
       hint: vi || silent ? 'Try: "Can I have a coffee, please?"' : null,
-      reply_vi: input.subtitles ? `[vi] ${reply}` : null,
+      reply_tr: input.subtitles ? `[${input.lang}] ${reply}` : null,
     };
   }
 }
@@ -285,11 +293,11 @@ MockNpcLlm.prototype.judge = async function (input: JudgeInput): Promise<NpcTurn
     emotion: goals.length ? 'happy' : 'neutral',
     goals_completed: goals,
     corrections: /\bi want\b/.test(t)
-      ? [{ original: input.text, corrected: input.text.replace(/\bi want\b/i, "I'd like"), explanation_vi: '"I\'d like" lịch sự hơn "I want".', type: 'register' }]
+      ? [{ original: input.text, corrected: input.text.replace(/\bi want\b/i, "I'd like"), explanation: '"I\'d like" lịch sự hơn "I want".', type: 'register' }]
       : [],
     new_vocab: [],
     hint: vi ? 'Try: "What do you recommend?"' : null,
-    reply_vi: null,
+    reply_tr: null,
   };
 };
 

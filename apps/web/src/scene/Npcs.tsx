@@ -21,7 +21,7 @@ function Npc({ npc }: { npc: NpcInfo }) {
   const speaking = useVoice((s) => s.speakingNpc === npc.id);
   const anim = speaking ? 'talk' : talking ? 'idle' : near ? 'wave' : 'idle';
   return (
-    <group position={npc.position} rotation={[0, 0, 0]}>
+    <group position={npc.position} rotation={[0, npc.facing ?? 0, 0]}>
       <Chibi spec={NPC_CHIBI[npc.id] ?? NPC_CHIBI_DEFAULT} anim={anim} />
       <NameTag name={npc.name} sub={npc.role} />
       {near ? (

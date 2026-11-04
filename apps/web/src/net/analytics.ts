@@ -7,7 +7,8 @@ let timer: number | null = null;
 
 /** Queue a product event; batches are posted every few seconds (or on page hide via sendBeacon). */
 export function track(name: string, props: Props = {}) {
-  queue.push({ name, props });
+  // Every event carries the learner's language (es:lang, '' = not chosen yet) to see who plays from where.
+  queue.push({ name, props: { ll: localStorage.getItem('es:lang') ?? '', ...props } });
   if (queue.length >= 20) flush();
   else if (timer === null) timer = window.setTimeout(flush, 4000);
 }

@@ -1,0 +1,14 @@
+id: supermarket-find-01
+npc: grocer
+level: A1
+title: Where Is the Milk?
+intro: You are new at FreshWay Supermarket. Ask where to find three things on your list.
+goals:
+  - { id: greet, desc: "Say hello" }
+  - { id: ask_one, desc: "Ask where something is" }
+  - { id: ask_two, desc: "Ask about a second product" }
+  - { id: thank, desc: "Say thank you" }
+target_vocab: [where, aisle, next to, milk, bread, eggs]
+target_phrases: ["Excuse me, where is the…?", "Where can I find…?", "Thank you!"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

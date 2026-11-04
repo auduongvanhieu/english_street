@@ -17,6 +17,8 @@ export interface Session {
   vocab: VocabItem[];
   finished: boolean;
   startedAt: number;
+  /** Learner language of the latest turn (meanings saved to the notebook use it). */
+  lang?: string;
 }
 
 /** Keyed JSON store with a TTL: NPC sessions, pair sessions. Redis in production, memory for dev. */

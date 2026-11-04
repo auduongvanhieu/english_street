@@ -1,0 +1,472 @@
+id: supermarket
+title: FreshWay Supermarket
+intro: Take a shopping list, find the products on the shelves and pay at the checkout. Learn food words, how to count them and how to talk about prices.
+categories:
+- id: fruit-veg
+  label: Fruit and vegetables
+- id: bakery
+  label: Bakery
+- id: dairy
+  label: Dairy and eggs
+- id: meat-fish
+  label: Meat and fish
+- id: frozen
+  label: Frozen food
+- id: drinks
+  label: Drinks
+- id: snacks
+  label: Snacks
+- id: household
+  label: Household
+groups:
+- id: finding
+  label: Finding things
+- id: amounts
+  label: How much and how many
+- id: checkout
+  label: At the checkout
+- id: deals
+  label: Prices and offers
+items:
+- id: bananas
+  en: banana
+  icon: 🍌
+  pos: noun
+  category: fruit-veg
+  plural: bananas
+  unit: a bunch of
+  price: 2
+  note: a bunch of bananas
+  sentences:
+  - en: I buy bananas.
+    level: A1
+  - en: A bunch of bananas, please.
+    level: A2
+  - en: Bananas are cheaper when you buy them loose.
+    level: B1
+- id: apples
+  en: apple
+  icon: 🍎
+  pos: noun
+  category: fruit-veg
+  plural: apples
+  unit: a bag of
+  price: 3
+  note: a bag of apples
+  sentences:
+  - en: The apples are red.
+    level: A1
+  - en: I need a bag of apples.
+    level: A2
+  - en: These apples are on sale this week.
+    level: B1
+- id: grapes
+  en: grapes
+  icon: 🍇
+  pos: noun
+  category: fruit-veg
+  unit: a bunch of
+  price: 4
+  note: a bunch of grapes
+  sentences:
+  - en: I like grapes.
+    level: A1
+  - en: How much are the grapes?
+    level: A2
+  - en: Seedless grapes are a little more expensive.
+    level: B1
+- id: lettuce
+  en: lettuce
+  icon: 🥬
+  pos: noun
+  category: fruit-veg
+  unit: a head of
+  price: 1.5
+  note: a head of lettuce
+  sentences:
+  - en: The lettuce is green.
+    level: A1
+  - en: I need one lettuce for the salad.
+    level: A2
+  - en: Lettuce stays fresh longer in the fridge.
+    level: B1
+- id: onions
+  en: onion
+  icon: 🧅
+  pos: noun
+  category: fruit-veg
+  plural: onions
+  unit: a kilo of
+  price: 1
+  note: a kilo of onions
+  sentences:
+  - en: Onions make me cry.
+    level: A1
+  - en: A kilo of onions, please.
+    level: A2
+  - en: Onions are sold by weight, so put them on the scale.
+    level: B1
+- id: bread
+  en: bread
+  icon: 🍞
+  pos: noun
+  category: bakery
+  unit: a loaf of
+  price: 2.5
+  note: 'Uncountable: a loaf of bread, some bread.'
+  sentences:
+  - en: I want bread.
+    level: A1
+  - en: Two loaves of bread, please.
+    level: A2
+  - en: The bread is baked here every morning.
+    level: B1
+- id: croissant
+  en: croissant
+  icon: 🥐
+  pos: noun
+  category: bakery
+  plural: croissants
+  price: 1.5
+  sentences:
+  - en: The croissant is warm.
+    level: A1
+  - en: Can I have two croissants?
+    level: A2
+  - en: Croissants are cheaper after six in the evening.
+    level: B1
+- id: cake
+  en: birthday cake
+  icon: 🎂
+  pos: noun
+  category: bakery
+  plural: birthday cakes
+  price: 15
+  sentences:
+  - en: The cake is for my sister.
+    level: A1
+  - en: Do you have chocolate birthday cakes?
+    level: A2
+  - en: You can order a cake with a name on it.
+    level: B1
+- id: milk
+  en: milk
+  icon: 🥛
+  pos: noun
+  category: dairy
+  unit: a carton of
+  price: 2
+  note: 'Uncountable: a carton of milk.'
+  sentences:
+  - en: I need milk.
+    level: A1
+  - en: A carton of milk, please.
+    level: A2
+  - en: Is this milk full-fat or skimmed?
+    level: B1
+- id: cheese
+  en: cheese
+  icon: 🧀
+  pos: noun
+  category: dairy
+  unit: a piece of
+  price: 4
+  note: 'Uncountable: a piece of cheese.'
+  sentences:
+  - en: I like cheese.
+    level: A1
+  - en: How much is this piece of cheese?
+    level: A2
+  - en: The cheese counter is at the back of the shop.
+    level: B1
+- id: eggs
+  en: egg
+  icon: 🥚
+  pos: noun
+  category: dairy
+  plural: eggs
+  unit: a box of
+  price: 3
+  note: a dozen eggs = 12 eggs
+  sentences:
+  - en: The eggs are white.
+    level: A1
+  - en: A dozen eggs, please.
+    level: A2
+  - en: Check that none of the eggs are broken before you buy them.
+    level: B1
+- id: yogurt
+  en: yogurt
+  icon: 🥣
+  pos: noun
+  category: dairy
+  unit: a pot of
+  price: 1
+  note: a pot of yogurt
+  sentences:
+  - en: I eat yogurt.
+    level: A1
+  - en: Four pots of yogurt, please.
+    level: A2
+  - en: Plain yogurt has less sugar than fruit yogurt.
+    level: B1
+- id: chicken
+  en: chicken
+  icon: 🍗
+  pos: noun
+  category: meat-fish
+  price: 6
+  note: 'Uncountable as food: some chicken.'
+  sentences:
+  - en: I cook chicken.
+    level: A1
+  - en: I'd like some chicken breasts.
+    level: A2
+  - en: The chicken should be kept in the fridge.
+    level: B1
+  unit: a pack of
+- id: fish
+  en: fish
+  icon: 🐟
+  pos: noun
+  category: meat-fish
+  price: 8
+  note: 'Plural: fish.'
+  sentences:
+  - en: The fish is fresh.
+    level: A1
+  - en: Is this fish fresh or frozen?
+    level: A2
+  - en: Ask at the fish counter if you want it cleaned.
+    level: B1
+  unit: a piece of
+- id: sausages
+  en: sausage
+  icon: 🌭
+  pos: noun
+  category: meat-fish
+  plural: sausages
+  unit: a pack of
+  price: 4
+  note: a pack of sausages
+  sentences:
+  - en: I like sausages.
+    level: A1
+  - en: A pack of sausages, please.
+    level: A2
+  - en: These sausages are made without pork.
+    level: B1
+- id: ice-cream
+  en: ice cream
+  icon: 🍦
+  pos: noun
+  category: frozen
+  unit: a tub of
+  price: 5
+  note: a tub of ice cream
+  sentences:
+  - en: Ice cream is cold.
+    level: A1
+  - en: Where is the ice cream?
+    level: A2
+  - en: Put the ice cream in the freezer as soon as you get home.
+    level: B1
+- id: frozen-peas
+  en: frozen peas
+  icon: 🫛
+  pos: noun
+  category: frozen
+  unit: a bag of
+  price: 2
+  note: a bag of frozen peas
+  sentences:
+  - en: Peas are green.
+    level: A1
+  - en: I need a bag of frozen peas.
+    level: A2
+  - en: Frozen vegetables are as healthy as fresh ones.
+    level: B1
+- id: juice
+  en: orange juice
+  icon: 🧃
+  pos: noun
+  category: drinks
+  unit: a bottle of
+  price: 3
+  note: a bottle of juice
+  sentences:
+  - en: I drink juice.
+    level: A1
+  - en: A bottle of orange juice, please.
+    level: A2
+  - en: Buy two bottles of juice and get one free.
+    level: B1
+- id: water
+  en: water
+  icon: 💧
+  pos: noun
+  category: drinks
+  unit: a bottle of
+  price: 1
+  note: a bottle of water
+  sentences:
+  - en: Water, please.
+    level: A1
+  - en: Where can I find bottled water?
+    level: A2
+  - en: A pack of six bottles is cheaper than six single ones.
+    level: B1
+- id: soda
+  en: soda
+  icon: 🥤
+  pos: noun
+  category: drinks
+  unit: a can of
+  price: 1.5
+  note: a can of soda
+  sentences:
+  - en: I want a soda.
+    level: A1
+  - en: Can I have two cans of soda?
+    level: A2
+  - en: Diet soda has no sugar.
+    level: B1
+- id: chips
+  en: chips
+  icon: 🍟
+  pos: noun
+  category: snacks
+  unit: a bag of
+  price: 2
+  note: 'a bag of chips (British English: crisps)'
+  sentences:
+  - en: I like chips.
+    level: A1
+  - en: Two bags of chips, please.
+    level: A2
+  - en: In British English, chips are called crisps.
+    level: B1
+- id: chocolate
+  en: chocolate
+  icon: 🍫
+  pos: noun
+  category: snacks
+  unit: a bar of
+  price: 2
+  note: a bar of chocolate
+  sentences:
+  - en: Chocolate is sweet.
+    level: A1
+  - en: A bar of chocolate, please.
+    level: A2
+  - en: Dark chocolate has less sugar than milk chocolate.
+    level: B1
+- id: rice
+  en: rice
+  icon: 🍚
+  pos: noun
+  category: snacks
+  unit: a bag of
+  price: 3
+  note: 'Uncountable: a bag of rice.'
+  sentences:
+  - en: We eat rice.
+    level: A1
+  - en: Where is the rice?
+    level: A2
+  - en: Brown rice takes longer to cook than white rice.
+    level: B1
+- id: soap
+  en: soap
+  icon: 🧼
+  pos: noun
+  category: household
+  unit: a bar of
+  price: 2
+  note: a bar of soap
+  sentences:
+  - en: I need soap.
+    level: A1
+  - en: Where is the soap?
+    level: A2
+  - en: This soap is good for sensitive skin.
+    level: B1
+- id: toothpaste
+  en: toothpaste
+  icon: 🪥
+  pos: noun
+  category: household
+  unit: a tube of
+  price: 3
+  note: a tube of toothpaste
+  sentences:
+  - en: I need toothpaste.
+    level: A1
+  - en: A tube of toothpaste, please.
+    level: A2
+  - en: This toothpaste is good for sensitive teeth.
+    level: B1
+- id: toilet-paper
+  en: toilet paper
+  icon: 🧻
+  pos: noun
+  category: household
+  unit: a pack of
+  price: 4
+  note: a pack of toilet paper
+  sentences:
+  - en: We need toilet paper.
+    level: A1
+  - en: A pack of toilet paper, please.
+    level: A2
+  - en: The big pack is better value for money.
+    level: B1
+phrases:
+- en: Excuse me, where can I find the milk?
+  level: A1
+  group: finding
+- en: It's in aisle three, next to the eggs.
+  level: A1
+  group: finding
+- en: Do you have any fresh bread?
+  level: A1
+  group: finding
+- en: Sorry, we've run out of bananas.
+  level: A2
+  group: finding
+- en: How many eggs do we need?
+  level: A1
+  group: amounts
+- en: How much rice do we need?
+  level: A2
+  group: amounts
+- en: We need a carton of milk and a loaf of bread.
+  level: A2
+  group: amounts
+- en: We don't need any cheese.
+  level: A2
+  group: amounts
+- en: That's twelve dollars fifty, please.
+  level: A1
+  group: checkout
+- en: Do you need a bag?
+  level: A1
+  group: checkout
+- en: Can I pay by card?
+  level: A1
+  group: checkout
+- en: Here's your change and your receipt.
+  level: A2
+  group: checkout
+- en: How much is this?
+  level: A1
+  group: deals
+- en: 'It''s on sale: buy one, get one free.'
+  level: A2
+  group: deals
+- en: This one is cheaper than that one.
+  level: A2
+  group: deals
+- en: Is this the cheapest one you have?
+  level: B1
+  group: deals

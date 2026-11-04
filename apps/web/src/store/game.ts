@@ -19,6 +19,7 @@ export interface RemotePlayer {
   bubble: string;
   /** critter id they are hugging ('' = none) */
   holding: string;
+  prop: string;
 }
 
 export interface NpcInfo {
@@ -27,6 +28,7 @@ export interface NpcInfo {
   role: string;
   shop: string;
   position: [number, number, number];
+  facing?: number;
   greeting: string;
   /** BCP-47 locale hint for TTS, e.g. en-GB */
   voice: string;
@@ -35,7 +37,7 @@ export interface NpcInfo {
 }
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'error';
-export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | 'settings' | null;
+export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | 'settings' | 'bus' | 'map' | null;
 
 interface GameState {
   playerName: string;

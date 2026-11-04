@@ -4,6 +4,8 @@ import { isBetaPass } from '@es/shared/token';
 import { env, isProd, webOrigins } from './env';
 import { healthRoutes } from './routes/health';
 import { contentRoutes } from './routes/content';
+import { areaRoutes } from './routes/areas';
+import { playRoutes } from './routes/play';
 import { npcRoutes } from './routes/npc';
 import { pairRoutes } from './routes/pair';
 import { adminRoutes } from './routes/admin';
@@ -25,7 +27,7 @@ const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env
 const [redis, attempts] = await Promise.all([connectRedis(), createAttemptRepo()]);
 const sessions = createStore<Session>(redis, 'sess');
 const pairs = createStore<PairSession>(redis, 'pair');
-const translations = createStore<{ vi: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
+const translations = createStore<{ text?: string; vi?: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
 budget.useRedis(redis);
 limiter.useRedis(redis);
 const llm = createNpcLlm();
@@ -51,6 +53,8 @@ await app.register(healthRoutes);
 await app.register(telemetryRoutes(attempts));
 await app.register(accountRoutes(attempts));
 await app.register(contentRoutes);
+await app.register(areaRoutes);
+await app.register(playRoutes(attempts));
 await app.register(npcRoutes(new NpcService(llm, sessions, attempts)));
 await app.register(pairRoutes(new PairService(llm, attempts, pairs), attempts));
 await app.register(dictRoutes(llm, translations, attempts));

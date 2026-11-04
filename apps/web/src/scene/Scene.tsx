@@ -11,6 +11,8 @@ import { Critters } from './Critters';
 import { Cyclists } from './Cyclists';
 import { Flora } from './Flora';
 import { PerfProbe } from './PerfProbe';
+import { Areas } from './areas/Areas';
+import { SunFollow } from './SunFollow';
 import { useSettings } from '../store/settings';
 
 const KEYMAP: { name: Controls; keys: string[] }[] = [
@@ -38,18 +40,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         {/* Fog in the horizon colour: the fields fade out instead of ending at the camera's far plane. */}
         <fog attach="fog" args={[HORIZON_COLOR, 70, 150]} />
         <hemisphereLight args={['#dff3ff', '#6b8f4e', low ? 0.9 : 0.6]} />
-        <directionalLight
-          position={[30, 40, 20]}
-          intensity={1.6}
-          castShadow={!low}
-          shadow-mapSize={[2048, 2048]}
-          shadow-bias={-0.0004}
-          shadow-normalBias={0.04}
-          shadow-camera-left={-45}
-          shadow-camera-right={45}
-          shadow-camera-top={30}
-          shadow-camera-bottom={-30}
-        />
+        <SunFollow low={low} />
         <Suspense fallback={null}>
           <City />
           <Npcs />
@@ -62,6 +53,9 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <Flora />
           <Critters />
           <Cyclists />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Areas />
         </Suspense>
         <PerfProbe />
       </Canvas>

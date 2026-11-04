@@ -4,7 +4,7 @@
  *   pnpm --filter @es/api eval:npc            (uses NPC_PROVIDER / auto)
  *   NPC_PROVIDER=claude pnpm --filter @es/api eval:npc
  */
-import { NpcTurnResponseSchema } from '@es/shared';
+import { NpcTurnResponseSchema, type LangCode } from '@es/shared';
 import { ClaudeNpcLlm, createNpcLlm } from '../src/npc/llm';
 import { MemoryStore, type Session } from '../src/npc/store';
 import { MemoryAttemptRepo } from '../src/npc/attempts';
@@ -50,6 +50,9 @@ const svc = new NpcService(llm, new MemoryStore<Session>(), new MemoryAttemptRep
 console.log(`provider: ${llm.name}\n`);
 const VERBOSE = process.env.EVAL_VERBOSE === '1';
 const FILTER = process.env.EVAL_FILTER ?? '';
+/** EVAL_LANG=ja: subtitles on in that language; checks that translations/explanations really use it. */
+const LANG = (process.env.EVAL_LANG || undefined) as LangCode | undefined;
+const SCRIPT: Partial<Record<string, RegExp>> = { ja: /[\u3040-\u30ff\u4e00-\u9fff]/, 'zh-CN': /[\u4e00-\u9fff]/, ko: /[\uac00-\ud7af]/, ar: /[\u0600-\u06ff]/, ru: /[\u0400-\u04ff]/, th: /[\u0e00-\u0e7f]/, hi: /[\u0900-\u097f]/, vi: /[ăâđêôơư]/i };
 const SELECTED = CASES.filter((c) => c.name.includes(FILTER));
 
 let pass = 0;
@@ -61,14 +64,21 @@ for (const c of SELECTED) {
   let sawCorrection = false;
   for (const line of c.lines) {
     if (state.finished) break;
-    const r = await svc.chat(state.sessionId, 'eval-player-0001', line);
+    const r = await svc.chat(state.sessionId, 'eval-player-0001', line, 'text', !!LANG, LANG);
+    if (LANG && LANG !== 'en') {
+      const re = SCRIPT[LANG];
+      const t = r.turn;
+      if (!t.reply_tr) problems.push(`no subtitle (${LANG})`);
+      else if (re && !re.test(t.reply_tr)) problems.push(`subtitle not in ${LANG}: ${t.reply_tr}`);
+      for (const k of t.corrections) if (re && !re.test(k.explanation)) problems.push(`explanation not in ${LANG}: ${k.explanation}`);
+    }
     if (VERBOSE) {
       const t = r.turn;
       console.log(`  > ${line}`);
       console.log(`  < [${t.emotion}] ${t.reply}`);
       if (t.goals_completed.length) console.log(`    goals: ${t.goals_completed.join(', ')}`);
-      for (const k of t.corrections) console.log(`    fix: "${k.original}" -> "${k.corrected}" (${k.type}) ${k.explanation_vi}`);
-      for (const v of t.new_vocab) console.log(`    vocab: ${v.word} = ${v.meaning_vi} | ${v.example}`);
+      for (const k of t.corrections) console.log(`    fix: "${k.original}" -> "${k.corrected}" (${k.type}) ${k.explanation}`);
+      for (const v of t.new_vocab) console.log(`    vocab: ${v.word} = ${v.meaning} | ${v.example}`);
       if (t.hint) console.log(`    hint: ${t.hint}`);
     }
     const v = NpcTurnResponseSchema.safeParse(r.turn);

@@ -11,7 +11,9 @@
     "prisma": "prisma",
     "postinstall": "prisma generate",
     "eval:npc": "tsx scripts/npc-eval.ts",
-    "eval:pair": "tsx scripts/pair-eval.ts"
+    "eval:pair": "tsx scripts/pair-eval.ts",
+    "i18n:translate": "tsx scripts/i18n-translate.ts",
+    "i18n:check": "tsx scripts/i18n-translate.ts --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",

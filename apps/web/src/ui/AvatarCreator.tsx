@@ -33,6 +33,18 @@ import { track } from '../net/analytics';
 import { PlayerAvatar } from '../scene/PlayerAvatar';
 import { slotLabels } from '../scene/playerLook';
 import { Sheet, SheetHeader } from './Sheet';
+import { t as tr, useT } from '../i18n';
+
+// Labels that reach t() dynamically (TABS, BODY_LABELS, HAIRSTYLE_LABELS, shop item labels, slotLabels, colour names); listed literally for key extraction. Never called.
+const _i18n = () => [
+  tr('Body'), tr('Skin & hair'), tr('Clothes'), tr('Extras'),
+  tr('T-shirt'), tr('Hoodie'), tr('Suit'), tr('Overalls'), tr('Dress'), tr('Robot'),
+  tr('Short'), tr('Spiky'), tr('Curly'), tr('Bob'), tr('Long'), tr('Ponytail'), tr('Buns'), tr('Bald'),
+  tr('None'), tr('Cap'), tr('Beanie'), tr('Sun hat'), tr('Top hat'), tr('Crown'), tr('Glasses'), tr('Sunglasses'), tr('Backpack'),
+  tr('Details'), tr('Tie'), tr('Shoes'), tr('Belt'), tr('Shirt'), tr('Trousers'), tr('Shorts'),
+  tr('blue'), tr('green'), tr('orange'), tr('purple'), tr('white'), tr('grey'), tr('charcoal'), tr('navy'), tr('denim'), tr('khaki'), tr('brown'), tr('red'), tr('pink'), tr('yellow'), tr('teal'), tr('gold'), tr('crimson'), tr('midnight'),
+];
+void _i18n;
 
 /** Shown once per device: the creator opens by itself on the first visit. */
 export const AVATAR_INTRO_KEY = 'es:avatar-intro';
@@ -75,6 +87,7 @@ function randomLook(): AvatarLook {
 
 /** Character creator: pick body, colours and accessories with a live 3D preview; paid items can be tried on before buying. */
 export function AvatarCreator() {
+  const t = useT();
   const profile = useProfile((s) => s.profile);
   const refresh = useProfile((s) => s.refresh);
   const close = useGame((s) => s.setUiPanel);
@@ -106,7 +119,7 @@ export function AvatarCreator() {
       await refresh();
       sendAvatar(look);
       track('avatar_save', { body: look.body, hat: look.hat, glasses: look.glasses, bag: look.bag, bought: missing.length, coins: cost });
-      setMsg({ ok: true, text: missing.length ? `Bought ${missing.length} item${missing.length > 1 ? 's' : ''} and saved!` : 'Saved! Everyone on the street sees your new look.' });
+      setMsg({ ok: true, text: missing.length ? (missing.length > 1 ? t('Bought {n} items and saved!', { n: missing.length }) : t('Bought 1 item and saved!')) : t('Saved! Everyone on the street sees your new look.') });
       setWave((w) => w + 1);
     } catch (e) {
       setMsg({ ok: false, text: (e as Error).message });
@@ -117,11 +130,11 @@ export function AvatarCreator() {
   }
 
   return (
-    <Sheet onClose={() => close(null)} label="Create your character" wide>
+    <Sheet onClose={() => close(null)} label={t('Create your character')} wide>
       <SheetHeader>
-        <h2 className="text-lg font-bold">🎨 Your character</h2>
+        <h2 className="text-lg font-bold">🎨 {t('Your character')}</h2>
         <span className="ml-auto mr-2 text-sm text-gray-600">🪙 {profile.coins}</span>
-        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
           ✕
         </button>
       </SheetHeader>
@@ -130,19 +143,19 @@ export function AvatarCreator() {
         <Preview look={look} wave={wave} head={tab === 'extras' || tab === 'looks'} />
         <div className="absolute bottom-2 left-2 flex gap-1.5">
           <button type="button" onClick={() => set(randomLook())} className="rounded-full bg-white/90 px-3 py-1 text-sm shadow hover:bg-white">
-            🎲 Random
+            🎲 {t('Random')}
           </button>
-          <button type="button" onClick={() => setWave((w) => w + 1)} className="rounded-full bg-white/90 px-3 py-1 text-sm shadow hover:bg-white" aria-label="Wave">
+          <button type="button" onClick={() => setWave((w) => w + 1)} className="rounded-full bg-white/90 px-3 py-1 text-sm shadow hover:bg-white" aria-label={t('Wave')}>
             👋
           </button>
         </div>
-        <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/30 px-2 py-0.5 text-[11px] text-white">drag to turn · scroll/pinch to zoom</span>
+        <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/30 px-2 py-0.5 text-[11px] text-white">{t('drag to turn · scroll/pinch to zoom')}</span>
       </div>
 
       <div className="flex shrink-0 gap-1 border-b px-3 pt-2">
-        {TABS.map((t) => (
-          <button key={t.id} type="button" onClick={() => setTab(t.id)} className={`flex-1 rounded-t-lg px-2 py-1.5 text-sm ${tab === t.id ? 'bg-blue-600 font-semibold text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-            {t.label}
+        {TABS.map((tb) => (
+          <button key={tb.id} type="button" onClick={() => setTab(tb.id)} className={`flex-1 rounded-t-lg px-2 py-1.5 text-sm ${tab === tb.id ? 'bg-blue-600 font-semibold text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+            {t(tb.label)}
           </button>
         ))}
       </div>
@@ -153,46 +166,46 @@ export function AvatarCreator() {
             {AVATAR_BODIES.map((b) => (
               <button key={b} type="button" onClick={() => set({ body: b })} className={`flex flex-col items-center rounded-xl border-2 py-2 text-sm ${look.body === b ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
                 <span className="text-3xl">{BODY_ICON[b]}</span>
-                {BODY_LABELS[b]}
+                {t(BODY_LABELS[b])}
               </button>
             ))}
           </div>
         )}
         {tab === 'looks' &&
           (look.body === 'robot' ? (
-            <p className="text-sm text-gray-500">Robots have no skin or hair 🤖 — pick their colours under Clothes. The antenna light uses the hat colour.</p>
+            <p className="text-sm text-gray-500">{t('Robots have no skin or hair 🤖 — pick their colours under Clothes. The antenna light uses the hat colour.')}</p>
           ) : (
             <>
-              <Swatches title="Skin" list={SKIN_TONES} value={look.skin} owned={owned} onPick={(skin) => set({ skin })} />
-              <Items title="Hairstyle" keys={AVATAR_HAIRSTYLES} items={HAIRSTYLE_ITEMS} icons={HAIR_ICON} value={look.hairStyle} owned={owned} onPick={(hairStyle) => set({ hairStyle })} />
-              <Swatches title="Hair colour" list={HAIR_COLORS} value={look.hair} owned={owned} onPick={(hair) => set({ hair })} />
+              <Swatches title={t('Skin')} list={SKIN_TONES} value={look.skin} owned={owned} onPick={(skin) => set({ skin })} />
+              <Items title={t('Hairstyle')} keys={AVATAR_HAIRSTYLES} items={HAIRSTYLE_ITEMS} icons={HAIR_ICON} value={look.hairStyle} owned={owned} onPick={(hairStyle) => set({ hairStyle })} />
+              <Swatches title={t('Hair colour')} list={HAIR_COLORS} value={look.hair} owned={owned} onPick={(hair) => set({ hair })} />
             </>
           ))}
         {tab === 'clothes' && (
           <>
-            <Swatches title={labels.top} list={CLOTH_COLORS} value={look.top} owned={owned} onPick={(top) => set({ top })} />
-            {labels.bottom && <Swatches title={labels.bottom} list={CLOTH_COLORS} value={look.bottom} owned={owned} onPick={(bottom) => set({ bottom })} />}
-            {labels.shoes && <Swatches title={labels.shoes} list={CLOTH_COLORS} value={look.shoes} owned={owned} onPick={(shoes) => set({ shoes })} />}
+            <Swatches title={t(labels.top)} list={CLOTH_COLORS} value={look.top} owned={owned} onPick={(top) => set({ top })} />
+            {labels.bottom && <Swatches title={t(labels.bottom)} list={CLOTH_COLORS} value={look.bottom} owned={owned} onPick={(bottom) => set({ bottom })} />}
+            {labels.shoes && <Swatches title={t(labels.shoes)} list={CLOTH_COLORS} value={look.shoes} owned={owned} onPick={(shoes) => set({ shoes })} />}
           </>
         )}
         {tab === 'extras' && (
           <>
-            <Items title="Hat" keys={AVATAR_HATS} items={HAT_ITEMS} icons={HAT_ICON} value={look.hat} owned={owned} onPick={(hat) => set({ hat })} />
-            {(look.body === 'robot' || (look.hat !== 'none' && look.hat !== 'crown')) && <Swatches title="Hat colour" list={CLOTH_COLORS} value={look.hatColor} owned={owned} onPick={(hatColor) => set({ hatColor })} />}
-            <Items title="Glasses" keys={AVATAR_GLASSES} items={GLASSES_ITEMS} icons={GLASSES_ICON} value={look.glasses} owned={owned} onPick={(glasses) => set({ glasses })} />
-            {look.body !== 'robot' && <Items title="Bag" keys={AVATAR_BAGS} items={BAG_ITEMS} icons={BAG_ICON} value={look.bag} owned={owned} onPick={(bag) => set({ bag })} />}
-            <p className="mt-1 text-xs text-gray-500">Items with 🪙 can be tried on for free — you only pay when you save. Earn coins by finishing quests.</p>
+            <Items title={t('Hat')} keys={AVATAR_HATS} items={HAT_ITEMS} icons={HAT_ICON} value={look.hat} owned={owned} onPick={(hat) => set({ hat })} />
+            {(look.body === 'robot' || (look.hat !== 'none' && look.hat !== 'crown')) && <Swatches title={t('Hat colour')} list={CLOTH_COLORS} value={look.hatColor} owned={owned} onPick={(hatColor) => set({ hatColor })} />}
+            <Items title={t('Glasses')} keys={AVATAR_GLASSES} items={GLASSES_ITEMS} icons={GLASSES_ICON} value={look.glasses} owned={owned} onPick={(glasses) => set({ glasses })} />
+            {look.body !== 'robot' && <Items title={t('Bag')} keys={AVATAR_BAGS} items={BAG_ITEMS} icons={BAG_ICON} value={look.bag} owned={owned} onPick={(bag) => set({ bag })} />}
+            <p className="mt-1 text-xs text-gray-500">{t('Items with 🪙 can be tried on for free — you only pay when you save. Earn coins by finishing quests.')}</p>
           </>
         )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2 border-t p-3">
         <p className={`min-w-0 flex-1 text-sm ${msg ? (msg.ok ? 'text-green-700' : 'text-red-600') : 'text-gray-500'}`}>
-          {msg?.text ?? (cost > 0 ? `Buying ${missing.length} item${missing.length > 1 ? 's' : ''}: 🪙 ${cost}` : dirty ? 'Unsaved changes' : 'This is you!')}
+          {msg?.text ?? (cost > 0 ? (missing.length > 1 ? t('Buying {n} items: 🪙 {cost}', { n: missing.length, cost }) : t('Buying 1 item: 🪙 {cost}', { cost })) : dirty ? t('Unsaved changes') : t('This is you!'))}
         </p>
         {dirty && (
           <button type="button" onClick={() => set(saved)} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
-            Undo
+            {t('Undo')}
           </button>
         )}
         <button
@@ -201,7 +214,7 @@ export function AvatarCreator() {
           disabled={busy || !dirty || cost > profile.coins}
           className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
         >
-          {busy ? 'Saving…' : cost > profile.coins ? 'Not enough 🪙' : cost > 0 ? `Buy & save · 🪙${cost}` : 'Save'}
+          {busy ? t('Saving…') : cost > profile.coins ? t('Not enough 🪙') : cost > 0 ? t('Buy & save · 🪙{cost}', { cost }) : t('Save')}
         </button>
       </div>
     </Sheet>
@@ -263,6 +276,7 @@ function WavingAvatar({ look, wave }: { look: AvatarLook; wave: number }) {
 }
 
 function Swatches({ title, list, value, owned, onPick }: { title: string; list: PaletteColor[]; value: string; owned: string[]; onPick: (hex: string) => void }) {
+  const t = useT();
   return (
     <div className="mb-3">
       <h3 className="mb-1.5 text-sm font-semibold text-gray-700">{title}</h3>
@@ -275,8 +289,8 @@ function Swatches({ title, list, value, owned, onPick }: { title: string; list: 
               key={c.id}
               type="button"
               onClick={() => onPick(c.hex)}
-              title={locked ? `${c.id} · 🪙${c.price}` : c.id}
-              aria-label={`${title} ${c.id}${locked ? ` (${c.price} coins)` : ''}`}
+              title={locked ? `${t(c.id)} · 🪙${c.price}` : t(c.id)}
+              aria-label={locked ? t('{title} {colour} ({price} coins)', { title, colour: t(c.id), price: c.price }) : `${title} ${t(c.id)}`}
               className={`relative h-9 w-9 rounded-full shadow-inner ring-offset-2 ${selected ? 'ring-2 ring-blue-600' : 'ring-1 ring-black/10 hover:ring-gray-400'}`}
               style={{ background: c.hex }}
             >
@@ -290,6 +304,7 @@ function Swatches({ title, list, value, owned, onPick }: { title: string; list: 
 }
 
 function Items<K extends string>({ title, keys, items, icons, value, owned, onPick }: { title: string; keys: readonly K[]; items: Record<K, ShopItem>; icons: Record<string, string>; value: K; owned: string[]; onPick: (k: K) => void }) {
+  const t = useT();
   return (
     <div className="mb-3">
       <h3 className="mb-1.5 text-sm font-semibold text-gray-700">{title}</h3>
@@ -300,7 +315,7 @@ function Items<K extends string>({ title, keys, items, icons, value, owned, onPi
           return (
             <button key={k} type="button" onClick={() => onPick(k)} className={`flex w-20 flex-col items-center rounded-xl border-2 py-1.5 text-xs ${value === k ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
               <span className="text-2xl">{icons[k]}</span>
-              {it.label}
+              {t(it.label)}
               {locked && <span className="text-[10px] text-amber-700">🪙 {it.price}</span>}
             </button>
           );

@@ -1,16 +1,18 @@
 import { useGame } from '../store/game';
 import { CRITTERS } from '../world/critters';
 import { toggleHug } from '../world/hold';
+import { useT } from '../i18n';
 
 /** "Hug Mochi" when a cat or dog is within reach, "Put Mochi down" while carrying one (F on desktop). */
 export function HugButton({ touch }: { touch: boolean }) {
   const near = useGame((s) => s.nearCritter);
   const holding = useGame((s) => (s.sessionId && s.players[s.sessionId]?.holding) || '');
   const busy = useGame((s) => s.panelNpc !== null);
+  const t = useT();
   const id = holding || near;
   const c = CRITTERS.find((x) => x.id === id);
   if (!c || busy) return null;
-  const label = holding ? `Put ${c.name} down` : `Hug ${c.name}`;
+  const label = holding ? t('Put {name} down', { name: c.name }) : t('Hug {name}', { name: c.name });
   if (touch)
     return (
       <button type="button" onClick={toggleHug} className="flex min-h-14 items-center gap-2 rounded-full bg-pink-400 px-5 text-base font-semibold text-white shadow-lg ring-2 ring-white/70 active:scale-95">

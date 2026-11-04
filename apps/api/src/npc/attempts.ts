@@ -31,13 +31,16 @@ export interface UserRecord {
   avatarConfig: unknown;
   placementDoneAt: Date | null;
   reviewsDone: number;
+  nativeLang: string;
+  gameState: unknown;
 }
 
 export interface VocabRecord {
   id: string;
   userId: string;
   word: string;
-  meaningVi: string;
+  meaning: string;
+  lang: string;
   example: string;
   ease: number;
   intervalDays: number;
@@ -78,7 +81,7 @@ export interface AttemptRepo {
   getUser(id: string): Promise<UserRecord | null>;
   getUserByEmail(email: string): Promise<UserRecord | null>;
   createUser(u: { id: string; email: string; name: string; passwordHash: string }): Promise<UserRecord>;
-  updateUser(id: string, patch: Partial<Pick<UserRecord, 'name' | 'cefrLevel' | 'avatarConfig' | 'placementDoneAt' | 'coins' | 'reviewsDone'>>): Promise<void>;
+  updateUser(id: string, patch: Partial<Pick<UserRecord, 'name' | 'cefrLevel' | 'avatarConfig' | 'placementDoneAt' | 'coins' | 'reviewsDone' | 'nativeLang' | 'gameState'>>): Promise<void>;
   /** Move a guest's attempts and vocabulary to a registered account. */
   transferGuest(guestId: string, userId: string): Promise<void>;
 
@@ -89,7 +92,7 @@ export interface AttemptRepo {
   /** Daily-board bonus if the quest is on today's board and not yet completed today. */
   dailyBonus(userId: string, questId: string): Promise<number>;
 
-  saveVocab(userId: string, items: VocabItem[]): Promise<void>;
+  saveVocab(userId: string, items: VocabItem[], lang: string): Promise<void>;
   listVocab(userId: string): Promise<VocabRecord[]>;
   reviewVocab(userId: string, id: string, grade: ReviewGrade): Promise<VocabRecord | null>;
 
@@ -138,7 +141,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
   async ensureUser(id: string, name: string) {
     let u = this.users.get(id);
     if (!u) {
-      u = { id, email: null, name, passwordHash: null, cefrLevel: 'A1', xp: 0, coins: 0, streak: 0, lastActiveAt: new Date(0), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0 };
+      u = { id, email: null, name, passwordHash: null, cefrLevel: 'A1', xp: 0, coins: 0, streak: 0, lastActiveAt: new Date(0), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
       this.users.set(id, u);
     }
     if (!u.email) u.name = name;
@@ -152,7 +155,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
     return [...this.users.values()].find((u) => u.email === email.toLowerCase()) ?? null;
   }
   async createUser(u: { id: string; email: string; name: string; passwordHash: string }) {
-    const rec: UserRecord = { ...u, email: u.email.toLowerCase(), cefrLevel: 'A1', xp: 0, coins: 0, streak: 1, lastActiveAt: new Date(), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0 };
+    const rec: UserRecord = { ...u, email: u.email.toLowerCase(), cefrLevel: 'A1', xp: 0, coins: 0, streak: 1, lastActiveAt: new Date(), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
     this.users.set(u.id, rec);
     return rec;
   }
@@ -201,12 +204,12 @@ export class MemoryAttemptRepo implements AttemptRepo {
     return dailyBonusFor(this, userId, questId);
   }
 
-  async saveVocab(userId: string, items: VocabItem[]) {
+  async saveVocab(userId: string, items: VocabItem[], lang: string) {
     const list = this.vocab.get(userId) ?? [];
     for (const v of items) {
       const existing = list.find((e) => e.word.toLowerCase() === v.word.toLowerCase());
-      if (existing) Object.assign(existing, { meaningVi: v.meaning_vi, example: v.example });
-      else list.push({ id: `${userId}:${list.length + 1}`, userId, word: v.word, meaningVi: v.meaning_vi, example: v.example, ease: 2.5, intervalDays: 0, nextReviewAt: new Date() });
+      if (existing) Object.assign(existing, { meaning: v.meaning, lang, example: v.example });
+      else list.push({ id: `${userId}:${list.length + 1}`, userId, word: v.word, meaning: v.meaning, lang, example: v.example, ease: 2.5, intervalDays: 0, nextReviewAt: new Date() });
     }
     this.vocab.set(userId, list);
   }
@@ -282,8 +285,11 @@ export class PrismaAttemptRepo implements AttemptRepo {
     return (await prisma.user.create({ data: { ...u, email: u.email.toLowerCase(), streak: 1 } })) as UserRecord;
   }
   async updateUser(id: string, patch: Parameters<AttemptRepo['updateUser']>[1]) {
-    const { avatarConfig, ...rest } = patch;
-    await prisma.user.update({ where: { id }, data: { ...rest, cefrLevel: rest.cefrLevel as CefrLevel | undefined, ...(avatarConfig !== undefined ? { avatarConfig: avatarConfig as object } : {}) } });
+    const { avatarConfig, gameState, ...rest } = patch;
+    await prisma.user.update({
+      where: { id },
+      data: { ...rest, cefrLevel: rest.cefrLevel as CefrLevel | undefined, ...(avatarConfig !== undefined ? { avatarConfig: avatarConfig as object } : {}), ...(gameState !== undefined ? { gameState: gameState as object } : {}) },
+    });
   }
   async transferGuest(guestId: string, userId: string) {
     const g = await prisma.user.findUnique({ where: { id: guestId } });
@@ -319,12 +325,12 @@ export class PrismaAttemptRepo implements AttemptRepo {
     return dailyBonusFor(this, userId, questId);
   }
 
-  async saveVocab(userId: string, items: VocabItem[]) {
+  async saveVocab(userId: string, items: VocabItem[], lang: string) {
     for (const v of items) {
       await prisma.vocabEntry.upsert({
         where: { userId_word: { userId, word: v.word } },
-        create: { userId, word: v.word, meaningVi: v.meaning_vi, example: v.example },
-        update: { meaningVi: v.meaning_vi, example: v.example },
+        create: { userId, word: v.word, meaning: v.meaning, lang, example: v.example },
+        update: { meaning: v.meaning, lang, example: v.example },
       });
     }
   }

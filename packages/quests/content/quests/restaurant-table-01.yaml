@@ -1,0 +1,14 @@
+id: restaurant-table-01
+npc: waiter
+level: A1
+title: Table for Two
+intro: You arrive at The Grand Garden Restaurant with a friend. Get a table and order your food and drinks.
+goals:
+  - { id: greet, desc: "Greet the waiter and ask for a table for two" }
+  - { id: order_food, desc: "Order a main course" }
+  - { id: order_drink, desc: "Order a drink" }
+  - { id: ask_bill, desc: "Ask for the bill" }
+target_vocab: [table, menu, main course, drink, bill]
+target_phrases: ["A table for two, please.", "I'd like the…", "Could we have the bill, please?"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

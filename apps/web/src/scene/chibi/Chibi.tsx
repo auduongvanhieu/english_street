@@ -159,6 +159,16 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
       p.legRX = Math.max(0, -Math.sin(b / 2)) * 0.5;
       break;
     }
+    case 'sit': {
+      // on a chair: thighs forward, hands resting on the table, a little idle sway
+      p.legLX = p.legRX = -1.45;
+      p.armLX = p.armRX = -0.95;
+      p.armLZ = 0.12;
+      p.armRZ = -0.12;
+      p.headX = 0.08 + Math.sin(t * 1.3) * 0.03;
+      p.headY = Math.sin(t * 0.4) * 0.25 * Math.max(0, Math.sin(t * 0.17));
+      break;
+    }
     case 'jump': {
       p.armLZ = 2.2;
       p.armRZ = -2.2;

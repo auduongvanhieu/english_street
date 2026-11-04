@@ -42,6 +42,8 @@ function Remote({ p }: { p: RemotePlayer }) {
     const g = ref.current;
     if (!g) return;
     const k = 1 - Math.pow(0.0001, dt);
+    // Bus ride / teleport: jump instead of sliding across the whole street.
+    if (Math.abs(p.x - g.position.x) + Math.abs(p.z - g.position.z) > 25) g.position.set(p.x, p.y, p.z);
     g.position.x += (p.x - g.position.x) * k;
     g.position.y += (p.y - g.position.y) * Math.min(1, k * 1.6);
     g.position.z += (p.z - g.position.z) * k;
@@ -66,7 +68,7 @@ function Remote({ p }: { p: RemotePlayer }) {
         select(selected ? null : p.id);
       }}
     >
-      {near ? <PlayerAvatar anim={p.anim} look={look} holding={p.holding} /> : null}
+      {near ? <PlayerAvatar anim={p.anim} look={look} holding={p.holding} prop={p.prop} /> : null}
       {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} /> : null}
       {selected ? (
         <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>

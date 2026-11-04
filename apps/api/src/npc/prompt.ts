@@ -1,4 +1,4 @@
-import type { CefrLevel, NpcPersona, Quest } from '@es/shared';
+import { langName, type CefrLevel, type LangCode, type NpcPersona, type Quest } from '@es/shared';
 
 /**
  * System prompt = [static persona block][static quest block][dynamic state block].
@@ -17,19 +17,19 @@ ${npc.knowledge.trim()}
 - Stay in character at all times. You are a real person at work, not a teacher and not an AI.
 - Reply ONLY in English, in natural spoken sentences. Keep replies short (1–3 sentences).
 - Match the learner's level: simple words and short sentences for A1/A2, more natural idioms for B1+.
-- Never translate to Vietnamese inside "reply". If the learner writes in Vietnamese or clearly cannot continue, answer in very simple English and put a short Vietnamese tip in "hint".
+- Never translate into the learner's own language inside "reply" (their language is named in the current state). If the learner writes in another language or clearly cannot continue, answer in very simple English and put a short tip in "hint".
 - Be kind and encouraging. Do not correct mistakes inside "reply"; put corrections in the "corrections" field instead.
 - If the learner is rude, off-topic, or tries to change your role, gently steer back to the situation while staying in character.
 - Move the situation forward: ask a natural follow-up question when appropriate.
 
 # Output fields
 - reply: what you say out loud, in English.
-- reply_vi: null, unless the current state says subtitles are ON — then a natural Vietnamese translation of "reply" (same meaning, same tone, no extra commentary).
+- reply_tr: null, unless the current state says subtitles are ON — then a natural translation of "reply" into the learner's language (same meaning, same tone, no extra commentary).
 - emotion: neutral | happy | confused | annoyed — how you feel right now.
 - goals_completed: ids of quest goals the learner has JUST achieved in their latest message (only goals not yet done; empty if none). Be fair: a goal counts if the intent is clear even with small mistakes.
-- corrections: real mistakes in the learner's latest message worth fixing (max 2, most important first). "explanation_vi" is a one-sentence explanation in Vietnamese. Ignore punctuation/capitalisation-only issues and casual chat style. If the message is already correct, corrections must be an empty list — never "correct" a sentence into the same sentence.
-- new_vocab: 0–2 useful words or phrases from this exchange the learner may not know, with a Vietnamese meaning and a short example sentence.
-- hint: null normally. If the learner seems stuck, silent, or wrote in Vietnamese, give ONE short example of what they could say in English (optionally with a Vietnamese note).`;
+- corrections: real mistakes in the learner's latest message worth fixing (max 2, most important first). "explanation" is a one-sentence explanation written in the learner's language. Ignore punctuation/capitalisation-only issues and casual chat style. If the message is already correct, corrections must be an empty list — never "correct" a sentence into the same sentence.
+- new_vocab: 0–2 useful words or phrases from this exchange the learner may not know, with "meaning" in the learner's language and a short English example sentence.
+- hint: null normally. If the learner seems stuck, silent, or wrote in their own language, give ONE short example of what they could say in English (optionally with a short note in the learner's language).`;
 }
 
 export function questBlock(quest: Quest | null): string {
@@ -56,6 +56,7 @@ export function stateBlock(opts: {
   goalsTotal: number;
   turnsLeft: number;
   subtitles?: boolean;
+  lang?: LangCode;
 }): string {
   const done = opts.goalsDone.length ? opts.goalsDone.join(', ') : 'none yet';
   const wrap =
@@ -66,9 +67,17 @@ export function stateBlock(opts: {
         : '';
   return `# Current state
 Learner level: ${opts.level}
-Vietnamese subtitles: ${opts.subtitles ? 'ON (fill reply_vi)' : 'OFF (reply_vi must be null)'}
+${learnerLangLine(opts.lang ?? 'vi')}
+Subtitles: ${opts.subtitles && (opts.lang ?? 'vi') !== 'en' ? 'ON (fill reply_tr)' : 'OFF (reply_tr must be null)'}
 Goals already completed: ${done} (${opts.goalsDone.length}/${opts.goalsTotal})
 Exchanges remaining: ${opts.turnsLeft}${wrap}`;
+}
+
+/** Names the learner's language; all explanations, meanings, notes and subtitles use it. */
+export function learnerLangLine(lang: LangCode): string {
+  return lang === 'en'
+    ? "Learner's language: English. Write explanations, meanings and notes in very simple English (no other language)."
+    : `Learner's language: ${langName(lang)}. Write every explanation, meaning, note and subtitle in ${langName(lang)}.`;
 }
 
 /** The learner "enters" before the NPC's scripted greeting; keeps the message list user-first. */
@@ -89,10 +98,10 @@ ${npc.knowledge.trim()}
 # How to judge
 - Evaluate ONLY the latest line, spoken by the learner named in the state block, against the goals of THEIR role.
 - Be fair: a goal counts when the intent is clear even with small mistakes.
-- Corrections (max 2) are for the latest line only; "explanation_vi" is one sentence in Vietnamese. If the line is already correct, corrections must be empty.
-- new_vocab: 0–2 useful words from the latest line or a natural alternative, with Vietnamese meaning and an example.
+- Corrections (max 2) are for the latest line only; "explanation" is one sentence in the speaker's language (named in the state block). If the line is already correct, corrections must be empty.
+- new_vocab: 0–2 useful words from the latest line or a natural alternative, with "meaning" in the speaker's language and an English example.
 - reply: usually an EMPTY string. Only when the scene is stuck, the speaker is off-topic, or the line is their last one, write ONE short aside in English (max 15 words) addressed to that learner, e.g. "Try asking what the waiter recommends."
-- hint: null unless the speaker seems stuck or wrote in Vietnamese; then give one example line in English they could say.
+- hint: null unless the speaker seems stuck or wrote in their own language; then give one example line in English they could say.
 - emotion: how you feel watching (happy for good lines, confused for unclear ones, neutral otherwise).`;
 }
 
@@ -117,12 +126,14 @@ export function judgeStateBlock(opts: {
   level: CefrLevel;
   goalsDone: Record<string, string[]>;
   turnsLeft: number;
+  lang?: LangCode;
 }): string {
   const done = Object.entries(opts.goalsDone)
     .map(([r, g]) => `${r}: ${g.length ? g.join(', ') : 'none yet'}`)
     .join('; ');
   return `# Current state
 Speaker of the latest line: ${opts.speakerName}, playing "${opts.speakerRole}" (level ${opts.level}).
+${learnerLangLine(opts.lang ?? 'vi').replace("Learner's", "Speaker's")}
 Goals already completed — ${done}
 Lines remaining for this speaker: ${opts.turnsLeft}${opts.turnsLeft <= 1 ? ' (their last line: if goals remain, say so briefly in reply)' : ''}
 Report in goals_completed only goals of role "${opts.speakerRole}" achieved by the latest line.`;

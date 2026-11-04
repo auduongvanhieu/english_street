@@ -17,6 +17,7 @@ import {
   maskProfanity,
   parseLook,
   HOLDABLE_RE,
+  PROP_RE,
   type ZoneMeta,
   type InputMessage,
   type JoinOptions,
@@ -124,6 +125,12 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (!HOLDABLE_RE.test(id)) return;
       for (const q of this.state.players.values()) if (q !== p && q.holding === id) return;
       p.holding = id;
+    });
+
+    this.onMessage<string>(MSG.PROP, (client, prop) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || typeof prop !== 'string') return;
+      p.prop = prop === '' || PROP_RE.test(prop) ? prop : p.prop;
     });
 
     // One-to-one talk: the server is the referee (distance, busy state, who is allowed to message whom).

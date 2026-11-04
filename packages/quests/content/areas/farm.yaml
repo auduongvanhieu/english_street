@@ -1,0 +1,71 @@
+id: farm
+title: Green Valley Farm
+intro: Meet the farm animals, grow your own vegetables and sell them at the market. Every job on the farm teaches you an action word.
+categories:
+  - { id: animals, label: Farm animals }
+  - { id: crops, label: Fruit and vegetables }
+  - { id: jobs, label: Farm jobs }
+groups:
+  - { id: animals, label: Animals and their sounds }
+  - { id: work, label: Working on the farm }
+  - { id: market, label: At the market }
+  - { id: weather, label: Weather and seasons }
+items:
+  - { id: cow, en: cow, plural: cows, icon: 🐄, category: animals, note: "The cow says moo.", fact: "A cow can give about 30 litres of milk a day.",
+      sentences: [{ en: "The cow is eating grass.", level: A1 }, { en: "We get milk from cows.", level: A1 }, { en: "The farmer milks the cows every morning.", level: A2 }] }
+  - { id: pig, en: pig, plural: pigs, icon: 🐖, category: animals, note: "The pig says oink.", fact: "Pigs roll in mud to stay cool.",
+      sentences: [{ en: "The pig is pink.", level: A1 }, { en: "The pigs are playing in the mud.", level: A2 }, { en: "Pigs are cleverer than most people think.", level: B1 }] }
+  - { id: sheep, en: sheep, plural: sheep, icon: 🐑, category: animals, note: "The sheep says baa. One sheep, two sheep!", fact: "Wool for sweaters comes from sheep.",
+      sentences: [{ en: "The sheep is white and soft.", level: A1 }, { en: "There are ten sheep in the field.", level: A2 }, { en: "Sheep are usually sheared once a year.", level: B1 }] }
+  - { id: goat, en: goat, plural: goats, icon: 🐐, category: animals, note: "A baby goat is called a kid.", fact: "Goats love climbing.",
+      sentences: [{ en: "The goat has two horns.", level: A1 }, { en: "The goat is climbing on a rock.", level: A2 }, { en: "Goats will try to eat almost anything.", level: B1 }] }
+  - { id: horse, en: horse, plural: horses, icon: 🐎, category: animals, note: "The horse says neigh.", fact: "Horses can sleep standing up.",
+      sentences: [{ en: "The horse is running.", level: A1 }, { en: "Can I ride the horse?", level: A2 }, { en: "The horse is used to pull the old cart.", level: B1 }] }
+  - { id: chicken, en: chicken, plural: chickens, icon: 🐔, category: animals, note: "The chicken says cluck. A female chicken is a hen.", fact: "A hen can lay about 300 eggs a year.",
+      sentences: [{ en: "The chicken is small.", level: A1 }, { en: "The hens lay eggs every day.", level: A2 }, { en: "The chickens are kept in a coop at night.", level: B1 }] }
+  - { id: donkey, en: donkey, plural: donkeys, icon: 🫏, category: animals, note: "The donkey says hee-haw.", fact: "Donkeys have very long ears to hear far away.",
+      sentences: [{ en: "The donkey has long ears.", level: A1 }, { en: "The donkey is carrying a heavy bag.", level: A2 }, { en: "Donkeys are famous for being stubborn.", level: B1 }] }
+  - { id: carrot, en: carrot, plural: carrots, icon: 🥕, category: crops, price: 1, note: "Grows under the ground.",
+      sentences: [{ en: "Rabbits love carrots.", level: A1 }, { en: "The carrots are ready to pick.", level: A2 }, { en: "Carrots grow best in soft, sandy soil.", level: B1 }] }
+  - { id: corn, en: corn, icon: 🌽, category: crops, price: 2, note: "Uncountable: some corn, an ear of corn.",
+      sentences: [{ en: "The corn is yellow.", level: A1 }, { en: "The corn grows very tall in summer.", level: A2 }, { en: "Popcorn is made from a special kind of corn.", level: B1 }] }
+  - { id: wheat, en: wheat, icon: 🌾, category: crops, price: 1, note: "Uncountable: a field of wheat.",
+      sentences: [{ en: "Bread is made from wheat.", level: A1 }, { en: "The farmer harvests the wheat in autumn.", level: A2 }, { en: "The wheat is ground into flour at the mill.", level: B1 }] }
+  - { id: tomato, en: tomato, plural: tomatoes, icon: 🍅, category: crops, price: 2,
+      sentences: [{ en: "The tomato is red.", level: A1 }, { en: "We need tomatoes for the salad.", level: A2 }, { en: "Tomatoes need a lot of sun and water.", level: B1 }] }
+  - { id: potato, en: potato, plural: potatoes, icon: 🥔, category: crops, price: 1,
+      sentences: [{ en: "I like potatoes.", level: A1 }, { en: "We dig the potatoes out of the ground.", level: A2 }, { en: "Potatoes can be boiled, fried or baked.", level: B1 }] }
+  - { id: pumpkin, en: pumpkin, plural: pumpkins, icon: 🎃, category: crops, price: 4,
+      sentences: [{ en: "The pumpkin is big and orange.", level: A1 }, { en: "This pumpkin is heavier than that one.", level: A2 }, { en: "People carve faces into pumpkins at Halloween.", level: B1 }] }
+  - { id: strawberry, en: strawberry, plural: strawberries, icon: 🍓, category: crops, price: 3,
+      sentences: [{ en: "Strawberries are sweet.", level: A1 }, { en: "Let's pick some strawberries.", level: A2 }, { en: "Strawberries are the only fruit with seeds on the outside.", level: B1 }] }
+  - { id: apple, en: apple, plural: apples, icon: 🍎, category: crops, price: 2, note: "Apples grow on apple trees in an orchard.",
+      sentences: [{ en: "The apple is green.", level: A1 }, { en: "There are a lot of apples on the tree.", level: A2 }, { en: "The apples fell off the tree in the strong wind.", level: B1 }] }
+  - { id: plant, en: plant, icon: 🌱, pos: verb, category: jobs, note: "plant – planted – planted",
+      sentences: [{ en: "I plant the seeds.", level: A1 }, { en: "We planted carrots yesterday.", level: A2 }, { en: "Seeds should be planted in spring.", level: B1 }] }
+  - { id: water, en: water, icon: 💧, pos: verb, category: jobs, note: "water – watered – watered",
+      sentences: [{ en: "I'm watering the plants.", level: A1 }, { en: "Don't forget to water the tomatoes.", level: A2 }, { en: "The plants have been watered twice today.", level: B1 }] }
+  - { id: harvest, en: harvest, icon: 🧺, pos: verb, category: jobs, note: "Also a noun: the harvest.",
+      sentences: [{ en: "It's time to harvest.", level: A1 }, { en: "We harvested a lot of corn this year.", level: A2 }, { en: "The harvest was smaller because of the dry summer.", level: B1 }] }
+  - { id: feed, en: feed, icon: 🌾, pos: verb, category: jobs, note: "feed – fed – fed",
+      sentences: [{ en: "I feed the chickens.", level: A1 }, { en: "The farmer fed the pigs an hour ago.", level: A2 }, { en: "The animals are fed twice a day.", level: B1 }] }
+  - { id: milk, en: milk, icon: 🥛, pos: verb, category: jobs, note: "Also a noun: a glass of milk.",
+      sentences: [{ en: "She milks the cow.", level: A1 }, { en: "Have you ever milked a cow?", level: A2 }, { en: "Cows are usually milked early in the morning.", level: B1 }] }
+  - { id: collect-eggs, en: collect eggs, icon: 🥚, pos: phrase, category: jobs,
+      sentences: [{ en: "I collect the eggs.", level: A1 }, { en: "We collected twelve eggs this morning.", level: A2 }, { en: "The eggs must be collected carefully so they don't break.", level: B1 }] }
+phrases:
+  - { en: "The cow says moo.", level: A1, group: animals }
+  - { en: "How many sheep are there?", level: A1, group: animals }
+  - { en: "Can I feed the goats?", level: A1, group: animals }
+  - { en: "Be careful, the horse might kick.", level: B1, group: animals }
+  - { en: "I'm planting carrots.", level: A1, group: work }
+  - { en: "The tomatoes need more water.", level: A2, group: work }
+  - { en: "When will the pumpkins be ready?", level: A2, group: work }
+  - { en: "Can you help me harvest the corn?", level: A2, group: work }
+  - { en: "How much are the strawberries?", level: A1, group: market }
+  - { en: "Three carrots for two dollars.", level: A1, group: market }
+  - { en: "They're fresh from the farm.", level: A2, group: market }
+  - { en: "Could I have a bag of potatoes, please?", level: A2, group: market }
+  - { en: "It's sunny today. The plants will grow fast.", level: A1, group: weather }
+  - { en: "We need rain. The ground is very dry.", level: A2, group: weather }
+  - { en: "In autumn we harvest the apples.", level: A2, group: weather }

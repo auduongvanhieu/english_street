@@ -21,9 +21,12 @@ export const MSG = {
   AVATAR: 'avatar',
   /** client -> server: id of the cat/dog the player picks up ('' = put it down); shows up in Player.holding */
   HOLD: 'hold',
+  /** Something on the table in front of you: 'dish:<menu item id>' while seated in the restaurant, '' = none. */
+  PROP: 'prop',
 } as const;
 
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
+export const PROP_RE = /^dish:[a-z-]{2,24}$/;
 export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling)-\d{1,2}$/;
 
 export interface JoinOptions {

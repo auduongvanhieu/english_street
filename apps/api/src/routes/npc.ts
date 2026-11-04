@@ -42,7 +42,7 @@ export function npcRoutes(svc: NpcService) {
       if (!pid) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await allowTurn(pid))) return reply.code(429).send({ error: 'rate_limited' });
       await budget.check(pid, req.ip);
-      const out = await svc.chat(req.params.id, pid, body.data.text, body.data.source, body.data.subtitles === true);
+      const out = await svc.chat(req.params.id, pid, body.data.text, body.data.source, body.data.subtitles === true, body.data.lang);
       await budget.recordTurn(pid, req.ip);
       return out;
     });

@@ -28,8 +28,15 @@ export default defineConfig({
       workbox: {
         // App shell is precached; 3D models are cached on first use so revisits start instantly.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Interface catalogs: each player only needs their own language, fetched (and then cached) on demand.
+        globIgnores: ['**/locales/**'],
         navigateFallbackDenylist: [/^\/api\//, /^\/ws\//],
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/assets/locales/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'es-locales', expiration: { maxEntries: 40, maxAgeSeconds: 30 * 24 * 3600 } },
+          },
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/models/'),
             handler: 'CacheFirst',
@@ -40,4 +47,12 @@ export default defineConfig({
     }),
   ],
   server: { port: 5173 },
+  build: {
+    rollupOptions: {
+      output: {
+        // src/i18n/locales/<code>.json → assets/locales/<code>-<hash>.js (kept out of the PWA precache)
+        chunkFileNames: (c) => (c.facadeModuleId?.includes('/i18n/locales/') ? 'assets/locales/[name]-[hash].js' : 'assets/[name]-[hash].js'),
+      },
+    },
+  },
 });

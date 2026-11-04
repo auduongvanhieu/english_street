@@ -60,3 +60,33 @@ export function loadPlacement(): PlacementQuestion[] {
   });
   return placementCache;
 }
+
+// ---------------------------------------------------------------- themed areas (zoo, farm, restaurant, supermarket)
+import { existsSync } from 'node:fs';
+import { AREA_IDS, AreaContentSchema, type AreaContent, type AreaId, type AreaTranslations } from '@es/shared';
+let areaCache: Map<AreaId, AreaContent> | undefined;
+export function loadAreas(): Map<AreaId, AreaContent> {
+  if (!areaCache) {
+    areaCache = new Map();
+    for (const id of AREA_IDS) {
+      const r = AreaContentSchema.safeParse(parse(readFileSync(join(CONTENT_DIR, 'areas', `${id}.yaml`), 'utf8')));
+      if (!r.success) throw new Error(`Invalid area ${id}: ${r.error.message}`);
+      areaCache.set(id, r.data);
+    }
+  }
+  return areaCache;
+}
+export const getArea = (id: AreaId) => loadAreas().get(id);
+
+/** Translations of all area strings for one language (content/areas/i18n/<lang>.json); {} when missing. */
+const areaTrCache = new Map<string, AreaTranslations>();
+export function areaTranslations(lang: string): AreaTranslations {
+  let t = areaTrCache.get(lang);
+  if (!t) {
+    const file = join(CONTENT_DIR, 'areas', 'i18n', `${lang}.json`);
+    t = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as AreaTranslations) : {};
+    areaTrCache.set(lang, t);
+  }
+  return t;
+}
+export const AREA_I18N_DIR = join(CONTENT_DIR, 'areas', 'i18n');

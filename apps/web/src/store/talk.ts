@@ -5,6 +5,7 @@ import { track } from '../net/analytics';
 import { useGame } from './game';
 import { useVoiceChat } from '../net/voicechat';
 import { haptic } from '../native/bridge';
+import { t } from '../i18n';
 
 export interface TalkLine {
   from: 'me' | 'them';
@@ -67,10 +68,10 @@ export const useTalk = create<TalkStore>((set, get) => ({
   },
   send(text) {
     const p = get().partner;
-    const t = text.trim();
-    if (!p || !t) return;
-    sendTalk({ to: p.id, type: 'msg', text: t });
-    set((s) => ({ lines: [...s.lines.slice(-99), { from: 'me', text: t, at: Date.now() }] }));
+    const msg = text.trim();
+    if (!p || !msg) return;
+    sendTalk({ to: p.id, type: 'msg', text: msg });
+    set((s) => ({ lines: [...s.lines.slice(-99), { from: 'me', text: msg, at: Date.now() }] }));
   },
   typing() {
     const p = get().partner;
@@ -79,7 +80,7 @@ export const useTalk = create<TalkStore>((set, get) => ({
   end() {
     const p = get().partner;
     if (p) sendTalk({ to: p.id, type: 'end' });
-    finish('You ended the conversation.');
+    finish(t('You ended the conversation.'));
   },
 }));
 
@@ -104,7 +105,7 @@ export function initTalkMessaging() {
       case 'decline':
         if (s.pendingTo?.id === m.from) {
           useTalk.setState({ pendingTo: null });
-          setNotice(`${s.pendingTo.name} is busy right now.`);
+          setNotice(t('{name} is busy right now.', { name: s.pendingTo.name }));
         }
         return;
       case 'start':
@@ -125,10 +126,10 @@ export function initTalkMessaging() {
       case 'end':
         if (m.reason === 'busy') {
           useTalk.setState({ pendingTo: null });
-          setNotice('That player is already talking to someone.');
+          setNotice(t('That player is already talking to someone.'));
           return;
         }
-        if (s.partner?.id === m.from) finish(m.reason === 'distance' ? 'You walked too far apart — the conversation ended.' : `${s.partner.name} ended the conversation.`, m.reason);
+        if (s.partner?.id === m.from) finish(m.reason === 'distance' ? t('You walked too far apart — the conversation ended.') : t('{name} ended the conversation.', { name: s.partner.name }), m.reason);
         return;
     }
   });

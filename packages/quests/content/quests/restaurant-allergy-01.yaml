@@ -1,0 +1,14 @@
+id: restaurant-allergy-01
+npc: waiter
+level: A2
+title: Food Allergy
+intro: You are allergic to nuts and your friend is vegetarian. Order a safe meal for both of you.
+goals:
+  - { id: say_allergy, desc: "Tell the waiter about your nut allergy" }
+  - { id: ask_safe, desc: "Ask which dishes are safe or vegetarian" }
+  - { id: order_special, desc: "Order with a special request (without…, a bit milder…)" }
+  - { id: dessert, desc: "Ask about a dessert without nuts" }
+target_vocab: [allergic, nuts, vegetarian, without, contain]
+target_phrases: ["I'm allergic to…", "Does it contain…?", "Could I have it without…?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

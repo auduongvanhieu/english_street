@@ -35,14 +35,14 @@ export interface Cyclist {
 }
 
 /** Ride from one end of the backdrop to the other (well past the playable street on both sides). */
-export const RIDE_FROM = -75;
-export const RIDE_TO = 75;
+export const RIDE_FROM = -185;
+export const RIDE_TO = 185;
 const LANE = 1.15;
 
 export const CYCLISTS: Cyclist[] = [
-  { id: 'bike-1', name: 'Sam', shirt: '#e5533d', helmet: '#f5f5f5', frame: '#2b5fb3', skin: '#eec1a0', hair: '#a0682f', hairStyle: 'spiky', shorts: '#24365c', dir: 1, speed: 5.5, period: 58, offset: 0, greeting: 'On your left!', sentence: 'Sam rides his bicycle to work every morning.', word: { en: 'bicycle', vi: 'xe đạp' }, kind: 'cyclist', sound: 'bell' },
-  { id: 'bike-2', name: 'Linh', shirt: '#3aa66b', helmet: '#f2c94c', frame: '#e86fa8', skin: '#e0ac80', hair: '#1c1410', hairStyle: 'ponytail', shorts: '#2f3437', dir: -1, speed: 5.0, period: 73, offset: 21, greeting: 'Excuse me!', sentence: 'Linh wears a helmet when she rides.', word: { en: 'helmet', vi: 'mũ bảo hiểm' }, kind: 'cyclist', sound: 'bell' },
-  { id: 'bike-3', name: 'Omar', shirt: '#4a90e2', helmet: '#e5533d', frame: '#c9a227', skin: '#8a5634', hair: '#1c1410', hairStyle: 'curly', shorts: '#2f3437', dir: 1, speed: 6.2, period: 91, offset: 47, greeting: 'Morning!', sentence: 'Omar is riding fast in the bike lane.', word: { en: 'lane', vi: 'làn đường' }, kind: 'cyclist', sound: 'bell' },
+  { id: 'bike-1', name: 'Sam', shirt: '#e5533d', helmet: '#f5f5f5', frame: '#2b5fb3', skin: '#eec1a0', hair: '#a0682f', hairStyle: 'spiky', shorts: '#24365c', dir: 1, speed: 5.5, period: 92, offset: 0, greeting: 'On your left!', sentence: 'Sam rides his bicycle to work every morning.', word: { en: 'bicycle', vi: 'xe đạp' }, kind: 'cyclist', sound: 'bell' },
+  { id: 'bike-2', name: 'Linh', shirt: '#3aa66b', helmet: '#f2c94c', frame: '#e86fa8', skin: '#e0ac80', hair: '#1c1410', hairStyle: 'ponytail', shorts: '#2f3437', dir: -1, speed: 5.0, period: 108, offset: 21, greeting: 'Excuse me!', sentence: 'Linh wears a helmet when she rides.', word: { en: 'helmet', vi: 'mũ bảo hiểm' }, kind: 'cyclist', sound: 'bell' },
+  { id: 'bike-3', name: 'Omar', shirt: '#4a90e2', helmet: '#e5533d', frame: '#c9a227', skin: '#8a5634', hair: '#1c1410', hairStyle: 'curly', shorts: '#2f3437', dir: 1, speed: 6.2, period: 126, offset: 47, greeting: 'Morning!', sentence: 'Omar is riding fast in the bike lane.', word: { en: 'lane', vi: 'làn đường' }, kind: 'cyclist', sound: 'bell' },
 ];
 
 export interface CyclistPose {

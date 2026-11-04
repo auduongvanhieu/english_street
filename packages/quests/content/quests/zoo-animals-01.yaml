@@ -1,0 +1,14 @@
+id: zoo-animals-01
+npc: zookeeper
+level: A1
+title: Animal Spotting
+intro: You are at the zoo. Ask the zookeeper about the animals and where to find them.
+goals:
+  - { id: greet, desc: "Say hello to the zookeeper" }
+  - { id: ask_where, desc: "Ask where an animal is" }
+  - { id: describe, desc: "Say what an animal looks like (big, long neck, black and white…)" }
+  - { id: thank, desc: "Say thank you and goodbye" }
+target_vocab: [elephant, giraffe, penguin, big, long, where]
+target_phrases: ["Where is the…?", "It has a long…", "It's black and white."]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

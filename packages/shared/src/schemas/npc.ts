@@ -11,6 +11,8 @@ export const NpcPersonaSchema = z.object({
   knowledge: z.string().describe('Facts the NPC knows: menu, prices, hours…'),
   greeting: z.string(),
   position: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
+  /** Rotation (radians) the NPC faces; 0 = +Z (towards the street from the shop row). */
+  facing: z.number().default(0),
 });
 export type NpcPersona = z.infer<typeof NpcPersonaSchema>;
 
@@ -19,14 +21,14 @@ export const NpcEmotionSchema = z.enum(['neutral', 'happy', 'confused', 'annoyed
 export const CorrectionSchema = z.object({
   original: z.string(),
   corrected: z.string(),
-  explanation_vi: z.string(),
+  explanation: z.string(),
   type: z.enum(['grammar', 'vocabulary', 'spelling', 'register', 'other']),
 });
 export type Correction = z.infer<typeof CorrectionSchema>;
 
 export const VocabItemSchema = z.object({
   word: z.string(),
-  meaning_vi: z.string(),
+  meaning: z.string(),
   example: z.string(),
 });
 export type VocabItem = z.infer<typeof VocabItemSchema>;
@@ -34,8 +36,8 @@ export type VocabItem = z.infer<typeof VocabItemSchema>;
 /** Structured output returned by the LLM for one NPC turn. */
 export const NpcTurnResponseSchema = z.object({
   reply: z.string(),
-  /** Vietnamese translation of reply for subtitles; null unless the learner asked for subtitles. */
-  reply_vi: z.string().nullable(),
+  /** Translation of reply (learner's language) for subtitles; null unless the learner asked for subtitles. */
+  reply_tr: z.string().nullable(),
   emotion: NpcEmotionSchema,
   goals_completed: z.array(z.string()),
   corrections: z.array(CorrectionSchema),

@@ -4,6 +4,12 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { END_FENCE_X, MODEL_URL, TILE, type TileModel } from '../world/layout';
+import { AREAS, GATE_X } from '../world/areas';
+
+/** Inside an area's yard footprint (its own scene draws the ground there). */
+const inYard = (x: number, z: number) => z < -4 && z > -33 && AREAS.some((a) => x > a.x0 - 2 && x < a.x1 + 2);
+/** South park rows of the farm are its fields. */
+const inFarmField = (x: number, z: number) => z > 5 && z < 16 && x > 110 && x < 166;
 import { serverNow } from '../net/client';
 import { useSettings } from '../store/settings';
 
@@ -120,8 +126,13 @@ function Fences() {
         }
       }
     };
-    // both ends of the street (x = ±46), from the back row to the river
-    for (const sx of [-1, 1]) line(sx * END_FENCE_X, STREET_MIN_Z - 2, sx * END_FENCE_X, RIVER_NEAR_Z - 1);
+    // both ends of the street (x = ±170), from behind the area yards to the river
+    for (const sx of [-1, 1]) line(sx * END_FENCE_X, -32, sx * END_FENCE_X, RIVER_NEAR_Z - 1);
+    // the old ends (x = ±46) are gates now: fence only north of the pavement and on the river bank side
+    for (const sx of [-1, 1]) {
+      line(sx * GATE_X, STREET_MIN_Z - 2, sx * GATE_X, -6.2);
+      line(sx * GATE_X, 6.2, sx * GATE_X, RIVER_NEAR_Z - 1);
+    }
     // far bank
     line(-120, RIVER_FAR_Z + 2, 120, RIVER_FAR_Z + 2);
     return { posts, rails };
@@ -207,31 +218,35 @@ function backdropPlacements(low: boolean): Placement[] {
   const out: Placement[] = [];
   // The street continues beyond the end fences with the very same tiles (road, lamp posts, pavements, park
   // rows), so inside and outside the fence look like one street running to the horizon.
-  const ext = low ? 32 : 38;
+  const ext = 46;
+  const push = (p: Placement) => {
+    if (!inYard(p.x, p.z) && !inFarmField(p.x, p.z)) out.push(p);
+  };
   for (let tx = -ext; tx <= ext; tx++) {
     if (Math.abs(tx) > 10) {
       const grassy = (k: number) => (k === 0 ? 'grass-trees-tall' : k === 1 ? 'grass-trees' : 'grass') as TileModel;
-      out.push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
-      out.push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: -2 * TILE, rot: 0, scaleY: 1 });
-      out.push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
-      out.push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
-      out.push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
-      out.push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
-      out.push({ model: Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
+      push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: -2 * TILE, rot: 0, scaleY: 1 });
+      push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
+      push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
+      push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
     }
+    if (low && Math.abs(tx) > 32) continue;
     // row A (tz -6) and row B (tz -9): houses with gardens/trees in between; row B a little taller on average
     for (const [tz, base, spread] of [
       [-6, 0.85, 0.35],
       [-9, 1.0, 0.5],
     ] as const) {
       const house = r() < 0.65;
-      if (house) out.push({ model: pickHouse(r), x: tx * TILE + (r() - 0.5) * 1.2, z: tz * TILE, rot: 0, scaleY: base + r() * spread, tint: TINTS[Math.floor(r() * TINTS.length)] });
-      else out.push({ model: r() < 0.6 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+      if (house) push({ model: pickHouse(r), x: tx * TILE + (r() - 0.5) * 1.2, z: tz * TILE, rot: 0, scaleY: base + r() * spread, tint: TINTS[Math.floor(r() * TINTS.length)] });
+      else push({ model: r() < 0.6 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
     }
     // gardens between and behind the rows
-    for (const tz of [-4, -5, -7, -8, -10]) out.push({ model: r() < 0.45 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+    for (const tz of [-4, -5, -7, -8, -10]) push({ model: r() < 0.45 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
     // river bank row (tz 4): grass with a few trees
-    out.push({ model: r() < 0.3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+    push({ model: r() < 0.3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
   }
   // far bank and the two ends: scattered tree clusters
   const clusters = low ? 18 : 40;

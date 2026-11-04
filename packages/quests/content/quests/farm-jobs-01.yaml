@@ -1,0 +1,14 @@
+id: farm-jobs-01
+npc: farmer
+level: A1
+title: Help on the Farm
+intro: Farmer Jack needs help today. Offer to help and ask what to do.
+goals:
+  - { id: greet, desc: "Greet the farmer" }
+  - { id: offer, desc: "Offer to help (\"Can I help you?\")" }
+  - { id: ask_job, desc: "Ask what you should do" }
+  - { id: confirm, desc: "Repeat the job to check (e.g. \"So I feed the chickens?\")" }
+target_vocab: [feed, water, milk, chickens, cows, eggs]
+target_phrases: ["Can I help you?", "What can I do?", "Do you want me to…?"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

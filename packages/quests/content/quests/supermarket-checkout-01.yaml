@@ -1,0 +1,14 @@
+id: supermarket-checkout-01
+npc: grocer
+level: A2
+title: At the Checkout
+intro: You are paying for your shopping. Ask about the offer, answer the cashier's questions and pay.
+goals:
+  - { id: ask_offer, desc: "Ask about a special offer or a price" }
+  - { id: bag, desc: "Answer about a bag" }
+  - { id: pay_method, desc: "Say how you want to pay" }
+  - { id: receipt, desc: "Ask for or take the receipt and say goodbye" }
+target_vocab: [offer, on sale, bag, card, cash, receipt]
+target_phrases: ["Is this on sale?", "Can I pay by card?", "Could I have the receipt, please?"]
+max_turns: 10
+reward: { xp: 70, coins: 15 }

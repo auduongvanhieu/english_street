@@ -1,0 +1,14 @@
+id: zoo-feeding-01
+npc: zookeeper
+level: A2
+title: Feeding Time
+intro: It's almost feeding time. Find out what the animals eat and help the zookeeper plan the feeding show.
+goals:
+  - { id: ask_food, desc: "Ask what one animal eats" }
+  - { id: ask_amount, desc: "Ask how much or how often it eats" }
+  - { id: compare, desc: "Compare two animals (bigger, faster, more dangerous…)" }
+  - { id: ask_time, desc: "Ask when the feeding show starts" }
+target_vocab: [meat, fish, bamboo, hay, how much, how often]
+target_phrases: ["What does the … eat?", "How much does it eat?", "… is bigger than …"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

@@ -39,7 +39,7 @@ for (const step of SCRIPT) {
   const t = r.turn;
   console.log(`${step.who} (${state.players.find((x) => x.playerId === p.playerId)?.role}): ${step.text}`);
   console.log(`   goals: [${t.goals_completed.join(', ')}]${t.reply ? ` | aside: "${t.reply}"` : ''}${t.hint ? ` | hint: ${t.hint}` : ''}`);
-  for (const c of t.corrections) console.log(`   fix: "${c.original}" -> "${c.corrected}" (${c.type}) ${c.explanation_vi}`);
+  for (const c of t.corrections) console.log(`   fix: "${c.original}" -> "${c.corrected}" (${c.type}) ${c.explanation}`);
   for (const g of step.expect ?? []) if (!t.goals_completed.includes(g)) problems.push(`${step.who}: expected goal ${g} for "${step.text}"`);
   state = r.state;
   if (r.summaries) console.log('\nsummaries:', JSON.stringify(Object.fromEntries(Object.entries(r.summaries).map(([k, v]) => [k, `${v.status}:${v.score}`]))));

@@ -22,6 +22,8 @@ export class Player extends Schema {
   @type('number') bubbleAt = 0;
   /** Critter id this player is hugging ('' = none). One holder per critter. */
   @type('string') holding = '';
+  /** Table prop ('dish:steak' while eating in the restaurant). */
+  @type('string') prop = '';
 }
 
 export class StreetState extends Schema {

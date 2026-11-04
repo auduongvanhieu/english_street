@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CEFR_LEVELS, type AttemptSummary, type CefrLevel, type NpcTurnResponse, type Quest, type SessionState } from '@es/shared';
+import { CEFR_LEVELS, toLang, type LangCode, type AttemptSummary, type CefrLevel, type NpcTurnResponse, type Quest, type SessionState } from '@es/shared';
 import { getNpc, getQuest } from '@es/quests';
 import { ENTER_MESSAGE } from './prompt';
 import { env } from '../env';
@@ -85,7 +85,7 @@ export class NpcService {
     return this.state(s, quest);
   }
 
-  async chat(sessionId: string, playerId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
+  async chat(sessionId: string, playerId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false, langPref?: LangCode): Promise<{ turn: NpcTurnResponse; state: SessionState; summary: AttemptSummary | null }> {
     const s = await this.sessions.get(sessionId);
     if (!s || s.playerId !== playerId) throw new NpcError(404, 'session_not_found');
     if (s.finished) throw new NpcError(409, 'session_finished');
@@ -95,6 +95,7 @@ export class NpcService {
 
     const user = await this.attempts.ensureUser(playerId, s.playerName);
     const level = (CEFR_LEVELS as readonly string[]).includes(user.cefrLevel) ? (user.cefrLevel as CefrLevel) : 'A1';
+    const lang = langPref ?? toLang(user.nativeLang, 'vi');
     const clean = text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim();
 
     const turn = await this.llm.turn({
@@ -106,14 +107,16 @@ export class NpcService {
       history: trimHistory(s.history.map((m) => ({ role: m.role, content: m.content })), env.NPC_HISTORY_MAX),
       text: clean,
       subtitles,
+      lang,
     });
 
     s.turns += 1;
+    s.lang = lang;
     s.goalsDone = [...s.goalsDone, ...turn.goals_completed.filter((g) => !s.goalsDone.includes(g))];
     s.corrections.push(...turn.corrections);
     s.vocab.push(...turn.new_vocab.filter((v) => !s.vocab.some((x) => x.word.toLowerCase() === v.word.toLowerCase())));
     s.history.push({ role: 'user', content: clean, corrections: turn.corrections, goalsCompleted: turn.goals_completed });
-    s.history.push({ role: 'assistant', content: turn.reply, ...(turn.reply_vi ? { content_vi: turn.reply_vi } : {}) });
+    s.history.push({ role: 'assistant', content: turn.reply, ...(turn.reply_tr ? { content_tr: turn.reply_tr } : {}) });
 
     const allDone = !!quest && quest.goals.every((g) => s.goalsDone.includes(g.id));
     const outOfTurns = s.turns >= s.maxTurns;
@@ -135,7 +138,7 @@ export class NpcService {
     await this.attempts.logEvent({
       name: 'npc_turn',
       playerId,
-      props: { npcId: s.npcId, questId: s.questId ?? '', level, source, subtitles, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
+      props: { npcId: s.npcId, questId: s.questId ?? '', level, source, subtitles, lang, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
     });
     if (summary) await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: s.questId ?? '', status: summary.status, score: summary.score, turns: s.turns } });
     return { turn, state: this.state(s, quest), summary };
@@ -172,7 +175,7 @@ export class NpcService {
     const bonus = await this.attempts.dailyBonus(s.playerId, quest.id);
     summary.reward.xp += bonus;
     await this.attempts.reward(s.playerId, summary.reward.xp, summary.reward.coins);
-    await this.attempts.saveVocab(s.playerId, s.vocab);
+    await this.attempts.saveVocab(s.playerId, s.vocab, s.lang ?? 'vi');
     return summary;
   }
 

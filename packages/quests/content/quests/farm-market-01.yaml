@@ -1,0 +1,14 @@
+id: farm-market-01
+npc: farmer
+level: A2
+title: At the Farm Market
+intro: Buy fresh food at the farm market for a picnic. You have $10.
+goals:
+  - { id: ask_price, desc: "Ask the price of something" }
+  - { id: buy_two, desc: "Buy at least two different things with amounts (three carrots, a box of eggs…)" }
+  - { id: ask_fresh, desc: "Ask if something is fresh or when it was picked" }
+  - { id: pay, desc: "Check the total and pay" }
+target_vocab: [fresh, a box of, a bag of, how much, total]
+target_phrases: ["How much are the…?", "Could I have…?", "That's all, thanks."]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

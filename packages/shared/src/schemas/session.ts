@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { CorrectionSchema, NpcTurnResponseSchema, VocabItemSchema } from './npc';
+import { LangSchema } from '../i18n';
 import { QuestGoalSchema, QuestAttemptStatusSchema } from './quest';
 
 export const ChatMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
   content: z.string(),
-  /** Vietnamese subtitle for assistant lines (when subtitles were on for that turn). */
-  content_vi: z.string().optional(),
+  /** Subtitle (learner's language) for assistant lines (when subtitles were on for that turn). */
+  content_tr: z.string().optional(),
   corrections: z.array(CorrectionSchema).optional(),
   goalsCompleted: z.array(z.string()).optional(),
 });
@@ -38,8 +39,10 @@ export const SessionChatRequestSchema = z.object({
   playerId: z.string().min(8).max(64).optional(),
   text: z.string().min(1).max(500),
   source: z.enum(['text', 'voice']).default('text'),
-  /** Ask the NPC to include a Vietnamese translation of its reply (reply_vi). */
+  /** Ask the NPC to include a translation of its reply (reply_tr). */
   subtitles: z.boolean().optional(),
+  /** Learner's language for explanations/meanings/subtitles; defaults to the profile's. */
+  lang: LangSchema.optional(),
 });
 export type SessionChatRequest = z.infer<typeof SessionChatRequestSchema>;
 

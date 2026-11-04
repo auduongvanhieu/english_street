@@ -5,18 +5,21 @@ import { useVoice } from '../store/voice';
 import { useVoiceChat } from '../net/voicechat';
 import { Sheet, SheetHeader } from './Sheet';
 import { HudButton } from './Hud';
+import { LANGS, type LangCode } from '@es/shared';
+import { useLang, useT } from '../i18n';
 
 export function SettingsButton({ compact }: { compact?: boolean }) {
   const open = useGame((s) => s.setUiPanel);
+  const t = useT();
   if (compact)
     return (
-      <HudButton onClick={() => open('settings')} title="Settings">
+      <HudButton onClick={() => open('settings')} title={t('Settings')}>
         ⚙️
       </HudButton>
     );
   return (
-    <button type="button" onClick={() => open('settings')} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title="Settings">
-      ⚙️ Settings
+    <button type="button" onClick={() => open('settings')} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title={t('Settings')}>
+      ⚙️ {t('Settings')}
     </button>
   );
 }
@@ -53,57 +56,92 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   );
 }
 
-/** ⚙️ All player options in one sheet: subtitles, IPA, voice, graphics, sound. */
+/** Learner's own language (translations) + interface language. Also used on the first-run name screen. */
+export function LanguagePicker({ id = 'lang-select', className = '' }: { id?: string; className?: string }) {
+  const lang = useLang((s) => s.lang);
+  const setLang = useLang((s) => s.setLang);
+  const t = useT();
+  return (
+    <select id={id} value={lang} onChange={(e) => setLang(e.target.value as LangCode)} aria-label={t('My language')} className={`min-h-9 rounded-lg border bg-white px-2 text-sm ${className}`}>
+      {LANGS.map((l) => (
+        <option key={l.code} value={l.code}>
+          {l.native}
+          {l.code === 'en' ? ` (${t('no translation')})` : ''}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** ⚙️ All player options in one sheet: language, subtitles, IPA, voice, graphics, sound. */
 export function SettingsPanel() {
+  const t = useT();
+  const lang = useLang((st) => st.lang);
+  const ui = useLang((st) => st.ui);
+  const setUi = useLang((st) => st.setUi);
+  const noTr = lang === 'en';
   const s = useSettings();
   const close = useGame((st) => st.setUiPanel);
   const level = useProfile((p) => p.profile?.cefrLevel);
   const voice = useVoice();
   const vc = useVoiceChat();
-  const effective = subtitlesOn(s.subtitlesVi, level);
+  const effective = subtitlesOn(s.subtitles, level);
   return (
-    <Sheet onClose={() => close(null)} label="Settings">
+    <Sheet onClose={() => close(null)} label={t('Settings')}>
       <SheetHeader>
-        <h2 className="text-lg font-bold">⚙️ Settings</h2>
-        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+        <h2 className="text-lg font-bold">⚙️ {t('Settings')}</h2>
+        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
           ✕
         </button>
       </SheetHeader>
       <div className="min-h-0 flex-1 divide-y overflow-y-auto px-4 sm:px-5">
         <section className="py-2">
-          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Learning</h3>
-          <Row label="Luôn hiện phụ đề tiếng Việt" hint={`Off: tap "Dịch" on a line to translate it (now ${effective ? 'always on' : 'per line'})`}>
-            <Segmented<Tri> value={s.subtitlesVi === 'on' ? 'on' : 'off'} options={[{ id: 'off', label: 'Off' }, { id: 'on', label: 'On' }]} onChange={(v) => s.set({ subtitlesVi: v })} />
+          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">🌐 {t('Language')}</h3>
+          <Row label={t('My language')} hint={t('Meanings, subtitles and explanations are shown in this language')}>
+            <LanguagePicker />
           </Row>
-          <Row label="Always show IPA" hint='Off: tap "IPA" on a line; tap any word for details'>
-            <Toggle on={s.ipa} onChange={(v) => s.set({ ipa: v })} label="IPA" />
-          </Row>
-        </section>
-        <section className="py-2">
-          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Voice</h3>
-          {voice.ttsSupported && (
-            <>
-              <Row label="NPC voice" hint="Read NPC lines aloud">
-                <Toggle on={!voice.muted} onChange={(v) => voice.setMuted(!v)} label="NPC voice" />
-              </Row>
-              <Row label="Voice speed" hint={`${s.ttsRate.toFixed(2)}×`}>
-                <input type="range" min={0.6} max={1.3} step={0.05} value={s.ttsRate} onChange={(e) => s.set({ ttsRate: Number(e.target.value) })} className="w-36" aria-label="Voice speed" />
-              </Row>
-            </>
-          )}
-          {vc.supported && (
-            <Row label="Voice chat with players" hint="Microphone, only players near you can hear">
-              <Toggle on={vc.enabled} onChange={(v) => (v ? void vc.enable() : vc.disable())} label="Voice chat" />
+          {!noTr && (
+            <Row label={t('Interface language')} hint={t('Keep menus in English for extra practice')}>
+              <Segmented<'auto' | 'en'> value={ui} options={[{ id: 'auto', label: LANGS.find((l) => l.code === lang)?.native ?? lang }, { id: 'en', label: 'English' }]} onChange={setUi} />
             </Row>
           )}
         </section>
         <section className="py-2">
-          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Graphics &amp; sound</h3>
-          <Row label="Graphics quality" hint="Low = no shadows, smoother on phones">
-            <Segmented value={s.quality} options={[{ id: 'low' as const, label: '⚡ Low' }, { id: 'high' as const, label: '✨ High' }]} onChange={(v) => s.setQuality(v)} />
+          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Learning')}</h3>
+          {!noTr && (
+            <Row label={t('Always show subtitles')} hint={t('Off: tap "Translate" on a line (now {mode})', { mode: effective ? t('always on') : t('per line') })}>
+              <Segmented<Tri> value={s.subtitles === 'on' ? 'on' : 'off'} options={[{ id: 'off', label: t('Off') }, { id: 'on', label: t('On') }]} onChange={(v) => s.set({ subtitles: v })} />
+            </Row>
+          )}
+          <Row label={t('Always show IPA')} hint={t('Off: tap "IPA" on a line; tap any word for details')}>
+            <Toggle on={s.ipa} onChange={(v) => s.set({ ipa: v })} label="IPA" />
           </Row>
-          <Row label="Bird sounds" hint={s.ambientVolume === 0 ? 'off' : `${Math.round(s.ambientVolume * 100)}%`}>
-            <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label="Ambient volume" />
+        </section>
+        <section className="py-2">
+          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Voice')}</h3>
+          {voice.ttsSupported && (
+            <>
+              <Row label={t('NPC voice')} hint={t('Read NPC lines aloud')}>
+                <Toggle on={!voice.muted} onChange={(v) => voice.setMuted(!v)} label={t('NPC voice')} />
+              </Row>
+              <Row label={t('Voice speed')} hint={`${s.ttsRate.toFixed(2)}×`}>
+                <input type="range" min={0.6} max={1.3} step={0.05} value={s.ttsRate} onChange={(e) => s.set({ ttsRate: Number(e.target.value) })} className="w-36" aria-label={t('Voice speed')} />
+              </Row>
+            </>
+          )}
+          {vc.supported && (
+            <Row label={t('Voice chat with players')} hint={t('Microphone, only players near you can hear')}>
+              <Toggle on={vc.enabled} onChange={(v) => (v ? void vc.enable() : vc.disable())} label={t('Voice chat')} />
+            </Row>
+          )}
+        </section>
+        <section className="py-2">
+          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Graphics & sound')}</h3>
+          <Row label={t('Graphics quality')} hint={t('Low = no shadows, smoother on phones')}>
+            <Segmented value={s.quality} options={[{ id: 'low' as const, label: `⚡ ${t('Low')}` }, { id: 'high' as const, label: `✨ ${t('High')}` }]} onChange={(v) => s.setQuality(v)} />
+          </Row>
+          <Row label={t('Bird sounds')} hint={s.ambientVolume === 0 ? t('off') : `${Math.round(s.ambientVolume * 100)}%`}>
+            <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label={t('Bird sounds')} />
           </Row>
         </section>
       </div>

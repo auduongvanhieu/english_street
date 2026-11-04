@@ -8,3 +8,6 @@ export * from './profanity';
 export * from './avatar';
 export * from './progression';
 export * from './net';
+export * from './i18n';
+export * from './schemas/area';
+export * from './farm';

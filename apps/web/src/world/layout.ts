@@ -1,10 +1,11 @@
 import { WORLD_BOUNDS } from '@es/shared';
+import { STREET_END_X, areaFenceBlockers, walkable } from './areas';
 
 /** One Kenney city tile = TILE world units (metres). */
 export const TILE = 4;
 
 /** x of the wooden fences that close both ends of the street (they cross the road; cyclists carry their bikes over). */
-export const END_FENCE_X = 11 * TILE + 2;
+export const END_FENCE_X = STREET_END_X;
 
 export type TileModel =
   | 'road-straight'
@@ -113,10 +114,19 @@ export function buildBlockers(): Aabb[] {
   }));
   // fountain in the park
   list.push({ minX: -1.2, maxX: 1.2, minZ: 2 * TILE - 1.2, maxZ: 2 * TILE + 1.2 });
+  list.push(...areaFenceBlockers(), ...extraBlockers);
   return list;
 }
 
 export const BOUNDS: Aabb = { ...WORLD_BOUNDS };
+
+/** Solid things registered by the area scenes (enclosures, shelves, walls, tables). Read once by LocalPlayer. */
+const extraBlockers: Aabb[] = [];
+export function registerBlockers(list: Aabb[]) {
+  extraBlockers.push(...list);
+  blockersVersion.n++;
+}
+export const blockersVersion = { n: 0 };
 
 export const PLAYER_RADIUS = 0.4;
 
@@ -131,7 +141,8 @@ export interface Circle {
 /** Lamp posts of the `road-straight-lightposts` tiles (even tx): shafts at local x = ±0.45 tile, rotated onto the road edges. */
 export function buildLampPosts(): Circle[] {
   const out: Circle[] = [];
-  for (let tx = TX_MIN; tx <= TX_MAX; tx++) {
+  // The street (and its lamp posts) continues to the end fences.
+  for (let tx = -42; tx <= 42; tx++) {
     if (tx % 2 !== 0) continue;
     for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * 0.45 * TILE, r: 0.18, h: 5 });
   }
@@ -170,9 +181,9 @@ export function resolveMove(
     }
   }
   let nx = x + dx;
-  if (collides(nx, z, blockers) || hitsCircle(nx, z, x, z, circles, y)) nx = x;
+  if (collides(nx, z, blockers) || hitsCircle(nx, z, x, z, circles, y) || (!walkable(nx, z) && walkable(x, z))) nx = x;
   let nz = z + dz;
-  if (collides(nx, nz, blockers) || hitsCircle(nx, nz, nx, z, circles, y)) nz = z;
+  if (collides(nx, nz, blockers) || hitsCircle(nx, nz, nx, z, circles, y) || (!walkable(nx, nz) && walkable(nx, z))) nz = z;
   nx = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, nx));
   nz = Math.min(BOUNDS.maxZ, Math.max(BOUNDS.minZ, nz));
   return [nx, nz];

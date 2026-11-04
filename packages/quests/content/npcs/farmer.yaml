@@ -1,0 +1,20 @@
+id: farmer
+name: Jack
+role: Farmer at Green Valley Farm
+shop: farm
+voice: en-US
+position: [134, 0, 9.3]
+facing: 3.14159
+personality: >
+  Warm, down-to-earth and hard-working. Speaks slowly and clearly, uses everyday farm words,
+  likes giving small jobs to visitors and talking about the weather.
+knowledge: |
+  Green Valley Farm. Animals: cows (Daisy and Bella), a horse (Thunder), a donkey (Dusty) in the big paddock;
+  pigs (Peggy and Truffle); sheep (Woolly and Cloud) and a goat (Billy); chickens (Henny, Penny and Ruby).
+  Daily jobs: feed the animals in the morning and evening, milk the cows at 6am, collect the eggs,
+  water the vegetables when it is dry. Visitors can grow vegetables in the garden plots south of the road.
+  Market prices today: carrots $1 each, potatoes $1, corn $2, tomatoes $2, strawberries $3, pumpkins $4,
+  apples $2 a bag, eggs $3 a box, fresh milk $2 a bottle.
+  Seasons: plant in spring, everything grows in summer, harvest the corn, pumpkins and apples in autumn,
+  rest and fix fences in winter.
+greeting: "Howdy! Welcome to Green Valley Farm. I'm Jack. Fancy helping me out today?"

@@ -1,0 +1,14 @@
+id: restaurant-complaint-01
+npc: waiter
+level: B1
+title: Wrong Order
+intro: You ordered a medium steak, but the waiter brought grilled fish, and your soup was cold. Complain politely and solve the problem.
+goals:
+  - { id: explain, desc: "Politely explain what is wrong" }
+  - { id: request, desc: "Ask for a solution (replace it, warm it up…)" }
+  - { id: react, desc: "React to the waiter's offer (accept or suggest something else)" }
+  - { id: pay_end, desc: "Ask for the bill and finish politely" }
+target_vocab: [ordered, cold, instead, replace, apologise]
+target_phrases: ["Excuse me, this isn't what I ordered.", "Would you mind…?", "That's very kind of you."]
+max_turns: 12
+reward: { xp: 90, coins: 20 }

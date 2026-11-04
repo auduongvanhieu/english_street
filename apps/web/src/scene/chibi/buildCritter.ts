@@ -55,7 +55,7 @@ const DIMS: Record<'cat' | 'shiba' | 'husky', Dims> = {
 };
 
 /** Big chibi eyes (pupil + highlights), placed on a head sphere of radius r centred at the origin. */
-function eyes(p: Part, r: number, dx: number, dy: number, size: number, iris?: string) {
+export function eyes(p: Part, r: number, dx: number, dy: number, size: number, iris?: string) {
   for (const sx of [-1, 1]) {
     const x = sx * dx;
     const z = Math.sqrt(Math.max(0, r * r - x * x - dy * dy));
@@ -67,7 +67,7 @@ function eyes(p: Part, r: number, dx: number, dy: number, size: number, iris?: s
   }
 }
 
-function blush(p: Part, r: number, dx: number, dy: number) {
+export function blush(p: Part, r: number, dx: number, dy: number) {
   for (const sx of [-1, 1]) {
     const x = sx * dx;
     const z = Math.sqrt(Math.max(0, r * r - x * x - dy * dy));

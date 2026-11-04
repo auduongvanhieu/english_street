@@ -41,6 +41,8 @@ export const ProfileSchema = z.object({
   email: z.string().nullable(),
   cefrLevel: z.enum(CEFR_LEVELS),
   placementDone: z.boolean(),
+  /** Learner's own language code ('' = not chosen yet). */
+  nativeLang: z.string().default(''),
   xp: z.number().int(),
   level: z.number().int(),
   nextLevelXp: z.number().int(),
@@ -79,7 +81,9 @@ export function placementLevel(correct: number): (typeof CEFR_LEVELS)[number] {
 export const VocabEntryDtoSchema = z.object({
   id: z.string(),
   word: z.string(),
-  meaningVi: z.string(),
+  meaning: z.string(),
+  /** Language of `meaning`. */
+  lang: z.string().default('vi'),
   example: z.string(),
   ease: z.number(),
   intervalDays: z.number().int(),

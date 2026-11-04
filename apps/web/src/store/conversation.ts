@@ -10,7 +10,7 @@ interface ConversationStore {
   summary: AttemptSummary | null;
   loading: boolean;
   error: string | null;
-  /** Vietnamese subtitles for lines that did not come with content_vi (greeting, older turns), by English text. */
+  /** Subtitles (learner's language) for lines that did not come with content_tr (greeting, older turns), by English text. */
   vi: Record<string, string>;
   translate: (text: string) => Promise<void>;
   start: (npcId: string, questId: string | null, playerName: string) => Promise<void>;
@@ -18,6 +18,10 @@ interface ConversationStore {
   end: () => Promise<void>;
   reset: () => void;
 }
+
+import { onLangChange } from '../i18n';
+// Subtitles are per language: drop them when the learner switches.
+onLangChange(() => useConversation.setState({ vi: {} }));
 
 /** Texts currently being translated (avoids duplicate requests from several bubbles). */
 const inflight = new Set<string>();
@@ -35,7 +39,7 @@ export const useConversation = create<ConversationStore>((set, get) => ({
     inflight.add(text);
     try {
       const r = await translateText(text);
-      set((s) => ({ vi: { ...s.vi, [text]: r.vi } }));
+      set((s) => ({ vi: { ...s.vi, [text]: r.text } }));
     } catch {
       /* subtitles are best-effort */
     } finally {
@@ -49,8 +53,8 @@ export const useConversation = create<ConversationStore>((set, get) => ({
       const state = questId ? await startQuest(questId, playerName) : await startFreeTalk(npcId, playerName);
       set({ state, loading: false });
       // The greeting is static text, so it is translated through the cached /translate endpoint.
-      if (subtitlesOn(useSettings.getState().subtitlesVi, useProfile.getState().profile?.cefrLevel)) {
-        for (const m of state.messages) if (m.role === 'assistant' && !m.content_vi) void get().translate(m.content);
+      if (subtitlesOn(useSettings.getState().subtitles, useProfile.getState().profile?.cefrLevel)) {
+        for (const m of state.messages) if (m.role === 'assistant' && !m.content_tr) void get().translate(m.content);
       }
     } catch (e) {
       set({ loading: false, error: (e as Error).message });
@@ -67,7 +71,7 @@ export const useConversation = create<ConversationStore>((set, get) => ({
       state: { ...s, messages: [...s.messages, { role: 'user', content: text }] },
     });
     try {
-      const subs = subtitlesOn(useSettings.getState().subtitlesVi, useProfile.getState().profile?.cefrLevel);
+      const subs = subtitlesOn(useSettings.getState().subtitles, useProfile.getState().profile?.cefrLevel);
       const r = await sendTurn(s.sessionId, text, source, subs);
       set({ state: r.state, lastTurn: r.turn, summary: r.summary, loading: false });
       if (r.summary) void useProfile.getState().refresh();

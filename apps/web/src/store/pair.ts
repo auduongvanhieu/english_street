@@ -5,6 +5,7 @@ import { API_URL } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { useGame } from './game';
 import { useProfile } from './profile';
+import { t } from '../i18n';
 
 export interface Invite {
   from: string; // sessionId
@@ -137,7 +138,7 @@ export function initPairMessaging() {
         break;
       }
       case 'decline':
-        if (st.pendingTo?.sessionId === m.from) usePair.setState({ pendingTo: null, error: 'Invitation declined' });
+        if (st.pendingTo?.sessionId === m.from) usePair.setState({ pendingTo: null, error: t('Invitation declined') });
         break;
       case 'start':
         if (st.partnerSession === m.from) usePair.setState({ state: m.session as PairSessionState, loading: false });

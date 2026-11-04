@@ -298,3 +298,12 @@ mắt to, má hồng, đổ bóng toon + viền. Người chơi tự tạo nhân
 kính, kính râm, balo; xem trước 3D xoay được, thử đồ trả phí miễn phí, chỉ trả xu khi lưu; người khác trong khu thấy ngay.
 Mở tự động lần đầu vào game. Chi tiết kỹ thuật: README mục *Character creator*.
 
+
+## 12. Step 4 (plan) — Mở rộng phố, 4 khu chủ đề, đa ngôn ngữ
+
+Plan: `/root/session_manager_workspaces/plans/english-street-step4.md`. Con phố kéo dài tới x = ±170 với cổng chào ở x = ±46 và
+4 khu: Sở thú (12 chuồng thú), Nông trại (vật nuôi, vườn rau riêng, chợ), Siêu thị (kệ hàng, trò đi chợ theo danh sách),
+Nhà hàng (ngồi bàn, gọi món, món ăn hiện trên bàn). Vào khu tự mở khung hướng dẫn: thẻ từ có hình, IPA, nghe giọng Mỹ/Anh,
+nghĩa, 3 mẫu câu theo trình độ, chuyện thú vị, luyện phát âm, quiz. Xe buýt + bản đồ để đi nhanh.
+Người học trên toàn thế giới chọn ngôn ngữ của mình (16 ngôn ngữ + tiếng Anh): mọi phần dịch, giải thích lỗi, phụ đề
+và giao diện theo ngôn ngữ đó. Chi tiết kỹ thuật: README mục *Languages* và *Themed areas*.

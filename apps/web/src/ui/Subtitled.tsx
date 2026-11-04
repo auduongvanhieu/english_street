@@ -3,6 +3,7 @@ import { addVocab, fetchIpa, translateText } from '../net/api';
 import { track } from '../net/analytics';
 import { useVoice } from '../store/voice';
 import { useSettings } from '../store/settings';
+import { useLang, useT } from '../i18n';
 
 const ipaCache = new Map<string, string | null>();
 const viCache = new Map<string, string>();
@@ -22,11 +23,13 @@ async function ipaForWords(words: string[]): Promise<void> {
 }
 
 /**
- * An NPC line with tappable words, an optional IPA line and an optional Vietnamese subtitle.
- * `vi` comes from the structured turn (reply_vi) or the cached /translate endpoint.
+ * An NPC line with tappable words, an optional IPA line and an optional subtitle in the learner's language.
+ * `vi` comes from the structured turn (reply_tr) or the cached /translate endpoint.
  */
 export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text: string; vi?: string; showVi: boolean; lang: string; npcId: string; onTranslate?: () => void }) {
   const ipaAlways = useSettings((s) => s.ipa);
+  const t = useT();
+  const noTr = useLang((s) => s.lang === 'en');
   // Per-line toggles; the global settings only decide whether they start open.
   const [viOpen, setViOpen] = useState(showVi);
   const [ipaOpen, setIpaOpen] = useState(ipaAlways);
@@ -57,7 +60,7 @@ export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text
 
   return (
     <span className="block">
-      <span>
+      <span dir="ltr">
         {parts.map((p, i) =>
           p.word ? (
             <button
@@ -77,9 +80,9 @@ export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text
         )}
       </span>
       {ipaLine && <span className="mt-0.5 block font-mono text-xs text-gray-500">{ipaLine}</span>}
-      {viOpen && <span className="mt-0.5 block text-xs text-blue-800/80">{vi ?? '…'}</span>}
+      {viOpen && !noTr && <span className="mt-0.5 block text-xs text-blue-800/80">{vi ?? '…'}</span>}
       <span className="mt-1 flex gap-1.5">
-        <button
+        {!noTr && <button
           type="button"
           aria-pressed={viOpen}
           onClick={() => {
@@ -90,8 +93,8 @@ export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text
           }}
           className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${viOpen ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
         >
-          Dịch
-        </button>
+          {t('Translate')}
+        </button>}
         <button
           type="button"
           aria-pressed={ipaOpen}
@@ -111,48 +114,51 @@ export function Subtitled({ text, vi, showVi, lang, npcId, onTranslate }: { text
 
 /** Popup for one tapped word: IPA, meaning, listen, save to notebook. */
 export function WordCard({ word, lang, onClose }: { word: string; lang: string; onClose: () => void }) {
+  const t = useT();
+  const to = useLang((s) => s.lang);
   const key = word.toLowerCase();
+  const trKey = `${to}:${key}`;
   const [ipa, setIpa] = useState<string | null>(ipaCache.get(key) ?? null);
-  const [vi, setVi] = useState<string | null>(viCache.get(key) ?? null);
+  const [vi, setVi] = useState<string | null>(to === 'en' ? '' : (viCache.get(trKey) ?? null));
   const [saved, setSaved] = useState(false);
   const speakAs = useVoice((s) => s.speakAs);
   useEffect(() => {
     let alive = true;
     if (!ipaCache.get(key)) void ipaForWords([key]).then(() => alive && setIpa(ipaCache.get(key) ?? null));
-    if (!viCache.has(key)) {
-      const p = viInflight.get(key) ?? translateText(key).then((r) => r.vi);
-      viInflight.set(key, p);
+    if (to !== 'en' && !viCache.has(trKey)) {
+      const p = viInflight.get(trKey) ?? translateText(key, to).then((r) => r.text);
+      viInflight.set(trKey, p);
       p.then((v) => {
-        viCache.set(key, v);
+        viCache.set(trKey, v);
         if (alive) setVi(v);
       })
-        .catch(() => alive && setVi('(no translation)'))
-        .finally(() => viInflight.delete(key));
+        .catch(() => alive && setVi(t('(no translation)')))
+        .finally(() => viInflight.delete(trKey));
     }
     return () => {
       alive = false;
     };
-  }, [key]);
+  }, [key, trKey, to, t]);
   return (
     <span className="mt-1 flex flex-wrap items-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-2 py-1.5 text-xs text-gray-900">
-      <b className="text-sm">{word}</b>
+      <b className="text-sm" dir="ltr">{word}</b>
       {ipa && <span className="font-mono text-gray-600">/{ipa}/</span>}
       <span className="text-blue-900">{vi ?? '…'}</span>
-      <button type="button" onClick={() => speakAs('word', word, lang)} className="min-h-7 rounded bg-white px-2" aria-label={`Listen to ${word}`}>
+      <button type="button" onClick={() => speakAs('word', word, lang)} className="min-h-7 rounded bg-white px-2" aria-label={t('Listen to {word}', { word })}>
         🔊
       </button>
       <button
         type="button"
-        disabled={saved || !vi}
+        disabled={saved || vi === null}
         onClick={() => {
           setSaved(true);
-          void addVocab(word, vi ?? '', '').catch(() => setSaved(false));
+          void addVocab(word, vi || word, '').catch(() => setSaved(false));
         }}
         className="min-h-7 rounded bg-white px-2 disabled:opacity-60"
       >
-        {saved ? '✓ Saved' : '📓 Save'}
+        {saved ? t('✓ Saved') : t('📓 Save')}
       </button>
-      <button type="button" onClick={onClose} className="min-h-7 px-1 text-gray-500" aria-label="Close word card">
+      <button type="button" onClick={onClose} className="min-h-7 px-1 text-gray-500" aria-label={t('Close')}>
         ✕
       </button>
     </span>

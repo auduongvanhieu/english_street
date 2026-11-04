@@ -53,6 +53,12 @@ export const NPC_CHIBI: Record<string, ChibiSpec> = {
   teller: npc({ body: 'suit', skin: '#8a5634', hair: '#1c1410', hairStyle: 'curly', top: '#55606e', bottom: '#9b2335' }),
   recruiter: npc({ body: 'dress', skin: '#f6d7c3', hair: '#d9b25c', hairStyle: 'bob', top: '#1f3a63', bottom: '#d2a93a', shoes: '#3a2a22', glasses: 'round' }),
   maitre: npc({ body: 'suit', skin: '#e0ac80', hair: '#6b4226', hairStyle: 'short', top: '#161616', bottom: '#161616', extras: ['bowtie', 'apron'], apronColor: '#1e1e1e' }),
+  // Themed areas
+  zookeeper: npc({ body: 'tee', skin: '#c98e62', hair: '#3a2618', hairStyle: 'curly', top: '#6b8f3a', bottom: '#8a6a44', shoes: '#4a3424', hat: 'sunhat', hatColor: '#d9c27a', extras: ['badge'] }),
+  farmer: npc({ body: 'girl', skin: '#eec1a0', hair: '#a0682f', hairStyle: 'short', top: '#e5533d', bottom: '#3a6ea5', shoes: '#5a3d2a', hat: 'cap', hatColor: '#f2c94c' }),
+  waiter: npc({ body: 'suit', skin: '#8a5634', hair: '#1c1410', hairStyle: 'short', top: '#fafafa', bottom: '#161616', extras: ['bowtie', 'apron'], apronColor: '#b5452f' }),
+  chef: npc({ body: 'tee', skin: '#f6d7c3', hair: '#2d2118', hairStyle: 'buns', top: '#fafafa', bottom: '#2b2b2b', hat: 'paperhat', hatColor: '#ffffff', extras: ['apron'], apronColor: '#ffffff' }),
+  grocer: npc({ body: 'tee', skin: '#e0ac80', hair: '#1c1410', hairStyle: 'ponytail', top: '#2a9d8f', bottom: '#2f3a44', extras: ['badge', 'apron'], apronColor: '#2a9d8f' }),
 };
 /** Any NPC without a hand-made look. */
 export const NPC_CHIBI_DEFAULT = npc({ body: 'hoodie', top: '#8e5bd8', hairStyle: 'short' });

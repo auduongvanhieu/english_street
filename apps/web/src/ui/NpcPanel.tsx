@@ -11,6 +11,7 @@ import { Sheet, SheetHeader } from './Sheet';
 import { Subtitled } from './Subtitled';
 import { subtitlesOn, useSettings } from '../store/settings';
 import { useProfile } from '../store/profile';
+import { useLang, useT } from '../i18n';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -19,6 +20,7 @@ export function NpcPanel() {
   const closePanel = useGame((s) => s.closePanel);
   const conv = useConversation();
   const voice = useVoice();
+  const t = useT();
 
   // Leaving the panel ends any open session and silences the NPC.
   useEffect(() => {
@@ -37,7 +39,7 @@ export function NpcPanel() {
   };
 
   return (
-    <Sheet onClose={() => void close()} label={`Talking to ${npc.name}`}>
+    <Sheet onClose={() => void close()} label={t('Talking to {name}', { name: npc.name })}>
         <SheetHeader>
           <div>
             <h2 className="text-lg font-bold leading-tight">{npc.name}</h2>
@@ -49,13 +51,13 @@ export function NpcPanel() {
                 type="button"
                 onClick={() => voice.setMuted(!voice.muted)}
                 className="rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
-                title={voice.muted ? 'Unmute NPC voice' : 'Mute NPC voice'}
-                aria-label={voice.muted ? 'Unmute' : 'Mute'}
+                title={voice.muted ? t('Unmute NPC voice') : t('Mute NPC voice')}
+                aria-label={voice.muted ? t('Unmute') : t('Mute')}
               >
                 {voice.muted ? '🔇' : '🔊'}
               </button>
             )}
-            <button type="button" onClick={close} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label="Close">
+            <button type="button" onClick={close} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
               ✕ <span className="hidden sm:inline">Esc</span>
             </button>
           </div>
@@ -75,6 +77,7 @@ export function NpcPanel() {
 // ---------------------------------------------------------------- Menu
 function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: string; greeting: string; quests: { id: string; title: string; level: string }[]; pairQuests: { id: string; title: string; level: string; roles: { id: string; label: string }[] }[]; playerName: string }) {
   const { start, loading, error } = useConversation();
+  const t = useT();
   const pair = usePair();
   const closePanel = useGame((s) => s.closePanel);
   const [picking, setPicking] = useState<string | null>(null);
@@ -83,24 +86,24 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
   const nearby = me ? Object.values(players).filter((p) => p.id !== me.id && Math.hypot(p.x - me.x, p.z - me.z) <= PROXIMITY_RADIUS + INTERACT_RADIUS) : [];
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-      <p className="mb-4 rounded-xl bg-blue-50 px-4 py-3 text-blue-900">“{greeting}”</p>
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Quests</h3>
+      <p className="mb-4 rounded-xl bg-blue-50 px-4 py-3 text-blue-900" dir="ltr">“{greeting}”</p>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Quests')}</h3>
       <ul className="space-y-2">
         {quests.map((q) => (
           <li key={q.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
             <span>
               <span className="mr-2 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs">{q.level}</span>
-              {q.title}
+              <span dir="ltr">{q.title}</span>
             </span>
             <button type="button" disabled={loading} onClick={() => start(npcId, q.id, playerName)} className="min-h-10 rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
-              Start
+              {t('Start')}
             </button>
           </li>
         ))}
       </ul>
       {pairQuests.length > 0 && (
         <>
-          <h3 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Pair quests (with another player)</h3>
+          <h3 className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Pair quests (with another player)')}</h3>
           <ul className="space-y-2">
             {pairQuests.map((q) => (
               <li key={q.id} className="rounded-lg border px-3 py-2">
@@ -110,13 +113,13 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
                     👥 {q.title}
                   </span>
                   <button type="button" disabled={!!pair.pendingTo} onClick={() => setPicking(picking === q.id ? null : q.id)} className="rounded-lg bg-purple-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50">
-                    {pair.pendingTo ? 'Waiting…' : 'Invite'}
+                    {pair.pendingTo ? t('Waiting…') : t('Invite')}
                   </button>
                 </div>
                 {picking === q.id && (
                   <div className="mt-2 text-sm">
                     {nearby.length === 0 ? (
-                      <p className="text-gray-500">No other player nearby. Ask someone to walk over here first.</p>
+                      <p className="text-gray-500">{t('No other player nearby. Ask someone to walk over here first.')}</p>
                     ) : (
                       <ul className="space-y-1">
                         {nearby.map((p) => (
@@ -131,7 +134,7 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
                               }}
                               className="rounded bg-purple-600 px-2 py-0.5 text-xs text-white"
                             >
-                              Invite as {q.roles[1]?.label}
+                              {t('Invite as {role}', { role: q.roles[1]?.label ?? '' })}
                             </button>
                           </li>
                         ))}
@@ -145,9 +148,9 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
         </>
       )}
       <button type="button" disabled={loading} onClick={() => start(npcId, null, playerName)} className="mt-3 w-full rounded-lg border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-        💬 Just chat (no quest)
+        💬 {t('Just chat (no quest)')}
       </button>
-      {error && <p className="mt-2 text-sm text-red-600">Could not start: {error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{t('Could not start: {error}', { error })}</p>}
     </div>
   );
 }
@@ -156,6 +159,7 @@ function Menu({ npcId, greeting, quests, pairQuests, playerName }: { npcId: stri
 function Chat({ npcId, lang }: { npcId: string; lang: string }) {
   const { state, lastTurn, loading, error, send } = useConversation();
   const voice = useVoice();
+  const t = useT();
   const [text, setText] = useState('');
   const [sttError, setSttError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -189,12 +193,12 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const t = text.trim();
-    if (!t || loading) return;
+    const msg = text.trim();
+    if (!msg || loading) return;
     setText('');
     const src = fromVoice.current ? 'voice' : 'text';
     fromVoice.current = false;
-    void send(t, src);
+    void send(msg, src);
   }
 
   // --- push-to-talk ---
@@ -208,14 +212,14 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
     track('stt_used');
     stt.current = startStt({
       lang: 'en-US',
-      onInterim: (t) => setText(base ? `${base} ${t}` : t),
-      onFinal: (t) => {
-        setText(base ? `${base} ${t}` : t);
+      onInterim: (s) => setText(base ? `${base} ${s}` : s),
+      onFinal: (s) => {
+        setText(base ? `${base} ${s}` : s);
         fromVoice.current = true;
       },
       onError: (code) => {
-        if (code !== 'aborted' && code !== 'no-speech') setSttError(code === 'not-allowed' ? 'Microphone permission denied' : `Speech recognition error: ${code}`);
-        if (code === 'no-speech') setSttError('No speech detected. Hold the mic and speak clearly.');
+        if (code !== 'aborted' && code !== 'no-speech') setSttError(code === 'not-allowed' ? t('Microphone permission denied') : t('Speech recognition error: {code}', { code }));
+        if (code === 'no-speech') setSttError(t('No speech detected. Hold the mic and speak clearly.'));
       },
       onEnd: () => {
         stt.current = null;
@@ -224,7 +228,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
       },
     });
     if (stt.current) voice.setListening(true);
-    else setSttError('Voice input is not supported in this browser (try Chrome or Edge).');
+    else setSttError(t('Voice input is not supported in this browser (try Chrome or Edge).'));
   }
   function micUp() {
     stt.current?.stop();
@@ -239,7 +243,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             return (
               <span key={g.id} className={`rounded-full px-2.5 py-0.5 text-xs ${done ? 'bg-green-100 text-green-800 line-through' : 'bg-gray-100 text-gray-700'}`}>
                 {done ? '✓ ' : '○ '}
-                {g.desc}
+                <span dir="ltr">{g.desc}</span>
               </span>
             );
           })}
@@ -260,10 +264,10 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
         )}
         {lastTurn?.hint && !loading && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            💡 <b>Hint:</b> {lastTurn.hint}
+            💡 <b>{t('Hint:')}</b> {lastTurn.hint}
           </div>
         )}
-        {error && <p className="text-sm text-red-600">Error: {error}</p>}
+        {error && <p className="text-sm text-red-600">{t('Error: {error}', { error })}</p>}
         {sttError && <p className="text-sm text-red-600">{sttError}</p>}
       </div>
 
@@ -276,8 +280,8 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             onPointerCancel={micUp}
             onPointerLeave={micUp}
             disabled={loading || state.finished}
-            aria-label="Hold to talk"
-            title="Hold to talk (release to stop)"
+            aria-label={t('Hold to talk')}
+            title={t('Hold to talk (release to stop)')}
             className={`min-h-11 min-w-11 select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-50`}
           >
             🎤
@@ -290,14 +294,14 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
             setText(e.target.value);
             fromVoice.current = false;
           }}
-          placeholder={state.finished ? 'Conversation finished' : voice.listening ? 'Listening…' : voice.sttSupported ? 'Type, or hold 🎤 to speak…' : 'Type in English…'}
+          placeholder={state.finished ? t('Conversation finished') : voice.listening ? t('Listening…') : voice.sttSupported ? t('Type, or hold 🎤 to speak…') : t('Type in English…')}
           disabled={loading || state.finished}
           maxLength={500}
           enterKeyHint="send"
           className="min-h-11 flex-1 rounded-lg border px-3 py-2 text-base disabled:bg-gray-50 sm:text-sm"
         />
         <button type="submit" disabled={loading || state.finished || !text.trim()} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-          Send
+          {t('Send')}
         </button>
       </form>
     </>
@@ -306,21 +310,23 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
 
 function Bubble({ m, onReplay, lang, npcId }: { m: ChatMessage; onReplay?: () => void; lang: string; npcId: string }) {
   const mine = m.role === 'user';
-  const pref = useSettings((s) => s.subtitlesVi);
+  const t = useT();
+  const pref = useSettings((s) => s.subtitles);
   const level = useProfile((p) => p.profile?.cefrLevel);
-  const showVi = !mine && subtitlesOn(pref, level);
+  const learner = useLang((s) => s.lang);
+  const showVi = !mine && learner !== 'en' && subtitlesOn(pref, level);
   const viFallback = useConversation((c) => c.vi[m.content]);
   const translate = useConversation((c) => c.translate);
   useEffect(() => {
-    if (showVi && !m.content_vi && !viFallback) void translate(m.content);
-  }, [showVi, m.content, m.content_vi, viFallback, translate]);
+    if (showVi && !m.content_tr && !viFallback) void translate(m.content);
+  }, [showVi, m.content, m.content_tr, viFallback, translate]);
   return (
     <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%]">
         <div className={`flex items-start gap-1 rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
-          {mine ? <span>{m.content}</span> : <Subtitled text={m.content} vi={m.content_vi ?? viFallback} showVi={showVi} lang={lang} npcId={npcId} onTranslate={() => void translate(m.content)} />}
+          {mine ? <span dir="ltr">{m.content}</span> : <Subtitled text={m.content} vi={m.content_tr ?? viFallback} showVi={showVi} lang={lang} npcId={npcId} onTranslate={() => void translate(m.content)} />}
           {onReplay && (
-            <button type="button" onClick={onReplay} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label="Replay" title="Listen again">
+            <button type="button" onClick={onReplay} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label={t('Replay')} title={t('Listen again')}>
               🔊
             </button>
           )}
@@ -329,7 +335,7 @@ function Bubble({ m, onReplay, lang, npcId }: { m: ChatMessage; onReplay?: () =>
           <CorrectionNote key={i} c={c} />
         ))}
         {m.goalsCompleted && m.goalsCompleted.length > 0 && (
-          <div className="mt-1 text-right text-xs text-green-700">✓ goal{m.goalsCompleted.length > 1 ? 's' : ''} completed</div>
+          <div className="mt-1 text-right text-xs text-green-700">✓ {m.goalsCompleted.length > 1 ? t('goals completed') : t('goal completed')}</div>
         )}
       </div>
     </div>
@@ -340,8 +346,8 @@ function CorrectionNote({ c }: { c: Correction }) {
   const [open, setOpen] = useState(false);
   return (
     <button type="button" onClick={() => setOpen((o) => !o)} className="mt-1 block w-full rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-left text-xs text-amber-900">
-      💡 <span className="line-through opacity-60">{c.original}</span> → <b>{c.corrected}</b>
-      {open && <div className="mt-1 text-amber-800">{c.explanation_vi}</div>}
+      💡 <span dir="ltr"><span className="line-through opacity-60">{c.original}</span> → <b>{c.corrected}</b></span>
+      {open && <div className="mt-1 text-amber-800">{c.explanation}</div>}
     </button>
   );
 }
@@ -349,25 +355,26 @@ function CorrectionNote({ c }: { c: Correction }) {
 // ---------------------------------------------------------------- Summary
 function Summary({ onClose }: { onClose: () => void }) {
   const summary = useConversation((s) => s.summary);
+  const t = useT();
   if (!summary) return null;
-  const title = summary.status === 'completed' ? '🎉 Quest complete!' : summary.status === 'failed' ? '⏱️ Out of turns' : '👋 Quest left';
+  const title = summary.status === 'completed' ? `🎉 ${t('Quest complete!')}` : summary.status === 'failed' ? `⏱️ ${t('Out of turns')}` : `👋 ${t('Quest left')}`;
   return (
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
       <div className="text-center">
         <h3 className="text-xl font-bold">{title}</h3>
         <div className="mt-1 text-4xl font-black text-blue-600">{summary.score}</div>
         <p className="text-sm text-gray-500">
-          {summary.goalsDone.length}/{summary.goalsTotal} goals · {summary.turns} turns · +{summary.reward.xp} XP · +{summary.reward.coins} coins
+          {t('{done}/{total} goals · {turns} turns · +{xp} XP · +{coins} coins', { done: summary.goalsDone.length, total: summary.goalsTotal, turns: summary.turns, xp: summary.reward.xp, coins: summary.reward.coins })}
         </p>
       </div>
       {summary.corrections.length > 0 && (
         <section>
-          <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Corrections</h4>
+          <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Corrections')}</h4>
           <ul className="space-y-1 text-sm">
             {summary.corrections.map((c, i) => (
               <li key={i} className="rounded-lg bg-amber-50 px-3 py-2">
-                <span className="line-through opacity-60">{c.original}</span> → <b>{c.corrected}</b>
-                <div className="text-xs text-amber-800">{c.explanation_vi}</div>
+                <span dir="ltr"><span className="line-through opacity-60">{c.original}</span> → <b>{c.corrected}</b></span>
+                <div className="text-xs text-amber-800">{c.explanation}</div>
               </li>
             ))}
           </ul>
@@ -375,19 +382,19 @@ function Summary({ onClose }: { onClose: () => void }) {
       )}
       {summary.vocab.length > 0 && (
         <section>
-          <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">New words</h4>
+          <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('New words')}</h4>
           <ul className="space-y-1 text-sm">
             {summary.vocab.map((v, i) => (
               <li key={i} className="rounded-lg bg-green-50 px-3 py-2">
-                <b>{v.word}</b> — {v.meaning_vi}
-                <div className="text-xs italic text-green-800">{v.example}</div>
+                <b dir="ltr">{v.word}</b> — {v.meaning}
+                <div className="text-xs italic text-green-800" dir="ltr">{v.example}</div>
               </li>
             ))}
           </ul>
         </section>
       )}
       <button type="button" onClick={onClose} className="min-h-12 w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
-        Back to the street
+        {t('Back to the street')}
       </button>
     </div>
   );

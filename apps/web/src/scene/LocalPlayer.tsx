@@ -50,6 +50,8 @@ import { PlayerAvatar } from './PlayerAvatar';
 import { heldCritters, holdable, hugRadius, myHolding } from '../world/hold';
 import { avatarLook, AvatarSchema } from '@es/shared';
 import { NameTag } from './NameTag';
+import { seatTaken, useRestaurant } from '../store/restaurant';
+import { TABLES } from '../world/buildings';
 
 export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 
@@ -57,6 +59,11 @@ export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 export const localPos = new THREE.Vector3(0, 0, 4);
 /** Local player's facing (rotation.y), for things placed in front of them. */
 export const localHeading = { y: 0 };
+/** Bus rides / "show me" jumps: set pending and the next frame moves the player (and snaps the camera). */
+export const teleport = { pending: false, x: 0, z: 0, rot: 0 };
+export function teleportTo(x: number, z: number, rot = Math.PI) {
+  Object.assign(teleport, { pending: true, x, z, rot });
+}
 const SPAWN = new THREE.Vector3(0, 0, 4);
 const dir = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -79,6 +86,7 @@ export function LocalPlayer({ name }: { name: string }) {
   const interactAcc = useRef(0);
   const avatar = useProfile((s) => s.profile?.avatar);
   const holding = useGame((s) => (s.sessionId && s.players[s.sessionId]?.holding) || '');
+  const prop = useGame((s) => (s.sessionId && s.players[s.sessionId]?.prop) || '');
   const look = useMemo(() => avatarLook(avatar ?? AvatarSchema.parse({})), [avatar]);
   const vy = useRef(0);
   const airborne = useRef(false);
@@ -87,6 +95,15 @@ export function LocalPlayer({ name }: { name: string }) {
     const g = ref.current;
     if (!g) return;
     const locked = useGame.getState().panelNpc !== null;
+    if (teleport.pending) {
+      teleport.pending = false;
+      g.position.set(teleport.x, 0, teleport.z);
+      g.rotation.y = teleport.rot;
+      vy.current = 0;
+      airborne.current = false;
+      const back = cameraOrbit.dist * 0.84;
+      camera.position.set(teleport.x + Math.sin(cameraOrbit.yaw) * back, cameraOrbit.dist * 0.55, teleport.z + Math.cos(cameraOrbit.yaw) * back);
+    }
 
     // --- input ---
     let ix = 0;
@@ -114,8 +131,22 @@ export function LocalPlayer({ name }: { name: string }) {
     dir.set(ix * cy + iz * sy, 0, -ix * sy + iz * cy);
     const mag = Math.min(1, dir.length());
 
+    // --- sitting on a restaurant chair: stay put until the player moves ---
+    const seat = useRestaurant.getState().seat;
+    if (seat && (mag > 0.05 || jump)) useRestaurant.getState().stand();
+    else if (seat) {
+      const s = TABLES[seat.table]?.seats[seat.seat];
+      if (s) {
+        g.position.set(s.x, 0, s.z);
+        g.rotation.y = s.rot;
+      }
+    }
+    const seated = !!useRestaurant.getState().seat;
+
     // --- movement with collision ---
-    if (mag > 0.05) {
+    if (seated) {
+      anim.current = 'sit';
+    } else if (mag > 0.05) {
       dir.normalize();
       const speed = WALK_SPEED * (run ? 2 : 1) * mag;
       nearbyCircles(g.position.x, g.position.z, posts, circles.current);
@@ -155,7 +186,7 @@ export function LocalPlayer({ name }: { name: string }) {
     }
     // One-shot emote overrides the base animation while it lasts.
     const emote = useGame.getState().emote;
-    if (emote && !moving(ix, iz)) anim.current = emote.until > Date.now() ? emote.name : anim.current;
+    if (emote && !moving(ix, iz) && !seated) anim.current = emote.until > Date.now() ? emote.name : anim.current;
     if (anim.current !== animState) setAnimState(anim.current);
 
     localPos.copy(g.position);
@@ -208,12 +239,26 @@ export function LocalPlayer({ name }: { name: string }) {
         }
       }
       if (hug !== s.nearCritter) s.setNearCritter(hug);
+      // nearest free restaurant chair within reach
+      let near: { table: number; seat: number } | null = null;
+      if (!useRestaurant.getState().seat && g.position.x < -114 && g.position.x > -162 && g.position.z < -9) {
+        let best = 1.4;
+        for (const t of TABLES)
+          t.seats.forEach((st, i) => {
+            const d = Math.hypot(st.x - g.position.x, st.z - g.position.z);
+            if (d < best && !seatTaken(st.x, st.z)) {
+              best = d;
+              near = { table: t.id, seat: i };
+            }
+          });
+      }
+      useRestaurant.getState().setNear(near);
     }
   });
 
   return (
     <group ref={ref} position={SPAWN}>
-      <PlayerAvatar anim={animState} look={look} holding={holding} />
+      <PlayerAvatar anim={animState} look={look} holding={holding} prop={prop} />
       <NameTag name={name} />
     </group>
   );

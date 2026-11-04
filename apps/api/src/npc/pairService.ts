@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CEFR_LEVELS, type AttemptSummary, type CefrLevel, type NpcTurnResponse, type PairLine, type PairQuest, type PairSessionState } from '@es/shared';
+import { CEFR_LEVELS, toLang, type AttemptSummary, type CefrLevel, type NpcTurnResponse, type PairLine, type PairQuest, type PairSessionState } from '@es/shared';
 import { getNpc, getPairQuest } from '@es/quests';
 import type { NpcLlm } from './llm';
 import type { AttemptRepo } from './attempts';
@@ -90,6 +90,7 @@ export class PairService {
       turnsLeft: s.maxTurns - (s.turns[playerId] ?? 0),
       transcript: s.messages,
       text: clean,
+      lang: toLang(user.nativeLang, 'vi'),
     });
 
     s.turns[playerId] = (s.turns[playerId] ?? 0) + 1;
