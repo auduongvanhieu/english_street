@@ -64,6 +64,7 @@ export default function App() {
   const [draft] = useState(playerName);
   const [npcError, setNpcError] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   // Zone picker shown between the name screen and the street (also after "Change zone").
   const [picker, setPicker] = useState(false);
   // ?zone=<id>[&code=…] deep link from a shared invite: join that zone straight away (code prompt if needed).
@@ -170,6 +171,7 @@ export default function App() {
     useVoiceChat.getState().disable();
     leaveRoom();
     setChatOpen(false);
+    setConfirmExit(false);
     setPicker(true);
   }
 
@@ -232,7 +234,7 @@ export default function App() {
             <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
             <SettingsButton compact />
             <FeedbackButton compact />
-            <HudButton onClick={exitGame} title={t('Exit to zone list')}>🚪</HudButton>
+            <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>🚪</HudButton>
           </div>
           {/* bottom-right: actions */}
           {!hudHidden && !chatOpen && !inTalk && (
@@ -260,7 +262,7 @@ export default function App() {
             </button>
             <SettingsButton />
             <FeedbackButton />
-            <button type="button" onClick={exitGame} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-red-600/80" title={t('Exit to zone list')}>
+            <button type="button" onClick={() => setConfirmExit(true)} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-red-600/80" title={t('Exit to zone list')}>
               🚪 {t('Exit')}
             </button>
           </div>
@@ -275,6 +277,7 @@ export default function App() {
         </>
       )}
 
+      {confirmExit && <ConfirmExit onStay={() => setConfirmExit(false)} onExit={exitGame} />}
       <ProfileHud compact={touch} />
       <ZoneChip compact={touch} onChange={() => { setPicker(true); leaveRoom(); }} />
       <InviteToast />
@@ -293,6 +296,38 @@ export default function App() {
       <AreaPanel />
       <ItemCard />
       {uiPanel === 'bus' ? <BusPanel /> : uiPanel === 'map' ? <MapPanel /> : null}
+    </div>
+  );
+}
+
+/** "Leave the game?" — asked before 🚪 Exit takes the player back to the zone list. */
+function ConfirmExit({ onStay, onExit }: { onStay: () => void; onExit: () => void }) {
+  const t = useT();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onStay();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onStay]);
+  return (
+    <div data-ui role="dialog" aria-modal="true" className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onStay}>
+      <div className="w-full max-w-xs rounded-2xl bg-white p-5 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="text-3xl">🚪</div>
+        <h2 className="mt-1 text-lg font-bold">{t('Leave the game?')}</h2>
+        <p className="mt-1 text-sm text-gray-600">{t('You will go back to the zone list. Your progress is saved.')}</p>
+        <div className="mt-4 flex gap-2">
+          <button type="button" autoFocus onClick={onStay} className="min-h-11 flex-1 rounded-lg border font-medium hover:bg-gray-50">
+            {t('Stay')}
+          </button>
+          <button type="button" onClick={onExit} className="min-h-11 flex-1 rounded-lg bg-red-600 font-semibold text-white hover:bg-red-700">
+            {t('Exit')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
