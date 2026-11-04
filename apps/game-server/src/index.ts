@@ -49,7 +49,8 @@ const gameServer = new Server({
 // joinOrCreate({ zoneKind: 'main' }) only matches public Main Street rooms, never custom zones.
 gameServer.define(STREET_ROOM, StreetRoom).filterBy(['zoneKind']);
 
-gameServer.listen(port).then(() => {
+// BIND_HOST=127.0.0.1 behind nginx: then only nginx can reach us and the client IP header (X-Real-IP) can't be faked.
+gameServer.listen(port, process.env.BIND_HOST || '0.0.0.0').then(() => {
   console.log(`[game-server] listening on ws://localhost:${port}${process.env.BETA_CODES ? ' (closed beta: invite pass required)' : ''}`);
 });
 

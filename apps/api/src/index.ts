@@ -82,7 +82,7 @@ for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   });
 }
 
-app.listen({ port: env.API_PORT, host: '0.0.0.0' }).catch((err) => {
+app.listen({ port: env.API_PORT, host: env.BIND_HOST }).catch((err) => {
   app.log.error(err);
   process.exit(1);
 });

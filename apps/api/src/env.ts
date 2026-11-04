@@ -46,6 +46,8 @@ const EnvSchema = z.object({
   /** Cloudflare Turnstile (sign-in / sign-up). Without them the built-in image captcha is used. */
   TURNSTILE_SITE_KEY: z.string().default(''),
   TURNSTILE_SECRET: z.string().default(''),
+  /** 127.0.0.1 behind a reverse proxy (only it can reach the API; client IP headers can't be faked). */
+  BIND_HOST: z.string().default('0.0.0.0'),
   /** Guest passes (POST /auth/guest) one IP may get per hour / per day. */
   GUEST_PASSES_PER_IP_HOUR: z.coerce.number().int().positive().default(10),
   GUEST_PASSES_PER_IP_DAY: z.coerce.number().int().positive().default(30),
