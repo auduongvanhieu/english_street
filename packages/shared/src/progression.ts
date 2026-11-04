@@ -43,8 +43,10 @@ export const RegisterRequestSchema = z.object({
   /** Image captcha (GET /auth/captcha). */
   captchaId: z.string().max(64).optional(),
   captchaAnswer: z.string().max(16).optional(),
+  /** Cloudflare Turnstile token (preferred when the site key is configured). */
+  turnstileToken: z.string().max(4096).optional(),
 });
-export const LoginRequestSchema = z.object({ email: z.string().email(), password: z.string().min(1), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional() });
+export const LoginRequestSchema = z.object({ email: z.string().email(), password: z.string().min(1), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional(), turnstileToken: z.string().max(4096).optional() });
 
 export const ProfileSchema = z.object({
   id: z.string(),

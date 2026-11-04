@@ -28,7 +28,8 @@ import { DAILY_BONUS_XP, type AttemptRepo, type UserRecord } from '../npc/attemp
 import { budget } from '../npc/budget';
 import { allowAuth, limiter } from '../npc/ratelimit';
 import { areaStats } from './play';
-import { captcha } from '../captcha';
+import { captcha, humanCheck } from '../captcha';
+import { env } from '../env';
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -104,7 +105,7 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = RegisterRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request', issues: body.error.issues });
-      if (!(await captcha.verify(body.data.captchaId, body.data.captchaAnswer))) return reply.code(400).send({ error: 'captcha_failed' });
+      if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       if (await repo.getUserByEmail(body.data.email)) return reply.code(409).send({ error: 'email_taken' });
       const u = await repo.createUser({ id: randomUUID(), email: body.data.email, name: body.data.name, passwordHash: await hashPassword(body.data.password) });
       if (body.data.guestId) await repo.transferGuest(body.data.guestId, u.id);
@@ -117,7 +118,7 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
       const body = LoginRequestSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
-      if (!(await captcha.verify(body.data.captchaId, body.data.captchaAnswer))) return reply.code(400).send({ error: 'captcha_failed' });
+      if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       const u = await repo.getUserByEmail(body.data.email);
       if (!u?.passwordHash || !(await verifyPassword(body.data.password, u.passwordHash))) return reply.code(401).send({ error: 'invalid_credentials' });
       await repo.ensureUser(u.id, u.name); // streak

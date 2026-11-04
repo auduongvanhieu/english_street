@@ -46,10 +46,8 @@ export const startFreeTalk = (npcId: string, playerName: string) => post<Session
 export const sendTurn = (sessionId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false) => post<SessionChatResponse>(`/sessions/${sessionId}/chat`, { playerId: getPlayerId(), text, source, subtitles, lang: learnerLang() });
 export const endSession = (sessionId: string) => post<{ summary: AttemptSummary | null }>(`/sessions/${sessionId}/end`, { playerId: getPlayerId() });
 
-export interface CaptchaAnswer {
-  captchaId: string;
-  captchaAnswer: string;
-}
+/** Human check sent with sign-in / sign-up: a Turnstile token, or the built-in image captcha answer. */
+export type CaptchaAnswer = { turnstileToken: string } | { captchaId: string; captchaAnswer: string };
 export const fetchCaptcha = () => get<{ id: string; svg: string }>('/auth/captcha');
 export const register = (email: string, password: string, name: string, guestId: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/register', { email, password, name, guestId, ...c });
 export const login = (email: string, password: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/login', { email, password, ...c });
@@ -63,6 +61,8 @@ export const buyItem = (item: string) => post<{ avatar: Avatar; coins: number }>
 
 export interface ClientConfig {
   betaGate: boolean;
+  /** Cloudflare Turnstile site key ('' = use the built-in image captcha). */
+  turnstileSiteKey?: string;
 }
 export const fetchConfig = () => get<ClientConfig>('/config');
 export const verifyBetaCode = (code: string) => post<{ pass: string }>('/beta/verify', { code });

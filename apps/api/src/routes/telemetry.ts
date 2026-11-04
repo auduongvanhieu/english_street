@@ -26,7 +26,7 @@ const FeedbackSchema = z.object({
 export function telemetryRoutes(repo: AttemptRepo) {
   return async function routes(app: FastifyInstance) {
     /** Public runtime config for the client. */
-    app.get('/config', async () => ({ betaGate: env.BETA_CODES.length > 0, provider: process.env.npm_package_version ?? '0.1.0' }));
+    app.get('/config', async () => ({ betaGate: env.BETA_CODES.length > 0, provider: process.env.npm_package_version ?? '0.1.0', turnstileSiteKey: env.TURNSTILE_SECRET ? env.TURNSTILE_SITE_KEY : '' }));
 
     /** Closed beta: exchange an invite code for a long-lived pass (sent as `x-beta-pass`). */
     app.post('/beta/verify', async (req, reply) => {

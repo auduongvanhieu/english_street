@@ -43,6 +43,9 @@ const EnvSchema = z.object({
   ADMIN_TOKEN: z.string().optional(),
   /** Closed beta: comma-separated invite codes. Empty = open to everyone. */
   BETA_CODES: z.string().optional().transform(csv),
+  /** Cloudflare Turnstile (sign-in / sign-up). Without them the built-in image captcha is used. */
+  TURNSTILE_SITE_KEY: z.string().default(''),
+  TURNSTILE_SECRET: z.string().default(''),
 });
 
 export const env = EnvSchema.parse(process.env);
