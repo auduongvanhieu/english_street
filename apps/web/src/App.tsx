@@ -175,6 +175,31 @@ export default function App() {
     setPicker(true);
   }
 
+  // Phone app hooks (apps/mobile game_page.dart): menu "Exit to zone list" and the Android back button.
+  useEffect(() => {
+    const w = window as unknown as { __esExit?: () => void; __esBack?: () => void };
+    const inGame = () => !!useGame.getState().sessionId;
+    w.__esExit = () => {
+      if (inGame()) setConfirmExit(true);
+    };
+    w.__esBack = () => {
+      const g = useGame.getState();
+      const area = useArea.getState();
+      if (confirmExit) return setConfirmExit(false);
+      const open = area.card || area.panel || g.uiPanel || g.panelNpc || usePair.getState().state || chatOpen;
+      if (!inGame() || open) {
+        if (chatOpen && !g.panelNpc) setChatOpen(false);
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        return;
+      }
+      setConfirmExit(true);
+    };
+    return () => {
+      delete w.__esExit;
+      delete w.__esBack;
+    };
+  }, [confirmExit, chatOpen]);
+
   async function join(name: string, zone: ZoneSelection = { mode: 'main' }) {
     setPlayerName(name);
     const prof = useProfile.getState();

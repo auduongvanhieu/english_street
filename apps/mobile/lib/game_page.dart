@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -88,14 +89,36 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     }
   }
 
+  /// Menu → "Exit to zone list": the page shows its own confirm dialog.
+  Future<void> _exitGame() async {
+    await _controller?.evaluateJavascript(source: 'window.__esExit && window.__esExit()');
+  }
+
+  /// Menu → "Close app" (asks first).
+  Future<void> _quitApp() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Close English Street?'),
+        content: const Text('Your progress is saved.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Close')),
+        ],
+      ),
+    );
+    if (ok == true) await SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        // Android back: let the page close its own panels first (Escape), never leave the game by accident.
-        await _controller?.evaluateJavascript(source: "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))");
+        // Android back: the page closes its open panels first; on the bare street it asks "Leave the game?".
+        await _controller?.evaluateJavascript(
+            source: "window.__esBack ? window.__esBack() : window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))");
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFBAE6FD),
@@ -154,7 +177,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
               Positioned(
                 top: MediaQuery.of(context).padding.top + 4,
                 left: 4,
-                child: _MenuButton(onNotebook: _openNotebook, onSettings: _openSettings),
+                child: _MenuButton(onNotebook: _openNotebook, onSettings: _openSettings, onExit: _exitGame, onQuit: _quitApp),
               ),
             ],
           ),
@@ -165,9 +188,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
 }
 
 class _MenuButton extends StatelessWidget {
-  const _MenuButton({required this.onNotebook, required this.onSettings});
+  const _MenuButton({required this.onNotebook, required this.onSettings, required this.onExit, required this.onQuit});
   final VoidCallback onNotebook;
   final VoidCallback onSettings;
+  final VoidCallback onExit;
+  final VoidCallback onQuit;
 
   @override
   Widget build(BuildContext context) {
@@ -177,10 +202,15 @@ class _MenuButton extends StatelessWidget {
       onSelected: (v) {
         if (v == 'notebook') onNotebook();
         if (v == 'settings') onSettings();
+        if (v == 'exit') onExit();
+        if (v == 'quit') onQuit();
       },
       itemBuilder: (_) => const [
         PopupMenuItem(value: 'notebook', child: ListTile(leading: Icon(Icons.menu_book), title: Text('Notebook (offline)'))),
         PopupMenuItem(value: 'settings', child: ListTile(leading: Icon(Icons.settings), title: Text('App settings'))),
+        PopupMenuDivider(),
+        PopupMenuItem(value: 'exit', child: ListTile(leading: Icon(Icons.logout), title: Text('Exit to zone list'))),
+        PopupMenuItem(value: 'quit', child: ListTile(leading: Icon(Icons.power_settings_new), title: Text('Close app'))),
       ],
     );
   }
