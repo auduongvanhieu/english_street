@@ -170,7 +170,8 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   nothing. Bike and rider are primitives merged into one mesh each; wheels, cranks, thighs and shins are shared
   InstancedMeshes posed per frame (2-link leg IK onto the pedals) — about 7 draw calls for all three. Passing within 6 m
   rings a bell (WebAudio) and shows "On your left!"; tapping a rider opens the same card as the critters (sentence, word
-  saved to the notebook, TTS). Low quality shows one rider.
+  saved to the notebook, TTS). Low quality shows one rider. The road is closed by a fence at each end
+  (`END_FENCE_X`): riders stop, get off, lift the bike over while stepping across, then ride on (`pose.carry` in the schedule).
 - **Horizon** (Step 3, `scene/Horizon.tsx`): replaces the flat green plane. North: two rows of backdrop houses (instanced
   Kenney buildings with per-instance colour multipliers) and gardens; south: a river with a cheap analytic-ripple water shader
   (fog-aware, no reflections), ducks, two sail boats and footbridges; all around: endless farmland painted by the ground

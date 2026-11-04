@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { MODEL_URL, TILE, type TileModel } from '../world/layout';
+import { END_FENCE_X, MODEL_URL, TILE, type TileModel } from '../world/layout';
 import { serverNow } from '../net/client';
 import { useSettings } from '../store/settings';
 
@@ -121,7 +121,7 @@ function Fences() {
       }
     };
     // both ends of the street (x = ±46), from the back row to the river
-    for (const sx of [-1, 1]) line(sx * (STREET_HALF_X + 2), STREET_MIN_Z - 2, sx * (STREET_HALF_X + 2), RIVER_NEAR_Z - 1);
+    for (const sx of [-1, 1]) line(sx * END_FENCE_X, STREET_MIN_Z - 2, sx * END_FENCE_X, RIVER_NEAR_Z - 1);
     // far bank
     line(-120, RIVER_FAR_Z + 2, 120, RIVER_FAR_Z + 2);
     return { posts, rails };

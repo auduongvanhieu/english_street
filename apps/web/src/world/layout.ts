@@ -3,6 +3,9 @@ import { WORLD_BOUNDS } from '@es/shared';
 /** One Kenney city tile = TILE world units (metres). */
 export const TILE = 4;
 
+/** x of the wooden fences that close both ends of the street (they cross the road; cyclists carry their bikes over). */
+export const END_FENCE_X = 11 * TILE + 2;
+
 export type TileModel =
   | 'road-straight'
   | 'road-straight-lightposts'
