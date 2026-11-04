@@ -10,7 +10,7 @@ import { useSettings } from '../store/settings';
 /**
  * Everything beyond the playable street so the horizon is never a flat green plane:
  *  - north: two rows of backdrop houses (instanced Kenney buildings, per-instance tint) with trees between
- *  - south: a river with an animated (cheap, no reflection) water shader, boats, ducks and two footbridges
+ *  - south: a river with an animated (cheap, no reflection) water shader, boats and two footbridges (ducks: Critters)
  *  - all around: endless fields (procedural strips + hedges in the ground shader), fences, hay bales, tree clusters
  *  - sky: distance fog matching the sky colour and a few drifting cloud sprites
  * Layout is seeded, so every client sees the same landscape. Low quality drops the animated water, clouds and boats.
@@ -63,7 +63,7 @@ function Fields() {
         `#include <color_fragment>
         {
           // Keep the plain lawn under and right around the street; paint farmland beyond it.
-          float nearStreet = step(abs(vWp.x), ${(STREET_HALF_X + 6).toFixed(1)}) * step(${(STREET_MIN_Z - 10).toFixed(1)}, vWp.z) * step(vWp.z, ${(RIVER_FAR_Z + 8).toFixed(1)});
+          float nearStreet = step(abs(vWp.x), ${(39 * TILE + 2).toFixed(1)}) * step(${(STREET_MIN_Z - 10).toFixed(1)}, vWp.z) * step(vWp.z, ${(RIVER_FAR_Z + 8).toFixed(1)});
           float band = mod(floor(vWp.z / 9.0) + floor(vWp.x / 26.0) * 2.0, 3.0);
           vec3 f1 = vec3(0.50, 0.72, 0.35);
           vec3 f2 = vec3(0.70, 0.78, 0.38);
@@ -147,7 +147,7 @@ function HayBales() {
     for (let i = 0; i < 60; i++) {
       const x = (r() - 0.5) * 320;
       const z = (r() - 0.5) * 320;
-      if (Math.abs(x) < STREET_HALF_X + 10 && z > STREET_MIN_Z - 12 && z < RIVER_FAR_Z + 10) continue;
+      if (Math.abs(x) < 39 * TILE + 10 && z > STREET_MIN_Z - 12 && z < RIVER_FAR_Z + 10) continue;
       if (z > RIVER_NEAR_Z - 3 && z < RIVER_FAR_Z + 3) continue;
       const rot = new THREE.Quaternion().setFromAxisAngle(up, r() * Math.PI).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2));
       out.push(new THREE.Matrix4().compose(new THREE.Vector3(x, GROUND_Y + 0.7, z), rot, new THREE.Vector3(1, 1, 1)));
@@ -190,6 +190,7 @@ function pickHouse(r: () => number): TileModel {
 HOUSE_WEIGHTS.forEach(([m]) => useGLTF.preload(MODEL_URL(m)));
 useGLTF.preload(MODEL_URL('grass-trees-tall'));
 useGLTF.preload(MODEL_URL('grass'));
+(['pavement', 'road-straight', 'road-straight-lightposts', 'grass-trees'] as TileModel[]).forEach((m) => useGLTF.preload(MODEL_URL(m)));
 
 interface Placement {
   model: TileModel;
@@ -204,9 +205,20 @@ interface Placement {
 function backdropPlacements(low: boolean): Placement[] {
   const r = rng(41);
   const out: Placement[] = [];
-  const txMin = -16;
-  const txMax = 16;
-  for (let tx = txMin; tx <= txMax; tx++) {
+  // The street continues beyond the end fences with the very same tiles (road, lamp posts, pavements, park
+  // rows), so inside and outside the fence look like one street running to the horizon.
+  const ext = low ? 32 : 38;
+  for (let tx = -ext; tx <= ext; tx++) {
+    if (Math.abs(tx) > 10) {
+      const grassy = (k: number) => (k === 0 ? 'grass-trees-tall' : k === 1 ? 'grass-trees' : 'grass') as TileModel;
+      out.push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
+      out.push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: -2 * TILE, rot: 0, scaleY: 1 });
+      out.push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
+      out.push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
+      out.push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
+      out.push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
+      out.push({ model: Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
+    }
     // row A (tz -6) and row B (tz -9): houses with gardens/trees in between; row B a little taller on average
     for (const [tz, base, spread] of [
       [-6, 0.85, 0.35],
@@ -227,10 +239,6 @@ function backdropPlacements(low: boolean): Placement[] {
     const x = (r() - 0.5) * 260;
     const z = RIVER_FAR_Z + 6 + r() * 70;
     out.push({ model: 'grass-trees-tall', x, z, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.6 });
-  }
-  for (let i = 0; i < (low ? 8 : 16); i++) {
-    const sx = i % 2 === 0 ? -1 : 1;
-    out.push({ model: 'grass-trees-tall', x: sx * (STREET_HALF_X + 8 + r() * 40), z: STREET_MIN_Z - 20 + r() * 55, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.5 });
   }
   return out;
 }
@@ -405,7 +413,6 @@ function River({ low }: { low: boolean }) {
           <Boat seed={2} baseX={40} speed={-0.8} sail="#ffe08a" hull="#2f5f9e" />
         </>
       )}
-      <Ducks />
     </group>
   );
 }
@@ -464,38 +471,6 @@ function Boat({ seed, baseX, speed, sail, hull }: { seed: number; baseX: number;
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} roughness={0.8} />
       </mesh>
     </group>
-  );
-}
-
-const DUCKS = 4;
-/** Four ducks drifting on the near bank, one InstancedMesh (matrices updated per frame from the server clock). */
-function Ducks() {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const geo = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [];
-    parts.push(colored(new THREE.SphereGeometry(0.28, 8, 6).scale(1.3, 0.8, 1), '#f3e7c4'));
-    parts.push(colored(new THREE.SphereGeometry(0.16, 8, 6).translate(0.3, 0.28, 0), '#3f7a3a'));
-    parts.push(colored(new THREE.ConeGeometry(0.07, 0.2, 5).rotateZ(-Math.PI / 2).translate(0.5, 0.26, 0), '#f0a53b'));
-    return mergeGeometries(parts, false)!;
-  }, []);
-  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), p: new THREE.Vector3(), q: new THREE.Quaternion(), s: new THREE.Vector3(1, 1, 1), up: new THREE.Vector3(0, 1, 0) }), []);
-  useFrame(() => {
-    const im = ref.current;
-    if (!im) return;
-    const t = serverNow() / 1000;
-    for (let i = 0; i < DUCKS; i++) {
-      const cx = -12 + i * 8;
-      const dir = Math.cos(t * 0.15 + i);
-      tmp.p.set(cx + Math.sin(t * 0.15 + i) * 6, WATER_Y + 0.1 + Math.sin(t * 2 + i) * 0.03, RIVER_NEAR_Z + 3 + i * 1.5 + Math.cos(t * 0.11 + i * 2) * 2);
-      tmp.q.setFromAxisAngle(tmp.up, dir > 0 ? 0 : Math.PI);
-      im.setMatrixAt(i, tmp.m.compose(tmp.p, tmp.q, tmp.s));
-    }
-    im.instanceMatrix.needsUpdate = true;
-  });
-  return (
-    <instancedMesh ref={ref} args={[geo, undefined, DUCKS]} frustumCulled={false}>
-      <meshStandardMaterial vertexColors roughness={0.9} />
-    </instancedMesh>
   );
 }
 

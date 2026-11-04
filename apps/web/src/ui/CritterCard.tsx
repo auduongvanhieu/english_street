@@ -9,8 +9,9 @@ import { track } from '../net/analytics';
 import { critterSound } from '../audio/ambient';
 
 const saved = new Set<string>();
+const KIND_ICON: Record<string, string> = { cat: '🐱', cyclist: '🚴', duck: '🦆', duckling: '🐥', rabbit: '🐰' };
 
-/** Tap a cat, dog or passing cyclist: it reacts, says its line in English, and the key word goes to the notebook. */
+/** Tap a cat, dog, duck, rabbit or passing cyclist: it reacts, says its line in English, and the key word goes to the notebook. */
 export function CritterCard() {
   const id = useGame((s) => s.selectedCritter);
   const close = useGame((s) => s.setSelectedCritter);
@@ -39,7 +40,7 @@ export function CritterCard() {
     <div data-ui className="absolute bottom-[calc(max(1.25rem,env(safe-area-inset-bottom))+5.5rem)] left-1/2 z-20 w-[92vw] max-w-xs -translate-x-1/2 rounded-xl bg-white/95 p-3 text-sm shadow-2xl sm:bottom-24">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <b>{c.kind === 'cat' ? '🐱' : c.kind === 'cyclist' ? '🚴' : '🐶'} {c.name}</b>
+          <b>{KIND_ICON[c.kind] ?? '🐶'} {c.name}</b>
           <div className="mt-1">{c.sentence}</div>
           <div className="mt-1 text-xs text-blue-900">
             <b>{c.word.en}</b> — {c.word.vi} {state === 'saved' ? '· 📓 saved' : ''}

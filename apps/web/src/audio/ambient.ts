@@ -99,11 +99,34 @@ export function bellSound(volume = 0.5) {
 }
 
 /** Short critter voice: a meow (gliding tone), a woof (low burst) or a bicycle bell. */
-export function critterSound(kind: 'meow' | 'woof' | 'bell', volume = 0.5) {
+export function critterSound(kind: 'meow' | 'woof' | 'bell' | 'quack' | 'squeak', volume = 0.5) {
   if (kind === 'bell') return bellSound(volume);
   if (!ensure() || volume <= 0) return;
   void ctx!.resume();
   const t = ctx!.currentTime;
+  if (kind === 'quack' || kind === 'squeak') {
+    // quack: two nasal buzzes through a band-pass; squeak: a tiny high chirp
+    const quack = kind === 'quack';
+    for (let i = 0; i < (quack ? 2 : 1); i++) {
+      const t0 = t + i * 0.22;
+      const o = ctx!.createOscillator();
+      const g = ctx!.createGain();
+      const bp = ctx!.createBiquadFilter();
+      o.type = quack ? 'sawtooth' : 'sine';
+      o.frequency.setValueAtTime(quack ? 330 : 1500, t0);
+      o.frequency.exponentialRampToValueAtTime(quack ? 220 : 2300, t0 + (quack ? 0.15 : 0.08));
+      bp.type = 'bandpass';
+      bp.frequency.value = quack ? 1100 : 1800;
+      bp.Q.value = quack ? 2.5 : 1;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime((quack ? 0.4 : 0.18) * volume, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + (quack ? 0.17 : 0.1));
+      o.connect(bp).connect(g).connect(ctx!.destination);
+      o.start(t0);
+      o.stop(t0 + 0.2);
+    }
+    return;
+  }
   const o = ctx!.createOscillator();
   const g = ctx!.createGain();
   if (kind === 'meow') {

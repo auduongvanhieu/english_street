@@ -22,7 +22,7 @@ export interface CritterRig {
   /** joint positions (body space) */
   head: V3;
   tail: V3;
-  legs: [V3, V3, V3, V3]; // FL, FR, BL, BR
+  legs: V3[]; // FL, FR, BL, BR (empty for ducks)
   /** body centre height when standing (the body group is lowered for naps) */
   height: number;
 }
@@ -32,7 +32,8 @@ export interface CritterParts {
   body: THREE.BufferGeometry;
   head: THREE.BufferGeometry;
   tail: THREE.BufferGeometry;
-  leg: THREE.BufferGeometry;
+  /** null for animals without visible legs (ducks on the water) */
+  leg: THREE.BufferGeometry | null;
 }
 
 interface Dims {
@@ -47,7 +48,7 @@ interface Dims {
   headAt: V3;
   tailAt: V3;
 }
-const DIMS: Record<CritterKind, Dims> = {
+const DIMS: Record<'cat' | 'shiba' | 'husky', Dims> = {
   cat: { bodyR: 0.14, bodyS: [0.85, 0.8, 1.2], headR: 0.135, legR: 0.04, legLen: 0.05, hipY: 0.115, legX: 0.065, legZ: 0.09, headAt: [0, 0.24, 0.13], tailAt: [0, 0.2, -0.15] },
   shiba: { bodyR: 0.18, bodyS: [0.85, 0.8, 1.25], headR: 0.17, legR: 0.05, legLen: 0.07, hipY: 0.15, legX: 0.085, legZ: 0.13, headAt: [0, 0.32, 0.18], tailAt: [0, 0.27, -0.2] },
   husky: { bodyR: 0.2, bodyS: [0.88, 0.82, 1.3], headR: 0.185, legR: 0.058, legLen: 0.09, hipY: 0.17, legX: 0.095, legZ: 0.15, headAt: [0, 0.36, 0.21], tailAt: [0, 0.3, -0.23] },
@@ -75,6 +76,8 @@ function blush(p: Part, r: number, dx: number, dy: number) {
 }
 
 export function buildCritter(kind: CritterKind, coat: Coat): CritterParts {
+  if (kind === 'duck' || kind === 'duckling') return buildDuck(coat);
+  if (kind === 'rabbit') return buildRabbit(coat);
   const d = DIMS[kind];
   const cat = kind === 'cat';
   const bodyY = d.hipY + d.bodyR * 0.55;
@@ -159,6 +162,56 @@ export function buildCritter(kind: CritterKind, coat: Coat): CritterParts {
   return { rig: { head: d.headAt, tail: d.tailAt, legs: L, height: bodyY }, body: body.build(), head: head.build(), tail: tail.build(), leg: leg.build() };
 }
 
+/** A round duck floating on the water (origin = water line). Ducklings use the same shape, scaled down. */
+function buildDuck(coat: Coat): CritterParts {
+  const body = new Part();
+  body.add(sphere(0.17, 0, Math.PI, 0, Math.PI * 2, 20, 14), coat.fur, { p: [0, 0.06, 0], s: [0.95, 0.75, 1.25] });
+  for (const sx of [-1, 1]) body.add(sphere(0.1, 0, Math.PI, 0, Math.PI * 2, 12, 8), coat.dark, { p: [sx * 0.14, 0.1, -0.03], s: [0.35, 0.6, 1.1], r: [0.2, 0, sx * 0.2] });
+  body.add(capsule(0.06, 0.08), coat.fur, { p: [0, 0.17, 0.1], r: [0.35, 0, 0] });
+  const tail = new Part();
+  tail.add(new THREE.ConeGeometry(0.07, 0.13, 8), coat.dark, { p: [0, 0.03, -0.04], r: [-1.05, 0, 0], s: [1.3, 1, 0.6] });
+  const r = 0.115;
+  const head = new Part();
+  head.add(sphere(r, 0, Math.PI, 0, Math.PI * 2, 18, 14), coat.light);
+  head.add(sphere(1, 0, Math.PI, 0, Math.PI * 2, 12, 8), '#f59a2e', { p: [0, -0.025, r * 0.95], s: [0.065, 0.026, 0.075] });
+  head.add(sphere(1, 0, Math.PI, 0, Math.PI * 2, 12, 8), '#e5841f', { p: [0, -0.045, r * 0.9], s: [0.055, 0.018, 0.06] });
+  eyes(head, r, r * 0.42, r * 0.18, r * 0.2, coat.iris);
+  blush(head, r, r * 0.66, -r * 0.12);
+  head.add(sphere(0.025), coat.dark, { p: [0, r * 0.98, -0.01], s: [0.6, 1.2, 1] }); // little tuft
+  return { rig: { head: [0, 0.27, 0.15], tail: [0, 0.08, -0.2], legs: [], height: 0.06 }, body: body.build(), head: head.build(), tail: tail.build(), leg: null };
+}
+
+/** A chubby rabbit with long ears, a cotton tail and big back feet. */
+function buildRabbit(coat: Coat): CritterParts {
+  const body = new Part();
+  body.add(sphere(0.15, 0, Math.PI, 0, Math.PI * 2, 20, 14), coat.fur, { p: [0, 0.16, -0.02], s: [0.9, 0.88, 1.1] });
+  body.add(sphere(0.11, 0, Math.PI, 0, Math.PI * 2, 14, 10), coat.light, { p: [0, 0.13, 0.06], s: [0.8, 0.85, 0.9] });
+  const r = 0.13;
+  const head = new Part();
+  head.add(sphere(r, 0, Math.PI, 0, Math.PI * 2, 20, 14), coat.fur, { s: [1.05, 0.95, 1] });
+  for (const sx of [-1, 1]) {
+    head.add(capsule(0.036, 0.17), coat.fur, { p: [sx * 0.05, r + 0.08, -0.02], r: [-0.15, 0, -sx * 0.18] });
+    head.add(capsule(0.02, 0.14), '#ffb3c1', { p: [sx * 0.052, r + 0.08, 0.012], r: [-0.15, 0, -sx * 0.18] });
+    head.add(sphere(r * 0.33, 0, Math.PI, 0, Math.PI * 2, 10, 8), coat.light, { p: [sx * r * 0.22, -r * 0.38, r * 0.8], s: [1, 0.8, 0.7] });
+  }
+  head.add(sphere(r * 0.1), '#ff8fa3', { p: [0, -r * 0.2, r * 0.98], s: [1.3, 0.8, 0.8] });
+  head.add(box(r * 0.2, r * 0.16, 0.01), '#ffffff', { p: [0, -r * 0.55, r * 0.92] });
+  eyes(head, r, r * 0.4, r * 0.08, r * 0.2, coat.iris);
+  blush(head, r, r * 0.64, -r * 0.28);
+  const tail = new Part();
+  tail.add(sphere(0.055, 0, Math.PI, 0, Math.PI * 2, 12, 10), '#ffffff');
+  const leg = new Part();
+  leg.add(capsule(0.032, 0.03), coat.fur, { p: [0, -0.04, 0] });
+  leg.add(sphere(1, 0, Math.PI, 0, Math.PI * 2, 10, 8), coat.light, { p: [0, -0.07, 0.02], s: [0.04, 0.025, 0.07] });
+  return {
+    rig: { head: [0, 0.3, 0.12], tail: [0, 0.16, -0.18], legs: [[0.055, 0.08, 0.07], [-0.055, 0.08, 0.07], [0.085, 0.08, -0.07], [-0.085, 0.08, -0.07]], height: 0.16 },
+    body: body.build(),
+    head: head.build(),
+    tail: tail.build(),
+    leg: leg.build(),
+  };
+}
+
 /** Fur colours per critter (each cat has its own coat). */
 export const COATS: Record<string, Coat> = {
   'cat-1': { fur: '#f6efe4', light: '#ffffff', dark: '#e0a46a', iris: undefined }, // Mochi: cream with ginger tips
@@ -166,4 +219,15 @@ export const COATS: Record<string, Coat> = {
   'cat-3': { fur: '#f09a4a', light: '#fde3c4', dark: '#c9692a' }, // Ginger: orange tabby
   'dog-1': { fur: '#e58c3a', light: '#fbecd6', dark: '#b5642a' }, // Biscuit: shiba
   'dog-2': { fur: '#6f7782', light: '#f4f4f4', dark: '#4a525c', iris: '#7cc4f2' }, // Luna: husky, blue eyes
+  'duck-1': { fur: '#fbfbf3', light: '#ffffff', dark: '#e6dfcc' }, // Daisy: white duck
+  'duck-2': { fur: '#a8784a', light: '#2f7d4f', dark: '#6b4a32' }, // Hazel: brown body, green head
+  'rabbit-1': { fur: '#b89c84', light: '#f2e6d8', dark: '#8a705c' },
+  'rabbit-2': { fur: '#fafafa', light: '#ffffff', dark: '#e0e0e0', iris: '#ff8fa3' },
+  'rabbit-3': { fur: '#d6b48a', light: '#fbf0de', dark: '#a8835a' },
+  'rabbit-4': { fur: '#8a6248', light: '#e9d6c0', dark: '#5f412e' },
 };
+/** Coat for an id (ducklings are all fluffy yellow). */
+export function coatFor(id: string): Coat {
+  if (id.startsWith('duckling')) return { fur: '#ffd84a', light: '#ffe27a', dark: '#f2c41d' };
+  return COATS[id] ?? COATS['cat-1']!;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CRITTERS, poseAt, type Critter, type CritterKind } from '../world/critters';
+import { CRITTERS, DUCK_Y, poseAt, type Critter, type CritterKind } from '../world/critters';
 import { serverNow } from '../net/client';
 import { useGame } from '../store/game';
 import { useSettings } from '../store/settings';
@@ -9,16 +9,17 @@ import { localPos } from './LocalPlayer';
 import { NameTag } from './NameTag';
 import { livePos, pushAway, sidestep } from '../world/avoid';
 import { playerPoints } from './players';
-import { COATS, buildCritter, type CritterParts } from './chibi/buildCritter';
+import { buildCritter, coatFor, type CritterParts } from './chibi/buildCritter';
 import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
 /** Critter keeps this far from players' centres (player radius 0.4 + its own size + a little room). */
-const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2 };
+const AVOID: Record<CritterKind, number> = { cat: 1.0, shiba: 1.15, husky: 1.2, duck: 0.6, duckling: 0.4, rabbit: 1.0 };
 /** Chibi animals are drawn a bit bigger than life so their faces read from the street camera. */
-const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2 };
-const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85 };
-/** Critters beyond this distance are not animated/drawn (they are tiny anyway). */
-const DRAW_RADIUS = 36;
+const SCALE: Record<CritterKind, number> = { cat: 1.25, shiba: 1.2, husky: 1.2, duck: 2.0, duckling: 1.1, rabbit: 1.9 };
+const HEIGHT: Record<CritterKind, number> = { cat: 0.6, shiba: 0.75, husky: 0.85, duck: 0.8, duckling: 0.4, rabbit: 1.0 };
+const BASE_Y: Partial<Record<CritterKind, number>> = { duck: DUCK_Y, duckling: DUCK_Y };
+/** Critters beyond this distance are not animated/drawn (they are tiny anyway); river and meadow animals are seen from further. */
+const DRAW_RADIUS: Record<CritterKind, number> = { cat: 36, shiba: 36, husky: 36, duck: 60, duckling: 50, rabbit: 70 };
 
 export function Critters() {
   return (
@@ -31,8 +32,8 @@ export function Critters() {
 }
 
 function CritterView({ c }: { c: Critter }) {
-  const parts = useMemo(() => buildCritter(c.kind, COATS[c.id] ?? COATS['cat-1']!), [c.kind, c.id]);
-  useEffect(() => () => Object.values(parts).forEach((g) => (g as THREE.BufferGeometry).dispose?.()), [parts]);
+  const parts = useMemo(() => buildCritter(c.kind, coatFor(c.id)), [c.kind, c.id]);
+  useEffect(() => () => Object.values(parts).forEach((g) => (g as THREE.BufferGeometry | null)?.dispose?.()), [parts]);
   const group = useRef<THREE.Group>(null);
   const rig = useRef<RigRefs>({ legs: [] });
   const motion = useRef({ t: Math.random() * 10, phase: 0, nap: 0, react: 0, hop: 0 });
@@ -73,11 +74,11 @@ function CritterView({ c }: { c: Critter }) {
       state = 'react';
     }
     livePos.set(c.id, { x: g.position.x, z: g.position.z });
-    if (near) animate(rig.current, parts, state, motion.current, dt, c.speed);
+    if (near) animate(rig.current, parts, c.kind, state, motion.current, dt, c.speed);
     acc.current += dt;
     if (acc.current > 0.3) {
       acc.current = 0;
-      const n = Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z) < DRAW_RADIUS;
+      const n = Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z) < DRAW_RADIUS[c.kind];
       if (n !== near) setNear(n);
     }
   });
@@ -89,7 +90,7 @@ function CritterView({ c }: { c: Critter }) {
   return (
     <group
       ref={group}
-      position={[p0.x, 0, p0.z]}
+      position={[p0.x, BASE_Y[c.kind] ?? 0, p0.z]}
       rotation={[0, p0.rot, 0]}
       onClick={(e) => {
         e.stopPropagation();
@@ -97,7 +98,7 @@ function CritterView({ c }: { c: Critter }) {
       }}
     >
       {near ? <CritterBody parts={parts} rig={rig} scale={SCALE[c.kind]} /> : null}
-      {near && selected ? <NameTag name={c.name} sub={c.kind === 'cat' ? 'cat' : 'dog'} y={HEIGHT[c.kind] + 0.5} /> : null}
+      {near && selected ? <NameTag name={c.name} sub={c.kind === 'shiba' || c.kind === 'husky' ? 'dog' : c.kind} y={HEIGHT[c.kind] + 0.5} /> : null}
     </group>
   );
 }
@@ -139,9 +140,9 @@ function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.Re
           {part(parts.tail)}
         </group>
       </group>
-      {r.legs.map((p, i) => (
+      {parts.leg && r.legs.map((p, i) => (
         <group key={i} ref={(g) => void (g && (rig.current.legs[i] = g))} position={p}>
-          {part(parts.leg)}
+          {part(parts.leg!)}
         </group>
       ))}
     </group>
@@ -149,8 +150,11 @@ function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.Re
 }
 
 /** Procedural gait: diagonal leg pairs, body bob, wagging tail; naps lie down with the head low; react = head tilt + happy wag (+ a hop for dogs). */
-function animate(r: RigRefs, parts: CritterParts, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number) {
-  if (!r.body || !r.head || !r.tail || r.legs.length < 4) return;
+function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number) {
+  if (!r.body || !r.head || !r.tail) return;
+  if (kind === 'duck' || kind === 'duckling') return animateDuck(r, parts, state, m, dt);
+  if (r.legs.length < 4) return;
+  if (kind === 'rabbit') return animateRabbit(r, parts, state, m, dt, speed);
   const d = Math.min(dt, 0.1);
   m.t += d;
   const k = 1 - Math.exp(-d * 6);
@@ -182,4 +186,49 @@ function animate(r: RigRefs, parts: CritterParts, state: 'walk' | 'idle' | 'nap'
   const wag = state === 'react' ? 16 : walking ? 9 : 3;
   r.tail.rotation.y = Math.sin(m.t * wag) * (state === 'react' ? 0.6 : 0.35) * (1 - lie);
   r.tail.rotation.x = lie * 0.9;
+}
+
+/** Floating: bob and roll on the water, head bobbing while paddling, a dip under now and then, tail wiggle. */
+function animateDuck(r: RigRefs, parts: CritterParts, state: string, m: { t: number; phase: number; react: number }, dt: number) {
+  const d = Math.min(dt, 0.1);
+  m.t += d;
+  m.phase += d * 5;
+  m.react += ((state === 'react' ? 1 : 0) - m.react) * (1 - Math.exp(-d * 6));
+  r.body!.position.y = Math.sin(m.t * 2.1) * 0.012;
+  r.body!.rotation.z = Math.sin(m.t * 1.3) * 0.05;
+  r.body!.rotation.x = Math.sin(m.t * 1.7) * 0.03;
+  // dip the head under for ~1.4 s every ~11 s (not while you are looking at it)
+  const cyc = (m.t + parts.rig.head[2] * 37) % 11;
+  const dip = state === 'react' ? 0 : cyc < 1.4 ? Math.sin((cyc / 1.4) * Math.PI) : 0;
+  r.head!.rotation.x = Math.sin(m.phase) * 0.12 + dip * 1.5 - m.react * 0.35;
+  r.head!.position.z = parts.rig.head[2] + Math.sin(m.phase) * 0.012;
+  r.head!.rotation.z = m.react * Math.sin(m.t * 3) * 0.25;
+  r.tail!.rotation.y = Math.sin(m.t * (state === 'react' ? 18 : 6)) * (state === 'react' ? 0.5 : 0.2);
+}
+
+/** Hops in little arcs (back legs push, front legs reach), nose/ear twitch when sitting, flops down for naps. */
+function animateRabbit(r: RigRefs, parts: CritterParts, state: string, m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number) {
+  const d = Math.min(dt, 0.1);
+  m.t += d;
+  const k = 1 - Math.exp(-d * 8);
+  m.nap += ((state === 'nap' ? 1 : 0) - m.nap) * k;
+  m.react += ((state === 'react' ? 1 : 0) - m.react) * k;
+  const walking = state === 'walk';
+  if (walking) m.phase += d * (4 + speed * 2.5);
+  const air = walking ? Math.max(0, Math.sin(m.phase)) : state === 'react' ? Math.max(0, Math.sin(m.t * 7)) * 0.5 : 0;
+  m.hop = air * 0.11;
+  const lie = m.nap;
+  r.body!.position.y = m.hop - lie * 0.04 + Math.sin(m.t * 3) * 0.003;
+  r.body!.rotation.x = walking ? -Math.cos(m.phase) * 0.18 : 0;
+  r.legs.forEach((g, i) => {
+    const front = i < 2;
+    g.position.y = parts.rig.legs[i]![1] + m.hop - lie * 0.04;
+    g.rotation.x = walking ? (front ? -air * 0.9 : air * 1.0) : lie * (front ? -1.2 : 1.2);
+  });
+  // ears/nose twitch: quick head jitters while sitting
+  const twitch = !walking && Math.sin(m.t * 1.3) > 0.85 ? Math.sin(m.t * 40) * 0.05 : 0;
+  r.head!.rotation.x = twitch + lie * 0.3 - m.react * 0.2;
+  r.head!.rotation.y = state === 'idle' ? Math.sin(m.t * 0.5) * 0.4 * Math.max(0, Math.sin(m.t * 0.19)) : 0;
+  r.head!.rotation.z = m.react * Math.sin(m.t * 2.5) * 0.3;
+  r.tail!.rotation.y = Math.sin(m.t * 9) * 0.15;
 }

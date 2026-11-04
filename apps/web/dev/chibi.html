@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { chibiParts, chibiMaterial, chibiOutline, JOINTS, CHIBI_SCALE } from '../src/scene/chibi/buildChibi.ts';
 import { NPC_CHIBI } from '../src/scene/npcLook.ts';
-import { buildCritter, COATS } from '../src/scene/chibi/buildCritter.ts';
+import { buildCritter, coatFor } from '../src/scene/chibi/buildCritter.ts';
 const q = new URLSearchParams(location.search);
 const W=innerWidth,H=innerHeight; const r=new THREE.WebGLRenderer({antialias:true}); r.setSize(W,H); document.body.appendChild(r.domElement);
 const s=new THREE.Scene(); s.background=new THREE.Color('#bfe3f5'); s.add(new THREE.HemisphereLight(0xffffff,0x9fbf8f,1.6)); const d=new THREE.DirectionalLight(0xffffff,1.8); d.position.set(2,4,3); s.add(d);
@@ -16,11 +16,12 @@ if (set==='hair') specs=['short','spiky','curly','bob','long','ponytail','buns',
 if (set==='hats') specs=['cap','beanie','sunhat','tophat','crown'].map((h,i)=>({...base,hat:h,hairStyle:['short','bob','long','curly','ponytail'][i],glasses:i%2?'round':'sun',bag:i===2?'backpack':'none'}));
 if (set==='npcs') specs=Object.values(NPC_CHIBI);
 if (set==='critters') {
-  const ids=['cat-1','cat-2','cat-3','dog-1','dog-2']; const kinds=['cat','cat','cat','shiba','husky'];
-  ids.forEach((id,i)=>{ const p=buildCritter(kinds[i],COATS[id]); const g=new THREE.Group(); g.scale.setScalar(kinds[i]==='cat'?1.25:1.2);
+  const two=q.get('two'); const ids=two?['duck-1','duckling-11','duck-2','rabbit-1','rabbit-2','rabbit-3','rabbit-4']:['cat-1','cat-2','cat-3','dog-1','dog-2']; const kinds=two?['duck','duckling','duck','rabbit','rabbit','rabbit','rabbit']:['cat','cat','cat','shiba','husky'];
+  const SC={cat:1.25,shiba:1.2,husky:1.2,duck:1.5,duckling:0.8,rabbit:1.5};
+  ids.forEach((id,i)=>{ const p=buildCritter(kinds[i],coatFor(id)); const g=new THREE.Group(); g.scale.setScalar(SC[kinds[i]]);
     const add=(geo,pos)=>{ const grp=new THREE.Group(); if(pos) grp.position.set(...pos); grp.add(new THREE.Mesh(geo,chibiMaterial())); grp.add(new THREE.Mesh(geo,chibiOutline())); return grp; };
-    const body=add(p.body); g.add(body); body.add(add(p.head,p.rig.head)); body.add(add(p.tail,p.rig.tail)); p.rig.legs.forEach(l=>g.add(add(p.leg,l)));
-    g.position.x=(i-2)*0.75; g.rotation.y=Number(q.get('rot')||0.5); s.add(g); });
+    const body=add(p.body); g.add(body); body.add(add(p.head,p.rig.head)); body.add(add(p.tail,p.rig.tail)); if (p.leg) p.rig.legs.forEach(l=>g.add(add(p.leg,l)));
+    g.position.x=(i-(ids.length-1)/2)*0.75; g.rotation.y=Number(q.get('rot')||0.5); s.add(g); });
   const cam=new THREE.PerspectiveCamera(30,W/H,0.1,50); cam.position.set(0,0.9,4.2); cam.lookAt(0,0.3,0); r.render(s,cam); window.done=true;
   throw 0;
 }

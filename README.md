@@ -164,6 +164,12 @@ Preview any look without joining the game: `http://localhost:5173/dev/preview.ht
   loops with pauses. Positions are a pure function of the **server clock** (the room sends its `Date.now()` on join),
   so every client sees the same animal in the same place with zero network traffic. Tap one: it reacts, says an English
   sentence (TTS) and the key word (cat, dog, fountain, park…) is saved to the notebook once per session.
+- **Ducks and rabbits** (same system as the cats and dogs, so they are tappable with a sentence + notebook word and a
+  WebAudio quack / squeak): two duck families swim loops on the river (`DUCK_Y`, ducklings share the mother's loop with a
+  smaller time offset so they paddle in a line; head dips under now and then), four rabbits hop around the meadow beyond
+  the far bank and the grass outside both end fences (hopping arcs, nose/ear twitch, naps).
+- **Street beyond the fences** (`Horizon.tsx` backdrop): the same road / lamp-post / pavement / park tiles continue past
+  both end fences up to tx ±38 (±32 on low), so the street runs to the horizon instead of ending in a blank strip.
 - **Flowers and grass** (`scene/Flora.tsx`): seeded scatter over the grass tiles, one InstancedMesh per source mesh
   (9 draw calls); density 5+8 per tile on high, 2+3 on low. Textures were downsized to 256² WebP by the model build.
 - **Collision** (Step 3): besides the shop AABBs, `resolveMove` takes circle colliders: lamp posts (from the
