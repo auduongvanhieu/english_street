@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { busStep } from '../store/bus';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -130,6 +131,29 @@ export function LocalPlayer({ name }: { name: string }) {
     const sy = Math.sin(cameraOrbit.yaw);
     dir.set(ix * cy + iz * sy, 0, -ix * sy + iz * cy);
     const mag = Math.min(1, dir.length());
+
+    // --- bus ride: a short script moves the player (walk to the door, ride inside, step off) ---
+    const ride = busStep(g, dt, mag > 0.05 || jump);
+    if (ride) {
+      g.visible = !ride.hidden;
+      anim.current = ride.anim;
+      if (anim.current !== animState) setAnimState(anim.current);
+      localPos.copy(g.position);
+      localHeading.y = g.rotation.y;
+      const bk = cameraOrbit.dist * 0.84;
+      camTarget.set(g.position.x + sy * bk, cameraOrbit.dist * 0.55, g.position.z + cy * bk);
+      if (ride.snap) camera.position.copy(camTarget);
+      else camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
+      camera.lookAt(g.position.x, 0.95, g.position.z);
+      sendAcc.current += dt;
+      if (sendAcc.current >= 1 / INPUT_RATE_HZ) {
+        sendAcc.current = 0;
+        const vc = useVoiceChat.getState();
+        sendInput(g.position.x, 0, g.position.z, g.rotation.y, anim.current, vc.enabled, vc.shouting);
+      }
+      return;
+    }
+    if (!g.visible) g.visible = true;
 
     // --- sitting on a restaurant chair: stay put until the player moves ---
     const seat = useRestaurant.getState().seat;

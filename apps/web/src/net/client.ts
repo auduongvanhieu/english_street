@@ -25,6 +25,7 @@ interface PlayerLike {
   holding?: string;
   prop?: string;
   garden?: string;
+  bus?: string;
 }
 interface StreetStateLike {
   players: Map<string, PlayerLike>;
@@ -134,6 +135,7 @@ function bindRoom(r: Room<StreetStateLike>) {
       holding: p.holding ?? '',
       prop: p.prop ?? '',
       garden: p.garden ?? '',
+      bus: p.bus ?? '',
     });
 
   $(r.state).players.onAdd((p, id) => {
@@ -177,6 +179,11 @@ export function sendHold(id: string) {
 }
 
 /** Restaurant: the dish on the table in front of me ('dish:steak'), '' = none. */
+/** Bus ride tag (world/bus.ts encodeBus), '' when not riding. */
+export function sendBus(tag: string) {
+  room?.send(MSG.BUS, tag);
+}
+
 export function sendGarden(garden: string) {
   if (!room || garden === lastGarden) return;
   lastGarden = garden;

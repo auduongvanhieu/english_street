@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
+import { decodeBus, riderHidden } from '../world/bus';
+import { serverNow } from '../net/client';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGame, type RemotePlayer } from '../store/game';
@@ -48,6 +50,9 @@ function Remote({ p }: { p: RemotePlayer }) {
     g.position.y += (p.y - g.position.y) * Math.min(1, k * 1.6);
     g.position.z += (p.z - g.position.z) * k;
     g.rotation.y += shortestAngle(g.rotation.y, p.rot) * k;
+    // inside a bus: not drawn (the bus is)
+    const bus = decodeBus(p.bus);
+    g.visible = !(bus && riderHidden(bus, serverNow()));
     // Distance culling, checked ~4x/s (staggered so players don't all re-render on the same frame).
     acc.current += dt;
     if (acc.current < 0.25) return;

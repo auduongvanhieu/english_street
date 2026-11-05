@@ -18,6 +18,7 @@ import {
   parseLook,
   HOLDABLE_RE,
   GARDEN_RE,
+  BUS_RE,
   PROP_RE,
   type ZoneMeta,
   type InputMessage,
@@ -186,6 +187,12 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof garden !== 'string' || garden.length > 120) return;
       if (garden === '' || GARDEN_RE.test(garden)) p.garden = garden;
+    });
+
+    this.onMessage<string>(MSG.BUS, (client, tag) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || typeof tag !== 'string' || tag.length > 40) return;
+      if (tag === '' || BUS_RE.test(tag)) p.bus = tag;
     });
 
     // One-to-one talk: the server is the referee (distance, busy state, who is allowed to message whom).

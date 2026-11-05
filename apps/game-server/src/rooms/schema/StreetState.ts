@@ -26,6 +26,8 @@ export class Player extends Schema {
   @type('string') prop = '';
   /** Garden summary (GARDEN_RE) so others at the farm can visit it. */
   @type('string') garden = '';
+  /** Bus ride tag (BUS_RE): everyone renders the shared bus and hides the rider while inside. */
+  @type('string') bus = '';
 }
 
 export class StreetState extends Schema {

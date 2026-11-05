@@ -22,6 +22,8 @@ export interface RemotePlayer {
   prop: string;
   /** garden summary (GARDEN_RE), '' = none */
   garden: string;
+  /** bus ride tag (BUS_RE), '' = not on a bus */
+  bus: string;
 }
 
 export interface NpcInfo {

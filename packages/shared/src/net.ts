@@ -25,6 +25,8 @@ export const MSG = {
   PROP: 'prop',
   /** client -> server: your garden plots (see encodeGarden) so other players at the farm can visit it. */
   GARDEN: 'garden',
+  /** client -> server: bus ride tag "d|a:<stop>:<slot>" ('' = not riding); shows up in Player.bus */
+  BUS: 'bus',
   /** server -> client: { text, level: 'info' | 'warning' } notice from the moderators (announcement, mute…) */
   NOTICE: 'notice',
 } as const;
@@ -36,6 +38,8 @@ export const CLOSE_BANNED = 4106;
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
 export const PROP_RE = /^dish:[a-z-]{2,24}$/;
 /** Garden summary: 6 plots "crop:wateredAt" (wateredAt 0 = seeded, not watered yet), empty plots "", joined by "|". */
+/** Bus ride: boarding (d) or arriving (a) at a stop in a shared bus slot (see apps/web/src/world/bus.ts). */
+export const BUS_RE = /^[da]:(main|zoo|farm|supermarket|restaurant):\d{1,12}$/;
 export const GARDEN_RE = /^(?:[a-z]{2,12}:\d{1,13})?(?:\|(?:[a-z]{2,12}:\d{1,13})?){5}$/;
 export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling|kid|lamb|guineapig)-\d{1,2}$/;
 

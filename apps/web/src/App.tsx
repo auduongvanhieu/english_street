@@ -1,9 +1,13 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { rideTo } from './ui/area/Travel';
+import { useBus } from './store/bus';
+import { BusOverlay } from './ui/BusOverlay';
 import { isStaffTab, startWorldSync, useWorld } from './store/world';
 import { Maintenance, Notices } from './ui/Notices';
 import { AvatarSchema, EMOTES, avatarLook } from '@es/shared';
 import { AVATAR_INTRO_KEY } from './ui/AvatarCreator';
 // The 3D scene (three.js + models) loads only after sign-in, keeping the first paint small.
+import { SceneBoundary } from './scene/SceneBoundary';
 const Scene = lazy(() => import('./scene/Scene'));
 import { connect, leaveRoom } from './net/client';
 import { ZoneChip, ZoneScreen } from './ui/ZoneScreen';
@@ -54,7 +58,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo };
 }
 
 export default function App() {
@@ -260,11 +264,14 @@ export default function App() {
   return (
     <div ref={stage} className="relative h-full touch-none select-none overflow-hidden">
       <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-gray-700">{t('Loading the street…')}</div>}>
-        <Scene playerName={playerName} />
+        <SceneBoundary>
+          <Scene playerName={playerName} />
+        </SceneBoundary>
       </Suspense>
 
       <HintToast touch={touch} />
       <Notices />
+      <BusOverlay />
       {npcError && <div className="absolute left-1/2 top-24 -translate-x-1/2 rounded bg-black/60 px-3 py-1 text-xs text-yellow-300">{t('NPCs unavailable: API server not reachable.')}</div>}
 
       {touch ? (

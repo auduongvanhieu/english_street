@@ -4,6 +4,9 @@ import { useGame } from '../../store/game';
 import { useRestaurant } from '../../store/restaurant';
 import { AREAS, BUS_STOPS, GATE_X, STREET_END_X } from '../../world/areas';
 import { localPos, teleportTo } from '../../scene/LocalPlayer';
+import { setBusVoice, startRide, useBus } from '../../store/bus';
+import { sendHold } from '../../net/client';
+import { myHolding } from '../../world/hold';
 import { track } from '../../net/analytics';
 import { useT } from '../../i18n';
 import { Sheet, SheetHeader } from '../Sheet';
@@ -18,15 +21,26 @@ const STOP_NAME: Record<'main' | AreaId, string> = {
 };
 const STOP_ICON: Record<'main' | AreaId, string> = { main: '🏙️', zoo: '🦁', farm: '🐄', supermarket: '🛒', restaurant: '🍽️' };
 
-/** Ride the bus: jump to a stop, hear "Next stop: …". */
+setBusVoice(say);
+
+/**
+ * Ride the bus: walk to the nearest stop's kerb (or appear there when far away), board the shared bus, ride,
+ * step off at the destination (store/bus.ts). Without a game server connection: the old instant jump.
+ */
 export function rideTo(id: 'main' | AreaId) {
-  const s = BUS_STOPS.find((b) => b.id === id)!;
   useRestaurant.getState().stand();
-  // Step off just north of the stop, facing the area across the road.
-  teleportTo(s.x + 1.5, s.z - 1.6, Math.PI);
-  say(`Next stop: ${STOP_NAME[id]}.`);
-  track('bus_ride', { to: id });
   useGame.getState().setUiPanel(null);
+  if (useBus.getState().ride) return;
+  if (!useGame.getState().sessionId) {
+    const s = BUS_STOPS.find((b) => b.id === id)!;
+    teleportTo(s.x + 1.5, s.z - 1.6, Math.PI);
+    say(`Next stop: ${STOP_NAME[id]}.`);
+    track('bus_ride', { to: id });
+    return;
+  }
+  if (myHolding()) sendHold('');
+  const r = startRide(id, { x: localPos.x, z: localPos.z });
+  if (r.teleport) teleportTo(r.teleport.x, r.teleport.z, Math.PI);
 }
 
 export function BusPanel() {

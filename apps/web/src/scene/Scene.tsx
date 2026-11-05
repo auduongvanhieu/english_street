@@ -9,6 +9,7 @@ import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
 import { Critters } from './Critters';
 import { Cyclists } from './Cyclists';
+import { Buses } from './Buses';
 import { Flora } from './Flora';
 import { PerfProbe } from './PerfProbe';
 import { Areas } from './areas/Areas';
@@ -34,7 +35,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         shadows={low ? false : { type: THREE.PCFShadowMap }}
         camera={{ position: [0, 5.5, 12.5], fov: 50, far: 160 }}
         dpr={low ? 1 : [1, 1.5]}
-        gl={{ antialias: !low, powerPreference: 'high-performance' }}
+        gl={{ antialias: !low, powerPreference: low ? 'default' : 'high-performance' }}
       >
         <Sky sunPosition={[50, 40, 20]} />
         {/* Fog in the horizon colour: the fields fade out instead of ending at the camera's far plane. */}
@@ -53,6 +54,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <Flora />
           <Critters />
           <Cyclists />
+          <Buses />
         </Suspense>
         <Suspense fallback={null}>
           <Areas />
