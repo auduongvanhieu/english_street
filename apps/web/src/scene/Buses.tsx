@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Part, box, cyl, sphere } from './chibi/buildChibi';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { Text } from '@react-three/drei';
+import { Part, box, cyl } from './chibi/buildChibi';
 import { chibiMaterial } from './chibi/buildChibi';
 import { useGame } from '../store/game';
 import { localBusTag } from '../store/bus';
@@ -12,37 +14,77 @@ import { BUS_LANE_Z, busPose, decodeBus, tagLive, type BusTag, type StopId } fro
  * The shared buses: one per (stop, slot) that somebody is boarding or arriving with. Every client derives the
  * same motion from the server clock (world/bus.ts), so riders and onlookers see the same bus.
  */
-const BODY = '#f4b63f';
-const BODY_DARK = '#d9922a';
-const GLASS = '#3a5a7a';
+const BODY = '#f6b93b';
+const BODY_DARK = '#c98a1e';
+const ROOF = '#f4f1ea';
+const STRIPE = '#1f9e8f';
+const GLASS = '#26425a';
+const GLASS_LIGHT = '#3d6a8c';
+const TRIM = '#3a3f47';
+/** Front axle behind the front door (like a real city bus), rear axle near the back. */
+const AXLES = [-0.95, 2.85];
+const rbox = (x: number, y: number, z: number, r = 0.12) => new RoundedBoxGeometry(x, y, z, 3, r);
 
 let bodyGeo: THREE.BufferGeometry | null = null;
 let doorGeo: THREE.BufferGeometry | null = null;
 let wheelGeo: THREE.BufferGeometry | null = null;
-/** Bus facing −x: length 9 m, front at x = −4.5, door on the +z side near the front. */
+/**
+ * City bus facing −x: 9 m long, 2.4 m wide, ~3 m tall. Rounded yellow body with a teal stripe, one long band of
+ * tinted windows, a cream roof with an air-con box, LED destination board, headlights, tail lights, mirrors.
+ * The door is on the +z side near the front (x = DOOR_DX).
+ */
 function geometries() {
   if (bodyGeo) return { bodyGeo, doorGeo: doorGeo!, wheelGeo: wheelGeo! };
   const p = new Part();
-  p.add(box(9, 2.2, 2.4), BODY, { p: [0, 1.55, 0] });
-  p.add(cyl(1.2, 1.2, 9, 20, false, 0, Math.PI), BODY, { p: [0, 2.6, 0], r: [0, 0, Math.PI / 2], s: [0.35, 1, 1] }); // rounded roof
-  p.add(box(9.05, 0.28, 2.45), BODY_DARK, { p: [0, 0.55, 0] }); // bumper strip
-  // side windows (both sides) and windscreen
-  for (const z of [1.21, -1.21]) for (let i = 0; i < 4; i++) p.add(box(1.5, 0.95, 0.04), GLASS, { p: [-1.1 + i * 1.7, 2.05, z] });
-  p.add(box(0.04, 1.2, 2.0), GLASS, { p: [-4.52, 2.0, 0] });
-  p.add(box(0.04, 1.0, 1.6), GLASS, { p: [4.52, 2.05, 0] });
-  // headlights + destination board
-  for (const z of [-0.8, 0.8]) p.add(sphere(0.16), '#fff6c8', { p: [-4.52, 0.95, z], s: [0.5, 1, 1] });
-  p.add(box(0.06, 0.32, 1.5), '#1f2937', { p: [-4.55, 2.82, 0] });
-  // door frame on the +z side
-  p.add(box(1.25, 2.0, 0.05), '#7a5418', { p: [-2.4, 1.45, 1.22] });
+  // body, window band, roof
+  p.add(rbox(9, 1.15, 2.4, 0.2), BODY, { p: [0, 0.93, 0] });
+  p.add(rbox(8.92, 1.02, 2.34, 0.14), GLASS, { p: [0, 1.96, 0] });
+  p.add(rbox(9, 0.42, 2.4, 0.2), ROOF, { p: [0, 2.64, 0] });
+  p.add(rbox(2.4, 0.3, 1.5, 0.12), '#d5dade', { p: [1.5, 2.95, 0] }); // air conditioning
+  p.add(rbox(9.06, 0.3, 2.44, 0.12), TRIM, { p: [0, 0.4, 0] }); // skirt
+  // window pillars (body colour) and the stripe, both sides
+  for (const z of [1.175, -1.175]) {
+    for (const x of [-0.9, 0.7, 2.3, 3.8]) p.add(box(0.16, 1.02, 0.04), BODY, { p: [x, 1.96, z] });
+    p.add(box(8.3, 0.16, 0.03), STRIPE, { p: [0.25, 1.22, z * 1.025] });
+    p.add(box(8.3, 0.05, 0.03), '#ffffff', { p: [0.25, 1.33, z * 1.025] });
+  }
+  // wheel arches
+  for (const x of AXLES) p.add(rbox(1.3, 0.72, 2.46, 0.14), '#22252a', { p: [x, 0.58, 0] });
+  // front: windscreen, corner pillars, LED board, grille, headlights, indicators, bumper
+  p.add(box(0.05, 1.05, 2.06), GLASS_LIGHT, { p: [-4.49, 1.95, 0] });
+  for (const z of [1.1, -1.1]) p.add(box(0.12, 1.05, 0.16), BODY, { p: [-4.46, 1.96, z] });
+  p.add(box(0.06, 0.32, 1.7), '#121417', { p: [-4.52, 2.64, 0] });
+  p.add(box(0.06, 0.32, 0.12), '#ffb020', { p: [-4.53, 2.64, -0.72] }); // route number cell
+  p.add(rbox(0.06, 0.28, 1.1, 0.03), TRIM, { p: [-4.52, 0.86, 0] });
+  for (const z of [0.82, -0.82]) {
+    p.add(rbox(0.08, 0.24, 0.46, 0.06), '#fff6cf', { p: [-4.52, 0.88, z] });
+    p.add(rbox(0.08, 0.12, 0.18, 0.04), '#ff9a1f', { p: [-4.52, 0.62, z * 1.2] });
+  }
+  p.add(rbox(0.28, 0.3, 2.42, 0.1), TRIM, { p: [-4.46, 0.42, 0] });
+  // mirrors on short arms
+  for (const s of [1, -1]) {
+    p.add(box(0.06, 0.06, 0.32), TRIM, { p: [-4.45, 2.15, s * 1.32] });
+    p.add(rbox(0.1, 0.42, 0.16, 0.04), '#1b1d21', { p: [-4.58, 1.95, s * 1.5] });
+  }
+  // rear: window, tail lights, bumper
+  p.add(box(0.05, 0.85, 1.9), GLASS_LIGHT, { p: [4.49, 2.0, 0] });
+  for (const z of [0.85, -0.85]) p.add(rbox(0.08, 0.36, 0.26, 0.05), '#e23b3b', { p: [4.52, 0.95, z] });
+  p.add(rbox(0.28, 0.3, 2.42, 0.1), TRIM, { p: [4.46, 0.42, 0] });
+  // door opening on the +z side
+  p.add(box(1.34, 2.02, 0.03), TRIM, { p: [-2.4, 1.42, 1.215] });
   bodyGeo = p.build();
+  // the two door leaves (each mesh is scaled to half width in Bus): glass in a dark frame
   const d = new Part();
-  d.add(box(0.6, 1.85, 0.06), GLASS, { p: [-0.3, 0, 0] });
-  d.add(box(0.6, 1.85, 0.06), GLASS, { p: [0.3, 0, 0] });
+  for (const x of [-0.3, 0.3]) {
+    d.add(box(0.6, 1.86, 0.05), TRIM, { p: [x, 0, 0] });
+    d.add(box(0.46, 0.75, 0.06), GLASS_LIGHT, { p: [x, 0.42, 0] });
+    d.add(box(0.46, 0.65, 0.06), GLASS_LIGHT, { p: [x, -0.4, 0] });
+  }
   doorGeo = d.build();
   const w = new Part();
-  w.add(cyl(0.48, 0.48, 0.35, 18), '#2b2b2b', { r: [Math.PI / 2, 0, 0] });
-  w.add(cyl(0.22, 0.22, 0.37, 12), '#9aa3ad', { r: [Math.PI / 2, 0, 0] });
+  w.add(cyl(0.48, 0.48, 0.34, 20), '#262626', { r: [Math.PI / 2, 0, 0] });
+  w.add(cyl(0.27, 0.27, 0.36, 14), '#b8c0c8', { r: [Math.PI / 2, 0, 0] });
+  w.add(cyl(0.09, 0.09, 0.38, 8), '#5a6068', { r: [Math.PI / 2, 0, 0] });
   wheelGeo = w.build();
   return { bodyGeo, doorGeo, wheelGeo };
 }
@@ -75,8 +117,14 @@ function Bus({ stop, slot }: { stop: StopId; slot: number }) {
       <mesh geometry={geo.bodyGeo} material={mat} castShadow receiveShadow />
       <mesh ref={doorL} geometry={geo.doorGeo} material={mat} position={[-2.72, 1.45, 1.25]} scale={[0.5, 1, 1]} />
       <mesh ref={doorR} geometry={geo.doorGeo} material={mat} position={[-2.08, 1.45, 1.25]} scale={[0.5, 1, 1]} />
+      <Text position={[-4.56, 2.64, 0.12]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.17} color="#ffb020" anchorX="center" anchorY="middle">
+        ENGLISH STREET
+      </Text>
+      <Text position={[-4.56, 2.64, -0.72]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.22} color="#121417" anchorX="center" anchorY="middle">
+        1
+      </Text>
       <group ref={wheels}>
-        {[-3, 2.8].flatMap((x) => [1.15, -1.15].map((z) => <mesh key={`${x}:${z}`} geometry={geo.wheelGeo} material={mat} position={[x, 0.48, z]} />))}
+        {AXLES.flatMap((x) => [1.06, -1.06].map((z) => <mesh key={`${x}:${z}`} geometry={geo.wheelGeo} material={mat} position={[x, 0.48, z]} />))}
       </group>
     </group>
   );
