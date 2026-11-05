@@ -7,19 +7,33 @@ import { chibiMaterial } from '../chibi/buildChibi';
 import { localPos } from '../LocalPlayer';
 import { useSettings } from '../../store/settings';
 import { areaFrame, type AreaDef } from '../../world/areas';
+import { FAIRY, glowGeometry, glowPointsMat } from '../nightGlow';
 
 export { Part, box, cyl, sphere };
 
 /** A static prop built from primitives into ONE vertex-coloured toon mesh (one draw call). */
 export function Merged({ build, deps = [], castShadow = true, onClick }: { build: (p: Part) => void; deps?: unknown[]; castShadow?: boolean; onClick?: (e: { stopPropagation: () => void }) => void }) {
-  const geo = useMemo(() => {
+  const [geo, lights] = useMemo(() => {
     const p = new Part();
     build(p);
-    return p.build();
+    return [p.build(), p.lights.length ? glowGeometry(p.lights) : null] as const;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  useEffect(() => () => geo.dispose(), [geo]);
-  return <mesh geometry={geo} material={chibiMaterial()} castShadow={castShadow} receiveShadow onClick={onClick} />;
+  useEffect(
+    () => () => {
+      geo.dispose();
+      lights?.dispose();
+    },
+    [geo, lights],
+  );
+  const mesh = <mesh geometry={geo} material={chibiMaterial()} castShadow={castShadow} receiveShadow onClick={onClick} />;
+  if (!lights) return mesh;
+  return (
+    <>
+      {mesh}
+      <points geometry={lights} material={glowPointsMat} renderOrder={3} />
+    </>
+  );
 }
 
 /** Flat coloured ground patch slightly above the field (y = 0.01…). */
@@ -69,6 +83,29 @@ export function tree(p: Part, x: number, z: number, s = 1, leaf = '#5fae4e') {
   p.add(sphere(0.75 * s, 0, Math.PI, 0, Math.PI * 2, 10, 8), leaf, { p: [x, 1.8 * s, z] });
   p.add(sphere(0.55 * s, 0, Math.PI, 0, Math.PI * 2, 10, 8), leaf, { p: [x + 0.45 * s, 1.55 * s, z + 0.2 * s] });
   p.add(sphere(0.5 * s, 0, Math.PI, 0, Math.PI * 2, 10, 8), leaf, { p: [x - 0.4 * s, 1.6 * s, z - 0.25 * s] });
+  fairyLights(p, x, z, s);
+}
+
+/** A string of twinkling bulbs wound round the three leaf balls of tree() (lit at night, see nightGlow.ts). */
+function fairyLights(p: Part, x: number, z: number, s: number) {
+  const balls: [number, number, number, number][] = [
+    [x, 1.8 * s, z, 0.75 * s],
+    [x + 0.45 * s, 1.55 * s, z + 0.2 * s, 0.55 * s],
+    [x - 0.4 * s, 1.6 * s, z - 0.25 * s, 0.5 * s],
+  ];
+  const seed = Math.abs(Math.round(x * 7 + z * 13));
+  balls.forEach(([cx, cy, cz, r], b) => {
+    const n = b === 0 ? 10 : 6;
+    for (let i = 0; i < n; i++) {
+      // a spiral from the bottom of the ball to near its top (golden-angle steps)
+      const t = (i + 0.5) / n;
+      const y = -0.35 + 1.15 * t;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const a = i * 2.39996 + seed + b;
+      const k = r * 1.04;
+      p.lights.push({ p: [cx + Math.cos(a) * ring * k, cy + y * k, cz + Math.sin(a) * ring * k], c: FAIRY[(seed + i * 3 + b) % FAIRY.length]!, s: 0.55 * Math.max(0.8, s), tw: 0.6 });
+    }
+  });
 }
 
 export function rock(p: Part, x: number, z: number, s = 1, color = '#9a9a92') {

@@ -54,6 +54,8 @@ interface Xf {
 
 export class Part {
   private list: THREE.BufferGeometry[] = [];
+  /** Night glow sprites to draw with this part (fairy lights in trees…): rendered by Merged through nightGlow.ts. */
+  lights: { p: [number, number, number]; c: string; s: number; tw?: number }[] = [];
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
   private e = new THREE.Euler();
