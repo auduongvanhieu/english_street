@@ -15,7 +15,7 @@ import { BUS_STOPS } from './areas';
 export type StopId = 'main' | AreaId;
 export const BUS_SLOT_MS = 4000;
 /** Bus centre line on the road (south lane) and where the door is relative to the centre (bus faces −x). */
-export const BUS_LANE_Z = 1.5;
+export const BUS_LANE_Z = 1.4;
 export const DOOR_DX = -2.4;
 export const DOOR_Z = BUS_LANE_Z + 1.35;
 /** Where riders wait / step off on the pavement. */

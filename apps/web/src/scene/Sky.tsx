@@ -5,7 +5,8 @@ import { serverNow } from '../net/client';
 import { useWorld } from '../store/world';
 import { sky, updateSky } from '../world/sky';
 import { TILE } from '../world/layout';
-import { ROAD_SZ } from '../world/layout';
+import { LAMP_ARM, LAMP_H, LAMP_POST_Z } from '../world/layout';
+import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { cloudTexture } from './Horizon';
 import { localPos } from './LocalPlayer';
 import { ambientBirds } from '../audio/ambient';
@@ -254,14 +255,28 @@ export function Rain({ low }: { low: boolean }) {
 
 /* ------------------------------------------------------------------------------------------- lamps */
 
-/** Lamp heads of the road-straight-lightposts tiles (every even column, both kerbs; see world/layout.ts). */
-const LAMP_Y = 1.72;
-const LAMP_Z = 0.28 * TILE * ROAD_SZ;
+/** Lamp heads: every even column, both kerbs, at the end of the arm over the road (world/layout.ts). */
+const LAMP_Y = LAMP_H - 0.14;
+const LAMP_Z = LAMP_POST_Z - LAMP_ARM;
 const LAMP_X_MAX = 85; // tiles, as far as the road runs (Horizon ROAD_END_X)
 function lampSpots() {
   const out: [number, number][] = [];
   for (let tx = -LAMP_X_MAX; tx <= LAMP_X_MAX; tx++) if (tx % 2 === 0) for (const s of [-1, 1]) out.push([tx * TILE, s * LAMP_Z]);
   return out;
+}
+
+/** One lamp post at the origin, its arm reaching towards −z (over the road for a post on the +z kerb). */
+let postGeo: THREE.BufferGeometry | null = null;
+function lampPostGeometry() {
+  if (postGeo) return postGeo;
+  const p = new Part();
+  p.add(box(0.42, 0.36, 0.42), '#5d6573', { p: [0, 0.18, 0] });
+  p.add(box(0.18, LAMP_H, 0.18), '#7b8494', { p: [0, LAMP_H / 2, 0] });
+  p.add(box(0.22, 0.22, 0.22), '#7b8494', { p: [0, LAMP_H, 0] });
+  p.add(box(0.14, 0.14, LAMP_ARM), '#7b8494', { p: [0, LAMP_H, -LAMP_ARM / 2] });
+  p.add(box(0.44, 0.18, 0.56), '#4b5260', { p: [0, LAMP_H - 0.02, -LAMP_ARM] });
+  postGeo = p.build();
+  return postGeo;
 }
 
 function glowTexture() {
@@ -287,6 +302,8 @@ export function StreetLamps({ low }: { low: boolean }) {
   const haloMat = useMemo(() => new THREE.PointsMaterial({ map: tex, color: '#ffd27a', size: 2.6, sizeAttenuation: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true }), [tex]);
   const poolMat = useMemo(() => new THREE.MeshBasicMaterial({ map: tex, color: '#ffcf70', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5 }), [tex]);
   const bulbs = useRef<THREE.InstancedMesh>(null);
+  const posts = useRef<THREE.InstancedMesh>(null);
+  const postGeometry = useMemo(lampPostGeometry, []);
   const pools = useRef<THREE.InstancedMesh>(null);
   const haloGeo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -296,12 +313,16 @@ export function StreetLamps({ low }: { low: boolean }) {
   useLayoutEffect(() => {
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+    const turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+    const none = new THREE.Quaternion();
+    const one = new THREE.Vector3(1, 1, 1);
     spots.forEach(([x, z], i) => {
+      posts.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0, Math.sign(z) * LAMP_POST_Z), z > 0 ? none : turn, one));
       bulbs.current?.setMatrixAt(i, m.makeTranslation(x, LAMP_Y, z));
       // the pool sits a little towards the road centre, under the lamp arm
       pools.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0.03, z * 0.8), q, new THREE.Vector3(5, 5, 1)));
     });
-    for (const im of [bulbs.current, pools.current]) {
+    for (const im of [bulbs.current, pools.current, posts.current]) {
       if (!im) continue;
       im.instanceMatrix.needsUpdate = true;
       im.computeBoundingSphere();
@@ -326,13 +347,16 @@ export function StreetLamps({ low }: { low: boolean }) {
       ];
       lights.current.forEach((l, i) => {
         if (!l) return;
-        l.position.set(near[i]![0], LAMP_Y - 0.15, near[i]![1]);
-        l.intensity = k * 6;
+        // just under the lamp head, towards the road, so the post itself is not floodlit
+        l.position.set(near[i]![0], LAMP_Y - 0.45, near[i]![1] * 0.85);
+        l.distance = 12;
+        l.intensity = k * 4;
       });
     }
   });
   return (
     <group>
+      <instancedMesh ref={posts} args={[postGeometry, chibiMaterial(), spots.length]} castShadow={!low} receiveShadow frustumCulled={false} />
       <instancedMesh ref={bulbs} args={[undefined, bulbMat, spots.length]} frustumCulled={false}>
         <boxGeometry args={[0.32, 0.08, 0.2]} />
       </instancedMesh>

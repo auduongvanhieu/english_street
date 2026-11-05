@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { StreetBackdrop } from './StreetBackdrop';
 import { useProfile } from '../store/profile';
 import {
   fetchCaptcha,
@@ -176,8 +177,9 @@ export function AuthScreen({
   );
 
   return (
-    <div className="flex h-full items-center justify-center">
-      <form onSubmit={submit} className="w-[22rem] rounded-2xl bg-white/95 p-6 shadow-xl">
+    <div className="relative flex h-full items-center justify-center">
+      <StreetBackdrop />
+      <form onSubmit={submit} className="relative w-[22rem] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white/95 p-6 shadow-xl">
         <h1 className="mb-1 text-2xl font-bold">
           English Street{' '}
           {betaGate && (

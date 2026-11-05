@@ -18,7 +18,6 @@ const TILE_Y = -0.05 * TILE;
 
 const ALL_MODELS: TileModel[] = [
   'road-straight',
-  'road-straight-lightposts',
   'pavement',
   'pavement-fountain',
   'grass',

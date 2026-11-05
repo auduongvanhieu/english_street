@@ -60,11 +60,18 @@ export const ROAD_SZ = (ROAD_HALF * 2) / TILE;
 const PAVE_OUTER = 1.5 * TILE;
 export const PAVE_SZ = (PAVE_OUTER - ROAD_HALF) / TILE;
 export const PAVE_Z = (PAVE_OUTER + ROAD_HALF) / 2;
+/**
+ * Street lamps (drawn by scene/Sky.tsx StreetLamps, not the Kenney lightpost tile): a post on each kerb every
+ * other column, with an arm reaching over the road at LAMP_H, well above the 3 m bus.
+ */
+export const LAMP_POST_Z = ROAD_HALF - 0.3;
+export const LAMP_H = 4.2;
+export const LAMP_ARM = 1.2;
 /** Road and its two pavements at column tx (shared by the street and its continuation beyond the fences). */
 export function streetCross(tx: number): TilePlacement[] {
   return [
     { model: 'pavement', tx, tz: -1, z: -PAVE_Z, sz: PAVE_SZ },
-    { model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', tx, tz: 0, rot: ROAD_ROT, sz: ROAD_SZ },
+    { model: 'road-straight', tx, tz: 0, rot: ROAD_ROT, sz: ROAD_SZ },
     { model: 'pavement', tx, tz: 1, z: PAVE_Z, sz: PAVE_SZ },
   ];
 }
@@ -157,13 +164,13 @@ export interface Circle {
   h: number;
 }
 
-/** Lamp posts of the `road-straight-lightposts` tiles (even tx): shafts at local x = ±0.45 tile, rotated onto the road edges. */
+/** Street lamp posts (even tx, both kerbs), as round obstacles. */
 export function buildLampPosts(): Circle[] {
   const out: Circle[] = [];
   // The street (and its lamp posts) continues to the end fences.
   for (let tx = -42; tx <= 42; tx++) {
     if (tx % 2 !== 0) continue;
-    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * 0.45 * TILE * ROAD_SZ, r: 0.18, h: 5 });
+    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * LAMP_POST_Z, r: 0.2, h: 5 });
   }
   return out;
 }

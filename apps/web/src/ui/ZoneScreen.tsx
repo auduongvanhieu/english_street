@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { StreetBackdrop } from './StreetBackdrop';
 import { STREET_ROOM_MAX_CLIENTS, ZONE_CODE_RE, ZONE_NAME_MAX, ZONE_NAME_MIN, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { listZones } from '../net/client';
 import { useGame } from '../store/game';
@@ -76,8 +77,9 @@ export function ZoneScreen({ onJoin, onBack, connecting, connError, initial }: {
   }
 
   return (
-    <div className="flex h-full items-center justify-center p-3">
-      <div className="flex max-h-[92dvh] w-[26rem] max-w-full flex-col rounded-2xl bg-white/95 p-5 shadow-xl">
+    <div className="relative flex h-full items-center justify-center p-3">
+      <StreetBackdrop />
+      <div className="relative flex max-h-[92dvh] w-[26rem] max-w-full flex-col rounded-2xl bg-white/95 p-5 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-xl font-bold">{t('Zones')}</h1>
           <button type="button" onClick={onBack} className="text-sm text-gray-500 underline">

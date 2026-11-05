@@ -214,7 +214,7 @@ function pickHouse(r: () => number): TileModel {
 HOUSE_WEIGHTS.forEach(([m]) => useGLTF.preload(MODEL_URL(m)));
 useGLTF.preload(MODEL_URL('grass-trees-tall'));
 useGLTF.preload(MODEL_URL('grass'));
-(['pavement', 'road-straight', 'road-straight-lightposts', 'grass-trees'] as TileModel[]).forEach((m) => useGLTF.preload(MODEL_URL(m)));
+(['pavement', 'road-straight', 'grass-trees'] as TileModel[]).forEach((m) => useGLTF.preload(MODEL_URL(m)));
 
 interface Placement {
   model: TileModel;
