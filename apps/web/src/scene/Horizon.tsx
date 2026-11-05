@@ -570,10 +570,11 @@ export function cloudTexture() {
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   };
-  puff(40, 36, 26);
-  puff(64, 28, 30);
-  puff(90, 38, 24);
-  puff(64, 44, 34);
+  // every puff stays inside the 128×64 canvas, or the sprite shows a hard straight edge where it is cut off
+  puff(40, 35, 22);
+  puff(64, 29, 26);
+  puff(89, 37, 20);
+  puff(64, 39, 24);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
