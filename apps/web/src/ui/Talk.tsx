@@ -132,6 +132,15 @@ export function TalkBox(_props: { compact: boolean }) {
     if (partner && !matchMedia('(pointer: coarse)').matches) input.current?.focus();
   }, [partner]);
   useEffect(() => () => stt.current?.abort(), []);
+  // read each new message from the partner aloud as it arrives (like an NPC's reply; 🔇 in Settings mutes it)
+  const spokeUpTo = useRef(lines.length);
+  useEffect(() => {
+    if (lines.length < spokeUpTo.current) spokeUpTo.current = 0; // a new conversation
+    const fresh = lines.slice(spokeUpTo.current).filter((l) => l.from === 'them');
+    spokeUpTo.current = lines.length;
+    const last = fresh[fresh.length - 1];
+    if (last && !useVoice.getState().listening) useVoice.getState().speakAs('player', last.text, 'en-US');
+  }, [lines]);
   if (!partner) return null;
   const voiceConnected = vc.connected.includes(partner.id);
   const status = vc.supported
