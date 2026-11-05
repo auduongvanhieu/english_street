@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { CLOCK_HOUR, sunPosition, vnHour, type WeatherDto, type WeatherKind } from '@es/shared';
+import { useSettings, type SkyTime } from '../store/settings';
+
+/** Vietnam hour for each fixed time of day a player can pick in Settings. */
+const PICK_HOUR: Record<Exclude<SkyTime, 'system'>, number> = { morning: 8, noon: 12.5, sunset: 17.15, night: 22 };
 
 /**
  * Sky state for this frame: sun and moon from the Vietnam clock (real sun position for the weather's place),
@@ -88,7 +92,8 @@ const HO_CHI_MINH = { lat: 10.82, lon: 106.63 };
 
 /** The time the sky shows: real time, or today at a fixed Vietnam hour. */
 function skyTime(now: number, w: WeatherDto | null): number {
-  const fixed = skyDebug.hour ?? (w && w.clock !== 'live' ? CLOCK_HOUR[w.clock] : null);
+  const pick = useSettings.getState().skyTime;
+  const fixed = skyDebug.hour ?? (pick !== 'system' ? PICK_HOUR[pick] : null) ?? (w && w.clock !== 'live' ? CLOCK_HOUR[w.clock] : null);
   if (fixed === null) return now;
   return now - vnHour(now) * 3_600_000 + fixed * 3_600_000;
 }
@@ -123,13 +128,14 @@ export function updateSky(now: number, w: WeatherDto | null, dt: number) {
   sky.moonLit = (1 - Math.cos((age / SYNODIC) * Math.PI * 2)) / 2;
 
   // weather (eased)
-  const kind: WeatherKind = skyDebug.kind ?? w?.kind ?? 'partly';
+  const picked = useSettings.getState().skyWeather;
+  const kind: WeatherKind = skyDebug.kind ?? (picked !== 'system' ? picked : null) ?? w?.kind ?? 'partly';
   sky.kind = kind;
   const k = KIND[kind];
   let over = k.over;
-  if (kind === 'partly' && w?.live) over = Math.min(0.6, Math.max(0.15, (w.cloud / 100) * 0.55));
+  if (kind === 'partly' && w?.live && picked === 'system') over = Math.min(0.6, Math.max(0.15, (w.cloud / 100) * 0.55));
   let rain = k.rain;
-  if (w?.live && (kind === 'rain' || kind === 'storm')) rain = Math.min(1, 0.55 + w.rainMm / 4);
+  if (w?.live && picked === 'system' && (kind === 'rain' || kind === 'storm')) rain = Math.min(1, 0.55 + w.rainMm / 4);
   const ease = smoothOver < 0 ? 1 : 1 - Math.exp(-dt / 6);
   smoothOver = smoothOver < 0 ? over : smoothOver + (over - smoothOver) * ease;
   smoothRain += (rain - smoothRain) * ease;
@@ -177,7 +183,7 @@ export function updateSky(now: number, w: WeatherDto | null, dt: number) {
   // main light: the sun by day, the moon (kept high so the street stays readable) at night
   const sunI = day * (1.75 - 1.15 * o);
   const moonUp = smooth(-0.05, 0.25, Math.sin(moon.elevation));
-  const moonI = (1 - day) * (0.4 + 0.3 * sky.moonLit * moonUp) * (1 - 0.5 * o);
+  const moonI = (1 - day) * (0.55 + 0.3 * sky.moonLit * moonUp) * (1 - 0.5 * o);
   if (sunI >= moonI) {
     sky.lightDir.copy(sky.sunDir);
     if (sky.lightDir.y < 0.12) sky.lightDir.setY(0.12);
@@ -192,8 +198,8 @@ export function updateSky(now: number, w: WeatherDto | null, dt: number) {
   sky.lightDir.normalize();
   sky.hemiSky.copy(h).lerp(z, 0.4).lerp(tmp.set(1, 1, 1), 0.25 * day);
   if (day < 0.5) sky.hemiSky.lerp(tmp.set(0.35, 0.45, 0.8), (0.5 - day) * 1.2); // moonlit blue, not black
-  sky.hemiGround.set('#1f2a24').lerp(tmp.set('#6b8f4e'), day);
-  sky.hemiIntensity = 0.62 + 0.03 * day + 0.45 * o * day + sky.flash * 2.5;
+  sky.hemiGround.set('#3a4a40').lerp(tmp.set('#6b8f4e'), day);
+  sky.hemiIntensity = 0.85 - 0.2 * day + 0.45 * o * day + sky.flash * 2.5;
   sky.cloudColor.set(1, 1, 1).lerp(tmp.set(0.55, 0.58, 0.62), o * (sky.storm ? 1 : 0.7));
   sky.cloudColor.multiply(tmp.set(0.16, 0.18, 0.26).lerp(new THREE.Color(1, 1, 1), day));
   if (dusk > 0) sky.cloudColor.lerp(tmp.set(1, 0.68, 0.5), dusk * 0.45);

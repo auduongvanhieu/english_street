@@ -1,6 +1,6 @@
 import { useGame } from '../store/game';
 import { useProfile } from '../store/profile';
-import { subtitlesOn, useSettings, type Tri } from '../store/settings';
+import { subtitlesOn, useSettings, type Tri, type SkyTime, type SkyWeather } from '../store/settings';
 import { useVoice } from '../store/voice';
 import { useVoiceChat } from '../net/voicechat';
 import { Sheet, SheetHeader } from './Sheet';
@@ -144,6 +144,25 @@ export function SettingsPanel() {
           <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Graphics & sound')}</h3>
           <Row label={t('Graphics quality')} hint={t('Low = no shadows, smoother on phones')}>
             <Segmented value={s.quality} options={[{ id: 'low' as const, label: `⚡ ${t('Low')}` }, { id: 'high' as const, label: `✨ ${t('High')}` }]} onChange={(v) => s.setQuality(v)} />
+          </Row>
+          <Row label={t('Time of day')} hint={s.skyTime === 'system' ? t('Follows the real time in Vietnam') : t('Only on your screen')}>
+            <select value={s.skyTime} onChange={(e) => s.set({ skyTime: e.target.value as SkyTime })} className="min-h-9 rounded-lg border bg-white px-2 text-sm" aria-label={t('Time of day')}>
+              <option value="system">🕒 {t('Real time')}</option>
+              <option value="morning">🌅 {t('Morning')}</option>
+              <option value="noon">☀️ {t('Noon')}</option>
+              <option value="sunset">🌇 {t('Sunset')}</option>
+              <option value="night">🌙 {t('Night')}</option>
+            </select>
+          </Row>
+          <Row label={t('Weather')} hint={s.skyWeather === 'system' ? t('Follows the real weather') : t('Only on your screen')}>
+            <select value={s.skyWeather} onChange={(e) => s.set({ skyWeather: e.target.value as SkyWeather })} className="min-h-9 rounded-lg border bg-white px-2 text-sm" aria-label={t('Weather')}>
+              <option value="system">🛰️ {t('Real weather')}</option>
+              <option value="clear">☀️ {t('Sunny')}</option>
+              <option value="cloudy">☁️ {t('Cloudy')}</option>
+              <option value="rain">🌧️ {t('Rain')}</option>
+              <option value="storm">⛈️ {t('Storm')}</option>
+              <option value="fog">🌫️ {t('Fog')}</option>
+            </select>
           </Row>
           <Row label={t('Bird sounds')} hint={s.ambientVolume === 0 ? t('off') : `${Math.round(s.ambientVolume * 100)}%`}>
             <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label={t('Bird sounds')} />
