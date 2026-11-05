@@ -8,6 +8,8 @@ import '../../world/zooLayout';
 import '../../world/farmLayout';
 import '../../world/buildings';
 import '../../world/places';
+import '../../world/guideBoards';
+import { GuideBoard } from './GuideBoard';
 import { localPos } from '../LocalPlayer';
 import { useArea } from '../../store/area';
 import { useGame } from '../../store/game';
@@ -50,6 +52,11 @@ export function Areas() {
       ))}
       {AREAS.map((a) => (
         <AreaGate key={a.id} a={a} />
+      ))}
+      {AREAS.map((a) => (
+        <NearArea key={a.id} area={a}>
+          <GuideBoard a={a} />
+        </NearArea>
       ))}
       {BUS_STOPS.map((s) => (
         <BusStop key={s.id} x={s.x} z={s.z} />

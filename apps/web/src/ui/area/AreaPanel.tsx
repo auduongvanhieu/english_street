@@ -36,25 +36,24 @@ const ITEMS_LABEL: Record<AreaId, string> = {
   sports: tk('🏅 Sports words'),
 };
 
+/** Shown only while the player stands at the area's guide board (scene/areas/GuideBoard.tsx). */
 export function AreaChip() {
   const t = useT();
   const current = useArea((s) => s.current);
   const panel = useArea((s) => s.panel);
+  const near = useArea((s) => s.nearBoard);
   const setPanel = useArea((s) => s.setPanel);
-  if (!current || panel) return null;
+  if (!current || panel || !near) return null;
   const a = areaById(current);
   return (
     <button
       type="button"
       data-ui
       onClick={() => setPanel(true)}
-      className="absolute bottom-[calc(max(1.25rem,env(safe-area-inset-bottom))+0.25rem)] left-1/2 z-20 flex min-h-11 max-w-[56vw] -translate-x-1/2 items-center gap-2 rounded-full px-4 text-sm font-semibold text-white shadow-lg active:scale-95 sm:bottom-24 sm:max-w-none"
+      className="absolute bottom-[calc(max(1.25rem,env(safe-area-inset-bottom))+0.25rem)] left-1/2 z-20 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-white shadow-lg active:scale-95 sm:bottom-24"
       style={{ background: a.color }}
     >
-      {a.icon} <span className="hidden truncate sm:inline" dir="ltr">
-        {a.name} ·
-      </span>{' '}
-      {t('Open guide')}
+      📖 {t('Read guide')} <kbd className="hidden rounded bg-white/25 px-1.5 text-xs sm:inline">E</kbd>
     </button>
   );
 }

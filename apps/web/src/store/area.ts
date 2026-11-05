@@ -30,6 +30,9 @@ interface AreaStore {
   showBadge: (id: string | null) => void;
   /** Merge word cards opened on this device with the ones saved on the server (both ways). */
   syncLearned: () => Promise<void>;
+  /** The local player stands at the area's guide board (scene/areas/GuideBoard.tsx). */
+  nearBoard: boolean;
+  setNearBoard: (near: boolean) => void;
 }
 
 /** Cards opened but not yet saved on the server, per area (sent in small batches). */
@@ -70,6 +73,10 @@ const inflight = new Map<string, Promise<AreaContentDto | null>>();
 export const useArea = create<AreaStore>((set, get) => ({
   current: null,
   panel: false,
+  nearBoard: false,
+  setNearBoard(near) {
+    if (near !== get().nearBoard) set({ nearBoard: near });
+  },
   tab: 'items',
   card: null,
   content: {},

@@ -8,6 +8,7 @@ import type { AreaFrame } from '../../world/areas';
 import { localPos } from '../LocalPlayer';
 import { Ground, Merged, box } from './kit';
 import { bulbMat, glowGeometry, glowPointsMat, poolMat, windowMat } from '../nightGlow';
+import { interior } from '../InteriorLights';
 
 const WALL_H = 3.2;
 
@@ -25,6 +26,13 @@ export function BuildingShell({ b, name, frame, children }: { b: Building; name:
     const [x, z] = frame ? frame.toLocal(localPos.x, localPos.z) : [localPos.x, localPos.z];
     const i = insideBuilding(b, x, z + 0.6);
     if (i !== inside) setInside(i);
+    if (i) {
+      // tell the interior lights (scene/InteriorLights.tsx) where we are, in world coordinates
+      const [wx, wz] = frame ? frame.toWorld((b.x0 + b.x1) / 2, (b.z0 + b.z1) / 2) : [(b.x0 + b.x1) / 2, (b.z0 + b.z1) / 2];
+      const alongX = b.x1 - b.x0 >= b.z1 - b.z0;
+      // a turned frame (south bank) swaps nothing: rotation by π keeps the axes
+      interior.set(wx, wz, (alongX ? b.x1 - b.x0 : b.z1 - b.z0) / 2, alongX);
+    }
   });
   const w = b.x1 - b.x0;
   const d = b.z1 - b.z0;
@@ -72,6 +80,7 @@ export function BuildingShell({ b, name, frame, children }: { b: Building; name:
         </>
       ) : null}
       <NightFront b={b} inside={inside} />
+      {inside ? <CeilingLamps b={b} /> : null}
       {children}
     </group>
   );
@@ -106,5 +115,21 @@ function NightFront({ b, inside }: { b: Building; inside: boolean }) {
         <planeGeometry args={[b.doorW + 3.5, 3.2]} />
       </mesh>
     </group>
+  );
+}
+
+/** Warm pools of lamp light on the floor while inside (the lamps themselves are not drawn: the camera looks down through the missing roof). */
+function CeilingLamps({ b }: { b: Building }) {
+  const pools = useMemo(() => {
+    const spots: [number, number][] = [];
+    const nx = Math.max(1, Math.round((b.x1 - b.x0) / 6));
+    const nz = Math.max(1, Math.round((b.z1 - b.z0) / 6));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) spots.push([b.x0 + ((i + 0.5) * (b.x1 - b.x0)) / nx, b.z0 + ((j + 0.5) * (b.z1 - b.z0)) / nz]);
+    const sx = Math.min(5.5, (b.x1 - b.x0) / nx);
+    const sz = Math.min(5.5, (b.z1 - b.z0) / nz);
+    return mergeGeometries(spots.map(([x, z]) => new THREE.PlaneGeometry(sx, sz).rotateX(-Math.PI / 2).translate(x, 0.045, z)), false)!;
+  }, [b]);
+  return (
+    <mesh geometry={pools} material={poolMat} renderOrder={2} />
   );
 }

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { KeyboardControls } from '@react-three/drei';
 import { Horizon } from './Horizon';
 import { NightLights } from './NightLights';
+import { InteriorLights } from './InteriorLights';
 import { Clouds, Rain, SkyController, SkyDome, StreetLamps } from './Sky';
 import { GroundClick } from './GroundClick';
 import { City } from './City';
@@ -46,6 +47,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         <SkyDome />
         <SunFollow low={low} />
         <StreetLamps low={low} />
+        {!low && <InteriorLights />}
         <Clouds low={low} />
         <Rain low={low} />
         <GroundClick />

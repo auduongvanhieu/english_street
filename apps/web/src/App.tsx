@@ -156,6 +156,8 @@ export default function App() {
         toggleHug();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
+      } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && area.nearBoard && area.current && !area.panel) {
+        area.setPanel(true);
       } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useRestaurant.getState().near) {
         useRestaurant.getState().sit(useRestaurant.getState().near!);
         area.setPanel(true, 'menu');
