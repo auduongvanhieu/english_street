@@ -1,10 +1,13 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { insideBuilding, type Building } from '../../world/buildings';
 import type { AreaFrame } from '../../world/areas';
 import { localPos } from '../LocalPlayer';
 import { Ground, Merged, box } from './kit';
+import { bulbMat, glowGeometry, glowPointsMat, poolMat, windowMat } from '../nightGlow';
 
 const WALL_H = 3.2;
 
@@ -68,7 +71,40 @@ export function BuildingShell({ b, name, frame, children }: { b: Building; name:
           </Text>
         </>
       ) : null}
+      <NightFront b={b} inside={inside} />
       {children}
+    </group>
+  );
+}
+
+/** Window x positions on the front wall (same rule as the glass panes above). */
+function windowXs(b: Building) {
+  const out: number[] = [];
+  for (let x = b.x0 + 3; x < b.x1 - 2; x += 5) if (Math.abs(x - b.doorX) > b.doorW / 2 + 1.5) out.push(x);
+  return out;
+}
+
+/** At night: warm lit windows, a lantern each side of the door and a pool of light on the step (nightGlow.ts). */
+function NightFront({ b, inside }: { b: Building; inside: boolean }) {
+  const { windows, lamps, halos } = useMemo(() => {
+    const h = b.doorW / 2;
+    const win = windowXs(b).map((x) => new THREE.PlaneGeometry(2.5, 1.2).translate(x, 1.6, b.z1 + 0.2));
+    const sides = [b.doorX - h - 0.45, b.doorX + h + 0.45];
+    const lampGeo = mergeGeometries(sides.map((x) => new THREE.BoxGeometry(0.22, 0.32, 0.2).translate(x, 2.15, b.z1 + 0.25)), false)!;
+    return {
+      windows: win.length ? mergeGeometries(win, false)! : null,
+      lamps: lampGeo,
+      halos: glowGeometry(sides.map((x) => ({ p: [x, 2.15, b.z1 + 0.35] as [number, number, number], c: '#ffd27a', s: 1.8, tw: 0.05 }))),
+    };
+  }, [b]);
+  return (
+    <group>
+      {windows && !inside ? <mesh geometry={windows} material={windowMat} renderOrder={2} /> : null}
+      <mesh geometry={lamps} material={bulbMat} />
+      <points geometry={halos} material={glowPointsMat} renderOrder={3} />
+      <mesh material={poolMat} rotation-x={-Math.PI / 2} position={[b.doorX, 0.04, b.z1 + 1.6]} renderOrder={2}>
+        <planeGeometry args={[b.doorW + 3.5, 3.2]} />
+      </mesh>
     </group>
   );
 }

@@ -39,11 +39,11 @@ const STREET_HALF_X = 11 * TILE; // tiles tx -10..10 (+ half a tile)
 const STREET_MIN_Z = -3.5 * TILE;
 const STREET_MAX_Z = 3.5 * TILE;
 /** River along X on the south side. */
-const RIVER_NEAR_Z = 4.5 * TILE; // 18
-const RIVER_FAR_Z = 9.5 * TILE; // 38
+export const RIVER_NEAR_Z = 4.5 * TILE; // 18
+export const RIVER_FAR_Z = 9.5 * TILE; // 38
 const WATER_Y = -0.3;
 const GROUND_Y = -0.25;
-const TILE_Y = -0.05 * TILE;
+export const TILE_Y = -0.05 * TILE;
 /** Beyond the end fences the riverside road runs on (between fields and the river) to here, lost in the fog. */
 const ROAD_END_X = 85 * TILE;
 /** Outside the end fences: no houses, just the road, its pavements, the river bank and open fields. */
@@ -231,7 +231,7 @@ useGLTF.preload(MODEL_URL('grass-trees-tall'));
 useGLTF.preload(MODEL_URL('grass'));
 (['pavement', 'road-straight', 'grass-trees'] as TileModel[]).forEach((m) => useGLTF.preload(MODEL_URL(m)));
 
-interface Placement {
+export interface Placement {
   model: TileModel;
   x: number;
   z: number;
@@ -243,7 +243,7 @@ interface Placement {
 }
 
 /** Houses behind the shops (two staggered rows), a grass bank along the river, tree clusters on the far bank and the ends. */
-function backdropPlacements(low: boolean): Placement[] {
+export function backdropPlacements(low: boolean): Placement[] {
   const r = rng(41);
   const out: Placement[] = [];
   // The street continues beyond the end fences with the very same tiles (road, lamp posts, pavements, park
@@ -471,7 +471,7 @@ function River({ low }: { low: boolean }) {
       // the water follows the sky: darker at night and under cloud, the sun (or moon) glints on it
       (u.uSky!.value as THREE.Color).copy(sky.horizon);
       (u.uSun!.value as THREE.Vector3).copy(sky.lightDir);
-      u.uLight!.value = 0.12 + 0.88 * sky.day * (1 - 0.35 * sky.overcast);
+      u.uLight!.value = 0.24 + 0.76 * sky.day * (1 - 0.35 * sky.overcast);
       u.uSpec!.value = Math.min(1, sky.lightIntensity) * (1 - sky.overcast * 0.8);
     }
   });

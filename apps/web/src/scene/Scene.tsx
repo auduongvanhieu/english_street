@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { KeyboardControls } from '@react-three/drei';
 import { Horizon } from './Horizon';
+import { NightLights } from './NightLights';
 import { Clouds, Rain, SkyController, SkyDome, StreetLamps } from './Sky';
 import { GroundClick } from './GroundClick';
 import { City } from './City';
@@ -57,6 +58,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         {/* Decoration loads after the street itself so the first frame is never held back by flowers. */}
         <Suspense fallback={null}>
           <Horizon />
+          <NightLights low={low} />
           <Flora />
           <Critters />
           <Cyclists />

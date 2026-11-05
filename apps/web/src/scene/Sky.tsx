@@ -8,6 +8,7 @@ import { TILE } from '../world/layout';
 import { LAMP_ARM, LAMP_H, LAMP_POST_Z, LAMP_ROADS } from '../world/layout';
 import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { cloudTexture } from './Horizon';
+import { glowTexture } from './nightGlow';
 import { localPos } from './LocalPlayer';
 import { ambientBirds } from '../audio/ambient';
 
@@ -277,21 +278,6 @@ function lampPostGeometry() {
   p.add(box(0.44, 0.18, 0.56), '#4b5260', { p: [0, LAMP_H - 0.02, -LAMP_ARM] });
   postGeo = p.build();
   return postGeo;
-}
-
-function glowTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const ctx = c.getContext('2d')!;
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, 'rgba(255,255,255,1)');
-  g.addColorStop(0.25, 'rgba(255,255,255,0.55)');
-  g.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 64, 64);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
 }
 
 /** Bulbs, halos and pools of light under every street lamp; a few real lights near the player on high quality. */
