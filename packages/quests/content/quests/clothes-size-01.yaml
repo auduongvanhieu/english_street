@@ -1,0 +1,15 @@
+id: clothes-size-01
+npc: stylist
+level: A1
+title: The Right Size
+intro: You want a new hoodie at Style Corner. Ask for one in your size, try it on and say if it fits.
+goals:
+  - { id: greet, desc: "Say hello and say what you are looking for" }
+  - { id: size, desc: "Say your size (S, M, L or XL)" }
+  - { id: try_on, desc: "Ask to try it on" }
+  - { id: fit, desc: "Say if it fits, or if it's too big or too small" }
+  - { id: thank, desc: "Say thank you and goodbye" }
+target_vocab: [hoodie, size, small, medium, large, try on, fit, too big]
+target_phrases: ["I'm looking for a…", "Can I try it on?", "It's too big.", "It fits!"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

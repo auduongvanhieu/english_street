@@ -120,7 +120,7 @@ export function MapPanel() {
       </SheetHeader>
       <div className="px-3 pb-4 sm:px-5">
         <div className="overflow-x-auto rounded-xl">
-          <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="w-full min-w-[640px] rounded-xl bg-[#a8d27a]" direction="ltr">
+          <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="w-full min-w-[640px] rounded-xl bg-[#a8d27a] sm:min-w-0" direction="ltr">
             {/* river, bridges, main road, south-bank road */}
             <rect x={0} y={sz(18)} width={MAP_W} height={sz(38) - sz(18)} fill="#5ab0dc" />
             {[-BRIDGE_X, BRIDGE_X].map((x) => (

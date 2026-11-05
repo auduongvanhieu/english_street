@@ -1,0 +1,14 @@
+id: cinema-choose-01
+npc: usher
+level: B2
+title: Help Me Choose
+intro: You and your little cousin can't agree on a film. Ask Leo for advice, explain what each of you likes, discuss two or three films and agree on one.
+goals:
+  - { id: explain, desc: "Explain the problem and what you and your cousin like" }
+  - { id: ask, desc: "Ask about the films (genre, length, age, story)" }
+  - { id: weigh, desc: "Compare two films, giving pros and cons" }
+  - { id: decide, desc: "Make a decision and justify it" }
+target_vocab: [genre, suitable, scary, length, recommend, compromise]
+target_phrases: ["She's into…, whereas I prefer…", "Would it be suitable for a seven-year-old?", "On the other hand…", "I think we'll go for…"]
+max_turns: 12
+reward: { xp: 100, coins: 25 }

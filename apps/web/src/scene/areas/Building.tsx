@@ -63,7 +63,7 @@ export function BuildingShell({ b, name, frame, children }: { b: Building; name:
       {!inside ? (
         <>
           <Merged build={(p) => p.add(box(w + 0.6, 0.35, d + 0.6), b.roof, { p: [cx, WALL_H + 0.17, cz] })} deps={[b.area]} />
-          <Text position={[b.doorX, 3.0, b.z1 + 0.2]} fontSize={0.55} color={b.roof} anchorX="center" anchorY="bottom" outlineWidth={0.04} outlineColor="#ffffff">
+          <Text position={[b.doorX, 3.0, b.z1 + 0.36]} fontSize={0.55} color={b.roof} anchorX="center" anchorY="bottom" outlineWidth={0.04} outlineColor="#ffffff">
             {name}
           </Text>
         </>

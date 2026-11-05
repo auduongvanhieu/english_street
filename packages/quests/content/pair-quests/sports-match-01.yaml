@@ -1,0 +1,41 @@
+id: sports-match-01
+npc: coach
+level: A1
+title: Let's Plan a Match (pair)
+intro: You and your friend want to play together at Sunny Sports Park. One of you suggests a sport, the other has different ideas — agree on a sport, a day and a time. Coach Max listens and gives feedback.
+roles:
+  - id: player_a
+    label: Player A
+    brief: >
+      You love football and you can run fast, but you can't play basketball well. Suggest playing football on
+      Saturday afternoon. If your friend wants something else, find a sport you both like.
+    goals:
+      - id: suggest
+        desc: Suggest a sport (Let's play… / Do you want to…?)
+      - id: say_can
+        desc: Say what you can or can't do
+      - id: agree_time
+        desc: Agree on a day and a time
+      - id: equipment
+        desc: Say what you will bring (a ball, rackets, water…)
+  - id: player_b
+    label: Player B
+    brief: >
+      You don't like football very much, but you like badminton and table tennis. You are free on Saturday morning
+      and Sunday. Say what you like and don't like, and agree on a plan with your friend.
+    facts: |
+      The football pitch is free on Saturday from 2 pm. The sports hall (badminton, table tennis) is free on Saturday
+      morning and Sunday. Rackets can be borrowed for $1.
+    goals:
+      - id: like
+        desc: Say what you like and don't like
+      - id: other_idea
+        desc: Suggest another sport or another time (How about…?)
+      - id: compare
+        desc: Compare two sports (Badminton is easier than…)
+      - id: confirm
+        desc: Confirm the plan (OK, see you on… at…!)
+target_vocab: [football, badminton, Saturday, can, can't, easier]
+target_phrases: ["Let's play…", "How about…?", "I can…, but I can't…", "See you on Saturday!"]
+max_turns: 10
+reward: { xp: 80, coins: 20 }

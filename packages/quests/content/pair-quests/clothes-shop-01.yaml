@@ -1,0 +1,39 @@
+id: clothes-shop-01
+npc: stylist
+level: A1
+title: At Style Corner (pair)
+intro: "One of you is shopping for clothes, the other works at Style Corner. Chloe listens and gives each of you feedback."
+roles:
+  - id: customer
+    label: Customer
+    brief: >
+      You are shopping at Style Corner for a party. You want a jacket and a T-shirt. Say what you want, say
+      your size and your favourite colour, ask to try something on, ask the price, then decide and pay.
+    goals:
+      - id: want
+        desc: Say what you are looking for
+      - id: size_colour
+        desc: Say your size and the colour you want
+      - id: try_on
+        desc: Ask to try it on and say if it fits
+      - id: pay
+        desc: Ask the price and pay
+  - id: assistant
+    label: Shop assistant
+    brief: >
+      You work at Style Corner. Help the customer: ask what size and colour they want, show them the fitting
+      rooms, give a compliment, say the prices and take the payment. Prices are below.
+    facts: "{{menu:clothes}}"
+    goals:
+      - id: help
+        desc: Ask how you can help
+      - id: size_colour
+        desc: Ask about size and colour
+      - id: compliment
+        desc: Give a compliment (It suits you!)
+      - id: price
+        desc: Say the price and take the payment
+target_vocab: [size, colour, try on, fitting room, suit, price, card]
+target_phrases: ["Can I help you?", "What size are you?", "Can I try it on?", "That colour suits you!", "How much is it?"]
+max_turns: 7
+reward: { xp: 70, coins: 20 }

@@ -294,3 +294,29 @@ The street now runs from x = −170 to 170. The old end fences are welcome gates
 - **Performance**: areas are only mounted within 42 m (25 m on low quality); the sun and its shadow box follow the
   player. Measured draw calls: high 330 (main street) … 359 (zoo); low 61…115.
 - Animals are new procedural chibi rigs (`scene/chibi/buildAnimal.ts`, 19 kinds), on the same server clock as the street pets.
+
+## More areas and the south bank (plan Step 5 / phases 24–31)
+
+The main street now runs to x = ±294 (gates at ±46 and ±170). Across the river, two walkable footbridges
+(x = ±50) lead to a south-bank road (z = 48) with four more areas. Every area is defined once
+(`AREA_IDS`/`AREA_INFO` in `packages/shared/src/schemas/area.ts`, map position in `apps/web/src/world/areas.ts`);
+newer areas are written in a local frame (`areaFrame`: origin at the gate, −z into the yard) so a scene works
+north or south of a road. Area scenes are lazy chunks mounted only near the player; each area's own activity is
+a lazy tab (`apps/web/src/ui/area/activities/`).
+
+| Area | Where | Activity | NPC |
+|---|---|---|---|
+| 🏠 Cozy Home | north, x 234…290 | tidy the room (prepositions), my day (routine + times) | Linda (`mum`) |
+| 🏫 Maple School | north, x 174…230 | spelling bee, timetable questions | Ms. Green (`teacher`) |
+| 👕 Style Corner | north, x −230…−174 | fitting room: dress customers, add up prices, try on & buy for your character | Chloe (`stylist`) |
+| 🎬 Star Cinema & Library | north, x −290…−234 | box office (film, time, seats, snacks), find the book | Leo (`usher`), Mrs. Patel (`librarian`) |
+| 🚉 Central Station | south, x −106…−50 | timetable + right ticket, announcements; shared-clock train every 3 min | Mr. Okafor (`stationmaster`) |
+| 💊 City Hospital | south, x 110…166 | pharmacy: symptoms → medicine → dosage, body parts | Dr. Rivera (`pharmacist`) |
+| 🏨 Riverside Hotel | south, x −166…−110 | take a phone booking, be a polite guest | Mia (`receptionist`) |
+| ⚽ Sunny Sports Park | south, x 50…106 | coach says (commands), which sport; moves to the hall when it really rains | Coach Max (`coach`) |
+
+- Activities report with `POST /me/area-quiz` (same cap and badge rule as the quizzes); every area has a badge.
+- Each area has 2–3 quests and a pair quest. Daily quests are picked around the player's level; the bus panel and
+  map suggest areas for the player's level.
+- Admin: every area is editable; Style Corner items can be sold out / on sale (World → sold out & sale).
+

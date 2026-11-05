@@ -43,7 +43,11 @@ export function accountRoutes(repo: AttemptRepo) {
     const today = new Date();
     const start = new Date(today);
     start.setUTCHours(0, 0, 0, 0);
-    const daily = dailyQuestIds(loadQuests().map((q) => q.id), today).map((id) => {
+    // Today's quests come from every area, around the player's level (one step either side) when there are enough.
+    const rank = (l: string) => CEFR_LEVELS.indexOf(l as (typeof CEFR_LEVELS)[number]);
+    const all = loadQuests().filter((q) => !q.disabled);
+    const near = all.filter((q) => Math.abs(rank(q.level) - rank(u.cefrLevel)) <= 1);
+    const daily = dailyQuestIds((near.length >= 6 ? near : all).map((q) => q.id), today).map((id) => {
       const q = getQuest(id)!;
       return { questId: id, title: q.title, npcId: q.npc, level: q.level, bonusXp: DAILY_BONUS_XP, done: completed.some((a) => a.questId === id && a.finishedAt && a.finishedAt >= start) };
     });

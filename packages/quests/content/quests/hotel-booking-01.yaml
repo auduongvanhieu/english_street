@@ -1,0 +1,15 @@
+id: hotel-booking-01
+npc: receptionist
+level: A2
+title: A Room for the Family
+intro: Your family wants to stay at Riverside Hotel next month. Book a room — say the dates, the room type and ask about the price and breakfast.
+goals:
+  - { id: ask_room, desc: "Say you want to book a room and what kind (family, double, twin…)" }
+  - { id: dates, desc: "Give the dates with ordinal numbers (from the 14th to the 16th of May…) or the number of nights" }
+  - { id: ask_price, desc: "Ask how much it costs and if breakfast is included" }
+  - { id: details, desc: "Give your full name and phone number" }
+  - { id: confirm, desc: "Confirm the booking and thank her" }
+target_vocab: [family room, night, breakfast, price, the fourteenth, phone number]
+target_phrases: ["I'd like to book a family room.", "From the 14th to the 16th of May.", "How much is it per night?", "Is breakfast included?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

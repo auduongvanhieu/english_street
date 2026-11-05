@@ -1,16 +1,538 @@
 id: station
-title: station
-intro: Coming soon.
+title: Central Station
+intro: Trains come and go all day at Central Station. Read the departures board, buy the right ticket and find your platform before your train leaves!
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: tickets, label: Tickets }
+  - { id: places, label: Around the station }
+  - { id: trains, label: Trains and luggage }
+  - { id: time, label: Times and delays }
+  - { id: actions, label: Travelling }
+groups:
+  - { id: tickets, label: Buying a ticket }
+  - { id: times, label: Asking about times }
+  - { id: directions, label: Finding your way }
+  - { id: problems, label: Delays and problems }
+  - { id: announcements, label: Announcements }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # --- tickets
+  - id: ticket
+    en: ticket
+    plural: tickets
+    icon: 🎫
+    pos: noun
+    category: tickets
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: This is my ticket., level: A1 }
+      - { en: You need a ticket before you get on the train., level: A2 }
+      - { en: Keep your ticket until the end of your journey because the conductor may check it., level: B1 }
+  - id: single-ticket
+    en: single ticket
+    plural: single tickets
+    icon: ➡️
+    pos: noun
+    category: tickets
+    price: 8
+    note: Only one way. In the US people say "one-way ticket".
+    sentences:
+      - { en: A single ticket to Riverside, please., level: A1 }
+      - { en: I'm not coming back today, so I only need a single ticket., level: A2 }
+      - { en: A single ticket is cheaper, but you will need another ticket to come home., level: B1 }
+  - id: return-ticket
+    en: return ticket
+    plural: return tickets
+    icon: 🔁
+    pos: noun
+    category: tickets
+    price: 14
+    note: There and back again. In the US people say "round-trip ticket".
+    sentences:
+      - { en: A return ticket, please., level: A1 }
+      - { en: I'm coming back tomorrow, so I'd like a return ticket., level: A2 }
+      - { en: A return ticket is usually cheaper than two single tickets., level: B1 }
+  - id: ticket-office
+    en: ticket office
+    plural: ticket offices
+    icon: 🏢
+    pos: noun
+    category: tickets
+    sentences:
+      - { en: The ticket office is open., level: A1 }
+      - { en: You can buy tickets at the ticket office or at the machine., level: A2 }
+      - { en: The ticket office closes at ten, but the machines work all night., level: B1 }
+  - id: ticket-machine
+    en: ticket machine
+    plural: ticket machines
+    icon: 🏧
+    pos: noun
+    category: tickets
+    sentences:
+      - { en: Use the ticket machine., level: A1 }
+      - { en: The ticket machine takes cards and coins., level: A2 }
+      - { en: If the ticket machine is out of order, buy your ticket from the conductor., level: B1 }
+  - id: fare
+    en: fare
+    plural: fares
+    icon: 💲
+    pos: noun
+    category: tickets
+    sentences:
+      - { en: What is the fare?, level: A2 }
+      - { en: The fare to Sunny Bay is eight dollars., level: A2 }
+      - { en: Fares are higher at rush hour, so travel later if you can., level: B1 }
+  - id: timetable
+    en: timetable
+    plural: timetables
+    icon: 📋
+    pos: noun
+    category: tickets
+    note: In the US people often say "schedule".
+    sentences:
+      - { en: Look at the timetable., level: A1 }
+      - { en: The timetable says the next train is at 3:15., level: A2 }
+      - { en: The weekend timetable is different, so check it before you leave home., level: B1 }
+  - id: child-ticket
+    en: child ticket
+    plural: child tickets
+    icon: 🧒
+    pos: noun
+    category: tickets
+    price: 4
+    sentences:
+      - { en: One adult and one child ticket, please., level: A1 }
+      - { en: A child ticket is half price., level: A2 }
+      - { en: Children under five travel free, but older children need a child ticket., level: B1 }
+  - id: seat-reservation
+    en: seat reservation
+    plural: seat reservations
+    icon: 💺
+    pos: noun
+    category: tickets
+    sentences:
+      - { en: I have a seat reservation., level: A2 }
+      - { en: Can I make a seat reservation for the 9:40 train?, level: A2 }
+      - { en: Without a seat reservation you might have to stand on a busy train., level: B1 }
+  # --- places
+  - id: platform
+    en: platform
+    plural: platforms
+    icon: 🚏
+    pos: noun
+    category: places
+    sentences:
+      - { en: The train is at platform 2., level: A1 }
+      - { en: Which platform does the train to Old Town leave from?, level: A2 }
+      - { en: Please stand behind the yellow line when a train comes into the platform., level: B1 }
+  - id: waiting-room
+    en: waiting room
+    plural: waiting rooms
+    icon: 🪑
+    pos: noun
+    category: places
+    sentences:
+      - { en: The waiting room is warm., level: A1 }
+      - { en: You can sit in the waiting room until your train comes., level: A2 }
+      - { en: The waiting room gets crowded when trains are delayed., level: B1 }
+  - id: lost-property
+    en: lost property office
+    plural: lost property offices
+    icon: 🧳
+    pos: noun
+    category: places
+    note: In the US people say "lost and found".
+    sentences:
+      - { en: Where is the lost property office?, level: A2 }
+      - { en: I left my bag on the train. Can I ask at the lost property office?, level: A2 }
+      - { en: Things left on trains are kept at the lost property office for three months., level: B1 }
+  - id: toilets
+    en: toilets
+    icon: 🚻
+    pos: noun
+    category: places
+    note: In the US people say "restroom".
+    sentences:
+      - { en: Where are the toilets?, level: A1 }
+      - { en: The toilets are next to the waiting room., level: A2 }
+      - { en: There are toilets on most trains, but they can be busy., level: B1 }
+  - id: footbridge
+    en: footbridge
+    plural: footbridges
+    icon: 🌉
+    pos: noun
+    category: places
+    sentences:
+      - { en: Go over the footbridge., level: A2 }
+      - { en: Use the footbridge to get to platform 2., level: A2 }
+      - { en: Never walk across the tracks; always use the footbridge or the underpass., level: B1 }
+  - id: underpass
+    en: underpass
+    plural: underpasses
+    icon: ⬇️
+    pos: noun
+    category: places
+    sentences:
+      - { en: Go down to the underpass., level: A2 }
+      - { en: The underpass goes under the tracks to the other platforms., level: A2 }
+      - { en: There is a lift next to the underpass for people with heavy luggage., level: B1 }
+  - id: information-desk
+    en: information desk
+    plural: information desks
+    icon: ℹ️
+    pos: noun
+    category: places
+    sentences:
+      - { en: Ask at the information desk., level: A1 }
+      - { en: The information desk can tell you about delays., level: A2 }
+      - { en: If you need help with a wheelchair, tell the information desk before your journey., level: B1 }
+  - id: entrance
+    en: entrance
+    plural: entrances
+    icon: 🚪
+    pos: noun
+    category: places
+    sentences:
+      - { en: Meet me at the entrance., level: A1 }
+      - { en: The main entrance is on the south bank road., level: A2 }
+      - { en: The side entrance is closed in the evening, so use the main entrance., level: B1 }
+  - id: exit
+    en: exit
+    plural: exits
+    icon: 🚶
+    pos: noun
+    category: places
+    sentences:
+      - { en: Where is the exit?, level: A1 }
+      - { en: Follow the green signs to the exit., level: A2 }
+      - { en: Take the exit near the bus stop if you want to catch the bus into town., level: B1 }
+  # --- trains and luggage
+  - id: train
+    en: train
+    plural: trains
+    icon: 🚆
+    pos: noun
+    category: trains
+    sentences:
+      - { en: The train is fast., level: A1 }
+      - { en: The train to Maple Hill leaves at ten past two., level: A2 }
+      - { en: Travelling by train is relaxing because you can read or look out of the window., level: B1 }
+  - id: carriage
+    en: carriage
+    plural: carriages
+    icon: 🚃
+    pos: noun
+    category: trains
+    note: In the US people say "car".
+    sentences:
+      - { en: This train has three carriages., level: A1 }
+      - { en: The quiet carriage is at the front of the train., level: A2 }
+      - { en: First class is in the last carriage, so walk to the end of the platform., level: B1 }
+  - id: track
+    en: track
+    plural: tracks
+    icon: 🛤️
+    pos: noun
+    category: trains
+    sentences:
+      - { en: Don't walk on the track., level: A1 }
+      - { en: The train runs on the track along the river., level: A2 }
+      - { en: Workers are repairing the track, so some trains are slower this week., level: B1 }
+  - id: departures-board
+    en: departures board
+    plural: departures boards
+    icon: 🖥️
+    pos: noun
+    category: trains
+    sentences:
+      - { en: Look at the departures board., level: A1 }
+      - { en: The departures board shows the time and the platform., level: A2 }
+      - { en: The platform number appears on the departures board about ten minutes before the train leaves., level: B1 }
+  - id: luggage
+    en: luggage
+    icon: 🧳
+    pos: noun
+    category: trains
+    note: Uncountable – say "a lot of luggage" or "two pieces of luggage", not "luggages".
+    sentences:
+      - { en: I have a lot of luggage., level: A1 }
+      - { en: Please put your luggage on the rack above your seat., level: A2 }
+      - { en: Don't leave your luggage alone; it may be taken away for safety reasons., level: B1 }
+  - id: suitcase
+    en: suitcase
+    plural: suitcases
+    icon: 💼
+    pos: noun
+    category: trains
+    sentences:
+      - { en: My suitcase is big and heavy., level: A1 }
+      - { en: Can you help me carry my suitcase onto the train?, level: A2 }
+      - { en: A suitcase with wheels is much easier to pull through a busy station., level: B1 }
+  - id: backpack
+    en: backpack
+    plural: backpacks
+    icon: 🎒
+    pos: noun
+    category: trains
+    sentences:
+      - { en: My backpack is blue., level: A1 }
+      - { en: Take off your backpack when the train is full., level: A2 }
+      - { en: I travel with only a backpack, so I can get on and off quickly., level: B1 }
+  - id: luggage-trolley
+    en: luggage trolley
+    plural: luggage trolleys
+    icon: 🛒
+    pos: noun
+    category: trains
+    sentences:
+      - { en: Take a luggage trolley., level: A2 }
+      - { en: The luggage trolleys are next to the entrance., level: A2 }
+      - { en: Please return the luggage trolley when you have finished with it., level: B1 }
+  - id: seat
+    en: seat
+    plural: seats
+    icon: 💺
+    pos: noun
+    category: trains
+    sentences:
+      - { en: Is this seat free?, level: A1 }
+      - { en: Excuse me, I think you're in my seat., level: A2 }
+      - { en: Please give your seat to someone who needs it more than you., level: B1 }
+  - id: conductor
+    en: conductor
+    plural: conductors
+    icon: 👮
+    pos: noun
+    category: trains
+    sentences:
+      - { en: The conductor checks the tickets., level: A1 }
+      - { en: Ask the conductor if this train stops at Sunny Bay., level: A2 }
+      - { en: If you didn't have time to buy a ticket, you can buy one from the conductor., level: B1 }
+  # --- times and delays
+  - id: departure
+    en: departure
+    plural: departures
+    icon: 🛫
+    pos: noun
+    category: time
+    sentences:
+      - { en: The departure time is 2:30., level: A2 }
+      - { en: Check the departure time on the board., level: A2 }
+      - { en: Please arrive at least ten minutes before departure., level: B1 }
+  - id: arrival
+    en: arrival
+    plural: arrivals
+    icon: 🛬
+    pos: noun
+    category: time
+    sentences:
+      - { en: The arrival time is 4 pm., level: A2 }
+      - { en: What time is the arrival in Old Town?, level: A2 }
+      - { en: The arrival time may change if there is a lot of traffic on the line., level: B1 }
+  - id: delay
+    en: delay
+    plural: delays
+    icon: ⏳
+    pos: noun
+    category: time
+    sentences:
+      - { en: There is a delay., level: A2 }
+      - { en: We are sorry for the delay., level: A2 }
+      - { en: The delay was caused by a tree on the line after the storm., level: B1 }
+  - id: delayed
+    en: delayed
+    icon: 🐢
+    pos: adjective
+    category: time
+    sentences:
+      - { en: My train is delayed., level: A2 }
+      - { en: The 3:15 to Riverside is delayed by five minutes., level: A2 }
+      - { en: If your train is delayed for more than an hour, you can get some money back., level: B1 }
+  - id: cancelled
+    en: cancelled
+    icon: ❌
+    pos: adjective
+    category: time
+    note: The US spelling is "canceled".
+    sentences:
+      - { en: The train is cancelled., level: A2 }
+      - { en: The 5:40 is cancelled, so take the next train., level: A2 }
+      - { en: When a train is cancelled, your ticket is still valid on the next one., level: B1 }
+  - id: on-time
+    en: on time
+    icon: ✅
+    pos: phrase
+    category: time
+    sentences:
+      - { en: The train is on time., level: A1 }
+      - { en: Is the 6:20 on time today?, level: A2 }
+      - { en: Most trains here are on time, but bad weather can cause delays., level: B1 }
+  - id: clock
+    en: clock
+    plural: clocks
+    icon: 🕒
+    pos: noun
+    category: time
+    sentences:
+      - { en: Look at the station clock., level: A1 }
+      - { en: The clock says it's half past three., level: A2 }
+      - { en: The big station clock is always right, so set your watch by it., level: B1 }
+  - id: quarter-past
+    en: quarter past
+    icon: 🕒
+    pos: phrase
+    category: time
+    note: "3:15 = quarter past three. 3:45 = quarter to four."
+    sentences:
+      - { en: It's quarter past three., level: A1 }
+      - { en: The train leaves at quarter past four., level: A2 }
+      - { en: If we miss the quarter past train, the next one is at quarter to., level: B1 }
+  - id: half-past
+    en: half past
+    icon: 🕧
+    pos: phrase
+    category: time
+    note: "2:30 = half past two. On a timetable you may see 14:30 (the 24-hour clock)."
+    sentences:
+      - { en: It's half past two., level: A1 }
+      - { en: The train arrives at half past six in the evening., level: A2 }
+      - { en: "On the timetable, half past two in the afternoon is written 14:30.", level: B1 }
+  # --- travelling
+  - id: catch
+    en: catch a train
+    icon: 🏃
+    pos: verb
+    category: actions
+    sentences:
+      - { en: I want to catch the train., level: A2 }
+      - { en: Hurry up! We need to catch the 8:15., level: A2 }
+      - { en: If we leave now, we'll catch the earlier train and get there before lunch., level: B1 }
+  - id: miss
+    en: miss a train
+    icon: 😫
+    pos: verb
+    category: actions
+    sentences:
+      - { en: I missed the train., level: A2 }
+      - { en: Don't be late or you'll miss the train., level: A2 }
+      - { en: I missed my train because the bus was stuck in traffic., level: B1 }
+  - id: change-trains
+    en: change trains
+    icon: 🔀
+    pos: verb
+    category: actions
+    sentences:
+      - { en: Do I need to change trains?, level: A2 }
+      - { en: You change trains at Riverside., level: A2 }
+      - { en: You have ten minutes to change trains, which is enough if you walk quickly., level: B1 }
+  - id: get-on
+    en: get on
+    icon: ⬆️
+    pos: verb
+    category: actions
+    sentences:
+      - { en: Get on the train., level: A1 }
+      - { en: Let people get off before you get on., level: A2 }
+      - { en: Mind the gap between the train and the platform when you get on., level: B1 }
+  - id: get-off
+    en: get off
+    icon: ⬇️
+    pos: verb
+    category: actions
+    sentences:
+      - { en: We get off here., level: A1 }
+      - { en: Get off at the third stop, Maple Hill., level: A2 }
+      - { en: The doors only open for a short time, so be ready to get off., level: B1 }
+  - id: book
+    en: book
+    icon: 📲
+    pos: verb
+    category: actions
+    sentences:
+      - { en: I want to book a ticket., level: A2 }
+      - { en: You can book tickets online or at the station., level: A2 }
+      - { en: If you book your ticket early, it is often much cheaper., level: B1 }
+  - id: journey
+    en: journey
+    plural: journeys
+    icon: 🗺️
+    pos: noun
+    category: actions
+    sentences:
+      - { en: Have a good journey!, level: A1 }
+      - { en: The journey to Sunny Bay takes two hours., level: A2 }
+      - { en: The journey along the coast is beautiful, so try to get a window seat., level: B1 }
+phrases:
+  - { en: "A single ticket to Riverside, please.", level: A1, group: tickets }
+  - { en: "Can I have a return ticket to Sunny Bay?", level: A2, group: tickets }
+  - { en: "How much is a return ticket?", level: A2, group: tickets }
+  - { en: "Is there a discount for children?", level: A2, group: tickets }
+  - { en: "Can I pay by card?", level: A1, group: tickets }
+  - { en: "What time is the next train to Old Town?", level: A2, group: times }
+  - { en: "What time does it arrive?", level: A2, group: times }
+  - { en: "How long does the journey take?", level: A2, group: times }
+  - { en: "Do I need to change trains?", level: A2, group: times }
+  - { en: "Is this the train to Maple Hill?", level: A1, group: times }
+  - { en: "Which platform does it leave from?", level: A2, group: directions }
+  - { en: "Excuse me, where are the toilets?", level: A1, group: directions }
+  - { en: "Go over the footbridge to platform 2.", level: A2, group: directions }
+  - { en: "The lost property office is next to the ticket office.", level: A2, group: directions }
+  - { en: "Is this seat free?", level: A1, group: directions }
+  - { en: "My train is delayed. When is the next one?", level: A2, group: problems }
+  - { en: "I've missed my train. Can I use this ticket on the next one?", level: B1, group: problems }
+  - { en: "I left my bag on the train.", level: A2, group: problems }
+  - { en: "Sorry, the 4:20 has been cancelled.", level: A2, group: problems }
+  - { en: "Can I get my money back?", level: B1, group: problems }
+  - { en: "The train now arriving at platform 1 is the 2:15 to Riverside.", level: A2, group: announcements }
+  - { en: "Please stand behind the yellow line.", level: A2, group: announcements }
+  - { en: "We are sorry to announce that the 5:40 to Old Town is delayed.", level: B1, group: announcements }
+  - { en: "Please mind the gap between the train and the platform.", level: B1, group: announcements }
+  - { en: "Please do not leave your luggage unattended.", level: B1, group: announcements }
+quiz:
+  - id: single-or-return
+    question: "You are going to Sunny Bay and coming back the same evening. What ticket do you need?"
+    options: ["a return ticket", "a single ticket", "a child ticket", "no ticket"]
+    answer: 0
+    level: A2
+  - id: time-1430
+    question: "On the timetable the train leaves at 14:30. When is that?"
+    options: ["half past two in the afternoon", "half past four", "quarter to three", "two thirty in the morning"]
+    answer: 0
+    level: A2
+  - id: quarter-to
+    question: "It's 5:45. How do you say it?"
+    options: ["quarter to six", "quarter past five", "half past five", "five to six"]
+    answer: 0
+    level: A1
+  - id: cancelled-means
+    question: "The board says \"Cancelled\". What does it mean?"
+    options: ["The train will not run.", "The train is late.", "The train is full.", "The train is early."]
+    answer: 0
+    level: A2
+  - id: ask-platform
+    question: "Which question asks where your train leaves from?"
+    options: ["Which platform does it leave from?", "How much is it?", "What time is it?", "Is this seat free?"]
+    answer: 0
+    level: A2
+  - id: luggage-grammar
+    question: "Choose the correct sentence."
+    options: ["I have a lot of luggage.", "I have a lot of luggages.", "I have many luggage.", "I have a luggages."]
+    answer: 0
+    level: B1
+  - id: lost-bag
+    question: "You left your bag on the train. Where do you go?"
+    options: ["the lost property office", "the waiting room", "the footbridge", "the ticket machine"]
+    answer: 0
+    level: A2
+  - id: change-meaning
+    question: "\"You change trains at Riverside.\" What do you do at Riverside?"
+    options: ["get off and take another train", "buy food", "pay more money", "sit in a different seat"]
+    answer: 0
+    level: A2
+  - id: delayed-five
+    question: "The 3:10 is delayed by five minutes. When will it leave?"
+    options: ["3:15", "3:05", "3:50", "5:10"]
+    answer: 0
+    level: A2
+  - id: polite-ticket
+    question: "What is the most polite way to buy a ticket?"
+    options: ["Could I have a return ticket to Old Town, please?", "Give me a ticket.", "Ticket. Old Town.", "I want ticket now."]
+    answer: 0
+    level: A2

@@ -1,16 +1,545 @@
 id: clothes
-title: clothes
-intro: Coming soon.
+title: Style Corner
+intro: Come into the shop, find clothes in your favourite colours and try them on in the fitting room. Learn the names of clothes, sizes and what to say when you shop.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: tops, label: Tops and dresses }
+  - { id: bottoms, label: Trousers and skirts }
+  - { id: shoes, label: Shoes and socks }
+  - { id: accessories, label: Hats, glasses and bags }
+  - { id: describe, label: "Patterns, materials and fit" }
+  - { id: shop, label: In the shop }
+groups:
+  - { id: help, label: Asking for help }
+  - { id: size, label: Size and fit }
+  - { id: colour, label: Colours and styles }
+  - { id: paying, label: Paying and returns }
+  - { id: compliments, label: Compliments }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # ---------------------------------------------------------------- tops
+  - id: t-shirt
+    en: T-shirt
+    plural: T-shirts
+    icon: 👕
+    category: tops
+    price: 12
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: I have a blue T-shirt., level: A1 }
+      - { en: "This T-shirt is too small. Do you have a medium?", level: A2 }
+      - { en: Cotton T-shirts are cool and comfortable in hot weather., level: B1 }
+  - id: shirt
+    en: shirt
+    plural: shirts
+    icon: 👔
+    category: tops
+    price: 20
+    note: A shirt has buttons and a collar.
+    sentences:
+      - { en: Dad is wearing a white shirt., level: A1 }
+      - { en: I need a shirt for school., level: A2 }
+      - { en: "This shirt needs ironing, so it's a bit creased.", level: B1 }
+  - id: hoodie
+    en: hoodie
+    plural: hoodies
+    icon: 🧥
+    category: tops
+    price: 25
+    note: A warm top with a hood.
+    sentences:
+      - { en: My hoodie is grey., level: A1 }
+      - { en: Can I try on the red hoodie?, level: A2 }
+      - { en: "I always wear a hoodie when it's windy, because I can put the hood up.", level: B1 }
+  - id: sweater
+    en: sweater
+    plural: sweaters
+    icon: 🧶
+    category: tops
+    price: 28
+    note: "British people also say jumper."
+    sentences:
+      - { en: The sweater is warm., level: A1 }
+      - { en: Grandma made me a green sweater., level: A2 }
+      - { en: Wool sweaters can shrink if you wash them in hot water., level: B1 }
+  - id: jacket
+    en: jacket
+    plural: jackets
+    icon: 🧥
+    category: tops
+    price: 45
+    sentences:
+      - { en: Put on your jacket., level: A1 }
+      - { en: This jacket has two big pockets., level: A2 }
+      - { en: A light jacket is perfect for a cool spring evening., level: B1 }
+  - id: coat
+    en: coat
+    plural: coats
+    icon: 🧥
+    category: tops
+    price: 60
+    sentences:
+      - { en: "It's cold. Wear your coat.", level: A1 }
+      - { en: "My winter coat is long and black.", level: A2 }
+      - { en: "This coat is waterproof, so you won't get wet in the rain.", level: B1 }
+  - id: dress
+    en: dress
+    plural: dresses
+    icon: 👗
+    category: tops
+    price: 35
+    sentences:
+      - { en: She has a pink dress., level: A1 }
+      - { en: "I'd like a blue dress, size M, please.", level: A2 }
+      - { en: She's looking for a dress to wear to her cousin's wedding., level: B1 }
+  - id: suit
+    en: suit
+    plural: suits
+    icon: 🤵
+    category: tops
+    price: 90
+    note: A jacket and trousers in the same colour.
+    sentences:
+      - { en: He is wearing a black suit., level: A1 }
+      - { en: You need a suit for a job interview., level: A2 }
+      - { en: "The suit fits well, but the trousers are a little long.", level: B1 }
+  # ---------------------------------------------------------------- bottoms
+  - id: trousers
+    en: trousers
+    icon: 👖
+    category: bottoms
+    price: 30
+    note: "Always plural: a pair of trousers. Americans say pants."
+    sentences:
+      - { en: My trousers are grey., level: A1 }
+      - { en: I'd like a pair of black trousers., level: A2 }
+      - { en: "These trousers are too long, but they can shorten them for you.", level: B1 }
+  - id: jeans
+    en: jeans
+    icon: 👖
+    category: bottoms
+    price: 35
+    note: "Always plural: a pair of jeans."
+    sentences:
+      - { en: I like my blue jeans., level: A1 }
+      - { en: "These jeans are too tight. Can I have a bigger size?", level: A2 }
+      - { en: Jeans are made of denim, a strong cotton material., level: B1 }
+  - id: shorts
+    en: shorts
+    icon: 🩳
+    category: bottoms
+    price: 15
+    note: "Always plural: a pair of shorts."
+    sentences:
+      - { en: I wear shorts in summer., level: A1 }
+      - { en: Are these shorts on sale?, level: A2 }
+      - { en: "Shorts aren't allowed at some temples, so bring long trousers.", level: B1 }
+  - id: skirt
+    en: skirt
+    plural: skirts
+    icon: 👗
+    category: bottoms
+    price: 22
+    sentences:
+      - { en: The skirt is yellow., level: A1 }
+      - { en: She's wearing a long skirt today., level: A2 }
+      - { en: A pleated skirt is part of the school uniform at many schools., level: B1 }
+  - id: overalls
+    en: overalls
+    icon: 👖
+    category: bottoms
+    price: 32
+    note: "Trousers with a top part and straps. Always plural: a pair of overalls."
+    sentences:
+      - { en: The farmer wears overalls., level: A1 }
+      - { en: Overalls have a big pocket on the front., level: A2 }
+      - { en: "Overalls were work clothes, but now they're fashionable too.", level: B1 }
+  # ---------------------------------------------------------------- shoes
+  - id: shoes
+    en: shoe
+    plural: shoes
+    icon: 👞
+    category: shoes
+    price: 40
+    note: a pair of shoes
+    sentences:
+      - { en: My shoes are white., level: A1 }
+      - { en: "What size are your shoes? — I'm a size 38.", level: A2 }
+      - { en: "These shoes look great, but they hurt my feet a little.", level: B1 }
+  - id: trainers
+    en: trainer
+    plural: trainers
+    icon: 👟
+    category: shoes
+    price: 50
+    note: "Sports shoes. Americans say sneakers."
+    sentences:
+      - { en: I run in my trainers., level: A1 }
+      - { en: Can I try these trainers in a size 40?, level: A2 }
+      - { en: "Good trainers are expensive, but they're worth it if you run a lot.", level: B1 }
+  - id: boots
+    en: boot
+    plural: boots
+    icon: 🥾
+    category: shoes
+    price: 55
+    note: a pair of boots
+    sentences:
+      - { en: I wear boots in the rain., level: A1 }
+      - { en: These brown boots are made of leather., level: A2 }
+      - { en: "Walking boots should feel comfortable before you go on a long hike.", level: B1 }
+  - id: sandals
+    en: sandal
+    plural: sandals
+    icon: 🩴
+    category: shoes
+    price: 18
+    note: a pair of sandals
+    sentences:
+      - { en: I wear sandals on the beach., level: A1 }
+      - { en: These sandals are cheap and comfortable., level: A2 }
+      - { en: You can't wear sandals in the science lab for safety reasons., level: B1 }
+  - id: socks
+    en: sock
+    plural: socks
+    icon: 🧦
+    category: shoes
+    price: 4
+    note: a pair of socks
+    sentences:
+      - { en: My socks are red., level: A1 }
+      - { en: I need two pairs of white socks., level: A2 }
+      - { en: "I can never find matching socks after I do the washing.", level: B1 }
+  # ---------------------------------------------------------------- accessories
+  - id: cap
+    en: cap
+    plural: caps
+    icon: 🧢
+    category: accessories
+    price: 10
+    sentences:
+      - { en: I have a red cap., level: A1 }
+      - { en: A cap keeps the sun out of your eyes., level: A2 }
+      - { en: Some people wear their caps backwards., level: B1 }
+  - id: beanie
+    en: beanie
+    plural: beanies
+    icon: 🧶
+    category: accessories
+    price: 8
+    note: A soft, warm knitted hat.
+    sentences:
+      - { en: The beanie is warm., level: A1 }
+      - { en: I wear a beanie in winter., level: A2 }
+      - { en: "You lose a lot of heat through your head, so a beanie really helps.", level: B1 }
+  - id: sun-hat
+    en: sun hat
+    plural: sun hats
+    icon: 👒
+    category: accessories
+    price: 14
+    sentences:
+      - { en: Wear a sun hat at the beach., level: A1 }
+      - { en: This sun hat has a wide brim., level: A2 }
+      - { en: A sun hat protects your face and neck from sunburn., level: B1 }
+  - id: top-hat
+    en: top hat
+    plural: top hats
+    icon: 🎩
+    category: accessories
+    price: 30
+    sentences:
+      - { en: The magician has a top hat., level: A1 }
+      - { en: A top hat is tall and black., level: A2 }
+      - { en: Rich gentlemen wore top hats in the 1800s., level: B1 }
+  - id: glasses
+    en: glasses
+    icon: 👓
+    category: accessories
+    price: 25
+    note: "Always plural: a pair of glasses."
+    sentences:
+      - { en: My mum wears glasses., level: A1 }
+      - { en: I need my glasses to read., level: A2 }
+      - { en: "These round glasses really suit you.", level: B1 }
+  - id: sunglasses
+    en: sunglasses
+    icon: 🕶️
+    category: accessories
+    price: 16
+    note: "Always plural: a pair of sunglasses."
+    sentences:
+      - { en: I like your sunglasses!, level: A1 }
+      - { en: These sunglasses are on sale., level: A2 }
+      - { en: Good sunglasses protect your eyes from strong sunlight., level: B1 }
+  - id: backpack
+    en: backpack
+    plural: backpacks
+    icon: 🎒
+    category: accessories
+    price: 28
+    sentences:
+      - { en: My backpack is big., level: A1 }
+      - { en: I carry my books in my backpack., level: A2 }
+      - { en: This backpack has a pocket for a water bottle on each side., level: B1 }
+  - id: scarf
+    en: scarf
+    plural: scarves
+    icon: 🧣
+    category: accessories
+    price: 12
+    sentences:
+      - { en: The scarf is long., level: A1 }
+      - { en: Wear a scarf. It's very cold today., level: A2 }
+      - { en: "This scarf is made of soft wool, so it isn't itchy.", level: B1 }
+  - id: belt
+    en: belt
+    plural: belts
+    icon: 🪢
+    category: accessories
+    price: 15
+    sentences:
+      - { en: I have a brown belt., level: A1 }
+      - { en: My trousers are too big. I need a belt., level: A2 }
+      - { en: A leather belt goes well with smart shoes., level: B1 }
+  - id: tie
+    en: tie
+    plural: ties
+    icon: 👔
+    category: accessories
+    price: 18
+    sentences:
+      - { en: Dad has a blue tie., level: A1 }
+      - { en: You wear a tie with a shirt and a suit., level: A2 }
+      - { en: "Ties are less common at work now, except at formal events.", level: B1 }
+  # ---------------------------------------------------------------- describing clothes
+  - id: striped
+    en: striped
+    icon: 🦓
+    pos: adjective
+    category: describe
+    note: with lines (stripes)
+    sentences:
+      - { en: I have a striped T-shirt., level: A1 }
+      - { en: The sailor is wearing a blue and white striped shirt., level: A2 }
+      - { en: "Vertical stripes can make you look taller.", level: B1 }
+  - id: spotted
+    en: spotted
+    icon: 🔴
+    pos: adjective
+    category: describe
+    note: "with round spots — also called polka dot"
+    sentences:
+      - { en: The dress is red and spotted., level: A1 }
+      - { en: She loves her spotted scarf., level: A2 }
+      - { en: Polka dots were very popular in the 1950s., level: B1 }
+  - id: checked
+    en: checked
+    icon: 🏁
+    pos: adjective
+    category: describe
+    note: with squares, like a chessboard (Americans say plaid or checkered)
+    sentences:
+      - { en: He has a checked shirt., level: A1 }
+      - { en: A checked skirt is part of my uniform., level: A2 }
+      - { en: Checked shirts are popular with people who work outdoors., level: B1 }
+  - id: cotton
+    en: cotton
+    icon: ☁️
+    category: describe
+    note: "Uncountable. A soft material made from a plant."
+    sentences:
+      - { en: This T-shirt is cotton., level: A1 }
+      - { en: Cotton is soft and cool., level: A2 }
+      - { en: "Cotton clothes are easy to wash, but they crease easily.", level: B1 }
+  - id: wool
+    en: wool
+    icon: 🐑
+    category: describe
+    note: "Uncountable. It comes from sheep."
+    sentences:
+      - { en: Wool is warm., level: A1 }
+      - { en: My scarf is made of wool., level: A2 }
+      - { en: "Some people can't wear wool because it makes their skin itch.", level: B1 }
+  - id: leather
+    en: leather
+    icon: 👜
+    category: describe
+    note: Uncountable. Shoes, belts and bags are often leather.
+    sentences:
+      - { en: The belt is leather., level: A1 }
+      - { en: Leather shoes are strong., level: A2 }
+      - { en: "Leather lasts for years if you clean it regularly.", level: B1 }
+  - id: tight
+    en: tight
+    icon: 🤏
+    pos: adjective
+    category: describe
+    note: "opposite: loose"
+    sentences:
+      - { en: The jeans are tight., level: A1 }
+      - { en: "These shoes are too tight. I need a bigger size.", level: A2 }
+      - { en: "Tight clothes look smart, but loose ones are better for sport.", level: B1 }
+  - id: loose
+    en: loose
+    icon: 🎈
+    pos: adjective
+    category: describe
+    note: "opposite: tight"
+    sentences:
+      - { en: The hoodie is loose., level: A1 }
+      - { en: "This shirt is too loose. Do you have a smaller one?", level: A2 }
+      - { en: Loose clothes keep you cool when the weather is hot and humid., level: B1 }
+  # ---------------------------------------------------------------- in the shop
+  - id: size
+    en: size
+    plural: sizes
+    icon: 📏
+    category: shop
+    note: "Sizes: S (small), M (medium), L (large), XL (extra large)."
+    sentences:
+      - { en: What size are you?, level: A1 }
+      - { en: "Do you have this in a large? — Sorry, we only have small and medium.", level: A2 }
+      - { en: "Sizes are different in every shop, so always try things on first.", level: B1 }
+  - id: fitting-room
+    en: fitting room
+    plural: fitting rooms
+    icon: 🚪
+    category: shop
+    note: The small room where you try clothes on. Americans say dressing room.
+    sentences:
+      - { en: Where is the fitting room?, level: A1 }
+      - { en: You can take three items into the fitting room., level: A2 }
+      - { en: "There was a long queue for the fitting rooms because of the sale.", level: B1 }
+  - id: mirror
+    en: mirror
+    plural: mirrors
+    icon: 🪞
+    category: shop
+    sentences:
+      - { en: Look in the mirror., level: A1 }
+      - { en: There's a big mirror next to the fitting rooms., level: A2 }
+      - { en: "I looked in the mirror and decided the colour didn't suit me.", level: B1 }
+  - id: try-on
+    en: try on
+    icon: 🙋
+    pos: verb
+    category: shop
+    note: "try something on, try it on"
+    sentences:
+      - { en: Can I try it on?, level: A1 }
+      - { en: "I tried on three dresses, but none of them fitted.", level: A2 }
+      - { en: "You should try the shoes on with the socks you'll wear with them.", level: B1 }
+  - id: fit
+    en: fit
+    icon: ✅
+    pos: verb
+    category: shop
+    note: "It fits = it's the right size. It suits you = it looks good on you."
+    sentences:
+      - { en: It fits!, level: A1 }
+      - { en: "The jacket doesn't fit. It's too big.", level: A2 }
+      - { en: "The jeans fit me perfectly, and the colour suits me too.", level: B1 }
+  - id: price-tag
+    en: price tag
+    plural: price tags
+    icon: 🏷️
+    category: shop
+    sentences:
+      - { en: Look at the price tag., level: A1 }
+      - { en: "There's no price tag on this hat. How much is it?", level: A2 }
+      - { en: Don't take the price tags off until you're sure you want to keep it., level: B1 }
+  - id: receipt
+    en: receipt
+    plural: receipts
+    icon: 🧾
+    category: shop
+    note: "The 'p' is silent: /rɪˈsiːt/."
+    sentences:
+      - { en: Here is your receipt., level: A1 }
+      - { en: Keep the receipt if you want to change it., level: A2 }
+      - { en: "You can return anything within 30 days, as long as you have the receipt.", level: B1 }
+  - id: on-sale
+    en: on sale
+    icon: 🔖
+    pos: phrase
+    category: shop
+    note: cheaper than usual for a short time
+    sentences:
+      - { en: The hats are on sale., level: A1 }
+      - { en: "Everything is half price in the sale this week.", level: A2 }
+      - { en: "It was on sale, so I got it for half the normal price.", level: B1 }
+phrases:
+  - { en: "Can I help you?", level: A1, group: help }
+  - { en: "I'm just looking, thanks.", level: A1, group: help }
+  - { en: "I'm looking for a jacket.", level: A1, group: help }
+  - { en: "Where are the fitting rooms?", level: A1, group: help }
+  - { en: "Excuse me, do you sell school uniforms?", level: A2, group: help }
+  - { en: "What size are you?", level: A1, group: size }
+  - { en: "Can I try it on?", level: A1, group: size }
+  - { en: "It's too big. Do you have a smaller size?", level: A1, group: size }
+  - { en: "These jeans are a bit tight around the waist.", level: A2, group: size }
+  - { en: "It fits perfectly!", level: A2, group: size }
+  - { en: "Do you have this in red?", level: A1, group: colour }
+  - { en: "What other colours do you have?", level: A1, group: colour }
+  - { en: "I'd prefer something plain, without a pattern.", level: B1, group: colour }
+  - { en: "Which one goes better with my blue jeans?", level: B1, group: colour }
+  - { en: "How much is this hoodie?", level: A1, group: paying }
+  - { en: "I'll take it.", level: A1, group: paying }
+  - { en: "Can I pay by card?", level: A1, group: paying }
+  - { en: "I'd like to return these shoes. They're too small.", level: A2, group: paying }
+  - { en: "Could I change it for a bigger size?", level: A2, group: paying }
+  - { en: "Do you have the receipt?", level: A2, group: paying }
+  - { en: "You can get a refund or exchange it within 30 days.", level: B1, group: paying }
+  - { en: "That colour really suits you!", level: A2, group: compliments }
+  - { en: "I love your dress!", level: A1, group: compliments }
+  - { en: "You look great in that jacket.", level: A2, group: compliments }
+  - { en: "Where did you get those trainers? They're really cool.", level: B1, group: compliments }
+quiz:
+  - id: q-too-big
+    question: "The shirt is too big. What do you ask?"
+    options: ["Do you have a smaller size?", "Do you have a bigger size?", "Can I pay by card?", "Where is the mirror?"]
+    answer: 0
+    level: A1
+  - id: q-try-on
+    question: "You want to see if a jacket fits. What do you say?"
+    options: ["Can I try it on?", "Can I try it in?", "Can I put it off?", "Can I wear it out?"]
+    answer: 0
+    level: A1
+  - id: q-pair
+    question: "Which one do we say?"
+    options: ["a pair of jeans", "a jean", "two jean", "a jeans"]
+    answer: 0
+    level: A1
+  - id: q-feet
+    question: "Which of these do you wear on your feet?"
+    options: ["trainers", "a scarf", "a cap", "a belt"]
+    answer: 0
+    level: A1
+  - id: q-colour
+    question: "\"Do you have this ___ green?\""
+    options: ["in", "on", "at", "of"]
+    answer: 0
+    level: A2
+  - id: q-suit
+    question: "\"That colour really ___ you!\" (it looks good on you)"
+    options: ["suits", "fits", "wears", "tries"]
+    answer: 0
+    level: A2
+  - id: q-return
+    question: "Your new shoes are too small. You go back to the shop to get your money back. You want a…"
+    options: ["refund", "receipt", "price tag", "fitting room"]
+    answer: 0
+    level: A2
+  - id: q-material
+    question: "Which material comes from sheep?"
+    options: ["wool", "cotton", "leather", "denim"]
+    answer: 0
+    level: A2
+  - id: q-sale
+    question: "A $40 jacket is on sale at half price. How much is it now?"
+    options: ["$20", "$40", "$10", "$80"]
+    answer: 0
+    level: A2
+  - id: q-wearing
+    question: "Choose the correct sentence."
+    options: ["Today I'm wearing a striped T-shirt.", "Today I'm wear a striped T-shirt.", "Today I wearing a T-shirt striped.", "Today I'm wearing a T-shirt striped."]
+    answer: 0
+    level: B1

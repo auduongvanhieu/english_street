@@ -1,0 +1,15 @@
+id: station-ticket-01
+npc: stationmaster
+level: A2
+title: The Right Ticket
+intro: You want to visit Sunny Bay today and come back tomorrow. Buy the right ticket and find out the time and the platform of the next train.
+goals:
+  - { id: greet, desc: "Greet the stationmaster and say where you want to go" }
+  - { id: ticket_type, desc: "Ask for a single or a return ticket (you are coming back tomorrow)" }
+  - { id: ask_price, desc: "Ask how much it costs and pay" }
+  - { id: ask_time, desc: "Ask what time the next train leaves" }
+  - { id: ask_platform, desc: "Ask which platform it leaves from" }
+target_vocab: [return ticket, single ticket, platform, departure, fare]
+target_phrases: ["A return ticket to…, please.", "How much is it?", "What time does the next train leave?", "Which platform does it leave from?"]
+max_turns: 12
+reward: { xp: 60, coins: 12 }

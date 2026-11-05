@@ -1,0 +1,15 @@
+id: library-borrow-01
+npc: librarian
+level: A2
+title: Borrowing a Book
+intro: You are new at the library. Get a library card, ask Mrs. Patel to help you find a book and find out when you must bring it back.
+goals:
+  - { id: card, desc: "Ask for a library card (give your name)" }
+  - { id: find, desc: "Ask for a kind of book you like (adventure, mystery, animals…)" }
+  - { id: borrow, desc: "Say you would like to borrow it" }
+  - { id: due, desc: "Ask how long you can keep it or when the due date is" }
+  - { id: thank, desc: "Thank the librarian and say goodbye" }
+target_vocab: [library card, borrow, return, due date, author]
+target_phrases: ["Can I get a library card?", "I'd like to borrow this book.", "When do I have to return it?"]
+max_turns: 10
+reward: { xp: 60, coins: 15 }

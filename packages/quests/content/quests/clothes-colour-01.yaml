@@ -1,0 +1,14 @@
+id: clothes-colour-01
+npc: stylist
+level: A2
+title: Another Colour, Please
+intro: You like a T-shirt but not the colour. Ask what other colours there are, choose one, ask the price and pay.
+goals:
+  - { id: ask_colour, desc: "Ask if they have it in another colour" }
+  - { id: choose, desc: "Choose a colour and say why (I prefer…, it goes with…)" }
+  - { id: price, desc: "Ask how much it is" }
+  - { id: pay, desc: "Say you'll take it and how you want to pay" }
+target_vocab: [colour, T-shirt, prefer, how much, card, cash, receipt]
+target_phrases: ["Do you have this in blue?", "What other colours do you have?", "How much is it?", "I'll take it."]
+max_turns: 10
+reward: { xp: 60, coins: 12 }

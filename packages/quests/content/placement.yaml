@@ -10,17 +10,17 @@
   answer: 1
 - id: p03
   level: A1
-  question: "How much ___ this coffee?"
+  question: "How much ___ this T-shirt?"
   options: ["is", "are", "do", "does"]
   answer: 0
 - id: p04
   level: A2
-  question: "I ___ to the bank yesterday."
+  question: "I ___ to the cinema with my friends yesterday."
   options: ["go", "goes", "went", "gone"]
   answer: 2
 - id: p05
   level: A2
-  question: "Could you tell me ___ the post office is?"
+  question: "Could you tell me ___ platform 3 is?"
   options: ["where", "what", "who", "why"]
   answer: 0
 - id: p06
@@ -30,17 +30,17 @@
   answer: 1
 - id: p07
   level: B1
-  question: "I've been waiting here ___ twenty minutes."
+  question: "I've been waiting for the train ___ twenty minutes."
   options: ["since", "during", "for", "from"]
   answer: 2
 - id: p08
   level: B2
-  question: "The report ___ by the manager before the meeting."
-  options: ["had been reviewed", "has reviewed", "was reviewing", "reviewed"]
+  question: "The room ___ by the time the guests arrived at the hotel."
+  options: ["had been cleaned", "has cleaned", "was cleaning", "cleaned"]
   answer: 0
 - id: p09
   level: B2
-  question: "I wish I ___ more time to prepare for the interview."
+  question: "I wish I ___ more time to practise before the match."
   options: ["have", "had", "will have", "having"]
   answer: 1
 - id: p10

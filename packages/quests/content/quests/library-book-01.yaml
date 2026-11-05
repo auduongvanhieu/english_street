@@ -1,0 +1,15 @@
+id: library-book-01
+npc: librarian
+level: B1
+title: A Book I Loved
+intro: You are returning a book you really enjoyed. Mrs. Patel wants to put it on the "Readers' choice" shelf. Tell her about the book and why other people should read it.
+goals:
+  - { id: title, desc: "Say the title, the author and what kind of book it is" }
+  - { id: plot, desc: "Describe the plot in a few sentences (who, where, what happens)" }
+  - { id: character, desc: "Describe the main character" }
+  - { id: opinion, desc: "Say what you liked (or didn't like) and why" }
+  - { id: next, desc: "Ask for a similar book to read next" }
+target_vocab: [novel, author, plot, character, chapter, ending]
+target_phrases: ["It's about…", "It's set in…", "The main character is…", "What I liked most was…"]
+max_turns: 12
+reward: { xp: 90, coins: 20 }

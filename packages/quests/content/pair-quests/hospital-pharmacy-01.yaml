@@ -1,0 +1,42 @@
+id: hospital-pharmacy-01
+npc: pharmacist
+level: A2
+title: At the Pharmacy (pair)
+intro: One of you hurt their ankle playing football, the other works at the pharmacy counter. Dr. Rivera listens and gives feedback.
+roles:
+  - id: patient
+    label: Customer
+    brief: >
+      You fell during a football match an hour ago. Your ankle hurts and it is a bit swollen,
+      but you can walk. You are not allergic to anything. You want something for the pain and some advice.
+    goals:
+      - id: say_problem
+        desc: Say what happened and where it hurts
+      - id: answer_questions
+        desc: Answer the questions (when it happened, can you walk, allergies)
+      - id: ask_what
+        desc: Ask what you should buy and how to use it
+      - id: ask_sport
+        desc: Ask when you can play football again
+  - id: pharmacist
+    label: Pharmacist
+    brief: >
+      You work at the pharmacy counter at City Hospital. Ask questions about the injury, suggest
+      the right things and explain how to use them. Give good advice.
+    facts: |
+      For a sprained ankle: an ice pack ($4) for 20 minutes three times a day, a bandage ($5) for support,
+      pain tablets ($5): 2 tablets every 6 hours, no more than 8 a day. Rest and keep the foot up.
+      No football for about a week. If you can't walk at all, see a doctor for an X-ray.
+    goals:
+      - id: ask_symptoms
+        desc: Ask what happened and where it hurts
+      - id: ask_allergy
+        desc: Ask if they are allergic to anything
+      - id: suggest
+        desc: Suggest at least two things and explain how to use them
+      - id: advise
+        desc: Give advice with "You should…" / "You shouldn't…"
+target_vocab: [sprained ankle, ice pack, bandage, swollen, allergic]
+target_phrases: ["Where does it hurt?", "Are you allergic to anything?", "You should rest and keep your foot up.", "Use it for twenty minutes."]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

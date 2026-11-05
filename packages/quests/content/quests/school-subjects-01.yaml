@@ -1,0 +1,14 @@
+id: school-subjects-01
+npc: teacher
+level: A2
+title: Subjects and the Timetable
+intro: Talk to Ms. Green about school subjects and the timetable for this week.
+goals:
+  - { id: favourite, desc: "Say your favourite subject and why" }
+  - { id: ask_day, desc: "Ask which day you have a subject (When do we have Art?)" }
+  - { id: ask_time, desc: "Ask what time a lesson starts" }
+  - { id: days, desc: "Use a day of the week in a sentence" }
+target_vocab: [Maths, English, Art, Science, timetable, Monday, Friday]
+target_phrases: ["My favourite subject is…", "When do we have…?", "What time does … start?"]
+max_turns: 12
+reward: { xp: 60, coins: 12 }

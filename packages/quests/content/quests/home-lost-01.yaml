@@ -1,0 +1,14 @@
+id: home-lost-01
+npc: mum
+level: A1
+title: Where Is It?
+intro: Some things are lost in the house. Ask Mum where they are and say where you found them.
+goals:
+  - { id: ask_where, desc: "Ask where something is (Where is the remote?)" }
+  - { id: prep, desc: "Use a place word: on, in, under, behind, next to" }
+  - { id: room, desc: "Name a room in the house" }
+  - { id: thank, desc: "Say thank you" }
+target_vocab: [sofa, bed, bookcase, under, behind, next to, living room]
+target_phrases: ["Where is…?", "It's under the sofa.", "It's next to the bed."]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

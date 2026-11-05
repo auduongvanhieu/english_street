@@ -1,0 +1,41 @@
+id: cinema-boxoffice-01
+npc: usher
+level: A2
+title: At the Box Office (pair)
+intro: "One of you wants to see a film, the other sells tickets at Star Cinema. Leo listens and gives each of you feedback."
+roles:
+  - id: customer
+    label: Film fan
+    brief: >
+      You want to see a film tonight with your younger brother (he is 9). Ask what is on and what time,
+      choose a film that is OK for him, buy one adult and one child ticket with seats next to each other,
+      and buy a large popcorn to share. Ask the total.
+    goals:
+      - id: greet
+        desc: Greet the ticket seller and ask what's on tonight
+      - id: choose
+        desc: Choose a film and a showtime
+      - id: tickets
+        desc: Ask for one adult and one child ticket, seats together
+      - id: total
+        desc: Order popcorn and ask the total price
+  - id: seller
+    label: Ticket seller
+    brief: >
+      You sell tickets at Star Cinema. Tell the customer two or three films and their times (Space Cats 7:30,
+      Robo Racers 8:15, The Haunted Lighthouse 9:00 — age 12+), suggest a good film for a child, offer seats
+      and say the total. Adult tickets $9, child $6, large popcorn $6.
+    facts: "{{menu:cinema}}"
+    goals:
+      - id: greet
+        desc: Greet the customer
+      - id: films
+        desc: Tell the customer at least two films and their times
+      - id: advise
+        desc: Say which film is (or isn't) good for a child
+      - id: total
+        desc: Say the total price
+target_vocab: [ticket, showtime, seat, popcorn, adult, child, total]
+target_phrases: ["What's on tonight?", "One adult and one child, please.", "Seats next to each other?", "That's … dollars altogether."]
+max_turns: 7
+reward: { xp: 70, coins: 20 }

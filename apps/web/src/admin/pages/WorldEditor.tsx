@@ -29,7 +29,7 @@ export function WorldEditor() {
                 { id: 'farm', label: `🌱 ${L('Nông trại', 'Farm')}` },
                 { id: 'zoo', label: `🦁 ${L('Tên thú sở thú', 'Zoo animal names')}` },
                 { id: 'critters', label: `🐈 ${L('Thú trên phố & góc vuốt ve', 'Street & petting-corner pets')}` },
-                { id: 'soldout', label: `🚫 ${L('Hết hàng hôm nay', 'Sold out today')}` },
+                { id: 'soldout', label: `🚫 ${L('Hết hàng & giảm giá', 'Sold out & sale')}` },
                 { id: 'weather', label: `⛅ ${L('Thời tiết & giờ', 'Weather & time')}` },
               ]}
             />
@@ -182,20 +182,41 @@ function SoldOutTab({ d, set }: { d: WorldConfig; set: (d: WorldConfig) => void 
   const L = useL();
   const restaurant = useLoad(() => get<{ data: AreaContent }>('/admin/content/area/restaurant'));
   const market = useLoad(() => get<{ data: AreaContent }>('/admin/content/area/supermarket'));
+  const clothes = useLoad(() => get<{ data: AreaContent }>('/admin/content/area/clothes'));
+  const sale = d.sale ?? {};
   const toggle = (area: string, id: string, on: boolean) => {
     const list = new Set(d.soldOut[area] ?? []);
     if (on) list.add(id);
     else list.delete(id);
     set({ ...d, soldOut: { ...d.soldOut, [area]: [...list] } });
   };
-  const block = (area: string, a: AreaContent | undefined) => (
-    <Card title={area === 'restaurant' ? L('Nhà hàng', 'Restaurant') : L('Siêu thị', 'Supermarket')} actions={<Btn small onClick={() => set({ ...d, soldOut: { ...d.soldOut, [area]: [] } })}>{L('Còn hàng hết', 'All available')}</Btn>}>
+  const toggleSale = (area: string, id: string, on: boolean) => {
+    const list = new Set(sale[area] ?? []);
+    if (on) list.add(id);
+    else list.delete(id);
+    set({ ...d, sale: { ...sale, [area]: [...list] } });
+  };
+  const TITLE: Record<string, string> = { restaurant: L('Nhà hàng', 'Restaurant'), supermarket: L('Siêu thị', 'Supermarket'), clothes: L('Shop quần áo Style Corner', 'Style Corner (clothes)') };
+  const block = (area: string, a: AreaContent | undefined, withSale = false) => (
+    <Card
+      title={TITLE[area]}
+      actions={
+        <>
+          <Btn small onClick={() => set({ ...d, soldOut: { ...d.soldOut, [area]: [] } })}>{L('Còn hàng hết', 'All available')}</Btn>
+          {withSale ? <Btn small onClick={() => set({ ...d, sale: { ...sale, [area]: [] } })}>{L('Bỏ giảm giá', 'No sale')}</Btn> : null}
+        </>
+      }
+    >
       <p className="mb-2 text-xs text-gray-500">{L('Món hết hàng: NPC sẽ nói "hết rồi", người chơi không gọi/mua được.', 'Sold out: the NPC says it is gone, players cannot order/buy it.')}</p>
+      {withSale ? <p className="mb-2 text-xs text-gray-500">{L('Giảm giá: món có nhãn SALE, giá đô-la trong trò chơi phòng thử đồ giảm một nửa.', 'On sale: the item gets a SALE tag and its dollar price in the fitting-room game is halved.')}</p> : null}
       <div className="grid gap-1 md:grid-cols-3">
         {(a?.items ?? [])
           .filter((i) => i.price != null && !i.hidden)
           .map((i) => (
-            <Check key={i.id} checked={(d.soldOut[area] ?? []).includes(i.id)} onChange={(v) => toggle(area, i.id, v)} label={`${i.icon} ${i.en} ($${i.price})`} />
+            <div key={i.id} className="flex flex-wrap items-center gap-x-3">
+              <Check checked={(d.soldOut[area] ?? []).includes(i.id)} onChange={(v) => toggle(area, i.id, v)} label={`${i.icon} ${i.en} ($${i.price})`} />
+              {withSale ? <Check checked={(sale[area] ?? []).includes(i.id)} onChange={(v) => toggleSale(area, i.id, v)} label={`🔖 ${L('Giảm giá', 'On sale')}`} /> : null}
+            </div>
           ))}
       </div>
     </Card>
@@ -204,6 +225,7 @@ function SoldOutTab({ d, set }: { d: WorldConfig; set: (d: WorldConfig) => void 
     <>
       {block('restaurant', restaurant.data?.data)}
       {block('supermarket', market.data?.data)}
+      {block('clothes', clothes.data?.data, true)}
     </>
   );
 }

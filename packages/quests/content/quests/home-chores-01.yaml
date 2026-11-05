@@ -1,0 +1,14 @@
+id: home-chores-01
+npc: mum
+level: A1
+title: Helping Mum
+intro: Mum is busy. Offer to help with the chores and ask where things go.
+goals:
+  - { id: greet, desc: "Say hello to Mum" }
+  - { id: offer, desc: "Offer to help (Can I help you? / Shall I…?)" }
+  - { id: ask_where, desc: "Ask where something goes (Where do the cups go?)" }
+  - { id: say_done, desc: "Say what you did with a place word (I put the cups in the cupboard.)" }
+target_vocab: [cupboard, cup, plate, put, in, on, under]
+target_phrases: ["Can I help you?", "Where do the cups go?", "I put the cups in the cupboard."]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

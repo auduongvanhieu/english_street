@@ -1,16 +1,511 @@
 id: hotel
-title: hotel
-intro: Coming soon.
+title: Riverside Hotel
+intro: Check in at the front desk, book a room for your family and ask for help when something in your room doesn't work. Learn hotel words, dates and polite requests.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: rooms, label: Rooms }
+  - { id: booking, label: "Booking and checking in" }
+  - { id: facilities, label: Facilities }
+  - { id: in-room, label: In the room }
+  - { id: problems, label: Problems }
+  - { id: dates, label: "Dates and ordinal numbers" }
+groups:
+  - { id: booking, label: Booking a room }
+  - { id: checkin, label: "Checking in and out" }
+  - { id: asking, label: Asking for information }
+  - { id: problems, label: Problems and polite complaints }
+  - { id: desk, label: "At the front desk (staff)" }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # rooms
+  - id: single-room
+    en: single room
+    plural: single rooms
+    icon: 🛏️
+    category: rooms
+    price: 60
+    note: A room for one person, with one bed. $60 a night.
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: "I'd like a single room, please.", level: A1 }
+      - { en: "A single room costs sixty dollars a night.", level: A2 }
+      - { en: "I'm travelling alone, so a single room will be fine.", level: B1 }
+  - id: double-room
+    en: double room
+    plural: double rooms
+    icon: 💑
+    category: rooms
+    price: 90
+    note: A room with one big bed for two people. $90 a night.
+    sentences:
+      - { en: "We'd like a double room for two nights.", level: A1 }
+      - { en: "The double room has a big bed and a balcony.", level: A2 }
+      - { en: "Is there a double room available from the 14th of May?", level: B1 }
+  - id: twin-room
+    en: twin room
+    plural: twin rooms
+    icon: 👯
+    category: rooms
+    price: 90
+    note: A room with two single beds. $90 a night.
+    sentences:
+      - { en: "A twin room has two beds.", level: A1 }
+      - { en: "My brother and I want a twin room.", level: A2 }
+      - { en: "We asked for a twin room, but they gave us a double.", level: B1 }
+  - id: family-room
+    en: family room
+    plural: family rooms
+    icon: 👨‍👩‍👧‍👦
+    category: rooms
+    price: 140
+    note: A big room for two adults and two children. $140 a night.
+    sentences:
+      - { en: "We need a family room for four people.", level: A1 }
+      - { en: "The family room has a double bed and two single beds.", level: A2 }
+      - { en: "Could we have a family room with a view of the river?", level: B1 }
+  - id: suite
+    en: suite
+    plural: suites
+    icon: 👑
+    category: rooms
+    price: 250
+    note: A very big, expensive room, often with a living room.
+    sentences:
+      - { en: "The suite is very big.", level: A1 }
+      - { en: "The suite has a bedroom and a living room.", level: A2 }
+      - { en: "For our anniversary, we booked the suite on the top floor.", level: B1 }
+  - id: river-view
+    en: river view
+    icon: 🏞️
+    category: rooms
+    pos: phrase
+    sentences:
+      - { en: "My room has a river view.", level: A1 }
+      - { en: "A room with a river view costs a little more.", level: A2 }
+      - { en: "If possible, we'd prefer a room with a river view.", level: B1 }
+  # booking and checking in
+  - id: reservation
+    en: reservation
+    plural: reservations
+    icon: 📋
+    category: booking
+    note: "In British English people also say \"booking\"."
+    sentences:
+      - { en: "I have a reservation.", level: A1 }
+      - { en: "The reservation is in the name of Brown.", level: A2 }
+      - { en: "I'm afraid there's no reservation under that name.", level: B1 }
+  - id: book
+    en: book
+    icon: 📞
+    pos: verb
+    category: booking
+    note: "book a room, book a table: arrange it before you go"
+    sentences:
+      - { en: "I want to book a room.", level: A1 }
+      - { en: "I booked a double room for three nights.", level: A2 }
+      - { en: "It's a busy weekend, so you should book well in advance.", level: B1 }
+  - id: check-in
+    en: check in
+    icon: 🛎️
+    pos: verb
+    category: booking
+    note: "verb: check in · noun: check-in (Check-in is from 2 pm.)"
+    sentences:
+      - { en: "I'd like to check in, please.", level: A1 }
+      - { en: "You can check in from two o'clock.", level: A2 }
+      - { en: "If we arrive early, is it possible to check in before noon?", level: B1 }
+  - id: check-out
+    en: check out
+    icon: 🚪
+    pos: verb
+    category: booking
+    note: "verb: check out · noun: check-out (Check-out is at 11 am.)"
+    sentences:
+      - { en: "We check out tomorrow.", level: A1 }
+      - { en: "What time do we have to check out?", level: A2 }
+      - { en: "Could we check out a bit later? Our train leaves at four.", level: B1 }
+  - id: night
+    en: night
+    plural: nights
+    icon: 🌙
+    category: booking
+    sentences:
+      - { en: "I want to stay for two nights.", level: A1 }
+      - { en: "One night in a double room is ninety dollars.", level: A2 }
+      - { en: "We might stay an extra night if the weather is good.", level: B1 }
+  - id: guest
+    en: guest
+    plural: guests
+    icon: 🧑‍💼
+    category: booking
+    sentences:
+      - { en: "The hotel has many guests today.", level: A1 }
+      - { en: "Guests can use the pool for free.", level: A2 }
+      - { en: "The receptionist welcomed every guest with a smile.", level: B1 }
+  - id: receptionist
+    en: receptionist
+    plural: receptionists
+    icon: 💁
+    category: booking
+    sentences:
+      - { en: "The receptionist is very friendly.", level: A1 }
+      - { en: "Ask the receptionist for the Wi-Fi password.", level: A2 }
+      - { en: "The receptionist apologised and changed our room at once.", level: B1 }
+  - id: front-desk
+    en: front desk
+    icon: 🏨
+    category: booking
+    note: Also called "reception".
+    sentences:
+      - { en: "The front desk is open all night.", level: A1 }
+      - { en: "Please leave your key at the front desk.", level: A2 }
+      - { en: "If you need anything, just call the front desk by dialling zero.", level: B1 }
+  - id: passport
+    en: passport
+    plural: passports
+    icon: 🛂
+    category: booking
+    sentences:
+      - { en: "Here is my passport.", level: A1 }
+      - { en: "Can I see your passport, please?", level: A2 }
+      - { en: "We need a copy of your passport or ID card for our records.", level: B1 }
+  - id: full-name
+    en: full name
+    icon: 🪪
+    category: booking
+    pos: phrase
+    note: "first name + surname (family name): Kate Brown"
+    sentences:
+      - { en: "What's your full name?", level: A1 }
+      - { en: "My full name is Kate Brown. That's B-R-O-W-N.", level: A2 }
+      - { en: "Please write your full name in capital letters.", level: B1 }
+  - id: phone-number
+    en: phone number
+    plural: phone numbers
+    icon: 📱
+    category: booking
+    sentences:
+      - { en: "What's your phone number?", level: A1 }
+      - { en: "My phone number is oh-nine-one, two-three-four, five-six-seven.", level: A2 }
+      - { en: "Could you leave a phone number in case we need to contact you?", level: B1 }
+  - id: deposit
+    en: deposit
+    plural: deposits
+    icon: 💵
+    category: booking
+    sentences:
+      - { en: "You pay a deposit.", level: A2 }
+      - { en: "We need a deposit of fifty dollars.", level: A2 }
+      - { en: "The deposit will be returned when you check out.", level: B1 }
+  # facilities
+  - id: lift
+    en: lift
+    plural: lifts
+    icon: 🛗
+    category: facilities
+    note: "US English: elevator"
+    sentences:
+      - { en: "The lift is on the left.", level: A1 }
+      - { en: "Take the lift to the third floor.", level: A2 }
+      - { en: "The lift is out of order, so you'll have to use the stairs.", level: B1 }
+  - id: swimming-pool
+    en: swimming pool
+    plural: swimming pools
+    icon: 🏊
+    category: facilities
+    sentences:
+      - { en: "The hotel has a swimming pool.", level: A1 }
+      - { en: "The pool is open from 7 am to 9 pm.", level: A2 }
+      - { en: "Children must be with an adult when they use the pool.", level: B1 }
+  - id: breakfast
+    en: breakfast
+    icon: 🥐
+    category: facilities
+    price: 10
+    note: "$10 per person, from 6:30 to 10 am"
+    sentences:
+      - { en: "Breakfast is at seven.", level: A1 }
+      - { en: "Is breakfast included in the price?", level: A2 }
+      - { en: "Breakfast is served in the restaurant on the ground floor until ten.", level: B1 }
+  - id: wi-fi
+    en: Wi-Fi
+    icon: 📶
+    category: facilities
+    sentences:
+      - { en: "Is there Wi-Fi in the room?", level: A1 }
+      - { en: "What's the Wi-Fi password?", level: A2 }
+      - { en: "The Wi-Fi is free, but it's a bit slow in the evening.", level: B1 }
+  - id: room-service
+    en: room service
+    icon: 🍽️
+    category: facilities
+    sentences:
+      - { en: "I want to call room service.", level: A1 }
+      - { en: "Room service brings food to your room.", level: A2 }
+      - { en: "Room service is available twenty-four hours a day.", level: B1 }
+  - id: parking
+    en: car park
+    plural: car parks
+    icon: 🅿️
+    category: facilities
+    note: "US English: parking lot"
+    sentences:
+      - { en: "The car park is behind the hotel.", level: A1 }
+      - { en: "Is the car park free for guests?", level: A2 }
+      - { en: "The car park is full, but there's a public one across the street.", level: B1 }
+  - id: luggage
+    en: luggage
+    icon: 🧳
+    category: facilities
+    note: "uncountable: some luggage, a piece of luggage, two bags"
+    sentences:
+      - { en: "This is my luggage.", level: A1 }
+      - { en: "Can I leave my luggage here until five?", level: A2 }
+      - { en: "The porter will take your luggage up to your room.", level: B1 }
+  # in the room
+  - id: key-card
+    en: key card
+    plural: key cards
+    icon: 💳
+    category: in-room
+    sentences:
+      - { en: "Here is your key card.", level: A1 }
+      - { en: "Put the key card in the slot to turn on the lights.", level: A2 }
+      - { en: "I've lost my key card. Could you give me a new one?", level: B1 }
+  - id: towel
+    en: towel
+    plural: towels
+    icon: 🧺
+    category: in-room
+    sentences:
+      - { en: "I need a towel.", level: A1 }
+      - { en: "Could I have two more towels, please?", level: A2 }
+      - { en: "If you'd like new towels, leave the old ones on the floor.", level: B1 }
+  - id: pillow
+    en: pillow
+    plural: pillows
+    icon: 🛌
+    category: in-room
+    sentences:
+      - { en: "The pillow is soft.", level: A1 }
+      - { en: "Can I have an extra pillow?", level: A2 }
+      - { en: "My pillow is too hard. Do you have a softer one?", level: B1 }
+  - id: air-conditioner
+    en: air conditioner
+    plural: air conditioners
+    icon: ❄️
+    category: in-room
+    note: also "air conditioning" or "AC"
+    sentences:
+      - { en: "Turn on the air conditioner.", level: A1 }
+      - { en: "The air conditioner doesn't work.", level: A2 }
+      - { en: "The air conditioner is making a strange noise all night.", level: B1 }
+  - id: shower
+    en: shower
+    plural: showers
+    icon: 🚿
+    category: in-room
+    sentences:
+      - { en: "I'm having a shower.", level: A1 }
+      - { en: "There's no hot water in the shower.", level: A2 }
+      - { en: "The shower is dripping, and I can't turn it off.", level: B1 }
+  - id: balcony
+    en: balcony
+    plural: balconies
+    icon: 🌅
+    category: in-room
+    sentences:
+      - { en: "The room has a balcony.", level: A1 }
+      - { en: "We had breakfast on the balcony.", level: A2 }
+      - { en: "From the balcony, you can watch the boats on the river.", level: B1 }
+  - id: hairdryer
+    en: hairdryer
+    plural: hairdryers
+    icon: 💨
+    category: in-room
+    sentences:
+      - { en: "Is there a hairdryer?", level: A1 }
+      - { en: "The hairdryer is in the bathroom drawer.", level: A2 }
+      - { en: "Could you send up a hairdryer? Mine isn't working.", level: B1 }
+  # problems
+  - id: doesnt-work
+    en: doesn't work
+    icon: 🔧
+    pos: phrase
+    category: problems
+    sentences:
+      - { en: "The TV doesn't work.", level: A1 }
+      - { en: "Sorry, the light in the bathroom doesn't work.", level: A2 }
+      - { en: "The safe doesn't work, so I can't lock my things away.", level: B1 }
+  - id: noisy
+    en: noisy
+    icon: 🔊
+    pos: adjective
+    category: problems
+    sentences:
+      - { en: "My room is noisy.", level: A1 }
+      - { en: "The room next to the lift is very noisy.", level: A2 }
+      - { en: "It was so noisy that I couldn't sleep. Could I change rooms?", level: B1 }
+  - id: dirty
+    en: dirty
+    icon: 🧽
+    pos: adjective
+    category: problems
+    sentences:
+      - { en: "The towel is dirty.", level: A1 }
+      - { en: "The bathroom was dirty when we arrived.", level: A2 }
+      - { en: "I'm sorry to say this, but the sheets don't look clean.", level: B1 }
+  - id: complain
+    en: complain
+    icon: 🙋
+    pos: verb
+    category: problems
+    note: "complain about something; the noun is \"complaint\""
+    sentences:
+      - { en: "I don't want to complain, but…", level: A2 }
+      - { en: "She complained about the noise.", level: A2 }
+      - { en: "If you complain politely, the staff are usually happy to help.", level: B1 }
+  - id: lost
+    en: lost
+    icon: ❓
+    pos: adjective
+    category: problems
+    note: "lose – lost – lost"
+    sentences:
+      - { en: "I lost my key.", level: A1 }
+      - { en: "I've lost my key card. Can you help me?", level: A2 }
+      - { en: "Someone found a lost umbrella in the lobby this morning.", level: B1 }
+  - id: change-rooms
+    en: change rooms
+    icon: 🔄
+    pos: phrase
+    category: problems
+    sentences:
+      - { en: "Can I change rooms?", level: A2 }
+      - { en: "We changed rooms because ours was too cold.", level: A2 }
+      - { en: "Would it be possible to change rooms? Mine faces the busy road.", level: B1 }
+  # dates
+  - id: first
+    en: first
+    icon: 1️⃣
+    pos: adjective
+    category: dates
+    note: "1st — the first of June (June 1st)"
+    sentences:
+      - { en: "Today is the first of June.", level: A1 }
+      - { en: "We arrive on the 1st and leave on the 3rd.", level: A2 }
+      - { en: "The first night is already paid for.", level: B1 }
+  - id: second
+    en: second
+    icon: 2️⃣
+    pos: adjective
+    category: dates
+    note: "2nd — the second of May"
+    sentences:
+      - { en: "My room is on the second floor.", level: A1 }
+      - { en: "I'm checking out on the 2nd of May.", level: A2 }
+      - { en: "This is my second time at this hotel, and I love it.", level: B1 }
+  - id: third
+    en: third
+    icon: 3️⃣
+    pos: adjective
+    category: dates
+    note: "3rd — the third of March"
+    sentences:
+      - { en: "Take the lift to the third floor.", level: A1 }
+      - { en: "We're arriving on the 3rd of March.", level: A2 }
+      - { en: "Our room is the third door on the right.", level: B1 }
+  - id: twenty-first
+    en: twenty-first
+    icon: 📅
+    pos: adjective
+    category: dates
+    note: "21st, 22nd, 23rd, but 24th … 30th; 31st"
+    sentences:
+      - { en: "My birthday is on the twenty-first.", level: A1 }
+      - { en: "I'd like to book a room for the 21st of July.", level: A2 }
+      - { en: "Write the date like this: the 22nd, the 23rd, but the 24th.", level: B1 }
+  - id: date
+    en: date
+    plural: dates
+    icon: 🗓️
+    category: dates
+    sentences:
+      - { en: "What's the date today?", level: A1 }
+      - { en: "What dates would you like to stay?", level: A2 }
+      - { en: "Could you check the dates of my booking? I think there's a mistake.", level: B1 }
+phrases:
+  - { en: "I'd like to book a double room, please.", level: A1, group: booking }
+  - { en: "For two nights, from the 14th of May.", level: A2, group: booking }
+  - { en: "How much is it per night?", level: A1, group: booking }
+  - { en: "Is breakfast included?", level: A2, group: booking }
+  - { en: "My name is Kate Brown. That's B-R-O-W-N.", level: A2, group: booking }
+  - { en: "Do you have any rooms available for this weekend?", level: B1, group: booking }
+  - { en: "Hello, I have a reservation in the name of Brown.", level: A2, group: checkin }
+  - { en: "I'd like to check out, please.", level: A1, group: checkin }
+  - { en: "Can I leave my luggage here until this afternoon?", level: A2, group: checkin }
+  - { en: "Could I have a late check-out?", level: B1, group: checkin }
+  - { en: "What time is breakfast?", level: A1, group: asking }
+  - { en: "What's the Wi-Fi password?", level: A1, group: asking }
+  - { en: "Where is the lift?", level: A1, group: asking }
+  - { en: "Is the pool open in the evening?", level: A2, group: asking }
+  - { en: "Could you call a taxi for me, please?", level: A2, group: asking }
+  - { en: "Excuse me, the air conditioner doesn't work.", level: A2, group: problems }
+  - { en: "I'm sorry to bother you, but my room is very noisy.", level: B1, group: problems }
+  - { en: "Could I have some more towels, please?", level: A2, group: problems }
+  - { en: "I've lost my key card.", level: A2, group: problems }
+  - { en: "Would it be possible to change rooms?", level: B1, group: problems }
+  - { en: "Good evening. Welcome to Riverside Hotel!", level: A1, group: desk }
+  - { en: "Could you spell your surname, please?", level: A2, group: desk }
+  - { en: "Here's your key card. You're in room 305, on the third floor.", level: A2, group: desk }
+  - { en: "I'm so sorry about that. I'll send someone up right away.", level: B1, group: desk }
+  - { en: "Enjoy your stay!", level: A1, group: desk }
+  - { en: "How many nights would you like to stay?", level: A2, group: desk }
+quiz:
+  - id: room-two-beds
+    question: "A room with two single beds is a…"
+    options: [twin room, double room, single room, suite]
+    answer: 0
+    level: A2
+  - id: polite-complaint
+    question: "Which is the most polite way to complain?"
+    options: ["Fix my air conditioner now!", "Excuse me, the air conditioner doesn't work.", "Air conditioner bad.", "You broke the air conditioner."]
+    answer: 1
+    level: A2
+  - id: ordinal-14
+    question: "How do you say 14/5 as a date?"
+    options: [the fourteen of May, the fourteenth of May, the forty of May, the fourth of May]
+    answer: 1
+    level: A2
+  - id: ordinal-22
+    question: "Which one is correct?"
+    options: [the 22th, the 22st, the 22nd, the 22rd]
+    answer: 2
+    level: A2
+  - id: lift-us
+    question: "In American English, a \"lift\" is an…"
+    options: [escalator, elevator, apartment, airport]
+    answer: 1
+    level: A2
+  - id: check-in-time
+    question: "\"Check-in is ___ 2 pm.\""
+    options: [from, on, in, at the]
+    answer: 0
+    level: A2
+  - id: nights-price
+    question: "A double room is $90 a night. You stay 3 nights. How much is it?"
+    options: [$90, $180, $270, $300]
+    answer: 2
+    level: A1
+  - id: lost-key
+    question: "You lost your key card. What do you say?"
+    options: ["I've lost my key card.", "I've lost my key cards room.", "My key card is lose.", "I lose key card yesterday."]
+    answer: 0
+    level: A2
+  - id: spell-name
+    question: "The receptionist says: \"Could you spell that, please?\" She wants…"
+    options: [your phone number, the letters of your name, your room number, your passport]
+    answer: 1
+    level: A2
+  - id: luggage-countable
+    question: "Choose the correct sentence."
+    options: [I have three luggages., I have three pieces of luggage., I have a luggages., I have three luggage.]
+    answer: 1
+    level: B1

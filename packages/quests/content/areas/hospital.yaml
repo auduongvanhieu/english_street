@@ -1,16 +1,602 @@
 id: hospital
-title: hospital
-intro: Coming soon.
+title: City Hospital
+intro: Welcome to City Hospital! Learn the parts of the body, say how you feel and help the pharmacist give every patient the right medicine.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: body, label: The body }
+  - { id: symptoms, label: Symptoms }
+  - { id: medicine, label: Medicines }
+  - { id: advice, label: Advice and dosage }
+  - { id: hospital, label: At the hospital }
+groups:
+  - { id: feel, label: Saying how you feel }
+  - { id: pharmacy, label: At the pharmacy }
+  - { id: dosage, label: Understanding the dosage }
+  - { id: advice, label: Giving advice }
+  - { id: hospital, label: Finding your way }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # --- the body
+  - id: head
+    en: head
+    plural: heads
+    icon: 🙂
+    pos: noun
+    category: body
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: Touch your head., level: A1 }
+      - { en: I hit my head on the door., level: A2 }
+      - { en: Wear a helmet to protect your head when you ride a bike., level: B1 }
+  - id: eye
+    en: eye
+    plural: eyes
+    icon: 👁️
+    pos: noun
+    category: body
+    sentences:
+      - { en: She has brown eyes., level: A1 }
+      - { en: My eyes are red and itchy., level: A2 }
+      - { en: Rest your eyes for a few minutes every hour if you work on a computer., level: B1 }
+  - id: ear
+    en: ear
+    plural: ears
+    icon: 👂
+    pos: noun
+    category: body
+    sentences:
+      - { en: I have two ears., level: A1 }
+      - { en: My left ear hurts., level: A2 }
+      - { en: Don't put anything in your ear; ask a doctor to look at it., level: B1 }
+  - id: nose
+    en: nose
+    plural: noses
+    icon: 👃
+    pos: noun
+    category: body
+    sentences:
+      - { en: Touch your nose., level: A1 }
+      - { en: I have a cold and my nose is blocked., level: A2 }
+      - { en: Breathe in slowly through your nose and out through your mouth., level: B1 }
+  - id: mouth
+    en: mouth
+    plural: mouths
+    icon: 👄
+    pos: noun
+    category: body
+    sentences:
+      - { en: Open your mouth, please., level: A1 }
+      - { en: Cover your mouth when you cough., level: A2 }
+      - { en: The dentist looked inside my mouth and found a small hole in a tooth., level: B1 }
+  - id: tooth
+    en: tooth
+    plural: teeth
+    icon: 🦷
+    pos: noun
+    category: body
+    sentences:
+      - { en: Brush your teeth every day., level: A1 }
+      - { en: My tooth hurts when I eat ice cream., level: A2 }
+      - { en: Eating too many sweets is bad for your teeth., level: B1 }
+  - id: neck
+    en: neck
+    plural: necks
+    icon: 🧣
+    pos: noun
+    category: body
+    sentences:
+      - { en: The giraffe has a long neck., level: A1 }
+      - { en: My neck is stiff this morning., level: A2 }
+      - { en: Sleeping on a bad pillow can give you a sore neck., level: B1 }
+  - id: throat
+    en: throat
+    plural: throats
+    icon: 🗣️
+    pos: noun
+    category: body
+    sentences:
+      - { en: My throat hurts., level: A1 }
+      - { en: Drink something warm for your throat., level: A2 }
+      - { en: Singers have to look after their throats, especially before a concert., level: B1 }
+  - id: arm
+    en: arm
+    plural: arms
+    icon: 💪
+    pos: noun
+    category: body
+    sentences:
+      - { en: Raise your arm., level: A1 }
+      - { en: He broke his arm playing football., level: A2 }
+      - { en: The nurse put a bandage round my arm to stop the bleeding., level: B1 }
+  - id: hand
+    en: hand
+    plural: hands
+    icon: ✋
+    pos: noun
+    category: body
+    sentences:
+      - { en: Wash your hands., level: A1 }
+      - { en: I cut my hand on some glass., level: A2 }
+      - { en: Washing your hands often is the easiest way to stop colds from spreading., level: B1 }
+  - id: stomach
+    en: stomach
+    plural: stomachs
+    icon: 🫃
+    pos: noun
+    category: body
+    sentences:
+      - { en: My stomach is full., level: A1 }
+      - { en: I ate too much and now my stomach hurts., level: A2 }
+      - { en: Take these tablets on a full stomach, not before breakfast., level: B1 }
+  - id: back
+    en: back
+    plural: backs
+    icon: 🔙
+    pos: noun
+    category: body
+    sentences:
+      - { en: My back hurts., level: A1 }
+      - { en: Don't carry heavy bags or you'll hurt your back., level: A2 }
+      - { en: Sitting up straight at your desk is good for your back., level: B1 }
+  - id: leg
+    en: leg
+    plural: legs
+    icon: 🦵
+    pos: noun
+    category: body
+    sentences:
+      - { en: I have two legs., level: A1 }
+      - { en: My legs are tired after the run., level: A2 }
+      - { en: Stretch your legs before and after sport to avoid injuries., level: B1 }
+  - id: knee
+    en: knee
+    plural: knees
+    icon: 🦿
+    pos: noun
+    category: body
+    sentences:
+      - { en: I fell and hurt my knee., level: A1 }
+      - { en: Put a plaster on your knee., level: A2 }
+      - { en: Running on hard roads can be bad for your knees., level: B1 }
+  - id: foot
+    en: foot
+    plural: feet
+    icon: 🦶
+    pos: noun
+    category: body
+    sentences:
+      - { en: My feet are cold., level: A1 }
+      - { en: These new shoes hurt my feet., level: A2 }
+      - { en: After walking all day at the zoo, my feet were really sore., level: B1 }
+  # --- symptoms
+  - id: headache
+    en: headache
+    plural: headaches
+    icon: 🤕
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a headache., level: A1 }
+      - { en: I've had a headache since this morning., level: A2 }
+      - { en: Too much screen time and not enough water can give you a headache., level: B1 }
+  - id: sore-throat
+    en: sore throat
+    plural: sore throats
+    icon: 😣
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a sore throat., level: A1 }
+      - { en: It hurts when I swallow because I've got a sore throat., level: A2 }
+      - { en: A sore throat is often the first sign of a cold., level: B1 }
+  - id: fever
+    en: fever
+    plural: fevers
+    icon: 🤒
+    pos: noun
+    category: symptoms
+    note: In British English you also hear "a temperature" – "I've got a temperature."
+    sentences:
+      - { en: She has a fever., level: A1 }
+      - { en: He has a fever of 38.5 degrees., level: A2 }
+      - { en: If the fever lasts more than three days, you should see a doctor., level: B1 }
+  - id: cough
+    en: cough
+    plural: coughs
+    icon: 😷
+    pos: noun
+    category: symptoms
+    note: Also a verb – "He coughs a lot at night."
+    sentences:
+      - { en: I have a cough., level: A1 }
+      - { en: My cough is worse at night., level: A2 }
+      - { en: A dry cough can last for a few weeks after a cold., level: B1 }
+  - id: runny-nose
+    en: runny nose
+    icon: 🤧
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a runny nose., level: A1 }
+      - { en: I need tissues because I've got a runny nose., level: A2 }
+      - { en: A runny nose and sneezing in spring may be an allergy, not a cold., level: B1 }
+  - id: stomach-ache
+    en: stomach ache
+    plural: stomach aches
+    icon: 🤢
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a stomach ache., level: A1 }
+      - { en: I've got a stomach ache because I ate too fast., level: A2 }
+      - { en: If you have a stomach ache, eat plain food like rice and toast for a day., level: B1 }
+  - id: toothache
+    en: toothache
+    icon: 😖
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a toothache., level: A1 }
+      - { en: You should see a dentist about your toothache., level: A2 }
+      - { en: The toothache was so bad that I couldn't sleep all night., level: B1 }
+  - id: earache
+    en: earache
+    icon: 🙉
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: My son has an earache., level: A2 }
+      - { en: Children often get an earache after a cold., level: A2 }
+      - { en: Swimming in dirty water can sometimes give you an earache., level: B1 }
+  - id: rash
+    en: rash
+    plural: rashes
+    icon: 🔴
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a rash on my arm., level: A2 }
+      - { en: The rash is red and very itchy., level: A2 }
+      - { en: Some people get a rash when they eat nuts or strawberries., level: B1 }
+  - id: sprained-ankle
+    en: sprained ankle
+    plural: sprained ankles
+    icon: 🦶
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a sprained ankle., level: A2 }
+      - { en: I fell during the match and sprained my ankle., level: A2 }
+      - { en: With a sprained ankle you should keep your foot up and put ice on it., level: B1 }
+  - id: cut
+    en: cut
+    plural: cuts
+    icon: 🩸
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have a cut on my finger., level: A1 }
+      - { en: Clean the cut and put a plaster on it., level: A2 }
+      - { en: A small cut usually heals in a few days if you keep it clean., level: B1 }
+  - id: insect-bite
+    en: insect bite
+    plural: insect bites
+    icon: 🦟
+    pos: noun
+    category: symptoms
+    sentences:
+      - { en: I have an insect bite., level: A2 }
+      - { en: The mosquito bites on my legs are very itchy., level: A2 }
+      - { en: Try not to scratch an insect bite, or it may get worse., level: B1 }
+  - id: dizzy
+    en: dizzy
+    icon: 😵‍💫
+    pos: adjective
+    category: symptoms
+    sentences:
+      - { en: I feel dizzy., level: A2 }
+      - { en: Sit down if you feel dizzy., level: A2 }
+      - { en: Standing in the hot sun for too long can make you feel dizzy., level: B1 }
+  # --- medicines
+  - id: tablet
+    en: tablet
+    plural: tablets
+    icon: 💊
+    pos: noun
+    category: medicine
+    price: 5
+    note: Also called "pills". Swallow them with water.
+    sentences:
+      - { en: Take one tablet., level: A1 }
+      - { en: Take two tablets with a glass of water., level: A2 }
+      - { en: Don't take more than eight tablets in twenty-four hours., level: B1 }
+  - id: cough-syrup
+    en: cough syrup
+    icon: 🍯
+    pos: noun
+    category: medicine
+    price: 7
+    note: A sweet liquid medicine. You take it with a spoon.
+    sentences:
+      - { en: This cough syrup is sweet., level: A1 }
+      - { en: Take two spoons of cough syrup three times a day., level: A2 }
+      - { en: Cough syrup can make you sleepy, so take it before bed., level: B1 }
+  - id: throat-lozenges
+    en: throat lozenges
+    icon: 🍬
+    pos: noun
+    category: medicine
+    price: 4
+    note: Small sweets for a sore throat. Let them melt in your mouth – don't chew them.
+    sentences:
+      - { en: These throat lozenges taste of honey., level: A2 }
+      - { en: Suck one throat lozenge every three hours., level: A2 }
+      - { en: Throat lozenges help with the pain, but they don't cure the cold., level: B1 }
+  - id: cream
+    en: cream
+    plural: creams
+    icon: 🧴
+    pos: noun
+    category: medicine
+    price: 6
+    sentences:
+      - { en: Put some cream on it., level: A1 }
+      - { en: Put this cream on the rash twice a day., level: A2 }
+      - { en: Rub the cream in gently and wash your hands afterwards., level: B1 }
+  - id: eye-drops
+    en: eye drops
+    icon: 💧
+    pos: noun
+    category: medicine
+    price: 6
+    sentences:
+      - { en: Here are your eye drops., level: A2 }
+      - { en: Put two eye drops in each eye in the morning and evening., level: A2 }
+      - { en: Don't wear contact lenses while you are using these eye drops., level: B1 }
+  - id: ear-drops
+    en: ear drops
+    icon: 👂
+    pos: noun
+    category: medicine
+    price: 6
+    sentences:
+      - { en: Use the ear drops., level: A2 }
+      - { en: Put three ear drops in the ear that hurts, twice a day., level: A2 }
+      - { en: Warm the bottle in your hand first, because cold ear drops feel strange., level: B1 }
+  - id: plaster
+    en: plaster
+    plural: plasters
+    icon: 🩹
+    pos: noun
+    category: medicine
+    price: 3
+    note: In the US people say "Band-Aid" or "bandage".
+    sentences:
+      - { en: I need a plaster., level: A1 }
+      - { en: Put a plaster on your cut., level: A2 }
+      - { en: Change the plaster every day and keep the cut dry., level: B1 }
+  - id: bandage
+    en: bandage
+    plural: bandages
+    icon: 🧻
+    pos: noun
+    category: medicine
+    price: 5
+    sentences:
+      - { en: The nurse has a bandage., level: A1 }
+      - { en: Wrap a bandage round your ankle., level: A2 }
+      - { en: The bandage should be firm, but not so tight that your foot feels cold., level: B1 }
+  - id: ice-pack
+    en: ice pack
+    plural: ice packs
+    icon: 🧊
+    pos: noun
+    category: medicine
+    price: 4
+    sentences:
+      - { en: Use an ice pack., level: A2 }
+      - { en: Put an ice pack on your ankle for twenty minutes., level: A2 }
+      - { en: Wrap the ice pack in a towel so it doesn't hurt your skin., level: B1 }
+  - id: thermometer
+    en: thermometer
+    plural: thermometers
+    icon: 🌡️
+    pos: noun
+    category: medicine
+    price: 9
+    sentences:
+      - { en: Here is the thermometer., level: A1 }
+      - { en: Use the thermometer to check your temperature., level: A2 }
+      - { en: A normal body temperature is about 37 degrees, so 38.5 is a fever., level: B1 }
+  - id: prescription
+    en: prescription
+    plural: prescriptions
+    icon: 📝
+    pos: noun
+    category: medicine
+    sentences:
+      - { en: Here is my prescription., level: A2 }
+      - { en: You need a prescription from the doctor for this medicine., level: A2 }
+      - { en: Bring your prescription to the pharmacy and they will prepare your medicine., level: B1 }
+  # --- advice and dosage
+  - id: rest
+    en: rest
+    icon: 🛌
+    pos: verb
+    category: advice
+    sentences:
+      - { en: You should rest., level: A1 }
+      - { en: Stay at home and rest for two days., level: A2 }
+      - { en: Your body gets better faster if you rest and sleep well., level: B1 }
+  - id: drink-water
+    en: drink plenty of water
+    icon: 🚰
+    pos: phrase
+    category: advice
+    sentences:
+      - { en: Drink plenty of water., level: A1 }
+      - { en: When you have a fever, you should drink plenty of water., level: A2 }
+      - { en: Drinking plenty of water helps your body fight the illness., level: B1 }
+  - id: twice-a-day
+    en: twice a day
+    icon: ✌️
+    pos: phrase
+    category: advice
+    note: "once a day = 1 time, twice a day = 2 times, three times a day = 3 times"
+    sentences:
+      - { en: Take it twice a day., level: A2 }
+      - { en: Use the cream twice a day, in the morning and at night., level: A2 }
+      - { en: If you forget a dose, don't take two at once; just take the next one as usual., level: B1 }
+  - id: after-meals
+    en: after meals
+    icon: 🍽️
+    pos: phrase
+    category: advice
+    sentences:
+      - { en: Take the tablets after meals., level: A2 }
+      - { en: Take one tablet three times a day after meals., level: A2 }
+      - { en: Some medicines hurt your stomach, so take them after meals, not before., level: B1 }
+  - id: for-five-days
+    en: for five days
+    icon: 🗓️
+    pos: phrase
+    category: advice
+    sentences:
+      - { en: Take it for five days., level: A2 }
+      - { en: Use the eye drops for five days, then stop., level: A2 }
+      - { en: Even if you feel better, keep taking the medicine for all five days., level: B1 }
+  # --- at the hospital
+  - id: pharmacy
+    en: pharmacy
+    plural: pharmacies
+    icon: ⚕️
+    pos: noun
+    category: hospital
+    note: In British English also "chemist's"; in the US also "drugstore".
+    sentences:
+      - { en: The pharmacy is open., level: A1 }
+      - { en: You can buy cough syrup at the pharmacy., level: A2 }
+      - { en: The pharmacist can give you advice about small problems, so you don't always need a doctor., level: B1 }
+  - id: reception
+    en: reception
+    icon: 🛎️
+    pos: noun
+    category: hospital
+    sentences:
+      - { en: Go to reception, please., level: A1 }
+      - { en: Give your name at reception and take a seat., level: A2 }
+      - { en: The nurse at reception will ask you a few questions about your symptoms., level: B1 }
+  - id: ward
+    en: ward
+    plural: wards
+    icon: 🛏️
+    pos: noun
+    category: hospital
+    sentences:
+      - { en: My grandma is in the ward., level: A2 }
+      - { en: The children's ward is on the second floor., level: A2 }
+      - { en: Visitors can come to the ward between two and eight in the afternoon., level: B1 }
+  - id: ambulance
+    en: ambulance
+    plural: ambulances
+    icon: 🚑
+    pos: noun
+    category: hospital
+    sentences:
+      - { en: The ambulance is fast., level: A1 }
+      - { en: Call an ambulance! He has hurt his head., level: A2 }
+      - { en: Only call an ambulance in an emergency, when someone is badly hurt or very ill., level: B1 }
+  - id: nurse
+    en: nurse
+    plural: nurses
+    icon: 🧑‍⚕️
+    pos: noun
+    category: hospital
+    sentences:
+      - { en: The nurse is kind., level: A1 }
+      - { en: The nurse checked my temperature., level: A2 }
+      - { en: Nurses work long shifts and look after patients day and night., level: B1 }
+  - id: appointment
+    en: appointment
+    plural: appointments
+    icon: 📅
+    pos: noun
+    category: hospital
+    sentences:
+      - { en: I have an appointment at ten., level: A2 }
+      - { en: I'd like to make an appointment with the doctor., level: A2 }
+      - { en: If you can't come, please cancel your appointment so someone else can have it., level: B1 }
+phrases:
+  - { en: "I don't feel well.", level: A1, group: feel }
+  - { en: "I've got a headache and a sore throat.", level: A1, group: feel }
+  - { en: "My ankle hurts when I walk.", level: A2, group: feel }
+  - { en: "I've had a cough for three days.", level: A2, group: feel }
+  - { en: "I feel a bit dizzy.", level: A2, group: feel }
+  - { en: "Have you got anything for a cough?", level: A2, group: pharmacy }
+  - { en: "Can I buy this without a prescription?", level: B1, group: pharmacy }
+  - { en: "Is it OK for children?", level: A2, group: pharmacy }
+  - { en: "I'd like a box of plasters, please.", level: A1, group: pharmacy }
+  - { en: "Are you allergic to anything?", level: B1, group: pharmacy }
+  - { en: "How often should I take it?", level: A2, group: dosage }
+  - { en: "Take two tablets three times a day after meals.", level: A2, group: dosage }
+  - { en: "Take two spoons of syrup before bed.", level: A2, group: dosage }
+  - { en: "Use it for five days.", level: A2, group: dosage }
+  - { en: "Don't take more than eight tablets a day.", level: B1, group: dosage }
+  - { en: "You should rest and drink plenty of water.", level: A2, group: advice }
+  - { en: "You shouldn't go to school today.", level: A2, group: advice }
+  - { en: "Put some ice on it and keep your foot up.", level: B1, group: advice }
+  - { en: "If it doesn't get better, see a doctor.", level: B1, group: advice }
+  - { en: "I hope you feel better soon!", level: A1, group: advice }
+  - { en: "Where is the pharmacy?", level: A1, group: hospital }
+  - { en: "The waiting room is on the left.", level: A1, group: hospital }
+  - { en: "Please take a seat. The nurse will call your name.", level: A2, group: hospital }
+  - { en: "Which ward is my grandmother in?", level: A2, group: hospital }
+  - { en: "Call an ambulance, please!", level: A2, group: hospital }
+quiz:
+  - id: sore-throat-medicine
+    question: "\"I've got a sore throat.\" What can the pharmacist give you?"
+    options: ["throat lozenges", "eye drops", "a bandage", "an ice pack"]
+    answer: 0
+    level: A2
+  - id: twice-meaning
+    question: "\"Take it twice a day.\" How many times a day?"
+    options: ["2", "1", "3", "12"]
+    answer: 0
+    level: A2
+  - id: teeth-plural
+    question: "One tooth, two …"
+    options: ["teeth", "tooths", "toothes", "teeths"]
+    answer: 0
+    level: A1
+  - id: feet-plural
+    question: "One foot, two …"
+    options: ["feet", "foots", "feets", "footes"]
+    answer: 0
+    level: A1
+  - id: advice-should
+    question: "Your friend has a fever. What is good advice?"
+    options: ["You should rest and drink plenty of water.", "You should go running.", "You shouldn't drink anything.", "You should eat lots of sweets."]
+    answer: 0
+    level: A2
+  - id: cut-plaster
+    question: "You have a small cut on your finger. What do you need?"
+    options: ["a thermometer", "a plaster", "cough syrup", "ear drops"]
+    answer: 1
+    level: A1
+  - id: after-meals-meaning
+    question: "\"Take the tablets after meals.\" When do you take them?"
+    options: ["before breakfast", "when you have eaten", "in the night only", "when you are hungry"]
+    answer: 1
+    level: A2
+  - id: ankle-advice
+    question: "Choose the best advice for a sprained ankle."
+    options: ["Put ice on it and keep your foot up.", "Go to football practice.", "Take some eye drops.", "Use cough syrup."]
+    answer: 0
+    level: B1
+  - id: have-had
+    question: "Choose the correct sentence."
+    options: ["I've had a cough since three days.", "I've had a cough for three days.", "I have a cough for three days.", "I had a cough since three days."]
+    answer: 1
+    level: B1
+  - id: ambulance-when
+    question: "When should you call an ambulance?"
+    options: ["when someone is badly hurt", "when you have a small cut", "when you want a plaster", "when you have a runny nose"]
+    answer: 0
+    level: A2

@@ -1,16 +1,469 @@
 id: school
-title: school
-intro: Coming soon.
+title: Maple School
+intro: Welcome to Maple School! Learn the names of school things, subjects and days, practise classroom English and play the spelling bee.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: things, label: School things }
+  - { id: classroom, label: In the classroom }
+  - { id: subjects, label: School subjects }
+  - { id: days, label: Days of the week }
+  - { id: actions, label: Classroom actions }
+groups:
+  - { id: hello, label: First day at school }
+  - { id: teacher, label: The teacher says… }
+  - { id: ask, label: Asking in class }
+  - { id: timetable, label: Subjects and the timetable }
+  - { id: borrow, label: Borrowing things }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # ---------------------------------------------------------------- school things
+  - id: pen
+    en: pen
+    plural: pens
+    icon: 🖊️
+    category: things
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: "This is my pen.", level: A1 }
+      - { en: "Can I borrow your pen, please?", level: A2 }
+      - { en: "Please write your answers in pen, not in pencil.", level: B1 }
+  - id: pencil
+    en: pencil
+    plural: pencils
+    icon: ✏️
+    category: things
+    sentences:
+      - { en: "I have a red pencil.", level: A1 }
+      - { en: "My pencil is broken. Can I use yours?", level: A2 }
+      - { en: "Draw the picture in pencil first, then colour it in.", level: B1 }
+  - id: eraser
+    en: eraser
+    plural: erasers
+    icon: 🩹
+    category: things
+    note: "In British English people also say “rubber”."
+    sentences:
+      - { en: "Where is my eraser?", level: A1 }
+      - { en: "I made a mistake. Can I use your eraser?", level: A2 }
+      - { en: "If you write in pen, you can't rub it out with an eraser.", level: B1 }
+  - id: ruler
+    en: ruler
+    plural: rulers
+    icon: 📏
+    category: things
+    sentences:
+      - { en: "My ruler is long.", level: A1 }
+      - { en: "Use a ruler to draw a straight line.", level: A2 }
+      - { en: "Measure the line with your ruler and write down how long it is.", level: B1 }
+  - id: book
+    en: book
+    plural: books
+    icon: 📕
+    category: things
+    sentences:
+      - { en: "Open your book, please.", level: A1 }
+      - { en: "Turn to page ten in your English book.", level: A2 }
+      - { en: "I've forgotten my book, so I'll share with Minh.", level: B1 }
+  - id: notebook
+    en: notebook
+    plural: notebooks
+    icon: 📓
+    category: things
+    sentences:
+      - { en: "I write in my notebook.", level: A1 }
+      - { en: "Write the new words in your notebook.", level: A2 }
+      - { en: "I keep a notebook for new English words and read it before tests.", level: B1 }
+  - id: schoolbag
+    en: schoolbag
+    plural: schoolbags
+    icon: 🎒
+    category: things
+    sentences:
+      - { en: "My schoolbag is blue.", level: A1 }
+      - { en: "Put your books in your schoolbag.", level: A2 }
+      - { en: "My schoolbag is so heavy because I've got six books in it today.", level: B1 }
+  - id: scissors
+    en: scissors
+    icon: ✂️
+    category: things
+    note: "Always plural: a pair of scissors."
+    sentences:
+      - { en: "Can I have the scissors, please?", level: A1 }
+      - { en: "Cut out the picture with your scissors.", level: A2 }
+      - { en: "Be careful with the scissors and always pass them handle first.", level: B1 }
+  - id: crayon
+    en: crayon
+    plural: crayons
+    icon: 🖍️
+    category: things
+    sentences:
+      - { en: "I have twelve crayons.", level: A1 }
+      - { en: "Colour the sun with a yellow crayon.", level: A2 }
+      - { en: "The little ones love drawing with crayons on big sheets of paper.", level: B1 }
+  - id: pencil-case
+    en: pencil case
+    plural: pencil cases
+    icon: 👝
+    category: things
+    sentences:
+      - { en: "My pens are in my pencil case.", level: A1 }
+      - { en: "What's in your pencil case?", level: A2 }
+      - { en: "I always check that my pencil case is in my bag before I leave home.", level: B1 }
+  - id: calculator
+    en: calculator
+    plural: calculators
+    icon: 🧮
+    category: things
+    sentences:
+      - { en: "This is a calculator.", level: A1 }
+      - { en: "You can use a calculator in this Maths test.", level: A2 }
+      - { en: "Try to do the sum in your head before you check it on the calculator.", level: B1 }
+  - id: dictionary
+    en: dictionary
+    plural: dictionaries
+    icon: 📖
+    category: things
+    sentences:
+      - { en: "This is an English dictionary.", level: A1 }
+      - { en: "Look up the new word in your dictionary.", level: A2 }
+      - { en: "A good dictionary shows you how to pronounce each word.", level: B1 }
+  # ---------------------------------------------------------------- classroom
+  - id: school
+    en: school
+    plural: schools
+    icon: 🏫
+    category: classroom
+    sentences:
+      - { en: "I go to school.", level: A1 }
+      - { en: "My school is near my house.", level: A2 }
+      - { en: "Our school has about five hundred students and thirty teachers.", level: B1 }
+  - id: classroom
+    en: classroom
+    plural: classrooms
+    icon: 🧑‍🏫
+    category: classroom
+    sentences:
+      - { en: "Our classroom is big.", level: A1 }
+      - { en: "There are twenty desks in our classroom.", level: A2 }
+      - { en: "We decorated the classroom with our paintings for parents' day.", level: B1 }
+  - id: teacher
+    en: teacher
+    plural: teachers
+    icon: 👩‍🏫
+    category: classroom
+    sentences:
+      - { en: "She is my teacher.", level: A1 }
+      - { en: "Our English teacher is very kind.", level: A2 }
+      - { en: "If you don't understand, put up your hand and ask the teacher.", level: B1 }
+  - id: student
+    en: student
+    plural: students
+    icon: 🧑‍🎓
+    category: classroom
+    sentences:
+      - { en: "I am a student.", level: A1 }
+      - { en: "There are thirty students in my class.", level: A2 }
+      - { en: "The best student in each class gets a prize at the end of the year.", level: B1 }
+  - id: desk
+    en: desk
+    plural: desks
+    icon: 🪑
+    category: classroom
+    sentences:
+      - { en: "This is my desk.", level: A1 }
+      - { en: "Put your books on your desk.", level: A2 }
+      - { en: "I sit at the desk next to the window, so I can see the playground.", level: B1 }
+  - id: board
+    en: board
+    plural: boards
+    icon: 🟩
+    category: classroom
+    note: "A whiteboard (pens) or a blackboard (chalk)."
+    sentences:
+      - { en: "Look at the board.", level: A1 }
+      - { en: "The teacher writes the date on the board.", level: A2 }
+      - { en: "Copy the sentences from the board into your notebook.", level: B1 }
+  - id: library
+    en: library
+    plural: libraries
+    icon: 📚
+    category: classroom
+    sentences:
+      - { en: "I read books in the library.", level: A1 }
+      - { en: "You can borrow two books from the school library.", level: A2 }
+      - { en: "Please be quiet in the library because people are reading.", level: B1 }
+  - id: playground
+    en: playground
+    plural: playgrounds
+    icon: 🛝
+    category: classroom
+    sentences:
+      - { en: "We play in the playground.", level: A1 }
+      - { en: "At break time we play football in the playground.", level: A2 }
+      - { en: "When it rains, we stay inside instead of going to the playground.", level: B1 }
+  - id: timetable
+    en: timetable
+    plural: timetables
+    icon: 🗓️
+    category: classroom
+    note: "In American English people often say “schedule”."
+    sentences:
+      - { en: "Look at the timetable.", level: A1 }
+      - { en: "We have Maths on Monday and Wednesday. It's on the timetable.", level: A2 }
+      - { en: "Our new timetable starts next week, so check which day you have PE.", level: B1 }
+  - id: lesson
+    en: lesson
+    plural: lessons
+    icon: 🔔
+    category: classroom
+    sentences:
+      - { en: "The English lesson is fun.", level: A1 }
+      - { en: "Each lesson is forty-five minutes long.", level: A2 }
+      - { en: "The bell rings at the end of every lesson.", level: B1 }
+  # ---------------------------------------------------------------- subjects
+  - id: english
+    en: English
+    icon: 🔤
+    category: subjects
+    sentences:
+      - { en: "I like English.", level: A1 }
+      - { en: "We have English on Monday, Wednesday and Friday.", level: A2 }
+      - { en: "English is my favourite subject because I love songs and stories.", level: B1 }
+  - id: maths
+    en: Maths
+    icon: ➗
+    category: subjects
+    note: "In American English: math."
+    sentences:
+      - { en: "I have Maths today.", level: A1 }
+      - { en: "Maths is difficult, but I like it.", level: A2 }
+      - { en: "In Maths today we learned how to add and take away big numbers.", level: B1 }
+  - id: science
+    en: Science
+    icon: 🔬
+    category: subjects
+    sentences:
+      - { en: "Science is fun.", level: A1 }
+      - { en: "In Science we learn about plants and animals.", level: A2 }
+      - { en: "Our Science teacher showed us how a volcano works.", level: B1 }
+  - id: art
+    en: Art
+    icon: 🎨
+    category: subjects
+    sentences:
+      - { en: "I like Art.", level: A1 }
+      - { en: "We paint pictures in Art.", level: A2 }
+      - { en: "Our best paintings from Art are on the wall in the hall.", level: B1 }
+  - id: music
+    en: Music
+    icon: 🎵
+    category: subjects
+    sentences:
+      - { en: "We sing in Music.", level: A1 }
+      - { en: "I learn to play the guitar in Music.", level: A2 }
+      - { en: "In Music we're practising a song for the end-of-year show.", level: B1 }
+  - id: pe
+    en: PE
+    icon: 🏃
+    category: subjects
+    note: "PE = physical education: sport at school."
+    sentences:
+      - { en: "We have PE on Friday.", level: A1 }
+      - { en: "We play basketball in PE.", level: A2 }
+      - { en: "Don't forget your trainers, because we have PE outside today.", level: B1 }
+  - id: history
+    en: History
+    icon: 🏛️
+    category: subjects
+    sentences:
+      - { en: "I like History.", level: A1 }
+      - { en: "In History we learn about kings and queens.", level: A2 }
+      - { en: "In History we're learning how people lived a thousand years ago.", level: B1 }
+  - id: geography
+    en: Geography
+    icon: 🌍
+    category: subjects
+    sentences:
+      - { en: "I have Geography today.", level: A1 }
+      - { en: "In Geography we learn about rivers and mountains.", level: A2 }
+      - { en: "In Geography we drew a map of Vietnam and marked the big rivers.", level: B1 }
+  # ---------------------------------------------------------------- days
+  - id: monday
+    en: Monday
+    icon: 1️⃣
+    category: days
+    note: "The first day of the school week. Days always start with a capital letter."
+    sentences:
+      - { en: "Today is Monday.", level: A1 }
+      - { en: "We have English on Monday.", level: A2 }
+      - { en: "Monday morning is always busy because we have a test.", level: B1 }
+  - id: tuesday
+    en: Tuesday
+    icon: 2️⃣
+    category: days
+    sentences:
+      - { en: "Tomorrow is Tuesday.", level: A1 }
+      - { en: "On Tuesday we have Art and Music.", level: A2 }
+      - { en: "The library is closed on Tuesday afternoon.", level: B1 }
+  - id: wednesday
+    en: Wednesday
+    icon: 3️⃣
+    category: days
+    note: "Say it like “WENZ-day”: the first d is silent."
+    sentences:
+      - { en: "It's Wednesday today.", level: A1 }
+      - { en: "I have football club on Wednesday.", level: A2 }
+      - { en: "By Wednesday, we are halfway through the school week.", level: B1 }
+  - id: thursday
+    en: Thursday
+    icon: 4️⃣
+    category: days
+    sentences:
+      - { en: "See you on Thursday!", level: A1 }
+      - { en: "We have Science on Thursday morning.", level: A2 }
+      - { en: "Our class is going on a trip to the museum next Thursday.", level: B1 }
+  - id: friday
+    en: Friday
+    icon: 5️⃣
+    category: days
+    sentences:
+      - { en: "I like Friday.", level: A1 }
+      - { en: "On Friday we finish school at four o'clock.", level: A2 }
+      - { en: "Everyone is happy on Friday afternoon because the weekend is coming.", level: B1 }
+  - id: saturday
+    en: Saturday
+    icon: 6️⃣
+    category: days
+    sentences:
+      - { en: "There is no school on Saturday.", level: A1 }
+      - { en: "On Saturday I play with my friends.", level: A2 }
+      - { en: "On Saturday I have an extra English class in the morning.", level: B1 }
+  - id: sunday
+    en: Sunday
+    icon: 7️⃣
+    category: days
+    sentences:
+      - { en: "Sunday is a fun day.", level: A1 }
+      - { en: "On Sunday I visit my grandparents.", level: A2 }
+      - { en: "I always pack my schoolbag on Sunday evening.", level: B1 }
+  # ---------------------------------------------------------------- actions
+  - id: read
+    en: read
+    icon: 👀
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Read the story, please.", level: A1 }
+      - { en: "I read a book every week.", level: A2 }
+      - { en: "Read the text carefully before you answer the questions.", level: B1 }
+  - id: write
+    en: write
+    icon: ✍️
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Write your name.", level: A1 }
+      - { en: "Write the date at the top of the page.", level: A2 }
+      - { en: "Write a short email to a friend about your weekend.", level: B1 }
+  - id: listen
+    en: listen
+    icon: 👂
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Listen and repeat.", level: A1 }
+      - { en: "Listen to the teacher, please.", level: A2 }
+      - { en: "Listen to the recording twice and fill in the gaps.", level: B1 }
+  - id: spell
+    en: spell
+    icon: 🔡
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "How do you spell it?", level: A1 }
+      - { en: "Can you spell your name, please?", level: A2 }
+      - { en: "I always forget how to spell “Wednesday”.", level: B1 }
+  - id: count
+    en: count
+    icon: 🔢
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Count from one to ten.", level: A1 }
+      - { en: "Count the books on the shelf.", level: A2 }
+      - { en: "Can you count to a hundred in English without stopping?", level: B1 }
+phrases:
+  - { en: "Good morning, teacher!", level: A1, group: hello }
+  - { en: "My name is Lan. I'm nine years old.", level: A1, group: hello }
+  - { en: "Nice to meet you.", level: A1, group: hello }
+  - { en: "I'm in class 4A.", level: A1, group: hello }
+  - { en: "Where is my classroom?", level: A1, group: hello }
+  - { en: "Open your books, please.", level: A1, group: teacher }
+  - { en: "Close your books.", level: A1, group: teacher }
+  - { en: "Put up your hand.", level: A1, group: teacher }
+  - { en: "Work in pairs.", level: A1, group: teacher }
+  - { en: "Be quiet, please.", level: A1, group: teacher }
+  - { en: "Well done! Good job!", level: A1, group: teacher }
+  - { en: "May I come in?", level: A1, group: ask }
+  - { en: "May I go to the toilet, please?", level: A1, group: ask }
+  - { en: "Sorry, I don't understand.", level: A1, group: ask }
+  - { en: "Can you say that again, please?", level: A2, group: ask }
+  - { en: "How do you spell “ruler”?", level: A1, group: ask }
+  - { en: "What does “timetable” mean?", level: A2, group: ask }
+  - { en: "What's your favourite subject?", level: A1, group: timetable }
+  - { en: "My favourite subject is Art.", level: A1, group: timetable }
+  - { en: "We have Maths on Monday.", level: A1, group: timetable }
+  - { en: "What lessons do we have today?", level: A2, group: timetable }
+  - { en: "English starts at nine o'clock.", level: A2, group: timetable }
+  - { en: "Can I borrow your pencil, please?", level: A1, group: borrow }
+  - { en: "Here you are.", level: A1, group: borrow }
+  - { en: "Could I use your ruler for a minute?", level: A2, group: borrow }
+  - { en: "Thanks! I'll give it back after the lesson.", level: A2, group: borrow }
+quiz:
+  - id: subject-paint
+    question: "We paint and draw pictures in…"
+    options: [Maths, Art, Music, Geography]
+    answer: 1
+    level: A1
+  - id: subject-maps
+    question: "We learn about countries, rivers and maps in…"
+    options: [History, Science, Geography, PE]
+    answer: 2
+    level: A1
+  - id: after-monday
+    question: "What day comes after Tuesday?"
+    options: [Monday, Thursday, Wednesday, Friday]
+    answer: 2
+    level: A1
+  - id: weekend
+    question: "Which two days are the weekend?"
+    options: [Monday and Tuesday, Friday and Monday, Saturday and Sunday, Thursday and Friday]
+    answer: 2
+    level: A1
+  - id: hand
+    question: "You want to answer a question in class. What do you do?"
+    options: [Put up your hand., Close your eyes., Go to sleep., Stand on the desk.]
+    answer: 0
+    level: A1
+  - id: borrow
+    question: "You forgot your pencil. What do you say to your friend?"
+    options: ["Give me pencil!", "Can I borrow your pencil, please?", "Where pencil you?", "Pencil is me."]
+    answer: 1
+    level: A1
+  - id: spell-wed
+    question: "Which word is spelled correctly?"
+    options: [Wensday, Wednesday, Wedensday, Wendesday]
+    answer: 1
+    level: A2
+  - id: time-quarter
+    question: "Maths starts at 9:15. That's…"
+    options: [nine fifteen o'clock, a quarter past nine, a quarter to nine, half past nine]
+    answer: 1
+    level: A2
+  - id: scissors
+    question: "Can I borrow your ___? I want to cut this paper."
+    options: [ruler, eraser, scissors, crayon]
+    answer: 2
+    level: A1
+  - id: favourite
+    question: "“What's your favourite subject?” — Choose the best answer."
+    options: ["Yes, I do.", "It's Music. I love singing.", "At nine o'clock.", "On Monday."]
+    answer: 1
+    level: A2

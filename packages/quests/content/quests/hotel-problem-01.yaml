@@ -1,0 +1,15 @@
+id: hotel-problem-01
+npc: receptionist
+level: B1
+title: A Problem in Room 305
+intro: You are staying in room 305. The air conditioner doesn't work and the room is very hot. Go down to the front desk, complain politely and ask for help.
+goals:
+  - { id: polite_start, desc: "Start politely (Excuse me… / I'm sorry to bother you, but…)" }
+  - { id: problem, desc: "Explain the problem and give your room number" }
+  - { id: request, desc: "Ask for help: someone to fix it or a different room (Could you…? / Would it be possible…?)" }
+  - { id: extra, desc: "Ask for one more thing (towels, a pillow, the Wi-Fi password…)" }
+  - { id: thank, desc: "Thank her for her help" }
+target_vocab: [air conditioner, doesn't work, change rooms, towel, noisy]
+target_phrases: ["I'm sorry to bother you, but…", "The air conditioner doesn't work.", "Would it be possible to change rooms?", "Could I have some more towels?"]
+max_turns: 10
+reward: { xp: 70, coins: 15 }

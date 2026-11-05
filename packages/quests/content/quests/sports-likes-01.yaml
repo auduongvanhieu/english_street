@@ -1,0 +1,15 @@
+id: sports-likes-01
+npc: coach
+level: A1
+title: What Sports Do You Like?
+intro: Coach Max wants to know about you. Talk about the sports you like, the sports you can play and what you do in your free time.
+goals:
+  - { id: greet, desc: "Say hello to the coach" }
+  - { id: like, desc: "Say a sport you like and one you don't like" }
+  - { id: can, desc: "Say what you can or can't do (I can swim, but I can't…)" }
+  - { id: playgodo, desc: "Use play, go or do with a sport (I play football / I go swimming / I do karate)" }
+  - { id: ask_back, desc: "Ask the coach a question about his favourite sport" }
+target_vocab: [football, swimming, karate, like, can, can't]
+target_phrases: ["I like playing…", "I can…, but I can't…", "I go swimming on Sundays.", "What's your favourite sport?"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

@@ -1,0 +1,15 @@
+id: hospital-medicine-01
+npc: pharmacist
+level: A2
+title: Something for My Cold
+intro: You have had a sore throat and a cough for two days. Explain your symptoms to the pharmacist and get the right medicine.
+goals:
+  - { id: greet, desc: "Say hello and say you don't feel well" }
+  - { id: symptoms, desc: "Describe two symptoms (sore throat, cough…)" }
+  - { id: how_long, desc: "Say how long you have had them (for two days / since Monday)" }
+  - { id: allergies, desc: "Answer the question about allergies" }
+  - { id: buy, desc: "Ask how much it is and buy the medicine" }
+target_vocab: [sore throat, cough, cough syrup, throat lozenges, allergic]
+target_phrases: ["I don't feel well.", "I've got a sore throat and a cough.", "I've had it for two days.", "Have you got anything for a cough?"]
+max_turns: 12
+reward: { xp: 60, coins: 12 }

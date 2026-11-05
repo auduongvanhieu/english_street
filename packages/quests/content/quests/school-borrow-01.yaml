@@ -1,0 +1,14 @@
+id: school-borrow-01
+npc: teacher
+level: A1
+title: Can I Borrow…?
+intro: You forgot some things at home. Ask the teacher politely to borrow what you need.
+goals:
+  - { id: problem, desc: "Say what you forgot (I forgot my pencil.)" }
+  - { id: ask_polite, desc: "Ask politely to borrow something (Can I borrow…, please?)" }
+  - { id: thank, desc: "Say thank you" }
+  - { id: give_back, desc: "Promise to give it back (I'll give it back after the lesson.)" }
+target_vocab: [pencil, ruler, eraser, scissors, borrow]
+target_phrases: ["Can I borrow your…, please?", "Thank you very much!", "I'll give it back."]
+max_turns: 8
+reward: { xp: 50, coins: 10 }

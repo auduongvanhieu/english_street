@@ -1,16 +1,492 @@
 id: sports
-title: sports
-intro: Coming soon.
+title: Sunny Sports Park
+intro: Run, jump and play! Learn the names of sports, action words and how to talk about what you can do and what you like. Follow the coach's commands in the mini games.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: ball, label: Ball sports }
+  - { id: other, label: Other sports }
+  - { id: actions, label: Action words }
+  - { id: equipment, label: Equipment }
+  - { id: places, label: "Places and people" }
+  - { id: describe, label: "Describing and comparing" }
+groups:
+  - { id: likes, label: "Likes and dislikes" }
+  - { id: can, label: "What you can do" }
+  - { id: playgo, label: "play, go or do?" }
+  - { id: club, label: Joining a club }
+  - { id: coach, label: "The coach says" }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # ball sports
+  - id: football
+    en: football
+    icon: ⚽
+    category: ball
+    note: "play football · US English: soccer"
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: "I play football on Saturdays.", level: A1 }
+      - { en: "There are eleven players in a football team.", level: A2 }
+      - { en: "Football is the most popular sport in the world.", level: B1 }
+  - id: basketball
+    en: basketball
+    icon: 🏀
+    category: ball
+    note: play basketball
+    sentences:
+      - { en: "He is good at basketball.", level: A1 }
+      - { en: "Basketball players are usually very tall.", level: A2 }
+      - { en: "If you want to score in basketball, you have to throw the ball through the hoop.", level: B1 }
+  - id: volleyball
+    en: volleyball
+    icon: 🏐
+    category: ball
+    note: play volleyball
+    sentences:
+      - { en: "We play volleyball on the beach.", level: A1 }
+      - { en: "In volleyball, you hit the ball over the net.", level: A2 }
+      - { en: "Volleyball is a great team sport because everyone has to work together.", level: B1 }
+  - id: tennis
+    en: tennis
+    icon: 🎾
+    category: ball
+    note: play tennis
+    sentences:
+      - { en: "Can you play tennis?", level: A1 }
+      - { en: "You need a racket to play tennis.", level: A2 }
+      - { en: "Tennis is more tiring than it looks.", level: B1 }
+  - id: table-tennis
+    en: table tennis
+    icon: 🏓
+    category: ball
+    note: "play table tennis · also called ping-pong"
+    sentences:
+      - { en: "I like table tennis.", level: A1 }
+      - { en: "Table tennis is very popular in Vietnam and China.", level: A2 }
+      - { en: "You need fast hands and good eyes to play table tennis well.", level: B1 }
+  - id: badminton
+    en: badminton
+    icon: 🏸
+    category: ball
+    note: "play badminton · you hit a shuttlecock, not a ball"
+    sentences:
+      - { en: "My dad and I play badminton in the park.", level: A1 }
+      - { en: "In badminton, you hit a shuttlecock over a high net.", level: A2 }
+      - { en: "Badminton is one of the fastest racket sports in the world.", level: B1 }
+  # other sports
+  - id: swimming
+    en: swimming
+    icon: 🏊
+    category: other
+    note: "go swimming · swim – swam – swum"
+    sentences:
+      - { en: "I go swimming on Sundays.", level: A1 }
+      - { en: "Swimming is good for your whole body.", level: A2 }
+      - { en: "She learned to swim when she was only four years old.", level: B1 }
+  - id: running
+    en: running
+    icon: 🏃
+    category: other
+    note: "go running · run – ran – run"
+    sentences:
+      - { en: "I go running in the morning.", level: A1 }
+      - { en: "Running is free. You only need good shoes.", level: A2 }
+      - { en: "He has been running every day to get ready for the race.", level: B1 }
+  - id: cycling
+    en: cycling
+    icon: 🚴
+    category: other
+    note: go cycling
+    sentences:
+      - { en: "We go cycling by the river.", level: A1 }
+      - { en: "Cycling is a fun way to get to school.", level: A2 }
+      - { en: "Always wear a helmet when you go cycling on busy roads.", level: B1 }
+  - id: skateboarding
+    en: skateboarding
+    icon: 🛹
+    category: other
+    note: go skateboarding
+    sentences:
+      - { en: "My brother likes skateboarding.", level: A1 }
+      - { en: "Skateboarding became an Olympic sport in 2021.", level: A2 }
+      - { en: "It takes a lot of practice before you can do tricks on a skateboard.", level: B1 }
+  - id: martial-arts
+    en: karate
+    icon: 🥋
+    category: other
+    note: do karate · do judo · do taekwondo
+    sentences:
+      - { en: "I do karate after school.", level: A1 }
+      - { en: "Karate comes from Japan.", level: A2 }
+      - { en: "Doing karate teaches you to be calm and focused.", level: B1 }
+  - id: gymnastics
+    en: gymnastics
+    icon: 🤸
+    category: other
+    note: do gymnastics
+    sentences:
+      - { en: "She does gymnastics.", level: A1 }
+      - { en: "Gymnasts can jump, turn and balance.", level: A2 }
+      - { en: "Gymnastics needs strength, but it also needs a lot of courage.", level: B1 }
+  - id: yoga
+    en: yoga
+    icon: 🧘
+    category: other
+    note: do yoga
+    sentences:
+      - { en: "My mum does yoga.", level: A1 }
+      - { en: "Yoga helps you relax and stretch.", level: A2 }
+      - { en: "Many people do yoga in the morning to start the day calmly.", level: B1 }
+  # actions
+  - id: kick
+    en: kick
+    icon: 🦵
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Kick the ball!", level: A1 }
+      - { en: "He kicked the ball into the goal.", level: A2 }
+      - { en: "Don't kick the ball too hard, or it will go over the fence.", level: B1 }
+  - id: throw
+    en: throw
+    icon: 🤾
+    pos: verb
+    category: actions
+    note: "throw – threw – thrown"
+    sentences:
+      - { en: "Throw the ball to me!", level: A1 }
+      - { en: "She threw the ball very far.", level: A2 }
+      - { en: "He can throw the ball further than anyone in the class.", level: B1 }
+  - id: catch
+    en: catch
+    icon: 🧤
+    pos: verb
+    category: actions
+    note: "catch – caught – caught"
+    sentences:
+      - { en: "Catch the ball!", level: A1 }
+      - { en: "The goalkeeper caught the ball with both hands.", level: A2 }
+      - { en: "Keep your eyes on the ball, or you won't be able to catch it.", level: B1 }
+  - id: jump
+    en: jump
+    icon: 🦘
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Jump three times!", level: A1 }
+      - { en: "Can you jump higher than me?", level: A2 }
+      - { en: "In the long jump, you run fast and then jump as far as you can.", level: B1 }
+  - id: run
+    en: run
+    icon: 🏃‍♀️
+    pos: verb
+    category: actions
+    note: "run – ran – run"
+    sentences:
+      - { en: "Run to the tree!", level: A1 }
+      - { en: "I can run faster than my sister.", level: A2 }
+      - { en: "She ran so fast that she won the race easily.", level: B1 }
+  - id: hit
+    en: hit
+    icon: 🏏
+    pos: verb
+    category: actions
+    note: "hit – hit – hit"
+    sentences:
+      - { en: "Hit the ball!", level: A1 }
+      - { en: "In tennis, you hit the ball with a racket.", level: A2 }
+      - { en: "He hit the ball so hard that it flew out of the park.", level: B1 }
+  - id: swim
+    en: swim
+    icon: 🤽
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Can you swim?", level: A1 }
+      - { en: "Fish swim, and so do I!", level: A2 }
+      - { en: "I couldn't swim until I took lessons last summer.", level: B1 }
+  - id: climb
+    en: climb
+    icon: 🧗
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Climb the wall!", level: A1 }
+      - { en: "Monkeys can climb trees very well.", level: A2 }
+      - { en: "Climbing is hard, but the view from the top is worth it.", level: B1 }
+  - id: stretch
+    en: stretch
+    icon: 🙆
+    pos: verb
+    category: actions
+    sentences:
+      - { en: "Stretch your arms!", level: A1 }
+      - { en: "Always stretch before you run.", level: A2 }
+      - { en: "If you stretch after exercise, your muscles won't hurt so much the next day.", level: B1 }
+  # equipment
+  - id: ball
+    en: ball
+    plural: balls
+    icon: 🔴
+    category: equipment
+    sentences:
+      - { en: "This is my ball.", level: A1 }
+      - { en: "A basketball is bigger than a tennis ball.", level: A2 }
+      - { en: "The ball rolled under the bench, so we had to stop the game.", level: B1 }
+  - id: racket
+    en: racket
+    plural: rackets
+    icon: 🥍
+    category: equipment
+    sentences:
+      - { en: "I have a new racket.", level: A1 }
+      - { en: "You need a racket for tennis and badminton.", level: A2 }
+      - { en: "A badminton racket is much lighter than a tennis racket.", level: B1 }
+  - id: net
+    en: net
+    plural: nets
+    icon: 🥅
+    category: equipment
+    sentences:
+      - { en: "The ball is in the net!", level: A1 }
+      - { en: "Hit the ball over the net.", level: A2 }
+      - { en: "In badminton, the net is higher than in tennis.", level: B1 }
+  - id: helmet
+    en: helmet
+    plural: helmets
+    icon: ⛑️
+    category: equipment
+    sentences:
+      - { en: "Wear your helmet.", level: A1 }
+      - { en: "You must wear a helmet when you go cycling.", level: A2 }
+      - { en: "A helmet can protect your head if you fall off your bike.", level: B1 }
+  - id: trainers
+    en: trainers
+    icon: 👟
+    category: equipment
+    note: "always plural: a pair of trainers · US English: sneakers"
+    sentences:
+      - { en: "These are my new trainers.", level: A1 }
+      - { en: "You need trainers to play in the sports hall.", level: A2 }
+      - { en: "Good running trainers can stop your feet from getting hurt.", level: B1 }
+  - id: whistle
+    en: whistle
+    plural: whistles
+    icon: 📯
+    category: equipment
+    sentences:
+      - { en: "The coach has a whistle.", level: A1 }
+      - { en: "When you hear the whistle, start running!", level: A2 }
+      - { en: "The referee blew the whistle at the end of the match.", level: B1 }
+  - id: medal
+    en: medal
+    plural: medals
+    icon: 🥇
+    category: equipment
+    note: "gold, silver and bronze medals"
+    sentences:
+      - { en: "She won a gold medal.", level: A1 }
+      - { en: "The winner gets a gold medal and the second gets a silver one.", level: A2 }
+      - { en: "He trained for four years to win an Olympic medal.", level: B1 }
+  # places and people
+  - id: pitch
+    en: pitch
+    plural: pitches
+    icon: 🏟️
+    category: places
+    note: "football pitch · US English: field"
+    sentences:
+      - { en: "The players are on the pitch.", level: A1 }
+      - { en: "Our football pitch has new grass.", level: A2 }
+      - { en: "The pitch was too wet to play on after the heavy rain.", level: B1 }
+  - id: court
+    en: court
+    plural: courts
+    icon: 🔲
+    category: places
+    note: "basketball court, tennis court, badminton court"
+    sentences:
+      - { en: "Let's go to the basketball court.", level: A1 }
+      - { en: "The tennis court is next to the pool.", level: A2 }
+      - { en: "We booked the indoor court because it was going to rain.", level: B1 }
+  - id: sports-hall
+    en: sports hall
+    plural: sports halls
+    icon: 🏛️
+    category: places
+    sentences:
+      - { en: "We play in the sports hall.", level: A1 }
+      - { en: "When it rains, the games move into the sports hall.", level: A2 }
+      - { en: "The sports hall is big enough for two badminton courts.", level: B1 }
+  - id: team
+    en: team
+    plural: teams
+    icon: 👥
+    category: places
+    sentences:
+      - { en: "I'm in the school team.", level: A1 }
+      - { en: "Our team won the match three to one.", level: A2 }
+      - { en: "A good team listens to each other and works together.", level: B1 }
+  - id: coach
+    en: coach
+    plural: coaches
+    icon: 🧢
+    category: places
+    sentences:
+      - { en: "The coach is very kind.", level: A1 }
+      - { en: "Our coach tells us what to do.", level: A2 }
+      - { en: "The coach changed the team's plan at half-time, and we won.", level: B1 }
+  - id: match
+    en: match
+    plural: matches
+    icon: 🆚
+    category: places
+    sentences:
+      - { en: "We have a match today.", level: A1 }
+      - { en: "Did you watch the football match last night?", level: A2 }
+      - { en: "The match was cancelled because of the storm.", level: B1 }
+  - id: score
+    en: score
+    plural: scores
+    icon: 🔢
+    pos: noun
+    category: places
+    note: "the score (2–1) · to score a goal"
+    sentences:
+      - { en: "What's the score?", level: A1 }
+      - { en: "The score is two all.", level: A2 }
+      - { en: "She scored the winning goal in the last minute.", level: B1 }
+  # describe and compare
+  - id: fast
+    en: fast
+    icon: ⚡
+    pos: adjective
+    category: describe
+    note: "fast – faster – the fastest"
+    sentences:
+      - { en: "The cheetah is fast.", level: A1 }
+      - { en: "Run faster!", level: A1 }
+      - { en: "Usain Bolt was the fastest runner in the world.", level: B1 }
+  - id: high
+    en: high
+    icon: ⬆️
+    pos: adjective
+    category: describe
+    note: "high – higher – the highest"
+    sentences:
+      - { en: "Jump high!", level: A1 }
+      - { en: "Can you jump higher than the bar?", level: A2 }
+      - { en: "The high jump record is higher than most doors.", level: B1 }
+  - id: strong
+    en: strong
+    icon: 💪
+    pos: adjective
+    category: describe
+    note: "strong – stronger – the strongest"
+    sentences:
+      - { en: "He is very strong.", level: A1 }
+      - { en: "Swimming makes your arms stronger.", level: A2 }
+      - { en: "She's the strongest player on the team, but also the kindest.", level: B1 }
+  - id: tired
+    en: tired
+    icon: 😮‍💨
+    pos: adjective
+    category: describe
+    sentences:
+      - { en: "I'm tired.", level: A1 }
+      - { en: "After the race, we were very tired.", level: A2 }
+      - { en: "I was so tired after the match that I fell asleep on the bus.", level: B1 }
+  - id: win
+    en: win
+    icon: 🏆
+    pos: verb
+    category: describe
+    note: "win – won – won · the opposite: lose"
+    sentences:
+      - { en: "We won!", level: A1 }
+      - { en: "Which team won the match?", level: A2 }
+      - { en: "It doesn't matter if you win or lose, as long as you have fun.", level: B1 }
+  - id: practise
+    en: practise
+    icon: 🔁
+    pos: verb
+    category: describe
+    note: "UK: practise (verb), practice (noun) · US: practice for both"
+    sentences:
+      - { en: "I practise every day.", level: A1 }
+      - { en: "We practise football on Tuesdays and Thursdays.", level: A2 }
+      - { en: "If you practise more, you'll get better quickly.", level: B1 }
+phrases:
+  - { en: "I like playing football.", level: A1, group: likes }
+  - { en: "I don't like running.", level: A1, group: likes }
+  - { en: "My favourite sport is badminton.", level: A1, group: likes }
+  - { en: "I love swimming, but I hate cold water!", level: A2, group: likes }
+  - { en: "I'd rather play basketball than watch it.", level: B1, group: likes }
+  - { en: "I can swim, but I can't dive.", level: A1, group: can }
+  - { en: "Can you ride a bike?", level: A1, group: can }
+  - { en: "I'm good at table tennis.", level: A2, group: can }
+  - { en: "She can run faster than me.", level: A2, group: can }
+  - { en: "I play football and tennis.", level: A1, group: playgo }
+  - { en: "I go swimming and cycling.", level: A1, group: playgo }
+  - { en: "I do karate and yoga.", level: A1, group: playgo }
+  - { en: "We play ball games, but we go swimming and do yoga.", level: A2, group: playgo }
+  - { en: "I'd like to join the football club.", level: A2, group: club }
+  - { en: "What days do you practise?", level: A2, group: club }
+  - { en: "What do I need to bring?", level: A2, group: club }
+  - { en: "How much does it cost to join?", level: A2, group: club }
+  - { en: "Is it OK for beginners?", level: B1, group: club }
+  - { en: "Kick the ball!", level: A1, group: coach }
+  - { en: "Jump three times!", level: A1, group: coach }
+  - { en: "Throw the ball to the left!", level: A2, group: coach }
+  - { en: "Run faster!", level: A1, group: coach }
+  - { en: "Well done! Good job!", level: A1, group: coach }
+  - { en: "Take a deep breath and stretch your arms.", level: A2, group: coach }
+  - { en: "Pass the ball to your teammate!", level: A2, group: coach }
+quiz:
+  - id: go-swimming
+    question: "I ___ swimming every Sunday."
+    options: [go, play, do, make]
+    answer: 0
+    level: A1
+  - id: play-football
+    question: "We ___ football after school."
+    options: [go, play, do, make]
+    answer: 1
+    level: A1
+  - id: do-karate
+    question: "My sister ___ karate."
+    options: [goes, plays, does, makes]
+    answer: 2
+    level: A2
+  - id: faster
+    question: "A horse is ___ than a dog."
+    options: [fast, faster, fastest, more fast]
+    answer: 1
+    level: A2
+  - id: highest
+    question: "Who can jump the ___?"
+    options: [high, higher, highest, most high]
+    answer: 2
+    level: A2
+  - id: shuttlecock
+    question: "In which sport do you hit a shuttlecock?"
+    options: [tennis, badminton, golf, volleyball]
+    answer: 1
+    level: A2
+  - id: can-swim
+    question: "Choose the correct sentence."
+    options: [I can swims., I can to swim., I can swim., I cans swim.]
+    answer: 2
+    level: A1
+  - id: like-ing
+    question: "She likes ___ basketball."
+    options: [play, playing, plays, to playing]
+    answer: 1
+    level: A1
+  - id: goalkeeper
+    question: "In football, the player who catches the ball with his hands is the…"
+    options: [coach, referee, goalkeeper, fan]
+    answer: 2
+    level: A2
+  - id: past-win
+    question: "Yesterday our team ___ the match."
+    options: [win, winned, won, wins]
+    answer: 2
+    level: A2

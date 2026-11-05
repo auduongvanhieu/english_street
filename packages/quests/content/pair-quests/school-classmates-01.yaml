@@ -1,0 +1,38 @@
+id: school-classmates-01
+npc: teacher
+level: A1
+title: New Classmates (pair)
+intro: "You are two new classmates at Maple School. Get to know each other and share your things. Ms. Green listens and gives each of you feedback."
+roles:
+  - id: new
+    label: New student
+    brief: >
+      It's your first day at Maple School. Say hello to the student next to you, say your name and age, ask about
+      their favourite subject, and ask to borrow a pencil because you forgot yours.
+    goals:
+      - id: intro
+        desc: Say your name and age
+      - id: ask_subject
+        desc: Ask about their favourite subject
+      - id: borrow
+        desc: Ask politely to borrow a pencil
+      - id: thank
+        desc: Say thank you
+  - id: classmate
+    label: Classmate
+    brief: >
+      A new student sits next to you at Maple School. Welcome them, say your name, tell them your favourite subject and
+      what lesson is next (look at the timetable: Maths at nine o'clock), and lend them something.
+    goals:
+      - id: welcome
+        desc: Welcome the new student and say your name
+      - id: favourite
+        desc: Say your favourite subject
+      - id: next_lesson
+        desc: Say what lesson is next and when
+      - id: lend
+        desc: Lend something (Here you are.)
+target_vocab: [classmate, pencil, Maths, favourite, subject, borrow]
+target_phrases: ["What's your favourite subject?", "Can I borrow your pencil?", "Here you are.", "Next is Maths at nine o'clock."]
+max_turns: 7
+reward: { xp: 70, coins: 20 }

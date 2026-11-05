@@ -1,0 +1,15 @@
+id: sports-warmup-01
+npc: coach
+level: A1
+title: Warm-up Time!
+intro: It's time to warm up before the game. Listen to Coach Max's commands, say what you are doing, and compare yourself with him.
+goals:
+  - { id: ready, desc: "Say you are ready to start" }
+  - { id: follow, desc: "Follow two commands and say what you are doing (I'm jumping! / I'm stretching my arms.)" }
+  - { id: count, desc: "Count while you jump or run (one, two, three…)" }
+  - { id: compare, desc: "Compare: say who is faster, higher or stronger (You're faster than me!)" }
+  - { id: feel, desc: "Say how you feel after the warm-up (tired, hot, great…)" }
+target_vocab: [jump, run, stretch, faster, higher, tired]
+target_phrases: ["I'm ready!", "I'm jumping!", "You're faster than me.", "I'm tired, but I feel great!"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

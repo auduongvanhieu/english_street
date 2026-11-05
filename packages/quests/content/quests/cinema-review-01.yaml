@@ -1,0 +1,15 @@
+id: cinema-review-01
+npc: usher
+level: B1
+title: What Did You Think?
+intro: You have just come out of a film. Leo asks what you thought of it. Talk about the story and the characters, give your opinion with reasons and say who you would recommend it to.
+goals:
+  - { id: which, desc: "Say which film you saw and what kind of film it is" }
+  - { id: opinion, desc: "Give your opinion with at least one reason (because…)" }
+  - { id: describe, desc: "Describe a character or a scene without spoiling the ending" }
+  - { id: compare, desc: "Compare it with another film or say what could be better" }
+  - { id: recommend, desc: "Say who you would recommend it to and why" }
+target_vocab: [exciting, boring, character, plot, ending, recommend]
+target_phrases: ["I thought it was…", "The best part was…", "although…", "I'd recommend it to…"]
+max_turns: 12
+reward: { xp: 90, coins: 20 }

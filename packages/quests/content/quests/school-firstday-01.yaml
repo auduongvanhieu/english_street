@@ -1,0 +1,14 @@
+id: school-firstday-01
+npc: teacher
+level: A1
+title: My First Day
+intro: It's your first day at Maple School. Introduce yourself to your new teacher.
+goals:
+  - { id: greet, desc: "Say good morning to the teacher" }
+  - { id: name_age, desc: "Say your name and how old you are" }
+  - { id: spell, desc: "Spell your name when the teacher asks" }
+  - { id: like, desc: "Say something you like (a subject, a sport, a colour…)" }
+target_vocab: [teacher, class, name, years old, spell]
+target_phrases: ["Good morning, Ms. Green!", "My name is…", "I'm nine years old.", "I like…"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

@@ -1,0 +1,14 @@
+id: hospital-firstaid-01
+npc: pharmacist
+level: A2
+title: A First-Aid Kit
+intro: Your class is going camping and you have to buy things for a first-aid kit. You have $25. Ask the pharmacist what you need and buy the most important things.
+goals:
+  - { id: explain, desc: "Explain that you need a first-aid kit for a camping trip" }
+  - { id: ask_items, desc: "Ask what you should put in it" }
+  - { id: buy_items, desc: "Ask for at least three things (plasters, a bandage, an ice pack…)" }
+  - { id: ask_price, desc: "Ask the total price and check you have enough money" }
+target_vocab: [first-aid kit, plasters, bandage, thermometer, ice pack]
+target_phrases: ["What should I put in a first-aid kit?", "I'd like a box of plasters, please.", "How much is that altogether?"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

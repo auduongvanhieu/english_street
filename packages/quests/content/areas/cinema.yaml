@@ -1,16 +1,544 @@
 id: cinema
-title: cinema
-intro: Coming soon.
+title: Star Cinema & Library
+intro: Buy tickets and popcorn for a film, then find a good book in the library next door. Learn film and book words and how to say what you think about a story.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: genres, label: Kinds of films }
+  - { id: cinema, label: At the cinema }
+  - { id: snacks, label: Snack bar }
+  - { id: feelings, label: Opinions and feelings }
+  - { id: library, label: At the library }
+  - { id: story, label: Telling a story }
+groups:
+  - { id: tickets, label: Buying tickets }
+  - { id: snacks, label: At the snack bar }
+  - { id: opinions, label: Talking about films }
+  - { id: library, label: At the library }
+  - { id: stories, label: Describing a story }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # ---------------------------------------------------------------- kinds of films
+  - id: comedy
+    en: comedy
+    plural: comedies
+    icon: 😂
+    pos: noun
+    category: genres
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: I like comedies., level: A1 }
+      - { en: Let's watch a comedy tonight. I want to laugh., level: A2 }
+      - { en: The comedy was so funny that the whole cinema was laughing., level: B1 }
+  - id: cartoon
+    en: cartoon
+    plural: cartoons
+    icon: 🐭
+    pos: noun
+    category: genres
+    note: "Also: an animated film, an animation."
+    sentences:
+      - { en: My little brother loves cartoons., level: A1 }
+      - { en: This cartoon is good for children and adults., level: A2 }
+      - { en: Animated films can take four or five years to make., level: B1 }
+  - id: action-film
+    en: action film
+    plural: action films
+    icon: 💥
+    pos: noun
+    category: genres
+    sentences:
+      - { en: This is an action film., level: A1 }
+      - { en: Action films have lots of car chases and fights., level: A2 }
+      - { en: The action scenes were great, but the story was a bit weak., level: B1 }
+  - id: science-fiction
+    en: science fiction
+    icon: 🚀
+    pos: noun
+    category: genres
+    note: "Short: sci-fi. Uncountable: a science fiction film."
+    sentences:
+      - { en: I like science fiction., level: A1 }
+      - { en: It's a science fiction film about robots on Mars., level: A2 }
+      - { en: Good science fiction makes you think about the future., level: B1 }
+  - id: fantasy
+    en: fantasy
+    icon: 🐉
+    pos: noun
+    category: genres
+    sentences:
+      - { en: There are dragons in fantasy films., level: A1 }
+      - { en: She reads fantasy books about magic and wizards., level: A2 }
+      - { en: The fantasy world in the film looks completely real., level: B1 }
+  - id: documentary
+    en: documentary
+    plural: documentaries
+    icon: 🐋
+    pos: noun
+    category: genres
+    sentences:
+      - { en: We watch a documentary about whales., level: A1 }
+      - { en: Documentaries tell true stories about real people and places., level: A2 }
+      - { en: I learned a lot from that documentary about the ocean., level: B1 }
+  - id: horror-film
+    en: horror film
+    plural: horror films
+    icon: 👻
+    pos: noun
+    category: genres
+    sentences:
+      - { en: I don't like horror films., level: A1 }
+      - { en: Horror films are too scary for young children., level: A2 }
+      - { en: I watched the horror film with my hands over my eyes!, level: B1 }
+  - id: musical
+    en: musical
+    plural: musicals
+    icon: 🎤
+    pos: noun
+    category: genres
+    sentences:
+      - { en: People sing in a musical., level: A1 }
+      - { en: We went to see a musical and sang all the way home., level: A2 }
+      - { en: The songs in the musical are still stuck in my head., level: B1 }
+  # ---------------------------------------------------------------- at the cinema
+  - id: ticket
+    en: ticket
+    plural: tickets
+    icon: 🎟️
+    pos: noun
+    category: cinema
+    price: 9
+    note: "Adult $9, child $6."
+    sentences:
+      - { en: Two tickets, please., level: A1 }
+      - { en: How much is a ticket for a child?, level: A2 }
+      - { en: It's cheaper to book your tickets online in advance., level: B1 }
+  - id: seat
+    en: seat
+    plural: seats
+    icon: 💺
+    pos: noun
+    category: cinema
+    sentences:
+      - { en: This is my seat., level: A1 }
+      - { en: Can we have two seats next to each other?, level: A2 }
+      - { en: "Excuse me, I think you're sitting in my seat.", level: B1 }
+  - id: row
+    en: row
+    plural: rows
+    icon: 🔢
+    pos: noun
+    category: cinema
+    sentences:
+      - { en: We are in row C., level: A1 }
+      - { en: I don't like sitting in the front row., level: A2 }
+      - { en: The seats in the back row have the best view of the screen., level: B1 }
+  - id: screen
+    en: screen
+    plural: screens
+    icon: 📽️
+    pos: noun
+    category: cinema
+    sentences:
+      - { en: The screen is very big., level: A1 }
+      - { en: The film is on screen two., level: A2 }
+      - { en: Please turn off your phone before the film starts on the big screen., level: B1 }
+  - id: showtime
+    en: showtime
+    plural: showtimes
+    icon: 🕢
+    pos: noun
+    category: cinema
+    note: "Also: a show, a screening. The 7:30 show."
+    sentences:
+      - { en: The film is at seven thirty., level: A1 }
+      - { en: What are the showtimes for Space Cats?, level: A2 }
+      - { en: The evening showtimes are usually busier than the afternoon ones., level: B1 }
+  - id: box-office
+    en: box office
+    plural: box offices
+    icon: 🏪
+    pos: noun
+    category: cinema
+    note: "The desk where you buy tickets (also: ticket office)."
+    sentences:
+      - { en: Buy tickets at the box office., level: A1 }
+      - { en: The box office opens at ten in the morning., level: A2 }
+      - { en: The film was a big success at the box office., level: B1 }
+  - id: trailer
+    en: trailer
+    plural: trailers
+    icon: 🎞️
+    pos: noun
+    category: cinema
+    sentences:
+      - { en: I watch the trailer., level: A1 }
+      - { en: The trailer for that film looks really exciting., level: A2 }
+      - { en: There are about fifteen minutes of trailers before the film starts., level: B1 }
+  - id: subtitles
+    en: subtitles
+    icon: 💬
+    pos: noun
+    category: cinema
+    note: "Always plural: the subtitles."
+    sentences:
+      - { en: The film has subtitles., level: A1 }
+      - { en: I watch English films with English subtitles., level: A2 }
+      - { en: Reading subtitles is a great way to learn new words., level: B1 }
+  - id: aisle
+    en: aisle
+    plural: aisles
+    icon: 🚶
+    pos: noun
+    category: cinema
+    note: "The 's' is silent: /aɪl/."
+    sentences:
+      - { en: Walk down the aisle., level: A1 }
+      - { en: Can I have a seat next to the aisle?, level: A2 }
+      - { en: I prefer an aisle seat so I can get out easily., level: B1 }
+  - id: 3d-glasses
+    en: 3D glasses
+    icon: 🥽
+    pos: noun
+    category: cinema
+    sentences:
+      - { en: Put on your 3D glasses., level: A1 }
+      - { en: Do we need 3D glasses for this film?, level: A2 }
+      - { en: The dragon looked so real in 3D that I moved back in my seat., level: B1 }
+  # ---------------------------------------------------------------- snacks
+  - id: popcorn
+    en: popcorn
+    icon: 🍿
+    pos: noun
+    category: snacks
+    price: 4
+    note: "Uncountable: some popcorn, a box of popcorn. Small $4, large $6."
+    sentences:
+      - { en: I want popcorn., level: A1 }
+      - { en: A large popcorn and two drinks, please., level: A2 }
+      - { en: Would you like sweet or salted popcorn?, level: B1 }
+  - id: nachos
+    en: nachos
+    icon: 🧀
+    pos: noun
+    category: snacks
+    price: 5
+    sentences:
+      - { en: I like nachos with cheese., level: A1 }
+      - { en: Can we share some nachos?, level: A2 }
+      - { en: The nachos come with cheese sauce and a little salsa., level: B1 }
+  - id: soft-drink
+    en: soft drink
+    plural: soft drinks
+    icon: 🥤
+    pos: noun
+    category: snacks
+    price: 3
+    sentences:
+      - { en: A soft drink, please., level: A1 }
+      - { en: What size would you like, small or large?, level: A2 }
+      - { en: You can refill your soft drink for free during the film., level: B1 }
+  - id: ice-cream
+    en: ice cream
+    icon: 🍦
+    pos: noun
+    category: snacks
+    price: 4
+    sentences:
+      - { en: I want an ice cream., level: A1 }
+      - { en: Do you have chocolate ice cream?, level: A2 }
+      - { en: Eat your ice cream quickly or it'll melt before the film starts., level: B1 }
+  # ---------------------------------------------------------------- opinions and feelings
+  - id: exciting
+    en: exciting
+    icon: 🤩
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The film is exciting., level: A1 }
+      - { en: The ending was really exciting., level: A2 }
+      - { en: The film was exciting from start to finish, and I was never bored., level: B1 }
+      - { en: It's one of the most exciting films I've seen this year., level: B2 }
+  - id: boring
+    en: boring
+    icon: 🥱
+    pos: adjective
+    category: feelings
+    note: "boring = the film; bored = how you feel."
+    sentences:
+      - { en: This film is boring., level: A1 }
+      - { en: The film was boring, so I fell asleep., level: A2 }
+      - { en: The story was boring, but the music was beautiful., level: B1 }
+      - { en: The middle part dragged on a bit, so I got rather bored., level: B2 }
+  - id: scary
+    en: scary
+    icon: 😱
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The ghost is scary., level: A1 }
+      - { en: Is this film too scary for children?, level: A2 }
+      - { en: It wasn't very scary, but there were a few surprising moments., level: B1 }
+  - id: funny
+    en: funny
+    icon: 🤣
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The cat is funny., level: A1 }
+      - { en: It's the funniest film I've ever seen!, level: A2 }
+      - { en: The jokes were funny for adults and children., level: B1 }
+  - id: sad
+    en: sad
+    icon: 😢
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The film is sad., level: A1 }
+      - { en: I cried at the end because it was so sad., level: A2 }
+      - { en: It's a sad story, but it has a hopeful ending., level: B1 }
+      - { en: The ending was so moving that half the audience was in tears., level: B2 }
+  - id: surprising
+    en: surprising
+    icon: 😮
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The end is surprising., level: A1 }
+      - { en: The ending was surprising. I didn't expect it!, level: A2 }
+      - { en: The most surprising thing was that the villain was the hero's brother., level: B1 }
+      - { en: I never saw that twist coming, it took me completely by surprise., level: B2 }
+  - id: disappointing
+    en: disappointing
+    icon: 😕
+    pos: adjective
+    category: feelings
+    sentences:
+      - { en: The film was disappointing., level: A2 }
+      - { en: The book was great, but the film was disappointing., level: B1 }
+      - { en: After all the hype, I found it rather disappointing., level: B2 }
+  - id: recommend
+    en: recommend
+    icon: 👍
+    pos: verb
+    category: feelings
+    sentences:
+      - { en: I recommend this film., level: A2 }
+      - { en: Can you recommend a good book for a twelve-year-old?, level: B1 }
+      - { en: I'd highly recommend it to anyone who loves a good mystery., level: B2 }
+  # ---------------------------------------------------------------- library
+  - id: library-card
+    en: library card
+    plural: library cards
+    icon: 🪪
+    pos: noun
+    category: library
+    sentences:
+      - { en: This is my library card., level: A1 }
+      - { en: You need a library card to borrow books., level: A2 }
+      - { en: Getting a library card is free; you just need to fill in a form., level: B1 }
+  - id: borrow
+    en: borrow
+    icon: 📚
+    pos: verb
+    category: library
+    note: "You borrow FROM the library; the library lends TO you."
+    sentences:
+      - { en: I borrow a book., level: A1 }
+      - { en: How many books can I borrow?, level: A2 }
+      - { en: You can borrow up to five books for three weeks., level: B1 }
+  - id: return
+    en: return
+    icon: ↩️
+    pos: verb
+    category: library
+    sentences:
+      - { en: I return the book today., level: A1 }
+      - { en: Please return the books by Friday., level: A2 }
+      - { en: You can return books in the box outside when the library is closed., level: B1 }
+  - id: due-date
+    en: due date
+    plural: due dates
+    icon: 📅
+    pos: noun
+    category: library
+    sentences:
+      - { en: The due date is Monday., level: A1 }
+      - { en: When is the due date for this book?, level: A2 }
+      - { en: If you return a book after the due date, you have to pay a small fine., level: B1 }
+  - id: novel
+    en: novel
+    plural: novels
+    icon: 📖
+    pos: noun
+    category: library
+    sentences:
+      - { en: I'm reading a novel., level: A1 }
+      - { en: This novel is about a boy and his dog., level: A2 }
+      - { en: The novel was made into a film last year., level: B1 }
+  - id: author
+    en: author
+    plural: authors
+    icon: ✍️
+    pos: noun
+    category: library
+    sentences:
+      - { en: Who is the author?, level: A1 }
+      - { en: She's my favourite author. I've read all her books., level: A2 }
+      - { en: The author got the idea for the book on a long train journey., level: B1 }
+  - id: chapter
+    en: chapter
+    plural: chapters
+    icon: 📑
+    pos: noun
+    category: library
+    sentences:
+      - { en: I read one chapter every night., level: A1 }
+      - { en: The first chapter is a bit slow, but then it gets exciting., level: A2 }
+      - { en: Each chapter ends with a question, so you want to keep reading., level: B1 }
+  - id: bookmark
+    en: bookmark
+    plural: bookmarks
+    icon: 🔖
+    pos: noun
+    category: library
+    sentences:
+      - { en: Here is my bookmark., level: A1 }
+      - { en: I use a bookmark so I don't lose my page., level: A2 }
+      - { en: The library gives every new member a free bookmark., level: B1 }
+  # ---------------------------------------------------------------- telling a story
+  - id: plot
+    en: plot
+    plural: plots
+    icon: 🧩
+    pos: noun
+    category: story
+    note: "What happens in a story."
+    sentences:
+      - { en: The plot is simple., level: A2 }
+      - { en: The plot is about a girl who finds a magic key., level: B1 }
+      - { en: The plot was so complicated that I had to watch it twice., level: B2 }
+  - id: character
+    en: character
+    plural: characters
+    icon: 🧙
+    pos: noun
+    category: story
+    sentences:
+      - { en: The main character is a cat., level: A1 }
+      - { en: My favourite character is the funny robot., level: A2 }
+      - { en: The characters feel real because they make mistakes like us., level: B1 }
+  - id: ending
+    en: ending
+    plural: endings
+    icon: 🏁
+    pos: noun
+    category: story
+    sentences:
+      - { en: I like the ending., level: A1 }
+      - { en: The film has a happy ending., level: A2 }
+      - { en: Don't tell me the ending! I haven't seen it yet., level: B1 }
+  - id: review
+    en: review
+    plural: reviews
+    icon: ⭐
+    pos: noun
+    category: story
+    sentences:
+      - { en: The film has good reviews., level: A2 }
+      - { en: I read a review before I choose a film., level: B1 }
+      - { en: The critics gave it mixed reviews, but audiences loved it., level: B2 }
+  - id: actor
+    en: actor
+    plural: actors
+    icon: 🎭
+    pos: noun
+    category: story
+    sentences:
+      - { en: He is an actor., level: A1 }
+      - { en: Who's your favourite actor?, level: A2 }
+      - { en: The young actor who plays the hero is brilliant., level: B1 }
+  - id: director
+    en: director
+    plural: directors
+    icon: 🎬
+    pos: noun
+    category: story
+    sentences:
+      - { en: The director is famous., level: A2 }
+      - { en: The director also wrote the story., level: B1 }
+      - { en: It's the director's first film, which makes it even more impressive., level: B2 }
+phrases:
+  - { en: "Two tickets for Space Cats, please.", level: A1, group: tickets }
+  - { en: "What time does the film start?", level: A1, group: tickets }
+  - { en: "Are there any seats left for the 7:30 show?", level: A2, group: tickets }
+  - { en: "Can we sit next to each other?", level: A2, group: tickets }
+  - { en: "One adult and one child, please.", level: A1, group: tickets }
+  - { en: "How long is the film?", level: A2, group: tickets }
+  - { en: "A large popcorn, please.", level: A1, group: snacks }
+  - { en: "Sweet or salted?", level: A2, group: snacks }
+  - { en: "Can I have a small drink with no ice?", level: A2, group: snacks }
+  - { en: "That's fourteen dollars altogether.", level: A2, group: snacks }
+  - { en: "What did you think of the film?", level: A2, group: opinions }
+  - { en: "I loved it! It was really exciting.", level: A1, group: opinions }
+  - { en: "It was OK, but the ending was a bit disappointing.", level: B1, group: opinions }
+  - { en: "In my opinion, the book was better than the film.", level: B1, group: opinions }
+  - { en: "I'd recommend it to anyone who likes adventure stories.", level: B2, group: opinions }
+  - { en: "I'm not really into horror films.", level: B1, group: opinions }
+  - { en: "I'd like to borrow this book, please.", level: A1, group: library }
+  - { en: "When do I have to return it?", level: A2, group: library }
+  - { en: "Do you have any books by this author?", level: A2, group: library }
+  - { en: "Can I renew it for another week?", level: B1, group: library }
+  - { en: "It's due back on the twenty-first.", level: B1, group: library }
+  - { en: "It's about a girl who can talk to animals.", level: A2, group: stories }
+  - { en: "The main character is a shy boy called Tom.", level: A2, group: stories }
+  - { en: "It's set in a small town by the sea.", level: B1, group: stories }
+  - { en: "At first she's scared, but in the end she saves her friends.", level: B1, group: stories }
+  - { en: "Without giving away the ending, it's full of surprises.", level: B2, group: stories }
+quiz:
+  - id: q-tickets
+    question: "You want to buy tickets. Where do you go?"
+    options: [the box office, the snack bar, the screen, the aisle]
+    answer: 0
+    level: A1
+  - id: q-together
+    question: "You and your friend want to sit together. What do you say?"
+    options: ["Can we sit next to each other?", "Can we sit in front of each other?", "Can we sit behind the screen?", "Can we sit on the aisle?"]
+    answer: 0
+    level: A2
+  - id: q-scary
+    question: "A film with ghosts and monsters that makes you scream is…"
+    options: [scary, funny, boring, sad]
+    answer: 0
+    level: A1
+  - id: q-bored
+    question: "Choose the correct sentence."
+    options: ["The film was boring, so I was bored.", "The film was bored, so I was boring.", "The film was boring, so I was boring.", "The film was bored, so I was bored."]
+    answer: 0
+    level: A2
+  - id: q-borrow
+    question: "At the library: “Can I ___ this book for two weeks?”"
+    options: [borrow, lend, buy, sell]
+    answer: 0
+    level: A2
+  - id: q-due
+    question: "The day you must give a library book back is the…"
+    options: [due date, birthday, showtime, chapter]
+    answer: 0
+    level: A2
+  - id: q-documentary
+    question: "A film with true facts about real animals is a…"
+    options: [documentary, cartoon, musical, horror film]
+    answer: 0
+    level: A2
+  - id: q-plot
+    question: "“The plot is about a robot who wants to be a chef.” What does “plot” mean?"
+    options: [what happens in the story, the person who wrote it, the end of the film, the price of the ticket]
+    answer: 0
+    level: B1
+  - id: q-opinion
+    question: "Which sentence gives a balanced opinion?"
+    options: ["The acting was brilliant, although the story was a bit slow.", "Film. Good. Yes.", "I watch the film yesterday.", "The film is a cinema."]
+    answer: 0
+    level: B1
+  - id: q-twist
+    question: "“I never saw that twist coming.” The speaker means the story…"
+    options: [had a big surprise, was too long, was easy to guess, had no ending]
+    answer: 0
+    level: B2

@@ -1,3 +1,4 @@
+import { AREA_IDS } from '@es/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { BETA_PASS_TTL_S, signToken } from '@es/shared/token';
@@ -7,6 +8,8 @@ import { allowTelemetry } from '../npc/ratelimit';
 import type { AttemptRepo } from '../npc/attempts';
 
 /** Client-side event names we accept (anything else is dropped). */
+/** Area activities report `<area>_<what>`, e.g. school_spelling_done. */
+const AREA_ACTIVITY_EVENT = new RegExp(`^(${AREA_IDS.join('|')})_[a-z_]{2,30}$`);
 const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line', 'avatar_save', 'critter_hug', 'lang_change', 'area_enter', 'area_panel_open', 'word_card_open', 'quiz_done', 'farm_action', 'restaurant_order', 'shopping_done', 'shopping_start', 'bus_ride', 'restaurant_sit', 'garden_visit', 'translation_report', 'exit_game', 'area_leave', 'npc_open', 'notice_seen']);
 
 const EventsSchema = z.object({
@@ -48,7 +51,7 @@ export function telemetryRoutes(repo: AttemptRepo) {
       const body = EventsSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const pid = playerIdFrom(req, body.data.playerId);
-      for (const e of body.data.events) if (CLIENT_EVENTS.has(e.name)) await repo.logEvent({ name: e.name, playerId: pid, props: e.props });
+      for (const e of body.data.events) if (CLIENT_EVENTS.has(e.name) || AREA_ACTIVITY_EVENT.test(e.name)) await repo.logEvent({ name: e.name, playerId: pid, props: e.props });
       return reply.code(204).send();
     });
 

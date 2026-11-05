@@ -1,0 +1,15 @@
+id: cinema-tickets-01
+npc: usher
+level: A2
+title: Two Tickets, Please
+intro: You want to see a film this evening with a friend. Choose a film, buy tickets for a showtime, ask for seats together and buy a snack.
+goals:
+  - { id: greet, desc: "Greet the ticket seller and say which film you want to see" }
+  - { id: time, desc: "Ask about the showtimes and choose one" }
+  - { id: tickets, desc: "Say how many tickets you need (adult or child)" }
+  - { id: seats, desc: "Ask for seats next to each other (or in a certain row)" }
+  - { id: snack, desc: "Order a snack or a drink and ask the total price" }
+target_vocab: [ticket, showtime, seat, row, popcorn, total]
+target_phrases: ["Two tickets for…, please.", "What time is the next show?", "Can we sit next to each other?", "How much is that altogether?"]
+max_turns: 12
+reward: { xp: 60, coins: 15 }

@@ -1,0 +1,15 @@
+id: sports-club-01
+npc: coach
+level: A2
+title: Joining a Club
+intro: You want to join a club at Sunny Sports Park. Choose a club, ask about the days and times, what to bring and the price, then sign up.
+goals:
+  - { id: choose, desc: "Say which club you want to join" }
+  - { id: when, desc: "Ask what days and times the club meets" }
+  - { id: bring, desc: "Ask what equipment you need to bring" }
+  - { id: price, desc: "Ask how much it costs" }
+  - { id: sign_up, desc: "Give your name and age to sign up" }
+target_vocab: [club, trainers, racket, practise, Monday, beginner]
+target_phrases: ["I'd like to join the… club.", "What days do you practise?", "What do I need to bring?", "How much does it cost?"]
+max_turns: 12
+reward: { xp: 60, coins: 15 }

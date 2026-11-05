@@ -307,3 +307,12 @@ Nhà hàng (ngồi bàn, gọi món, món ăn hiện trên bàn). Vào khu tự 
 nghĩa, 3 mẫu câu theo trình độ, chuyện thú vị, luyện phát âm, quiz. Xe buýt + bản đồ để đi nhanh.
 Người học trên toàn thế giới chọn ngôn ngữ của mình (16 ngôn ngữ + tiếng Anh): mọi phần dịch, giải thích lỗi, phụ đề
 và giao diện theo ngôn ngữ đó. Chi tiết kỹ thuật: README mục *Languages* và *Themed areas*.
+
+
+## 13. Step 5 (plan) — 8 khu mới, bờ nam
+
+Plan: `/root/session_manager_workspaces/plans/english-street-step5.md`. Phố chính kéo dài tới ±294 (cổng ở ±46, ±170),
+thêm Ngôi nhà, Trường học, Shop quần áo, Rạp phim & thư viện. Qua hai cây cầu sang bờ nam: Nhà ga (tàu chạy theo giờ chung),
+Bệnh viện & nhà thuốc, Khách sạn, Công viên thể thao (trời mưa thật thì chơi trong nhà thi đấu). Mỗi khu có ~40 từ, mẫu câu,
+quiz, NPC với 2–3 nhiệm vụ, nhiệm vụ cặp đôi, huy hiệu và một hoạt động riêng. Khu ở xa không được vẽ. Chi tiết: README mục
+*More areas and the south bank*.

@@ -1,0 +1,15 @@
+id: hospital-dosage-01
+npc: pharmacist
+level: B1
+title: How Often Should I Take It?
+intro: Your little brother has a fever and an earache, and the doctor sent you to the pharmacy for his ear drops. Make sure you understand exactly how to use them.
+goals:
+  - { id: explain, desc: "Explain who the medicine is for and what the problem is" }
+  - { id: how_often, desc: "Ask how often and how much he should take" }
+  - { id: how_long, desc: "Ask for how many days" }
+  - { id: repeat, desc: "Repeat the instructions back to check you understood" }
+  - { id: advice, desc: "Ask what else you should do to help him get better" }
+target_vocab: [ear drops, dosage, twice a day, for five days, fever]
+target_phrases: ["How often should he take it?", "For how many days?", "So, three drops twice a day…", "What else should I do?"]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

@@ -1,0 +1,42 @@
+id: station-tickets-01
+npc: stationmaster
+level: A2
+title: At the Ticket Office (pair)
+intro: One of you is a traveller who needs to get to Sunny Bay before 3 pm, the other works at the ticket office. Mr. Okafor listens and gives feedback.
+roles:
+  - id: traveller
+    label: Traveller
+    brief: >
+      You must be in Sunny Bay before 3 pm for your cousin's birthday party. You are coming
+      back tomorrow. You have $25. Find the right train, buy the right ticket and ask which platform.
+    goals:
+      - id: say_where
+        desc: Say where you are going and when you must arrive
+      - id: ticket_type
+        desc: Ask for the right kind of ticket (you come back tomorrow)
+      - id: pay
+        desc: Ask the price and pay
+      - id: ask_platform
+        desc: Ask which platform the train leaves from
+  - id: clerk
+    label: Ticket clerk
+    brief: >
+      You work at the ticket office of Central Station. Help the traveller choose a train,
+      sell them a ticket and tell them the platform.
+    facts: |
+      Trains to Sunny Bay today: 12:10 (arrives 13:25, platform 2), 13:40 (arrives 14:55, platform 1, delayed 10 minutes,
+      so it arrives at 15:05), 14:15 (arrives 15:30, platform 2). The 12:10 is the right train for arriving before 3 pm.
+      Sunny Bay single $12, return $20. Card or cash.
+    goals:
+      - id: greet
+        desc: Greet the traveller and ask where they are going
+      - id: suggest_train
+        desc: Suggest a train with its time (and say if a train is delayed)
+      - id: ask_return
+        desc: Ask if they want a single or a return ticket and tell the price
+      - id: tell_platform
+        desc: Tell them the platform and wish them a good journey
+target_vocab: [single, return, platform, delayed, arrive]
+target_phrases: ["Where are you travelling to?", "Single or return?", "It leaves from platform…", "Have a good journey!"]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

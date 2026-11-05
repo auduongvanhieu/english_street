@@ -1,0 +1,39 @@
+id: home-tidyup-01
+npc: mum
+level: A1
+title: Tidy Up Together (pair)
+intro: "One of you is the parent, the other is the child. Tidy the house together. Linda listens and gives each of you feedback."
+roles:
+  - id: parent
+    label: Parent
+    brief: >
+      You are the parent at Cozy Home. The house is messy before Grandma visits. Ask your child to do two chores
+      (for example: put the toys in the toy box, put the cups in the cupboard, make the bed). Tell them where things go
+      and say thank you.
+    goals:
+      - id: ask_chore
+        desc: Ask your child to do a chore
+      - id: where
+        desc: Say where something goes (in, on, under, next to…)
+      - id: second
+        desc: Ask for a second chore
+      - id: thank
+        desc: Thank your child
+  - id: child
+    label: Child
+    brief: >
+      You are the child at Cozy Home. Your parent asks you to help before Grandma visits. Say yes, ask where things go,
+      say what you did, and ask if you can play or watch TV afterwards.
+    goals:
+      - id: agree
+        desc: Say yes and offer to help
+      - id: ask_where
+        desc: Ask where something goes
+      - id: report
+        desc: Say what you did (I put the… in/on the…)
+      - id: ask_permission
+        desc: Ask if you can play or watch TV
+target_vocab: [cupboard, toy box, bed, put, in, on, under, next to]
+target_phrases: ["Can you put the… in the…?", "Where does it go?", "I put the… on the…", "Can I watch TV now?"]
+max_turns: 7
+reward: { xp: 70, coins: 20 }

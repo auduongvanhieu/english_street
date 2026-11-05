@@ -1,0 +1,15 @@
+id: hotel-checkin-01
+npc: receptionist
+level: A2
+title: Checking In
+intro: You arrive at Riverside Hotel with a booking. Check in at the front desk, spell your name and get your key card.
+goals:
+  - { id: greet, desc: "Greet the receptionist and say you have a reservation" }
+  - { id: name, desc: "Give your name and spell your surname" }
+  - { id: passport, desc: "Give your passport or ID when she asks" }
+  - { id: ask_info, desc: "Ask one question: breakfast time, the Wi-Fi password or where the lift is" }
+  - { id: thank, desc: "Say thank you and goodbye" }
+target_vocab: [reservation, check in, passport, key card, breakfast, lift]
+target_phrases: ["I have a reservation in the name of…", "That's B-R-O-W-N.", "What time is breakfast?"]
+max_turns: 10
+reward: { xp: 60, coins: 15 }

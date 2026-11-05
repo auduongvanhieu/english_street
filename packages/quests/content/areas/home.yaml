@@ -1,16 +1,514 @@
 id: home
-title: home
-intro: Coming soon.
+title: Cozy Home
+intro: Welcome to Cozy Home! Look around the rooms, learn the names of things in the house and help Mum with the chores.
 categories:
-  - { id: main, label: Words }
-groups: []
+  - { id: rooms, label: Rooms and the house }
+  - { id: furniture, label: Furniture }
+  - { id: kitchen, label: In the kitchen }
+  - { id: bathroom, label: In the bathroom }
+  - { id: things, label: Things around the house }
+  - { id: chores, label: Chores }
+  - { id: routine, label: My day }
+groups:
+  - { id: home, label: At home }
+  - { id: where, label: Where is it? }
+  - { id: chores, label: Helping at home }
+  - { id: day, label: My day }
+  - { id: polite, label: Asking and thanking }
 items:
-  - id: hello
-    en: hello
-    icon: 👋
-    pos: phrase
-    category: main
+  # ---------------------------------------------------------------- rooms
+  - id: house
+    en: house
+    plural: houses
+    icon: 🏠
+    category: rooms
     sentences:
-      - { en: Hello!, level: A1 }
-phrases: []
-quiz: []
+      - { en: "This is my house.", level: A1 }
+      - { en: "Our house has four rooms and a small garden.", level: A2 }
+      - { en: "We've lived in this house since I was a baby.", level: B1 }
+  - id: living-room
+    en: living room
+    plural: living rooms
+    icon: 🛋️
+    category: rooms
+    sentences:
+      - { en: "The sofa is in the living room.", level: A1 }
+      - { en: "We watch TV in the living room in the evening.", level: A2 }
+      - { en: "The living room is the biggest room in our house.", level: B1 }
+  - id: kitchen
+    en: kitchen
+    plural: kitchens
+    icon: 🍳
+    category: rooms
+    sentences:
+      - { en: "Mum is in the kitchen.", level: A1 }
+      - { en: "We cook and wash the dishes in the kitchen.", level: A2 }
+      - { en: "The kitchen always smells nice when Dad is baking bread.", level: B1 }
+  - id: bedroom
+    en: bedroom
+    plural: bedrooms
+    icon: 💤
+    category: rooms
+    sentences:
+      - { en: "My bedroom is small and blue.", level: A1 }
+      - { en: "I sleep and do my homework in my bedroom.", level: A2 }
+      - { en: "I share a bedroom with my little brother, so we have bunk beds.", level: B1 }
+  - id: bathroom
+    en: bathroom
+    plural: bathrooms
+    icon: 🚿
+    category: rooms
+    sentences:
+      - { en: "The bathroom is next to my bedroom.", level: A1 }
+      - { en: "I have a shower in the bathroom every morning.", level: A2 }
+      - { en: "Please don't leave wet towels on the bathroom floor.", level: B1 }
+  - id: garden
+    en: garden
+    plural: gardens
+    icon: 🌻
+    category: rooms
+    note: "In American English people often say “yard”."
+    sentences:
+      - { en: "There are flowers in the garden.", level: A1 }
+      - { en: "The children are playing in the garden.", level: A2 }
+      - { en: "Mum hangs the washing on the line in the garden when it's sunny.", level: B1 }
+  - id: door
+    en: door
+    plural: doors
+    icon: 🚪
+    category: rooms
+    sentences:
+      - { en: "Please close the door.", level: A1 }
+      - { en: "Someone is knocking at the front door.", level: A2 }
+      - { en: "Don't forget to lock the door when you go out.", level: B1 }
+  - id: window
+    en: window
+    plural: windows
+    icon: 🪟
+    category: rooms
+    sentences:
+      - { en: "Open the window, please.", level: A1 }
+      - { en: "I can see the garden from my bedroom window.", level: A2 }
+      - { en: "It's cold in here because somebody left the window open.", level: B1 }
+  # ---------------------------------------------------------------- furniture
+  - id: sofa
+    en: sofa
+    plural: sofas
+    icon: 🛋️
+    category: furniture
+    sentences:
+      - { en: "The cat is on the sofa.", level: A1 }
+      - { en: "We sit on the sofa and read stories.", level: A2 }
+      - { en: "The sofa is so comfortable that Grandpa often falls asleep on it.", level: B1 }
+  - id: chair
+    en: chair
+    plural: chairs
+    icon: 🪑
+    category: furniture
+    sentences:
+      - { en: "Sit on the chair, please.", level: A1 }
+      - { en: "There are four chairs around the table.", level: A2 }
+      - { en: "Can you put the chairs back when you've finished eating?", level: B1 }
+  - id: table
+    en: table
+    plural: tables
+    icon: 🍽️
+    category: furniture
+    sentences:
+      - { en: "The plates are on the table.", level: A1 }
+      - { en: "We have dinner at the big table in the dining room.", level: A2 }
+      - { en: "It's your turn to lay the table tonight.", level: B1 }
+  - id: desk
+    en: desk
+    plural: desks
+    icon: 🖥️
+    category: furniture
+    sentences:
+      - { en: "My books are on my desk.", level: A1 }
+      - { en: "I do my homework at my desk.", level: A2 }
+      - { en: "I keep my desk tidy so I can find my pens quickly.", level: B1 }
+  - id: bed
+    en: bed
+    plural: beds
+    icon: 🛏️
+    category: furniture
+    sentences:
+      - { en: "The ball is under the bed.", level: A1 }
+      - { en: "I make my bed every morning.", level: A2 }
+      - { en: "I was so tired that I went straight to bed after dinner.", level: B1 }
+  - id: wardrobe
+    en: wardrobe
+    plural: wardrobes
+    icon: 👗
+    category: furniture
+    note: "In American English: closet."
+    sentences:
+      - { en: "My clothes are in the wardrobe.", level: A1 }
+      - { en: "Hang your coat in the wardrobe, please.", level: A2 }
+      - { en: "The wardrobe is so full that the door won't close.", level: B1 }
+  - id: bookcase
+    en: bookcase
+    plural: bookcases
+    icon: 📚
+    category: furniture
+    sentences:
+      - { en: "The books are in the bookcase.", level: A1 }
+      - { en: "There are lots of picture books on the bottom shelf.", level: A2 }
+      - { en: "We sorted the books in the bookcase by colour.", level: B1 }
+  - id: lamp
+    en: lamp
+    plural: lamps
+    icon: 💡
+    category: furniture
+    sentences:
+      - { en: "The lamp is on the desk.", level: A1 }
+      - { en: "Turn on the lamp. It's dark in here.", level: A2 }
+      - { en: "Please switch off the lamp when you leave the room to save electricity.", level: B1 }
+  - id: mirror
+    en: mirror
+    plural: mirrors
+    icon: 🪞
+    category: furniture
+    sentences:
+      - { en: "Look in the mirror!", level: A1 }
+      - { en: "There's a mirror above the sink in the bathroom.", level: A2 }
+      - { en: "I checked my hair in the mirror before I went out.", level: B1 }
+  - id: clock
+    en: clock
+    plural: clocks
+    icon: 🕰️
+    category: furniture
+    sentences:
+      - { en: "The clock is on the wall.", level: A1 }
+      - { en: "Look at the clock. It's seven o'clock!", level: A2 }
+      - { en: "The kitchen clock is five minutes fast, so we're never late.", level: B1 }
+  # ---------------------------------------------------------------- kitchen
+  - id: fridge
+    en: fridge
+    plural: fridges
+    icon: 🧊
+    category: kitchen
+    sentences:
+      - { en: "The milk is in the fridge.", level: A1 }
+      - { en: "Put the butter back in the fridge, please.", level: A2 }
+      - { en: "There's nothing in the fridge, so we need to go shopping.", level: B1 }
+  - id: cooker
+    en: cooker
+    plural: cookers
+    icon: 🔥
+    category: kitchen
+    note: "In American English: stove."
+    sentences:
+      - { en: "The pan is on the cooker.", level: A1 }
+      - { en: "Be careful! The cooker is hot.", level: A2 }
+      - { en: "Never leave the cooker on when you go out.", level: B1 }
+  - id: sink
+    en: sink
+    plural: sinks
+    icon: 🚰
+    category: kitchen
+    sentences:
+      - { en: "The cups are in the sink.", level: A1 }
+      - { en: "I wash my hands at the kitchen sink.", level: A2 }
+      - { en: "The sink is full of dirty dishes after the party.", level: B1 }
+  - id: cupboard
+    en: cupboard
+    plural: cupboards
+    icon: 🗄️
+    category: kitchen
+    note: "Say it like “CUB-bud”: the p is silent."
+    sentences:
+      - { en: "The plates are in the cupboard.", level: A1 }
+      - { en: "Can you put the cups in the cupboard, please?", level: A2 }
+      - { en: "The biscuits are in the top cupboard, where the baby can't reach them.", level: B1 }
+  - id: cup
+    en: cup
+    plural: cups
+    icon: ☕
+    category: kitchen
+    sentences:
+      - { en: "This is my cup.", level: A1 }
+      - { en: "Would you like a cup of tea?", level: A2 }
+      - { en: "I dropped a cup this morning and it broke into pieces.", level: B1 }
+  - id: bowl
+    en: bowl
+    plural: bowls
+    icon: 🥣
+    category: kitchen
+    sentences:
+      - { en: "I have a bowl of rice.", level: A1 }
+      - { en: "Put the bowls on the table, please.", level: A2 }
+      - { en: "I eat a bowl of cereal with milk before school.", level: B1 }
+  # ---------------------------------------------------------------- bathroom
+  - id: bath
+    en: bath
+    plural: baths
+    icon: 🛁
+    category: bathroom
+    sentences:
+      - { en: "The duck is in the bath.", level: A1 }
+      - { en: "The baby has a bath every evening.", level: A2 }
+      - { en: "I'd rather have a quick shower than a long bath.", level: B1 }
+  - id: toilet
+    en: toilet
+    plural: toilets
+    icon: 🚽
+    category: bathroom
+    sentences:
+      - { en: "Where is the toilet?", level: A1 }
+      - { en: "The toilet is next to the bath.", level: A2 }
+      - { en: "Remember to flush the toilet and wash your hands.", level: B1 }
+  - id: toothbrush
+    en: toothbrush
+    plural: toothbrushes
+    icon: 🪥
+    category: bathroom
+    sentences:
+      - { en: "My toothbrush is blue.", level: A1 }
+      - { en: "The toothbrushes are in a cup next to the sink.", level: A2 }
+      - { en: "Dentists say you should get a new toothbrush every three months.", level: B1 }
+  - id: soap
+    en: soap
+    icon: 🧼
+    category: bathroom
+    note: "Uncountable: some soap, a bar of soap."
+    sentences:
+      - { en: "Wash your hands with soap.", level: A1 }
+      - { en: "There's no soap in the bathroom. Can you get some?", level: A2 }
+      - { en: "Washing your hands with soap for twenty seconds kills most germs.", level: B1 }
+  # ---------------------------------------------------------------- things
+  - id: ball
+    en: ball
+    plural: balls
+    icon: ⚽
+    category: things
+    sentences:
+      - { en: "The ball is under the bed.", level: A1 }
+      - { en: "Don't play with the ball in the house!", level: A2 }
+      - { en: "I kicked the ball so hard that it went over the fence.", level: B1 }
+  - id: teddy-bear
+    en: teddy bear
+    plural: teddy bears
+    icon: 🧸
+    category: things
+    sentences:
+      - { en: "My teddy bear is on my bed.", level: A1 }
+      - { en: "My little sister can't sleep without her teddy bear.", level: A2 }
+      - { en: "I've had this teddy bear since I was two years old.", level: B1 }
+  - id: keys
+    en: keys
+    icon: 🔑
+    category: things
+    note: "One key, two keys."
+    sentences:
+      - { en: "Where are my keys?", level: A1 }
+      - { en: "The keys are next to the door.", level: A2 }
+      - { en: "Dad always loses his keys, so we hang them on a hook by the door.", level: B1 }
+  - id: plant
+    en: plant
+    plural: plants
+    icon: 🪴
+    category: things
+    sentences:
+      - { en: "The plant is green.", level: A1 }
+      - { en: "Please water the plants in the living room.", level: A2 }
+      - { en: "The plant grew so tall that we had to move it outside.", level: B1 }
+  # ---------------------------------------------------------------- chores
+  - id: wash-the-dishes
+    en: wash the dishes
+    icon: 🧽
+    pos: phrase
+    category: chores
+    sentences:
+      - { en: "I wash the dishes after dinner.", level: A1 }
+      - { en: "Can you help me wash the dishes, please?", level: A2 }
+      - { en: "If you cook, I'll wash the dishes.", level: B1 }
+  - id: make-the-bed
+    en: make the bed
+    icon: 🛌
+    pos: phrase
+    category: chores
+    sentences:
+      - { en: "I make my bed every day.", level: A1 }
+      - { en: "Don't forget to make your bed before school.", level: A2 }
+      - { en: "My room looks much tidier when I've made the bed.", level: B1 }
+  - id: sweep-the-floor
+    en: sweep the floor
+    icon: 🧹
+    pos: phrase
+    category: chores
+    sentences:
+      - { en: "Dad sweeps the floor.", level: A1 }
+      - { en: "Can you sweep the kitchen floor, please?", level: A2 }
+      - { en: "We need to sweep the floor because there are crumbs everywhere.", level: B1 }
+  - id: water-the-plants
+    en: water the plants
+    icon: 💧
+    pos: phrase
+    category: chores
+    sentences:
+      - { en: "I water the plants on Sunday.", level: A1 }
+      - { en: "It hasn't rained, so let's water the plants in the garden.", level: A2 }
+      - { en: "Could you water the plants while we're on holiday?", level: B1 }
+  - id: take-out-the-rubbish
+    en: take out the rubbish
+    icon: 🗑️
+    pos: phrase
+    category: chores
+    note: "In American English: take out the trash."
+    sentences:
+      - { en: "My brother takes out the rubbish.", level: A1 }
+      - { en: "The bin is full. Please take out the rubbish.", level: A2 }
+      - { en: "We take out the rubbish on Tuesday night because it's collected on Wednesday.", level: B1 }
+  - id: do-the-washing
+    en: do the washing
+    icon: 🧺
+    pos: phrase
+    category: chores
+    note: "In American English: do the laundry."
+    sentences:
+      - { en: "Mum does the washing on Saturday.", level: A1 }
+      - { en: "Put your dirty socks in the basket, then I can do the washing.", level: A2 }
+      - { en: "It's raining, so we'll have to dry the washing inside.", level: B1 }
+  # ---------------------------------------------------------------- my day
+  - id: get-up
+    en: get up
+    icon: ⏰
+    pos: verb
+    category: routine
+    sentences:
+      - { en: "I get up at six o'clock.", level: A1 }
+      - { en: "What time do you get up on Sundays?", level: A2 }
+      - { en: "I find it really hard to get up when it's cold and dark.", level: B1 }
+  - id: brush-my-teeth
+    en: brush my teeth
+    icon: 🦷
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "I brush my teeth in the morning.", level: A1 }
+      - { en: "I brush my teeth twice a day.", level: A2 }
+      - { en: "I always brush my teeth before bed, even when I'm really tired.", level: B1 }
+  - id: have-breakfast
+    en: have breakfast
+    icon: 🥞
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "I have breakfast at seven o'clock.", level: A1 }
+      - { en: "I usually have bread and an egg for breakfast.", level: A2 }
+      - { en: "If I don't have breakfast, I feel hungry all morning.", level: B1 }
+  - id: go-to-school
+    en: go to school
+    icon: 🚌
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "I go to school by bus.", level: A1 }
+      - { en: "I go to school at half past seven.", level: A2 }
+      - { en: "When it's sunny, I walk to school with my friends.", level: B1 }
+  - id: do-my-homework
+    en: do my homework
+    icon: 📝
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "I do my homework after school.", level: A1 }
+      - { en: "I do my homework at my desk before dinner.", level: A2 }
+      - { en: "I can't watch TV until I've finished my homework.", level: B1 }
+  - id: have-dinner
+    en: have dinner
+    icon: 🍝
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "We have dinner at seven o'clock.", level: A1 }
+      - { en: "My family has dinner together every evening.", level: A2 }
+      - { en: "While we're having dinner, we talk about our day.", level: B1 }
+  - id: go-to-bed
+    en: go to bed
+    icon: 😴
+    pos: phrase
+    category: routine
+    sentences:
+      - { en: "I go to bed at nine o'clock.", level: A1 }
+      - { en: "What time do you go to bed?", level: A2 }
+      - { en: "I went to bed late last night, so I'm a bit sleepy today.", level: B1 }
+phrases:
+  - { en: "Hi, Mum! I'm home!", level: A1, group: home }
+  - { en: "Welcome home! How was your day?", level: A1, group: home }
+  - { en: "This is my bedroom.", level: A1, group: home }
+  - { en: "There are four rooms in my house.", level: A1, group: home }
+  - { en: "Make yourself at home.", level: A2, group: home }
+  - { en: "Where is my bag?", level: A1, group: where }
+  - { en: "It's on the table.", level: A1, group: where }
+  - { en: "The ball is under the bed.", level: A1, group: where }
+  - { en: "Your keys are next to the door.", level: A1, group: where }
+  - { en: "The cat is behind the sofa.", level: A1, group: where }
+  - { en: "The lamp is between the bed and the desk.", level: A2, group: where }
+  - { en: "Have you looked in the wardrobe?", level: A2, group: where }
+  - { en: "Can you help me, please?", level: A1, group: chores }
+  - { en: "Put the cups in the cupboard, please.", level: A1, group: chores }
+  - { en: "Tidy your room, please.", level: A1, group: chores }
+  - { en: "Shall I take out the rubbish?", level: A2, group: chores }
+  - { en: "Whose turn is it to wash the dishes?", level: A2, group: chores }
+  - { en: "I get up at seven o'clock.", level: A1, group: day }
+  - { en: "What time do you go to bed?", level: A1, group: day }
+  - { en: "I go to school at half past seven.", level: A2, group: day }
+  - { en: "After school, I do my homework.", level: A2, group: day }
+  - { en: "On Sundays, I usually get up late.", level: A2, group: day }
+  - { en: "Thank you, Mum!", level: A1, group: polite }
+  - { en: "Can I have a glass of water, please?", level: A1, group: polite }
+  - { en: "Can I watch TV, please?", level: A1, group: polite }
+  - { en: "Thanks for your help. You're a star!", level: A2, group: polite }
+quiz:
+  - id: where-ball
+    question: "The ball is ___ the bed. (You can't see it from above.)"
+    options: [under, on, in, between]
+    answer: 0
+    level: A1
+  - id: where-cups
+    question: "Where do we keep the cups and plates?"
+    options: [in the cupboard, in the bath, under the bed, in the garden]
+    answer: 0
+    level: A1
+  - id: room-sleep
+    question: "Which room do you sleep in?"
+    options: [the kitchen, the bedroom, the bathroom, the garden]
+    answer: 1
+    level: A1
+  - id: room-cook
+    question: "Mum is cooking dinner. Where is she?"
+    options: [in the bathroom, in the bedroom, in the kitchen, in the garden]
+    answer: 2
+    level: A1
+  - id: milk-fridge
+    question: "The milk is cold. It's ___ the fridge."
+    options: [on, in, under, behind]
+    answer: 1
+    level: A1
+  - id: routine-order
+    question: "What do you usually do first in the morning?"
+    options: [go to bed, have dinner, get up, do my homework]
+    answer: 2
+    level: A1
+  - id: time-half
+    question: "7:30 is…"
+    options: [seven o'clock, half past seven, half past six, a quarter past seven]
+    answer: 1
+    level: A1
+  - id: between
+    question: "The lamp is ___ the bed and the desk."
+    options: [next, between, behind of, in front]
+    answer: 1
+    level: A2
+  - id: chore-bin
+    question: "The bin is full. What do you do?"
+    options: [make the bed, water the plants, take out the rubbish, wash the dishes]
+    answer: 2
+    level: A2
+  - id: he-gets-up
+    question: "Choose the correct sentence."
+    options: [He get up at six., He gets up at six., He getting up at six., He up gets at six.]
+    answer: 1
+    level: A2

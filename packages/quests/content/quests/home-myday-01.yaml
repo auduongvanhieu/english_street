@@ -1,0 +1,14 @@
+id: home-myday-01
+npc: mum
+level: A1
+title: Tell Mum About Your Day
+intro: You are home from school. Mum asks about your day. Tell her what you did and when.
+goals:
+  - { id: greet, desc: "Say hello, you are home" }
+  - { id: routine, desc: "Say two things you do every day (I get up…, I go to school…)" }
+  - { id: time, desc: "Say a time (at seven o'clock / at half past six)" }
+  - { id: ask_back, desc: "Ask Mum a question about her day or about dinner" }
+target_vocab: [get up, have breakfast, go to school, o'clock, half past]
+target_phrases: ["I get up at…", "What time is dinner?", "After school, I…"]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

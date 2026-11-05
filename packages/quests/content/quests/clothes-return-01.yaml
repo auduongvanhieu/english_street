@@ -1,0 +1,14 @@
+id: clothes-return-01
+npc: stylist
+level: A2
+title: Bring It Back
+intro: You bought some trainers last week, but they are too small. Go back to Style Corner and exchange them or get a refund.
+goals:
+  - { id: explain, desc: "Say what you bought and what the problem is" }
+  - { id: receipt, desc: "Answer about the receipt (when you bought them)" }
+  - { id: choose, desc: "Ask for a bigger size or a refund" }
+  - { id: polite, desc: "Stay polite and thank the assistant" }
+target_vocab: [return, exchange, refund, receipt, too small, bigger size]
+target_phrases: ["I'd like to return these…", "They're too small.", "Could I change them for a bigger size?", "Here's the receipt."]
+max_turns: 12
+reward: { xp: 70, coins: 15 }

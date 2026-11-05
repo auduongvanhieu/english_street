@@ -1,0 +1,14 @@
+id: station-directions-01
+npc: stationmaster
+level: A1
+title: Lost in the Station
+intro: It's your first time at Central Station. Ask where things are — the toilets, platform 2 and the lost property office (you left your umbrella on the train).
+goals:
+  - { id: ask_toilets, desc: "Ask where the toilets are" }
+  - { id: ask_platform, desc: "Ask how to get to platform 2" }
+  - { id: lost_item, desc: "Say what you lost and on which train" }
+  - { id: thank, desc: "Say thank you and goodbye" }
+target_vocab: [toilets, platform, footbridge, lost property office, next to]
+target_phrases: ["Excuse me, where are the toilets?", "How do I get to platform 2?", "I left my … on the train."]
+max_turns: 10
+reward: { xp: 50, coins: 10 }

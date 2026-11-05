@@ -1,0 +1,44 @@
+id: hotel-frontdesk-01
+npc: receptionist
+level: A2
+title: Check-in and a Problem (pair)
+intro: One of you is a guest arriving at Riverside Hotel, the other is the receptionist. Mia watches and gives you both feedback.
+roles:
+  - id: guest
+    label: Guest
+    brief: >
+      You booked a double room for two nights in the name of Kate Brown (or use your own name). Check in,
+      spell your surname and ask what time breakfast is. Then tell the receptionist politely that the air
+      conditioner in your room doesn't work and ask for help.
+    goals:
+      - id: say_booking
+        desc: Say you have a reservation and give your name
+      - id: spell
+        desc: Spell your surname
+      - id: ask_breakfast
+        desc: Ask about breakfast (time or price)
+      - id: complain
+        desc: Politely explain the problem with the air conditioner and ask for help
+  - id: receptionist
+    label: Receptionist
+    brief: >
+      You work at the front desk of Riverside Hotel. Welcome the guest, find the booking (ask them to spell the
+      surname), ask for a passport, give the key card and room number (305, third floor), answer the breakfast
+      question, and solve the air-conditioner problem politely.
+    facts: |
+      Double room, 2 nights, $90 a night, breakfast $10 per person, 6:30–10 am on the ground floor.
+      Room 305 is on the third floor; the lift is next to reception. A technician can come in 10 minutes,
+      or the guest can move to room 210.
+    goals:
+      - id: welcome
+        desc: Welcome the guest and ask for the booking name
+      - id: ask_spell
+        desc: Ask them to spell the surname and ask for a passport
+      - id: give_key
+        desc: Give the key card, the room number and the floor
+      - id: solve
+        desc: Apologise for the problem and offer a solution (technician or a new room)
+target_vocab: [reservation, spell, passport, key card, air conditioner, third floor]
+target_phrases: ["I have a reservation.", "Could you spell that, please?", "I'm so sorry about that.", "Would it be possible to…?"]
+max_turns: 10
+reward: { xp: 90, coins: 25 }

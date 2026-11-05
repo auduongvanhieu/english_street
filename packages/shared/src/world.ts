@@ -16,6 +16,8 @@ export const WorldConfigSchema = z.object({
   critterNames: z.record(z.string(), name).default({}),
   /** Area id → item ids that are sold out today (restaurant dishes, supermarket products). */
   soldOut: z.record(z.string(), z.array(z.string())).default({}),
+  /** Area id → item ids on sale today (half price; Style Corner clothes). */
+  sale: z.record(z.string(), z.array(z.string())).default({}),
   /** Where the street's weather comes from, or a fixed weather / time of day. */
   weather: WeatherConfigSchema.default(() => WeatherConfigSchema.parse({})),
 });
