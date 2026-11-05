@@ -42,7 +42,13 @@ export function AuthScreen({
   const [capAnswer, setCapAnswer] = useState('');
   // Sign-in / sign-up always; guests once, then their human pass (30 days) is enough.
   const [hasPass, setHasPass] = useState(() => !!getHumanPass());
-  const needCaptcha = !loggedIn && (mode !== 'guest' || !hasPass);
+  // Signed in = a saved token whose profile loaded; until then (or if it fails) the normal forms + check apply.
+  const signedIn = loggedIn && !!profile;
+  const needCaptcha = !signedIn && (mode !== 'guest' || !hasPass);
+  useEffect(() => {
+    if (loggedIn && !profile) void useProfile.getState().refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Cloudflare Turnstile when configured; the built-in image captcha when not, or when Turnstile can't load here.
   const [siteKey, setSiteKey] = useState('');
   const [tsFailed, setTsFailed] = useState(false);

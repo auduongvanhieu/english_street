@@ -33,10 +33,20 @@ export const useProfile = create<ProfileStore>((set) => ({
   async refresh() {
     try {
       const profile = await fetchMe();
+      // The saved sign-in no longer works (expired, or signed out by a moderator): the API answered as a guest.
+      if (getToken() && !profile.email) {
+        setSession(null, null);
+        set({ loggedIn: false });
+      }
       set({ profile });
       syncLang(profile);
-    } catch {
-      /* API down: HUD stays empty */
+    } catch (e) {
+      // a saved sign-in the API refuses: forget it so the sign-in form (with its security check) works again
+      if (getToken() && /unauthorized|^401$/.test((e as Error).message)) {
+        setSession(null, null);
+        set({ loggedIn: false });
+      }
+      /* otherwise API down: HUD stays empty */
     }
   },
   async login(email, password, captcha) {
