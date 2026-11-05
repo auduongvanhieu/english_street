@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { setting } from '../settings';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
@@ -30,6 +31,7 @@ import { allowAuth, limiter } from '../npc/ratelimit';
 import { areaStats } from './play';
 import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
+import { isBanned, userStatus } from '../moderation';
 import { HUMAN_PASS_TTL_S, signToken as signShared } from '@es/shared/token';
 
 export function accountRoutes(repo: AttemptRepo) {
@@ -108,7 +110,7 @@ export function accountRoutes(repo: AttemptRepo) {
       const body = z.object({ turnstileToken: z.string().max(4096).optional(), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       // guest passes per IP: a few per hour and per day (a school or café shares one IP, so not too strict)
-      if (!(await limiter.allow(`guestpass:h:${req.ip}`, env.GUEST_PASSES_PER_IP_HOUR, 3600)) || !(await limiter.allow(`guestpass:d:${req.ip}`, env.GUEST_PASSES_PER_IP_DAY, 86400)))
+      if (!(await limiter.allow(`guestpass:h:${req.ip}`, setting('guestPassesPerIpHour'), 3600)) || !(await limiter.allow(`guestpass:d:${req.ip}`, setting('guestPassesPerIpDay'), 86400)))
         return reply.code(429).send({ error: 'too_many_guests' });
       if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       await repo.logEvent({ name: 'guest_pass', props: {} });
@@ -135,9 +137,11 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       const u = await repo.getUserByEmail(body.data.email);
       if (!u?.passwordHash || !(await verifyPassword(body.data.password, u.passwordHash))) return reply.code(401).send({ error: 'invalid_credentials' });
+      const st = await userStatus(u.id, true);
+      if (isBanned(st)) return reply.code(403).send({ error: 'account_banned', until: st!.bannedUntil, reason: st!.banReason });
       await repo.ensureUser(u.id, u.name); // streak
       await repo.logEvent({ name: 'login', playerId: u.id });
-      return { token: signToken(u.id), profile: await profile((await repo.getUser(u.id)) ?? u) };
+      return { token: signToken(u.id, st?.tokenVersion ?? 0), profile: await profile((await repo.getUser(u.id)) ?? u) };
     });
 
     // ---- profile (token, or ?playerId= for guests) ----
@@ -224,6 +228,7 @@ export function accountRoutes(repo: AttemptRepo) {
       if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
       avatar.owned.push(body.data.item);
       await repo.updateUser(id, { avatarConfig: avatar, coins: u.coins - price });
+      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'avatar', item: body.data.item, coins: price } });
       return { avatar, coins: u.coins - price };
     });
 

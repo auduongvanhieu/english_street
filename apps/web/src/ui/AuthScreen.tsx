@@ -356,7 +356,13 @@ export function AuthScreen({
           <p className="mt-2 text-sm text-red-600">
             {gateRefused
               ? t('English Street is in closed beta — please enter your invite code.')
-              : connError.includes('too_many_guests')
+              : connError.includes('account_banned')
+                ? t('Your account has been suspended by a moderator.')
+                : connError.includes('kicked')
+                  ? t('A moderator removed you from the street.')
+                  : connError.includes('signed_out')
+                    ? t('You were signed out. Please sign in again.')
+                    : connError.includes('too_many_guests')
                 ? t('Too many guests from your network right now. Sign in to play, or try again later.')
                 : humanRefused
                   ? t('Please do the security check again.')

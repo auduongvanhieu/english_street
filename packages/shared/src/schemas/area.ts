@@ -28,10 +28,24 @@ export const AreaItemSchema = z.object({
   fact: z.string().optional(),
   /** Extra notes: menu description ("grilled, with fries"), sound ("moo"), how to count… */
   note: z.string().optional(),
+  /** Menu dishes: allergens ("milk", "nuts", "gluten"…), in English. */
+  allergens: z.array(z.string()).optional(),
+  /** Taken out of the game in the admin site (kept for later). */
+  hidden: z.boolean().optional(),
 });
 export type AreaItem = z.infer<typeof AreaItemSchema>;
 
 export const AreaPhraseSchema = z.object({ en: z.string(), level: z.enum(CEFR_LEVELS).default('A1'), group: z.string() });
+
+/** A hand-written area quiz question: 4 options, `answer` = index of the right one. */
+export const AreaQuizQuestionSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  question: z.string().min(1),
+  options: z.array(z.string().min(1)).length(4),
+  answer: z.number().int().min(0).max(3),
+  level: z.enum(CEFR_LEVELS).default('A1'),
+});
+export type AreaQuizQuestion = z.infer<typeof AreaQuizQuestionSchema>;
 
 export const AreaContentSchema = z.object({
   id: AreaIdSchema,
@@ -42,6 +56,8 @@ export const AreaContentSchema = z.object({
   groups: z.array(z.object({ id: z.string(), label: z.string() })).default([]),
   items: z.array(AreaItemSchema),
   phrases: z.array(AreaPhraseSchema).default([]),
+  /** Hand-written quiz questions, mixed into the generated ones. */
+  quiz: z.array(AreaQuizQuestionSchema).default([]),
 });
 export type AreaContent = z.infer<typeof AreaContentSchema>;
 

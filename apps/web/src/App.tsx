@@ -1,4 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { isStaffTab, startWorldSync, useWorld } from './store/world';
+import { Maintenance, Notices } from './ui/Notices';
 import { AvatarSchema, EMOTES, avatarLook } from '@es/shared';
 import { AVATAR_INTRO_KEY } from './ui/AvatarCreator';
 // The 3D scene (three.js + models) loads only after sign-in, keeping the first paint small.
@@ -80,10 +82,14 @@ export default function App() {
   const inPair = usePair((s) => !!s.state || s.loading || !!s.summaries);
   const inTalk = useTalk((s) => !!s.partner);
   useKeyboardInset();
+  // Admin maintenance switch: the street is closed (staff can continue from an admin tab).
+  const maintenance = useWorld((s) => s.cfg?.maintenance ?? '');
+  const [maintenanceOk, setMaintenanceOk] = useState(false);
 
   // Load NPC definitions once; subscribe to pair-quest relay messages.
   useEffect(() => {
     initAnalytics();
+    startWorldSync();
     exposeSession(() => ({ playerId: getPlayerId(), token: getToken(), apiUrl: API_URL, name: useGame.getState().playerName }));
     const offNative = onNative((e) => {
       if (e.type === 'push.token') void post('/me/push-token', { playerId: getPlayerId(), token: e.token, platform: e.platform }).catch(() => undefined);
@@ -231,6 +237,8 @@ export default function App() {
     }
   }
 
+  if (maintenance && !maintenanceOk) return <Maintenance text={maintenance} onContinue={isStaffTab() ? () => setMaintenanceOk(true) : undefined} />;
+
   if (conn !== 'connected') {
     const connError = conn === 'error' ? (useGame.getState().connError ?? 'connect_failed') : null;
     if (picker && playerName) {
@@ -256,6 +264,7 @@ export default function App() {
       </Suspense>
 
       <HintToast touch={touch} />
+      <Notices />
       {npcError && <div className="absolute left-1/2 top-24 -translate-x-1/2 rounded bg-black/60 px-3 py-1 text-xs text-yellow-300">{t('NPCs unavailable: API server not reachable.')}</div>}
 
       {touch ? (

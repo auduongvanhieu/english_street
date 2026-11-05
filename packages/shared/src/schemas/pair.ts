@@ -28,6 +28,8 @@ export const PairQuestSchema = z.object({
   /** Max lines per player. */
   max_turns: z.number().int().positive().default(8),
   reward: z.object({ xp: z.number().int(), coins: z.number().int() }).default({ xp: 80, coins: 20 }),
+  /** Switched off in the admin site. */
+  disabled: z.boolean().optional(),
 });
 export type PairQuest = z.infer<typeof PairQuestSchema>;
 

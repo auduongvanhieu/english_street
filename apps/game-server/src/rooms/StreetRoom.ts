@@ -25,9 +25,19 @@ import {
   type PairMessage,
   type RtcSignal,
   type TalkMessage,
+  CLOSE_BANNED,
+  CLOSE_KICKED,
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { Player, StreetState } from './schema/StreetState';
+import { accountStatus, isMuted, live, mutes, sampleHeat } from '../admin';
+
+/** Every open room (for the admin site: online list, kicks, notices). */
+export const ROOMS = new Set<StreetRoom>();
+/** Heat-map sample interval. */
+const HEAT_EVERY_MS = 30_000;
+/** Shown to a muted player who tries to chat. */
+const MUTED_TEXT = 'A moderator has muted your chat for now.';
 
 const SPAWN = { x: 0, y: 0, z: 4 };
 const BUBBLE_TTL_MS = 5000;
@@ -37,14 +47,25 @@ const RELAY_RADIUS = PROXIMITY_RADIUS * 2;
 
 const AUTH_SECRET = process.env.AUTH_SECRET ?? 'dev-secret-change-me';
 const BETA_GATE = (process.env.BETA_CODES ?? '').trim().length > 0;
-/** Guests (not signed in) playing at the same time from one IP, over all rooms of this server. */
-const MAX_GUESTS_PER_IP = Math.max(1, Number(process.env.MAX_GUESTS_PER_IP) || 6);
+/** Guests (not signed in) playing at the same time from one IP, over all rooms of this server (limit: live.maxGuestsPerIp). */
 const guestsByIp = new Map<string, number>();
 
 /** What onAuth hands to onJoin (client.auth). */
 interface JoinAuth {
   ip: string;
   guest: boolean;
+  /** Account id (signed in) or the guest's player id. */
+  uid: string;
+  mutedUntil: number;
+}
+
+/** Refuse banned accounts / guest ids (the API is the source of truth; fails open when it is down). */
+async function checkBan(uid: string, tokenVersion?: number) {
+  const s = await accountStatus(uid);
+  if (s?.banned) throw new Error('account_banned');
+  // signed out everywhere by an admin
+  if (s && tokenVersion !== undefined && tokenVersion !== s.tokenVersion) throw new Error('signed_out');
+  return s?.mutedUntil ?? 0;
 }
 
 export class StreetRoom extends Room<{ state: StreetState }> {
@@ -64,19 +85,27 @@ export class StreetRoom extends Room<{ state: StreetState }> {
    */
   static async onAuth(_token: string, options: Partial<JoinOptions>, context?: { ip?: string }): Promise<JoinAuth> {
     const ip = context?.ip ?? 'unknown';
-    if (verifyToken(AUTH_SECRET, options?.token) && !isBetaPass(AUTH_SECRET, options?.token) && !isHumanPass(AUTH_SECRET, options?.token)) return { ip, guest: false };
+    const signed = verifyToken(AUTH_SECRET, options?.token);
+    if (signed && !signed.sub.includes(':') && !isBetaPass(AUTH_SECRET, options?.token) && !isHumanPass(AUTH_SECRET, options?.token)) {
+      return { ip, guest: false, uid: signed.sub, mutedUntil: await checkBan(signed.sub, Number(signed.v ?? 0)) };
+    }
     if (BETA_GATE && !isBetaPass(AUTH_SECRET, options?.betaPass)) throw new Error('beta_pass_required');
     if (!isHumanPass(AUTH_SECRET, options?.humanPass)) throw new Error('human_check_required');
     // refuse early (before a seat is reserved) when this network already has its share of guests
-    if ((guestsByIp.get(ip) ?? 0) >= MAX_GUESTS_PER_IP) throw new Error('too_many_guests');
-    return { ip, guest: true };
+    if ((guestsByIp.get(ip) ?? 0) >= live.maxGuestsPerIp) throw new Error('too_many_guests');
+    const uid = typeof options?.playerId === 'string' ? options.playerId.slice(0, 64) : '';
+    return { ip, guest: true, uid, mutedUntil: await checkBan(uid) };
   }
 
   /** Guests counted per IP while they are in a room (released in onLeave). */
   private countedGuests = new Map<string, string>();
 
+  /** sessionId → join info (account id, IP, join time) for the admin site. */
+  private who = new Map<string, JoinAuth & { at: number }>();
+
   async onCreate(options: Partial<JoinOptions> = {}) {
     this.setState(new StreetState());
+    ROOMS.add(this);
     if (options.zoneKind === 'custom') {
       const name = sanitizeZoneName(options.zoneName);
       if (!name) throw new ServerError(4101, 'zone_name_invalid');
@@ -109,7 +138,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     // Shout: text heard within SHOUT_RADIUS, rate limited per player.
     this.onMessage<string>(MSG.SHOUT, (client, text) => {
       const p = this.state.players.get(client.sessionId);
-      if (!p || typeof text !== 'string') return;
+      if (!p || typeof text !== 'string' || this.muted(client)) return;
       const now = Date.now();
       if (now - (this.lastShoutAt.get(client.sessionId) ?? 0) < SHOUT_COOLDOWN_MS) return;
       const clean = maskProfanity(text.trim().slice(0, 140));
@@ -164,7 +193,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
 
     this.onMessage<string>(MSG.CHAT, (client, text) => {
       const p = this.state.players.get(client.sessionId);
-      if (!p || typeof text !== 'string') return;
+      if (!p || typeof text !== 'string' || this.muted(client)) return;
       const clean = maskProfanity(text.trim().slice(0, 140));
       if (!clean) return;
       p.bubble = clean;
@@ -193,10 +222,54 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       target.send(MSG.PAIR, { ...msg, from: client.sessionId });
     });
 
+    let lastHeat = Date.now();
     this.setSimulationInterval(() => {
       this.expireBubbles();
       this.dropDistantTalks();
+      if (Date.now() - lastHeat >= HEAT_EVERY_MS) {
+        lastHeat = Date.now();
+        this.state.players.forEach((p: Player) => sampleHeat(p.x, p.z));
+      }
     }, 1000);
+  }
+
+  onDispose() {
+    ROOMS.delete(this);
+  }
+
+  /** True (and tells the player) when a moderator muted them. */
+  private muted(client: Client) {
+    const uid = this.who.get(client.sessionId)?.uid ?? '';
+    if (!uid || !isMuted(uid)) return false;
+    client.send(MSG.NOTICE, { text: MUTED_TEXT, level: 'warning', code: 'muted' });
+    return true;
+  }
+
+  // ---------------------------------------------------------------- admin site
+  zoneName() {
+    return this.zone.name;
+  }
+  /** Players in this room for the online list (IP shortened). */
+  listPlayers() {
+    return this.clients.map((c) => {
+      const p = this.state.players.get(c.sessionId);
+      const w = this.who.get(c.sessionId);
+      return { sessionId: c.sessionId, uid: w?.uid ?? '', guest: w?.guest ?? true, name: p?.name ?? '', x: Math.round(p?.x ?? 0), z: Math.round(p?.z ?? 0), ip: shortIp(w?.ip ?? ''), since: w?.at ?? 0, room: this.roomId, zone: this.zone.name };
+    });
+  }
+  /** Remove every client of an account / guest id. Returns how many left. */
+  kick(uid: string, reason: string, banned = false) {
+    let n = 0;
+    for (const c of [...this.clients]) {
+      if (this.who.get(c.sessionId)?.uid !== uid) continue;
+      c.send(MSG.NOTICE, { text: reason, level: 'warning', code: banned ? 'banned' : 'kicked' });
+      c.leave(banned ? CLOSE_BANNED : CLOSE_KICKED, reason);
+      n += 1;
+    }
+    return n;
+  }
+  notice(text: string, level: 'info' | 'warning') {
+    this.broadcast(MSG.NOTICE, { text, level, code: 'announcement' });
   }
 
   private onTalk(client: Client, msg: TalkMessage) {
@@ -231,7 +304,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
         return;
       }
       case 'msg': {
-        if (me.talkWith !== msg.to || typeof msg.text !== 'string') return;
+        if (me.talkWith !== msg.to || typeof msg.text !== 'string' || this.muted(client)) return;
         const clean = maskProfanity(msg.text.trim().slice(0, 300));
         if (!clean) return;
         target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'msg', text: clean });
@@ -274,9 +347,13 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     const auth = client.auth as JoinAuth | undefined;
     if (auth?.guest) {
       const n = guestsByIp.get(auth.ip) ?? 0;
-      if (n >= MAX_GUESTS_PER_IP) throw new ServerError(4104, 'too_many_guests');
+      if (n >= live.maxGuestsPerIp) throw new ServerError(4104, 'too_many_guests');
       guestsByIp.set(auth.ip, n + 1);
       this.countedGuests.set(client.sessionId, auth.ip);
+    }
+    if (auth) {
+      this.who.set(client.sessionId, { ...auth, at: Date.now() });
+      if (auth.uid && auth.mutedUntil > Date.now()) mutes.set(auth.uid, auth.mutedUntil);
     }
     const p = new Player();
     p.id = client.sessionId;
@@ -300,6 +377,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (n > 0) guestsByIp.set(ip, n);
       else guestsByIp.delete(ip);
     }
+    this.who.delete(client.sessionId);
     const p = this.state.players.get(client.sessionId);
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);
@@ -324,6 +402,13 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (p.bubble && now - p.bubbleAt > BUBBLE_TTL_MS) p.bubble = '';
     });
   }
+}
+
+/** "203.0.113.x" / "2001:db8:…" — enough to spot many guests from one network, not a full address. */
+function shortIp(ip: string) {
+  const v4 = ip.replace(/^::ffff:/, '');
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(v4)) return v4.replace(/\.\d+$/, '.x');
+  return ip.split(':').slice(0, 3).join(':') + (ip.includes(':') ? ':…' : '');
 }
 
 function clamp(v: number, lo: number, hi: number) {

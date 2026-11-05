@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { soldOut } from './world';
 import type { AreaItemDto } from '@es/shared';
 import { sendAreaQuiz } from '../net/api';
 import { useArea } from './area';
@@ -61,7 +62,8 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
   async start() {
     const c = await useArea.getState().load('supermarket');
     if (!c) return;
-    const pool = [...c.items].sort(() => Math.random() - 0.5).slice(0, 4);
+    const gone = soldOut('supermarket');
+    const pool = c.items.filter((it) => !gone.includes(it.id)).sort(() => Math.random() - 0.5).slice(0, 4);
     const list = pool.map((it) => {
       const qty = it.id === 'cake' ? 1 : 1 + Math.floor(Math.random() * 3);
       return { item: it.id, qty, text: phrase(it, qty) };
@@ -72,6 +74,7 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
   pick(item) {
     const { list, cart } = get();
     if (!list.length) return; // no list yet: tapping a product only opens its card
+    if (soldOut('supermarket').includes(item)) return set({ note: { text: 'sold_out', ok: false, at: Date.now() } });
     const line = list.find((l) => l.item === item);
     const n = (cart[item] ?? 0) + 1;
     set({ cart: { ...cart, [item]: n }, note: { text: line ? (n > line.qty ? 'too_many' : 'added') : 'not_on_list', ok: !!line && n <= line.qty, at: Date.now() } });

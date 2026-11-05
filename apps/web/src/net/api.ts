@@ -15,6 +15,7 @@ export const ERROR_TEXT: Record<string, string> = {
   invalid_credentials: tk('Wrong email or password.'),
   email_taken: tk('An account with this email already exists.'),
   human_check_required: tk('Please do the security check again.'),
+  account_banned: tk('Your account has been suspended by a moderator.'),
   too_many_guests: tk('Too many guests from your network right now. Sign in to play, or try again later.'),
   captcha_failed: tk('The security code was wrong or expired. Try the new one.'),
   not_enough_coins: tk('Not enough coins yet.'),
@@ -83,7 +84,7 @@ export const addVocab = (word: string, meaning: string, example = '', lang: Lang
 export const fetchArea = (id: AreaId, lang: string) => get<AreaContentDto>(`/areas/${id}?lang=${encodeURIComponent(lang)}`);
 export const fetchAreaLearned = () => get<{ learned: Record<string, string[]> }>(`/me/areas${q()}`);
 export const sendAreaLearned = (area: AreaId, items: string[]) => post<{ learned: number; badge: string | null }>(`/me/area-learned${q()}`, { playerId: getPlayerId(), area, items });
-export const sendAreaQuiz = (area: AreaId, correct: number, total: number) =>
-  post<{ xp: number; coins: number; capped: boolean; passed?: boolean; badge?: string | null }>(`/me/area-quiz${q()}`, { playerId: getPlayerId(), area, correct, total });
+export const sendAreaQuiz = (area: AreaId, correct: number, total: number, wrong: string[] = []) =>
+  post<{ xp: number; coins: number; capped: boolean; passed?: boolean; badge?: string | null }>(`/me/area-quiz${q()}`, { playerId: getPlayerId(), area, correct, total, wrong });
 export const fetchFarm = () => get<{ farm: FarmState; now: number }>(`/me/farm${q()}`);
 export const farmAction = (a: FarmAction) => post<FarmActionResult & { now: number }>(`/me/farm${q()}`, { ...a, playerId: getPlayerId() });

@@ -38,11 +38,26 @@ function localizedManifests() {
   };
 }
 
+/** Content-Security-Policy for the built admin page (dev needs inline scripts for hot reload, so build only). */
+function adminCsp() {
+  return {
+    name: 'admin-csp',
+    apply: 'build' as const,
+    transformIndexHtml(html: string, ctx: { path: string }) {
+      if (!ctx.path.includes('admin')) return html;
+      const api = process.env.VITE_API_URL ? new URL(process.env.VITE_API_URL).origin : '';
+      const csp = `default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' ${api}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`;
+      return html.replace('<head>', `<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />`);
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
     localizedManifests(),
+    adminCsp(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'],
@@ -52,7 +67,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Interface catalogs: each player only needs their own language, fetched (and then cached) on demand.
         globIgnores: ['**/locales/**'],
-        navigateFallbackDenylist: [/^\/api\//, /^\/ws\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/ws\//, /^\/admin/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/assets/locales/'),
@@ -71,6 +86,8 @@ export default defineConfig({
   server: { port: 5173 },
   build: {
     rollupOptions: {
+      // the admin site is its own page (/admin/), so the game never loads its code and vice versa
+      input: { main: new URL('./index.html', import.meta.url).pathname, admin: new URL('./admin/index.html', import.meta.url).pathname },
       output: {
         // src/i18n/locales/<code>.json → assets/locales/<code>-<hash>.js (kept out of the PWA precache)
         chunkFileNames: (c) => (c.facadeModuleId?.includes('/i18n/locales/') ? 'assets/locales/[name]-[hash].js' : 'assets/[name]-[hash].js'),

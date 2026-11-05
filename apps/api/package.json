@@ -13,7 +13,10 @@
     "eval:npc": "tsx scripts/npc-eval.ts",
     "eval:pair": "tsx scripts/pair-eval.ts",
     "i18n:translate": "tsx scripts/i18n-translate.ts",
-    "i18n:check": "tsx scripts/i18n-translate.ts --check"
+    "i18n:check": "tsx scripts/i18n-translate.ts --check",
+    "admin:grant": "tsx scripts/admin-grant.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "db:restore": "tsx scripts/db-backup.ts restore"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
@@ -27,6 +30,7 @@
     "ioredis": "^6.0.0",
     "pg": "^8.23.1",
     "tsx": "^4.23.15",
+    "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

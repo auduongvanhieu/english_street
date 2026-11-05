@@ -1,4 +1,5 @@
 import type Redis from 'ioredis';
+import { setting } from '../settings';
 import { env } from '../env';
 import { NpcError } from './service';
 
@@ -75,9 +76,9 @@ class Budget {
   /** Throws a 429 NpcError when a limit is reached. */
   async check(playerId: string, ip: string) {
     const [usd, player, perIp] = await this.counters.get(dayKey(), ['usd', `p:${playerId}`, `ip:${ip}`]);
-    if (usd! >= env.NPC_DAILY_BUDGET_USD) throw new NpcError(429, 'daily_budget_exhausted');
-    if (player! >= env.NPC_DAILY_TURNS_PER_PLAYER) throw new NpcError(429, 'daily_quota_exhausted');
-    if (perIp! >= env.NPC_DAILY_TURNS_PER_PLAYER * 3) throw new NpcError(429, 'daily_quota_exhausted');
+    if (usd! >= setting('npcDailyBudgetUsd')) throw new NpcError(429, 'daily_budget_exhausted');
+    if (player! >= setting('npcDailyTurnsPerPlayer')) throw new NpcError(429, 'daily_quota_exhausted');
+    if (perIp! >= setting('npcDailyTurnsPerPlayer') * 3) throw new NpcError(429, 'daily_quota_exhausted');
   }
 
   async recordTurn(playerId: string, ip: string) {
@@ -92,13 +93,13 @@ class Budget {
 
   async remainingFor(playerId: string) {
     const [n] = await this.counters.get(dayKey(), [`p:${playerId}`]);
-    return Math.max(0, env.NPC_DAILY_TURNS_PER_PLAYER - n!);
+    return Math.max(0, setting('npcDailyTurnsPerPlayer') - n!);
   }
 
   async snapshot() {
     const day = dayKey();
     const [usd, turns] = await this.counters.get(day, ['usd', 'turns']);
-    return { day, backend: this.backend, spentUsd: Number(usd!.toFixed(4)), budgetUsd: env.NPC_DAILY_BUDGET_USD, turnsToday: turns };
+    return { day, backend: this.backend, spentUsd: Number(usd!.toFixed(4)), budgetUsd: setting('npcDailyBudgetUsd'), turnsToday: turns };
   }
 }
 

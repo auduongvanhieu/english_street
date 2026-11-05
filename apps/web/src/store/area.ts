@@ -56,6 +56,8 @@ async function flushLearned() {
 
 const LS_SEEN = 'es:areasSeen';
 const LS_LEARNED = 'es:areaLearned';
+/** When the player walked into the current area (area_leave reports the time spent). */
+let enteredAt = Date.now();
 const read = <T>(k: string, d: T): T => {
   try {
     return (JSON.parse(localStorage.getItem(k) ?? 'null') as T) ?? d;
@@ -96,7 +98,10 @@ export const useArea = create<AreaStore>((set, get) => ({
     }
   },
   setCurrent(a) {
-    if (a === get().current) return;
+    const prev = get().current;
+    if (a === prev) return;
+    if (prev) track('area_leave', { area: prev, seconds: Math.round((Date.now() - enteredAt) / 1000) });
+    enteredAt = Date.now();
     if (!a) return set({ current: null, panel: false, card: null });
     const seen = read<string[]>(LS_SEEN, []);
     const first = !seen.includes(a);

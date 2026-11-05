@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify';
-import { areaTranslations, getArea } from '@es/quests';
+import { areaTranslations, getArea, onContentChange } from '@es/quests';
 import { AreaIdSchema, toLang, type AreaContentDto } from '@es/shared';
 import { ipaForWords } from '../dict/ipa';
 
 const dtoCache = new Map<string, AreaContentDto>();
+onContentChange(() => dtoCache.clear());
 
 /** Learning content of a themed area in the learner's language: English source + translations + US IPA. */
 export function areaDto(id: Parameters<typeof getArea>[0], lang: string): AreaContentDto | null {
@@ -46,7 +47,7 @@ export async function areaRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { lang?: string } }>('/areas/:id', async (req, reply) => {
     const id = AreaIdSchema.safeParse(req.params.id);
     if (!id.success) return reply.code(404).send({ error: 'area_not_found' });
-    reply.header('cache-control', 'public, max-age=300');
+    reply.header('cache-control', 'public, max-age=60');
     return areaDto(id.data, toLang(req.query.lang, 'en'));
   });
 }

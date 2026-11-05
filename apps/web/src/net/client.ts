@@ -1,4 +1,7 @@
 import { Client, getStateCallbacks, type Room } from '@colyseus/sdk';
+import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
+import { useWorld } from '../store/world';
+import { t } from '../i18n';
 import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
@@ -147,12 +150,20 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<TalkMessage & { from: string }>(MSG.TALK, (m) => talkHandlers.forEach((h) => h(m)));
   r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
-  r.onLeave(() => {
+  r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
+    if (!m || typeof m.text !== 'string') return;
+    useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });
+  });
+  r.onLeave((code) => {
     if (room !== r) return; // we left on purpose (leaveRoom already reset the store)
     room = null;
     g.resetRoom();
     g.setSessionId(null);
-    g.setConn('idle');
+    // removed by a moderator: say why on the start screen
+    if (code === CLOSE_KICKED || code === CLOSE_BANNED) {
+      g.setConnError(code === CLOSE_BANNED ? 'account_banned' : 'kicked');
+      g.setConn('error');
+    } else g.setConn('idle');
   });
 }
 

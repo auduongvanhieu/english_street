@@ -7,7 +7,7 @@ import { allowTelemetry } from '../npc/ratelimit';
 import type { AttemptRepo } from '../npc/attempts';
 
 /** Client-side event names we accept (anything else is dropped). */
-const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line', 'avatar_save', 'critter_hug', 'lang_change', 'area_enter', 'area_panel_open', 'word_card_open', 'quiz_done', 'farm_action', 'restaurant_order', 'shopping_done', 'shopping_start', 'bus_ride', 'restaurant_sit', 'garden_visit', 'translation_report', 'exit_game']);
+const CLIENT_EVENTS = new Set(['page_load', 'join', 'perf', 'voice_chat_on', 'stt_used', 'tts_off', 'client_error', 'placement_skipped', 'settings_change', 'word_tap', 'translate_chat', 'talk_start', 'talk_end', 'shout', 'voice_shout', 'critter_tap', 'zone_create', 'zone_join', 'zone_full', 'translate_line', 'ipa_line', 'avatar_save', 'critter_hug', 'lang_change', 'area_enter', 'area_panel_open', 'word_card_open', 'quiz_done', 'farm_action', 'restaurant_order', 'shopping_done', 'shopping_start', 'bus_ride', 'restaurant_sit', 'garden_visit', 'translation_report', 'exit_game', 'area_leave', 'npc_open', 'notice_seen']);
 
 const EventsSchema = z.object({
   playerId: z.string().min(8).max(64).optional(),
@@ -23,6 +23,8 @@ const FeedbackSchema = z.object({
   meta: z.record(z.string(), z.union([z.string().max(200), z.number(), z.boolean()])).default({}),
 });
 
+import { useBetaCode } from '../admin/opsRoutes';
+
 export function telemetryRoutes(repo: AttemptRepo) {
   return async function routes(app: FastifyInstance) {
     /** Public runtime config for the client. */
@@ -34,7 +36,8 @@ export function telemetryRoutes(repo: AttemptRepo) {
       const body = z.object({ code: z.string().min(1).max(64) }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const code = body.data.code.trim();
-      if (!env.BETA_CODES.some((c) => c.toLowerCase() === code.toLowerCase())) return reply.code(403).send({ error: 'invalid_invite_code' });
+      const known = env.BETA_CODES.some((c) => c.toLowerCase() === code.toLowerCase()) || (repo.name === 'postgres' && (await useBetaCode(code)));
+      if (!known) return reply.code(403).send({ error: 'invalid_invite_code' });
       await repo.logEvent({ name: 'beta_claim', props: { code } });
       return { pass: signToken(env.AUTH_SECRET, 'beta', BETA_PASS_TTL_S, { code }) };
     });

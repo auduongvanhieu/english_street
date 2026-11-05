@@ -145,7 +145,7 @@ export class PairService {
       const sum = this.summarize(s, quest, p.playerId, completed ? 'completed' : 'failed');
       out[p.playerId] = sum;
       await this.attempts.update(s.attemptIds[p.playerId]!, { status: sum.status, score: sum.score, finishedAt: new Date() });
-      await this.attempts.reward(p.playerId, sum.reward.xp, sum.reward.coins);
+      await this.attempts.reward(p.playerId, sum.reward.xp, sum.reward.coins, 'pair');
       await this.attempts.logEvent({ name: 'pair_end', playerId: p.playerId, props: { questId: quest.id, status: sum.status, score: sum.score } });
     }
     return out;

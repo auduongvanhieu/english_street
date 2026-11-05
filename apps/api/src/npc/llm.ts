@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { setting } from '../settings';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import {
   NpcTurnResponseSchema,
@@ -17,7 +18,7 @@ import { budget } from './budget';
 
 /** A1–A2 quests and free chat go to the cheaper model; B1+ to the main one. */
 export function modelFor(level: string | null): string {
-  return !level || level === 'A1' || level === 'A2' ? env.NPC_MODEL_BASIC : env.NPC_MODEL;
+  return !level || level === 'A1' || level === 'A2' ? setting('npcModelBasic') : setting('npcModel');
 }
 
 export interface TurnInput {
@@ -79,7 +80,7 @@ export interface UsageTotals {
 }
 
 export class ClaudeNpcLlm implements NpcLlm {
-  readonly name = `claude:${env.NPC_MODEL}+${env.NPC_MODEL_BASIC}`;
+  readonly name = `claude:${setting('npcModel')}+${setting('npcModelBasic')}`;
   /** Running token totals since process start (for cost reporting). */
   readonly usage: UsageTotals = { requests: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
   private client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
@@ -155,7 +156,7 @@ export class ClaudeNpcLlm implements NpcLlm {
 
   async translate(text: string, to: LangCode): Promise<string> {
     const res = await this.client.messages.create({
-      model: env.NPC_MODEL_BASIC,
+      model: setting('npcModelBasic'),
       max_tokens: 300,
       system: `Translate the user message from English to natural ${langName(to)} for a language learner. Reply with the translation only — no quotes, no notes. If the message is a single word, give its most common meaning(s) as a short gloss.`,
       messages: [{ role: 'user', content: text }],
@@ -163,7 +164,7 @@ export class ClaudeNpcLlm implements NpcLlm {
     this.usage.requests += 1;
     this.usage.input += res.usage.input_tokens;
     this.usage.output += res.usage.output_tokens;
-    budget.recordUsage(env.NPC_MODEL_BASIC, { input: res.usage.input_tokens, output: res.usage.output_tokens, cacheRead: 0, cacheWrite: 0 });
+    budget.recordUsage(setting('npcModelBasic'), { input: res.usage.input_tokens, output: res.usage.output_tokens, cacheRead: 0, cacheWrite: 0 });
     return res.content
       .map((b) => (b.type === 'text' ? b.text : ''))
       .join('')

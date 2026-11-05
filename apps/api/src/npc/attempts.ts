@@ -88,7 +88,8 @@ export interface AttemptRepo {
   create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>): Promise<AttemptRecord>;
   update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
   listCompleted(userId: string): Promise<Pick<AttemptRecord, 'questId' | 'npcId' | 'finishedAt'>[]>;
-  reward(userId: string, xp: number, coins: number): Promise<void>;
+  /** Add XP / coins; coins are logged as a coins_earned event (economy stats) with their source. */
+  reward(userId: string, xp: number, coins: number, source?: string): Promise<void>;
   /** Daily-board bonus if the quest is on today's board and not yet completed today. */
   dailyBonus(userId: string, questId: string): Promise<number>;
 
@@ -193,7 +194,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
   async listCompleted(userId: string) {
     return [...this.attempts.values()].filter((a) => a.userId === userId && a.status === 'completed');
   }
-  async reward(userId: string, xp: number, coins: number) {
+  async reward(userId: string, xp: number, coins: number, _source = 'other') {
     const u = this.users.get(userId);
     if (u) {
       u.xp += xp;
@@ -318,8 +319,9 @@ export class PrismaAttemptRepo implements AttemptRepo {
   async listCompleted(userId: string) {
     return prisma.questAttempt.findMany({ where: { userId, status: 'completed' }, select: { questId: true, npcId: true, finishedAt: true } });
   }
-  async reward(userId: string, xp: number, coins: number) {
+  async reward(userId: string, xp: number, coins: number, source = 'other') {
     await prisma.user.update({ where: { id: userId }, data: { xp: { increment: xp }, coins: { increment: coins } } });
+    if (coins > 0) await this.logEvent({ name: 'coins_earned', playerId: userId, props: { source, coins } });
   }
   dailyBonus(userId: string, questId: string) {
     return dailyBonusFor(this, userId, questId);

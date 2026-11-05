@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { AreaContentDto, AreaItemDto } from '@es/shared';
+import type { AreaContentDto, AreaItemDto, AreaQuizQuestion } from '@es/shared';
 import { sendAreaQuiz } from '../../net/api';
 import { useProfile } from '../../store/profile';
 import { useArea } from '../../store/area';
@@ -9,17 +9,26 @@ import { say } from './common';
 type Q =
   | { type: 'listen'; answer: AreaItemDto; options: AreaItemDto[] }
   | { type: 'picture'; answer: AreaItemDto; options: AreaItemDto[] }
-  | { type: 'gap'; answer: AreaItemDto; options: AreaItemDto[]; sentence: string };
+  | { type: 'gap'; answer: AreaItemDto; options: AreaItemDto[]; sentence: string }
+  /** Written in the admin site: a question with 4 text options. */
+  | { type: 'custom'; q: AreaQuizQuestion; answer: { id: string; en: string }; options: { id: string; en: string; icon: string }[] };
 
 const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
 const QUESTIONS = 6;
 
+/** Up to 2 hand-written questions (admin site), the rest generated from the word cards. */
 function makeQuiz(c: AreaContentDto): Q[] {
+  const custom: Q[] = shuffle(c.quiz ?? [])
+    .slice(0, 2)
+    .map((q) => {
+      const options = q.options.map((en, i) => ({ id: `${q.id}#${i}`, en, icon: '' }));
+      return { type: 'custom' as const, q, answer: options[q.answer]!, options: shuffle(options) };
+    });
   // only items with a distinct picture are fair for picture questions
   const pool = c.items.filter((it, i, all) => all.findIndex((x) => x.icon === it.icon) === i);
-  return shuffle(pool)
-    .slice(0, QUESTIONS)
-    .map((answer, i) => {
+  const generated: Q[] = shuffle(pool)
+    .slice(0, QUESTIONS - custom.length)
+    .map((answer, i): Q => {
       const options = shuffle([answer, ...shuffle(pool.filter((x) => x.id !== answer.id)).slice(0, 3)]);
       const kind = i % 3;
       if (kind === 2) {
@@ -31,6 +40,7 @@ function makeQuiz(c: AreaContentDto): Q[] {
       }
       return { type: kind === 0 ? 'listen' : 'picture', answer, options };
     });
+  return shuffle([...generated, ...custom]);
 }
 
 /** Short quiz on an area's words: listen → pick the picture, picture → pick the word, fill the gap. */
@@ -40,6 +50,8 @@ export function Quiz({ content }: { content: AreaContentDto }) {
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  /** Words answered wrong (item ids; custom questions as quiz:<id>), for the admin stats. */
+  const [wrong, setWrong] = useState<string[]>([]);
   const [reward, setReward] = useState<{ xp: number; coins: number; capped: boolean } | null>(null);
   const q = qs?.[i];
   const done = qs && i >= qs.length;
@@ -48,6 +60,7 @@ export function Quiz({ content }: { content: AreaContentDto }) {
     setQs(nq);
     setI(0);
     setScore(0);
+    setWrong([]);
     setPicked(null);
     setReward(null);
     if (nq[0]?.type === 'listen') say(nq[0].answer.en);
@@ -59,7 +72,7 @@ export function Quiz({ content }: { content: AreaContentDto }) {
     if (qs && n < qs.length && qs[n]!.type === 'listen') say(qs[n]!.answer.en);
     if (qs && n >= qs.length) {
       try {
-        const r = await sendAreaQuiz(content.id, score, qs.length);
+        const r = await sendAreaQuiz(content.id, score, qs.length, wrong);
         setReward(r);
         if (r.badge) useArea.getState().showBadge(r.badge);
         void useProfile.getState().refresh();
@@ -69,6 +82,9 @@ export function Quiz({ content }: { content: AreaContentDto }) {
     }
   };
   const optionsLabel = useMemo(() => (q?.type === 'listen' ? 'icon' : 'word'), [q]);
+  const speak = (s: string) => {
+    if (q?.type !== 'custom') say(s);
+  };
 
   if (!qs)
     return (
@@ -106,6 +122,10 @@ export function Quiz({ content }: { content: AreaContentDto }) {
           </button>
           <span className="text-sm">{t('Listen and choose the right picture.')}</span>
         </div>
+      ) : q.type === 'custom' ? (
+        <div className="mb-3 rounded-lg bg-gray-50 px-3 py-2 text-base" dir="ltr">
+          {q.q.question}
+        </div>
       ) : q.type === 'picture' ? (
         <div className="mb-3 flex items-center gap-3">
           <span className="text-6xl">{q.answer.icon}</span>
@@ -130,7 +150,8 @@ export function Quiz({ content }: { content: AreaContentDto }) {
               onClick={() => {
                 setPicked(o.id);
                 if (o.id === q.answer.id) setScore((s) => s + 1);
-                say(q.answer.en);
+                else setWrong((w) => [...w, q.type === 'custom' ? `quiz:${q.q.id}` : q.answer.id]);
+                speak(q.answer.en);
               }}
               className={`min-h-12 rounded-xl border-2 px-2 ${optionsLabel === 'icon' ? 'text-4xl' : 'text-base font-medium'} ${state}`}
               dir="ltr"

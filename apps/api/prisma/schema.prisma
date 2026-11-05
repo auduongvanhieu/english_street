@@ -15,6 +15,13 @@ enum CefrLevel {
   C1
 }
 
+/// Admin site: editor = content only, admin = everything (players, settings).
+enum UserRole {
+  player
+  editor
+  admin
+}
+
 enum QuestAttemptStatus {
   active
   completed
@@ -40,6 +47,16 @@ model User {
   /// Small per-player game state: farm plots/basket, area quiz reward counters.
   gameState    Json     @default("{}")
   createdAt    DateTime @default(now())
+  role         UserRole @default(player)
+  /// Moderation: no sign-in / joining until this time (far future = permanent).
+  bannedUntil  DateTime?
+  banReason    String   @default("")
+  /// No chat until this time.
+  mutedUntil   DateTime?
+  /// Bumped to sign the account out everywhere (tokens carry the version they were minted with).
+  tokenVersion Int      @default(0)
+  /// Admin site two-step sign-in (TOTP secret, base32); null = off.
+  totpSecret   String?
 
   attempts QuestAttempt[]
   vocab    VocabEntry[]
@@ -92,8 +109,14 @@ model Report {
   details        String   @default("")
   context        Json     @default("[]")
   createdAt      DateTime @default(now())
+  /// new | done | ignored
+  status         String   @default("new")
+  handledBy      String?
+  handledAt      DateTime?
+  note           String   @default("")
 
   @@index([targetPlayerId])
+  @@index([status, createdAt])
 }
 
 /// Product analytics (server + client events). Kept small: name + a few props.
@@ -117,6 +140,8 @@ model Feedback {
   page      String   @default("")
   meta      Json     @default("{}")
   createdAt DateTime @default(now())
+  /// new | done
+  status    String   @default("new")
 }
 
 /// Device push tokens registered by the mobile app (FCM / APNs via FCM). Used by the reminder job.
@@ -128,4 +153,102 @@ model PushToken {
   updatedAt DateTime @updatedAt
 
   @@index([playerId])
+}
+
+/// Admin actions (who changed what), for review and undo.
+model AdminAudit {
+  id        String   @id @default(cuid())
+  actorId   String
+  actorName String
+  action    String
+  target    String   @default("")
+  before    Json?
+  after     Json?
+  ip        String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
+
+/// Content edited in the admin site. Overrides the YAML in packages/quests/content (kind + id).
+/// kinds: npc, quest, pair, placement, area, area-tr (id = language), world.
+model ContentDoc {
+  kind      String
+  id        String
+  data      Json
+  /// true = the YAML item is hidden/removed.
+  deleted   Boolean  @default(false)
+  version   Int      @default(1)
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@id([kind, id])
+}
+
+model ContentRevision {
+  id        String   @id @default(cuid())
+  kind      String
+  docId     String
+  version   Int
+  data      Json?
+  deleted   Boolean  @default(false)
+  updatedBy String
+  createdAt DateTime @default(now())
+
+  @@index([kind, docId, createdAt])
+}
+
+/// Live settings (anti-spam limits, budget, maintenance…). Unset keys fall back to .env.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedBy String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+/// Invite codes for the closed beta (in addition to BETA_CODES in .env).
+model BetaCode {
+  code      String   @id
+  label     String   @default("")
+  uses      Int      @default(0)
+  maxUses   Int?
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+/// Banner / in-game notice for everyone, between startsAt and endsAt.
+model Announcement {
+  id        String   @id @default(cuid())
+  text      String
+  /// info | warning
+  level     String   @default("info")
+  startsAt  DateTime @default(now())
+  endsAt    DateTime
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([endsAt])
+}
+
+/// Player positions sampled by the game server, counted per 4 m cell and hour (heat map).
+model HeatCell {
+  hour  DateTime
+  cx    Int
+  cz    Int
+  count Int
+
+  @@id([hour, cx, cz])
+  @@index([hour])
+}
+
+/// Daily rollups for the stats pages (one row per day + metric + key).
+model DailyStat {
+  day    String
+  metric String
+  key    String @default("")
+  value  Float
+
+  @@id([day, metric, key])
+  @@index([metric, day])
 }

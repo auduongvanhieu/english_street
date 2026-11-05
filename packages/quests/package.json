@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "validate": "tsx src/validate.ts"
+    "validate": "tsx src/validate.ts",
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@es/shared": "workspace:*",

@@ -60,7 +60,7 @@ export function playRoutes(repo: AttemptRepo) {
       const r = applyFarm(farm, body.data, now);
       if (r.error) return { ...r, now };
       await repo.updateUser(id, { gameState: { ...gs, farm: r.farm } });
-      if (r.xp || r.coins) await repo.reward(id, r.xp, r.coins);
+      if (r.xp || r.coins) await repo.reward(id, r.xp, r.coins, 'farm');
       await repo.logEvent({ name: 'farm_action', playerId: id, props: { action: body.data.action, coins: r.coins } });
       return { ...r, now };
     });
@@ -97,7 +97,7 @@ export function playRoutes(repo: AttemptRepo) {
     app.post('/me/area-quiz', async (req, reply) => {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
-      const body = z.object({ area: AreaIdSchema, correct: z.number().int().min(0).max(20), total: z.number().int().min(1).max(20) }).safeParse(req.body);
+      const body = z.object({ area: AreaIdSchema, correct: z.number().int().min(0).max(20), total: z.number().int().min(1).max(20), wrong: z.array(z.string().max(80)).max(20).default([]) }).safeParse(req.body);
       if (!body.success || body.data.correct > body.data.total) return reply.code(400).send({ error: 'bad_request' });
       if (!(await limiter.allow(`quiz:${id}`, 6))) return reply.code(429).send({ error: 'rate_limited' });
       const { gs } = await state(id);
@@ -111,11 +111,11 @@ export function playRoutes(repo: AttemptRepo) {
       const next: GameState = { ...gs, quiz: { day, xp: used + xp } };
       if (passed) next.areas = { ...gs.areas, [area]: { learned: gs.areas?.[area]?.learned ?? [], quiz: true } };
       await repo.updateUser(id, { gameState: next });
-      if (xp || coins) await repo.reward(id, xp, coins);
+      if (xp || coins) await repo.reward(id, xp, coins, 'quiz');
       const before = areaStats(gs).badges;
       const badge = areaStats(next).badges.find((b) => !before.includes(b)) ?? null;
       if (badge) await repo.logEvent({ name: 'badge_earned', playerId: id, props: { badge } });
-      await repo.logEvent({ name: 'quiz_done', playerId: id, props: { area: body.data.area, correct: body.data.correct, total: body.data.total } });
+      await repo.logEvent({ name: 'quiz_done', playerId: id, props: { area: body.data.area, correct: body.data.correct, total: body.data.total, wrong: body.data.wrong } });
       return { xp, coins, capped: xp < want, passed, badge };
     });
   };

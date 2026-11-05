@@ -35,3 +35,11 @@ export const isBetaPass = (secret: string, token: unknown) => verifyToken(secret
 /** Human pass: minted by POST /auth/guest after a captcha, lets a guest join the street and use the API. */
 export const HUMAN_PASS_TTL_S = 30 * 24 * 3600;
 export const isHumanPass = (secret: string, token: unknown) => verifyToken(secret, token)?.sub === 'human';
+
+/** Key for service-to-service calls between the API and the game server (header x-internal-key). */
+export const internalKey = (secret: string) => createHmac('sha256', secret).update('es-internal-v1').digest('hex');
+export function isInternalKey(secret: string, key: unknown): boolean {
+  if (typeof key !== 'string') return false;
+  const want = internalKey(secret);
+  return key.length === want.length && timingSafeEqual(Buffer.from(key), Buffer.from(want));
+}

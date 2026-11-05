@@ -1,0 +1,50 @@
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { isInternalKey } from '@es/shared/token';
+import { env } from '../env';
+import { prisma } from '../plugins/prisma';
+import { isBanned, userStatus } from '../moderation';
+import { setting } from '../settings';
+
+const HeatSchema = z.object({
+  cells: z.array(z.tuple([z.string().datetime(), z.number().int().min(-500).max(500), z.number().int().min(-500).max(500), z.number().int().min(1).max(100_000)])).max(20_000),
+});
+
+/** Service calls from the game server (x-internal-key). */
+export function internalRoutes(dbOn: boolean) {
+  return async function routes(app: FastifyInstance) {
+    app.addHook('onRequest', async (req, reply) => {
+      if (!isInternalKey(env.AUTH_SECRET, req.headers['x-internal-key'])) return reply.code(403).send({ error: 'forbidden' });
+    });
+
+    app.get('/internal/settings', async () => ({ maxGuestsPerIp: setting('maxGuestsPerIp'), extraBannedWords: setting('extraBannedWords'), allowedWords: setting('allowedWords') }));
+
+    app.get<{ Params: { id: string } }>('/internal/user/:id', async (req) => {
+      const s = await userStatus(req.params.id).catch(() => null);
+      return { banned: isBanned(s), until: s?.bannedUntil ?? null, reason: s?.banReason ?? '', mutedUntil: s?.mutedUntil ? s.mutedUntil.getTime() : 0, tokenVersion: s?.tokenVersion ?? 0 };
+    });
+
+    /** Heat-map samples: add the counts to the cells (one statement per 2000 cells). */
+    app.post('/internal/heat', async (req, reply) => {
+      const body = HeatSchema.safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!dbOn) return { ok: true };
+      // merge duplicate cells first (one INSERT … ON CONFLICT can't touch the same row twice)
+      const merged = new Map<string, [string, number, number, number]>();
+      for (const [h, cx, cz, n] of body.data.cells) {
+        const k = `${new Date(h).toISOString()}|${cx}|${cz}`;
+        const cur = merged.get(k);
+        if (cur) cur[3] += n;
+        else merged.set(k, [h, cx, cz, n]);
+      }
+      const rows = [...merged.values()];
+      for (let i = 0; i < rows.length; i += 2000) {
+        const chunk = rows.slice(i, i + 2000);
+        const v = chunk.map((_, j) => `($${j * 4 + 1}::timestamp, $${j * 4 + 2}::int, $${j * 4 + 3}::int, $${j * 4 + 4}::int)`).join(',');
+        const p = chunk.flatMap(([h, cx, cz, n]) => [new Date(h), cx, cz, n]);
+        await prisma.$executeRawUnsafe(`INSERT INTO "HeatCell" ("hour","cx","cz","count") VALUES ${v} ON CONFLICT ("hour","cx","cz") DO UPDATE SET "count" = "HeatCell"."count" + EXCLUDED."count"`, ...p);
+      }
+      return { ok: true };
+    });
+  };
+}

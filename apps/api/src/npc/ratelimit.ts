@@ -1,4 +1,5 @@
 import type Redis from 'ioredis';
+import { setting } from '../settings';
 import { env } from '../env';
 
 /**
@@ -35,7 +36,7 @@ class RateLimiter {
 
 export const limiter = new RateLimiter();
 /** NPC turns per player per minute. */
-export const allowTurn = (playerId: string) => limiter.allow(`turn:${playerId}`, env.NPC_RATE_PER_MIN);
+export const allowTurn = (playerId: string) => limiter.allow(`turn:${playerId}`, setting('npcRatePerMin'));
 /** Login / register attempts per IP per minute. */
 export const allowAuth = (ip: string) => limiter.allow(`auth:${ip}`, 10);
 /** Client analytics + feedback posts per IP per minute. */

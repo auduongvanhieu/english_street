@@ -43,6 +43,9 @@ export function ZoneScreen({ onJoin, onBack, connecting, connError, initial }: {
   const err = (() => {
     if (!connError) return error;
     if (connError.includes('zone_code_required')) return t('Wrong code for that zone.');
+    if (connError.includes('account_banned')) return t('Your account has been suspended by a moderator.');
+    if (connError.includes('kicked')) return t('A moderator removed you from the street.');
+    if (connError.includes('signed_out')) return t('You were signed out. Please sign in again.');
     if (connError.includes('too_many_guests')) return t('Too many guests from your network right now. Sign in to play, or try again later.');
     if (connError.includes('zone_name_invalid')) return t('Pick another zone name (3–24 letters, no bad words).');
     if (connError.includes('zone_code_invalid')) return t('Codes are 4–8 letters or digits.');

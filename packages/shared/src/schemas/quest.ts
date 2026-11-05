@@ -18,6 +18,8 @@ export const QuestSchema = z.object({
   target_phrases: z.array(z.string()).default([]),
   max_turns: z.number().int().positive().default(12),
   reward: z.object({ xp: z.number().int(), coins: z.number().int() }).default({ xp: 50, coins: 10 }),
+  /** Switched off in the admin site: kept, but not offered in the game. */
+  disabled: z.boolean().optional(),
 });
 export type Quest = z.infer<typeof QuestSchema>;
 

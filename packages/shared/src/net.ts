@@ -25,7 +25,13 @@ export const MSG = {
   PROP: 'prop',
   /** client -> server: your garden plots (see encodeGarden) so other players at the farm can visit it. */
   GARDEN: 'garden',
+  /** server -> client: { text, level: 'info' | 'warning' } notice from the moderators (announcement, mute…) */
+  NOTICE: 'notice',
 } as const;
+
+/** Close codes the server uses when it removes a player (client shows why). */
+export const CLOSE_KICKED = 4105;
+export const CLOSE_BANNED = 4106;
 
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
 export const PROP_RE = /^dish:[a-z-]{2,24}$/;

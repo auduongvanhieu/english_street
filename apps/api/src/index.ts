@@ -9,6 +9,8 @@ import { playRoutes } from './routes/play';
 import { npcRoutes } from './routes/npc';
 import { pairRoutes } from './routes/pair';
 import { adminRoutes } from './routes/admin';
+import { internalRoutes } from './routes/internal';
+import { startStatsJob } from './admin/stats';
 import { telemetryRoutes } from './routes/telemetry';
 import { dictRoutes } from './routes/dict';
 import { PairService, type PairSession } from './npc/pairService';
@@ -21,6 +23,12 @@ import { NpcService } from './npc/service';
 import { budget } from './npc/budget';
 import { captcha } from './captcha';
 import { limiter } from './npc/ratelimit';
+import { enableModeration } from './moderation';
+import { onSettingsChange, setting, startSettings } from './settings';
+import { setProfanityWords } from '@es/shared';
+import { startContent } from './admin/contentStore';
+import { initTranslationJob } from './admin/translateJob';
+import { enableAnnouncements, worldRoutes } from './routes/world';
 
 // forceCloseConnections: a restart (tsx watch, systemd) must free the port immediately instead of waiting for keep-alive sockets.
 const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env.TRUST_PROXY, forceCloseConnections: true });
@@ -29,6 +37,13 @@ const [redis, attempts] = await Promise.all([connectRedis(), createAttemptRepo()
 const sessions = createStore<Session>(redis, 'sess');
 const pairs = createStore<PairSession>(redis, 'pair');
 const translations = createStore<{ text?: string; vi?: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
+const dbOn = attempts.name === 'postgres';
+enableModeration(dbOn);
+enableAnnouncements(dbOn);
+onSettingsChange(() => setProfanityWords(setting('extraBannedWords'), setting('allowedWords')));
+await startSettings(redis, dbOn);
+await startContent(redis, dbOn);
+if (dbOn) await initTranslationJob().catch(() => undefined);
 budget.useRedis(redis);
 limiter.useRedis(redis);
 captcha.useRedis(redis);
@@ -45,7 +60,8 @@ registerAuth(app);
 if (env.BETA_CODES.length > 0) {
   const open = new Set(['/auth/login', '/auth/guest', '/beta/verify', '/events', '/feedback']);
   app.addHook('onRequest', async (req, reply) => {
-    if (req.method !== 'POST' || open.has(req.url.split('?')[0]!)) return;
+    const path = req.url.split('?')[0]!;
+    if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;
     if (req.authPlayerId || isBetaPass(env.AUTH_SECRET, req.headers['x-beta-pass'])) return;
     return reply.code(403).send({ error: 'beta_pass_required' });
   });
@@ -57,7 +73,7 @@ if (env.BETA_CODES.length > 0) {
   const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/beta/verify', '/events', '/me/push-token']);
   app.addHook('onRequest', async (req, reply) => {
     const path = req.url.split('?')[0]!;
-    if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin')) return;
+    if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;
     if (req.authPlayerId || isHumanPass(env.AUTH_SECRET, req.headers['x-human-pass'])) return;
     return reply.code(403).send({ error: 'human_check_required' });
   });
@@ -68,11 +84,15 @@ await app.register(telemetryRoutes(attempts));
 await app.register(accountRoutes(attempts));
 await app.register(contentRoutes);
 await app.register(areaRoutes);
+await app.register(worldRoutes);
 await app.register(playRoutes(attempts));
-await app.register(npcRoutes(new NpcService(llm, sessions, attempts)));
+const npcService = new NpcService(llm, sessions, attempts);
+await app.register(npcRoutes(npcService));
 await app.register(pairRoutes(new PairService(llm, attempts, pairs), attempts));
 await app.register(dictRoutes(llm, translations, attempts));
-await app.register(adminRoutes(attempts));
+await app.register(adminRoutes(attempts, npcService));
+startStatsJob(dbOn);
+await app.register(internalRoutes(dbOn));
 
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.once(sig, () => {

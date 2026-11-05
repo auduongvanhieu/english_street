@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CROPS, CROP_PRICE, GROW_MS, plotStage, type AreaContentDto, type Crop } from '@es/shared';
+import { useWorld } from '../../store/world';
+/** Stable empty list for selectors. */
+const NONE: string[] = [];
+import { CROPS, CROP_PRICE, FARM, GROW_MS, plotStage, type AreaContentDto, type Crop } from '@es/shared';
 import { useFarm } from '../../store/farm';
 import { useGame } from '../../store/game';
 import { areaAt } from '../../world/areas';
@@ -89,7 +92,7 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
       <section>
         <h3 className="mb-2 text-sm font-semibold">🌱 {t('My garden')}</h3>
         <div className="grid grid-cols-3 gap-2">
-          {farm.plots.map((p, i) => {
+          {farm.plots.slice(0, FARM.plotCount).map((p, i) => {
             const st = plotStage(p, now);
             const sel = plot === i;
             return (
@@ -115,7 +118,7 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
                   <>
                     <div className="mb-1 text-xs text-gray-600">{t('Choose seeds to plant:')}</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {CROPS.map((c) => (
+                      {CROPS.filter((c) => !FARM.disabled.includes(c)).map((c) => (
                         <button key={c} type="button" disabled={busy} onClick={() => void act({ action: 'plant', plot, crop: c })} className="min-h-9 rounded-full border bg-white px-2.5 text-sm" title={`${Math.round(GROW_MS[c] / 60000)} min`}>
                           {icon(c)} <span dir="ltr">{label(c)}</span>
                         </button>
@@ -193,6 +196,7 @@ export function MenuTab({ content }: { content: AreaContentDto }) {
   const seat = useRestaurant((s) => s.seat);
   const order = useRestaurant((s) => s.order);
   const orderDish = useRestaurant((s) => s.orderDish);
+  const gone = useWorld((s) => s.cfg?.soldOut.restaurant ?? NONE);
   const openCard = useArea((s) => s.openCard);
   const [, tick] = useState(0);
   useEffect(() => {
@@ -231,6 +235,7 @@ export function MenuTab({ content }: { content: AreaContentDto }) {
                     </span>
                     <span className="block truncate text-[11px] text-gray-500" dir="ltr">
                       {i.note}
+                      {i.allergens?.length ? ` · ⚠ ${i.allergens.join(', ')}` : ''}
                     </span>
                     {!noTr && i.tr.meaning ? <span className="block text-[11px] text-blue-800">{i.tr.meaning}</span> : null}
                   </span>
@@ -238,7 +243,9 @@ export function MenuTab({ content }: { content: AreaContentDto }) {
                 <span className="text-sm font-semibold text-emerald-700" dir="ltr">
                   ${i.price}
                 </span>
-                {seat ? (
+                {gone.includes(i.id) ? (
+                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700">{t('Sold out')}</span>
+                ) : seat ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -309,7 +316,7 @@ export function ShoppingTab({ content }: { content: AreaContentDto }) {
       </section>
       {note && Date.now() - note.at < 5000 ? (
         <div className={`rounded-lg px-3 py-1.5 text-sm ${note.ok ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`}>
-          {note.text === 'added' ? t('In the trolley!') : note.text === 'too_many' ? t('Too many! Check the list.') : t("That's not on your list.")}
+          {note.text === 'added' ? t('In the trolley!') : note.text === 'too_many' ? t('Too many! Check the list.') : note.text === 'sold_out' ? t('Sorry, that is sold out today.') : t("That's not on your list.")}
         </div>
       ) : null}
       <section>
