@@ -2,20 +2,25 @@ import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { insideBuilding, type Building } from '../../world/buildings';
+import type { AreaFrame } from '../../world/areas';
 import { localPos } from '../LocalPlayer';
 import { Ground, Merged, box } from './kit';
 
 const WALL_H = 3.2;
 
-/** Walls, floor and roof of a walk-in building; the roof and front wall disappear while you are inside. */
-export function BuildingShell({ b, name, children }: { b: Building; name: string; children?: React.ReactNode }) {
+/**
+ * Walls, floor and roof of a walk-in building; the roof and front wall disappear while you are inside.
+ * With `frame`, `b` is in that area's local coordinates (render it inside <AreaGroup>).
+ */
+export function BuildingShell({ b, name, frame, children }: { b: Building; name: string; frame?: AreaFrame; children?: React.ReactNode }) {
   const [inside, setInside] = useState(false);
   const acc = useRef(0);
   useFrame((_, dt) => {
     acc.current += dt;
     if (acc.current < 0.2) return;
     acc.current = 0;
-    const i = insideBuilding(b, localPos.x, localPos.z + 0.6);
+    const [x, z] = frame ? frame.toLocal(localPos.x, localPos.z) : [localPos.x, localPos.z];
+    const i = insideBuilding(b, x, z + 0.6);
     if (i !== inside) setInside(i);
   });
   const w = b.x1 - b.x0;

@@ -6,7 +6,7 @@ import { registerBlockers, type Aabb } from './layout';
  * with a door gap in the front wall; the scenes hide the front wall and roof while the player is inside.
  */
 export interface Building {
-  area: AreaId;
+  area: AreaId | string;
   x0: number;
   x1: number;
   z0: number;
@@ -26,7 +26,8 @@ export function insideBuilding(b: Building, x: number, z: number) {
   return x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1;
 }
 
-function walls(b: Building): Aabb[] {
+/** Wall blockers of a building (door gap in the front wall), in the building's own coordinates. */
+export function walls(b: Building): Aabb[] {
   const t = 0.2;
   const h = b.doorW / 2;
   return [
