@@ -46,7 +46,7 @@ import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
 import { WeatherChip } from './ui/WeatherChip';
-import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
+import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, Collapsible, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
 import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
 import { useT } from './i18n';
@@ -296,21 +296,25 @@ export default function App() {
           {/* top-right: utility buttons */}
           <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <WeatherChip compact />
-            <VoiceChatButton compact />
-            <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
-            <SettingsButton compact />
-            <FeedbackButton compact />
-            <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>🚪</HudButton>
+            <Collapsible id="top" icon="☰" title={t('More buttons')}>
+              <VoiceChatButton compact />
+              <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
+              <SettingsButton compact />
+              <FeedbackButton compact />
+              <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>🚪</HudButton>
+            </Collapsible>
           </div>
           {/* bottom-right: actions */}
           {!hudHidden && !chatOpen && !inTalk && (
             <div data-ui className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] flex flex-col items-end gap-3">
-              <SitButton />
-              <TalkButton />
+              <SitButton compact />
+              <TalkButton compact />
               <HugButton touch />
+              <Collapsible id="actions" icon="⋯" title={t('More actions')} reverse>
+                <EmoteBar compact />
+                <ShoutButton compact />
+              </Collapsible>
               <HudButton big onClick={requestJump} title={t('Jump')}>⤒</HudButton>
-              <EmoteBar compact />
-              <ShoutButton compact />
               <HudButton onClick={() => setChatOpen(true)} title={t('Nearby chat')}>💬</HudButton>
             </div>
           )}

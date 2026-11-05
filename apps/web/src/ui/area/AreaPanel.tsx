@@ -3,6 +3,7 @@ import { BADGES, type AreaContentDto, type AreaId } from '@es/shared';
 import { useArea } from '../../store/area';
 import { useRestaurant } from '../../store/restaurant';
 import { useSeat } from '../../store/seat';
+import { ActionCircle } from '../Hud';
 import { useFarm } from '../../store/farm';
 import { useGame } from '../../store/game';
 import { tk, useLang, useT } from '../../i18n';
@@ -242,7 +243,7 @@ export function BadgeToast() {
 }
 
 /** "🪑 Sit down" near a free restaurant chair, "Stand up" while seated. */
-export function SitButton() {
+export function SitButton({ compact }: { compact?: boolean }) {
   const t = useT();
   const near = useRestaurant((s) => s.near);
   const seat = useRestaurant((s) => s.seat);
@@ -260,7 +261,7 @@ export function SitButton() {
         </button>
       </div>
     );
-  if (!near) return <AnySeatButton />;
+  if (!near) return <AnySeatButton compact={compact} />;
   return (
     <button
       type="button"
@@ -277,10 +278,12 @@ export function SitButton() {
 }
 
 /** Sit on / get up from any chair, bench, sofa or bleacher step (world/seats.ts). */
-function AnySeatButton() {
+function AnySeatButton({ compact }: { compact?: boolean }) {
   const t = useT();
   const seat = useSeat((s) => s.seat);
   const near = useSeat((s) => s.near);
+  if (compact && seat) return <ActionCircle onClick={() => useSeat.getState().stand()} icon="🧍" label={t('Stand up')} color="bg-white" />;
+  if (compact && near) return <ActionCircle onClick={() => useSeat.getState().sit(near)} icon="🪑" label={t('Sit down')} color="bg-amber-400" />;
   if (seat)
     return (
       <button type="button" data-ui onClick={() => useSeat.getState().stand()} className="min-h-12 rounded-full bg-white px-5 text-base font-semibold text-black shadow-lg">

@@ -40,6 +40,39 @@ export function HudButton({ onClick, title, active, children, className = '', bi
   );
 }
 
+/** Round action button for phones (icon only, small badge in the corner) instead of a long text pill. */
+export function ActionCircle({ onClick, icon, badge, label, color }: { onClick: () => void; icon: string; badge?: string; label: string; color: string }) {
+  return (
+    <button type="button" onClick={onClick} title={label} aria-label={label} className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl shadow-lg ring-2 ring-white/70 active:scale-95 ${color}`}>
+      {icon}
+      {badge ? <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm shadow">{badge}</span> : null}
+    </button>
+  );
+}
+
+/** A group of HUD buttons behind a ☰ / ⋯ toggle (phones); open/closed is remembered. */
+export function Collapsible({ id, icon, title, children, reverse }: { id: string; icon: string; title: string; children: React.ReactNode; reverse?: boolean }) {
+  const key = `es.hud.${id}`;
+  const [open, setOpen] = useState(() => localStorage.getItem(key) === '1');
+  const toggle = () =>
+    setOpen((o) => {
+      localStorage.setItem(key, o ? '0' : '1');
+      return !o;
+    });
+  const btn = (
+    <HudButton onClick={toggle} title={title} active={open}>
+      {open ? '✕' : icon}
+    </HudButton>
+  );
+  return (
+    <>
+      {reverse && open ? children : null}
+      {btn}
+      {!reverse && open ? children : null}
+    </>
+  );
+}
+
 export function EmoteBar({ compact }: { compact?: boolean }) {
   const play = useGame((s) => s.playEmote);
   const [open, setOpen] = useState(false);
@@ -106,12 +139,13 @@ export function VoiceChatButton({ compact }: { compact?: boolean }) {
 }
 
 /** Big "Talk to X" button for touch screens (desktop uses the keyboard prompt). */
-export function TalkButton() {
+export function TalkButton({ compact }: { compact?: boolean }) {
   const target = useGame((s) => s.interactTarget);
   const npc = useGame((s) => s.npcs.find((n) => n.id === target));
   const open = useGame((s) => s.openPanel);
   const t = useT();
   if (!npc) return null;
+  if (compact) return <ActionCircle onClick={() => open(npc.id)} icon="💬" label={t('Talk to {name}', { name: npc.name })} color="bg-yellow-400" />;
   return (
     <button
       type="button"
