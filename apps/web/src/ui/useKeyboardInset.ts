@@ -13,6 +13,8 @@ export function useKeyboardInset() {
     const update = () => {
       const covered = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
       root.style.setProperty('--kb', `${covered}px`);
+      // what is really visible (iOS keeps 100dvh while the keyboard covers half of it)
+      root.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
       root.classList.toggle('kb-open', covered > 120);
     };
     update();
@@ -22,6 +24,7 @@ export function useKeyboardInset() {
       vv.removeEventListener('resize', update);
       vv.removeEventListener('scroll', update);
       root.style.removeProperty('--kb');
+      root.style.removeProperty('--vvh');
       root.classList.remove('kb-open');
     };
   }, []);

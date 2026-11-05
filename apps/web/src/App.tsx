@@ -25,7 +25,7 @@ import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
-import { PlayerPopup, ShoutButton, TalkBox, TalkToast } from './ui/Talk';
+import { PlayerPopup, ShoutButton, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
 import { setAmbientVolume } from './audio/ambient';
 import { exposeSession, isNativeApp, onNative } from './native/bridge';
@@ -56,6 +56,7 @@ import { ItemCard } from './ui/area/ItemCard';
 import { BusPanel, MapPanel } from './ui/area/Travel';
 import { useArea } from './store/area';
 import { useSeat } from './store/seat';
+import { useFollow } from './store/follow';
 import { useRestaurant } from './store/restaurant';
 import { useFarm } from './store/farm';
 import { useShopping } from './store/shopping';
@@ -63,7 +64,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow };
 }
 
 export default function App() {
@@ -347,6 +348,7 @@ export default function App() {
       <ZoneChip compact={touch} onChange={() => { setPicker(true); leaveRoom(); }} />
       <InviteToast />
       <TalkToast />
+      <FollowChip />
       {!hudHidden && <PlayerPopup />}
       {!hudHidden && <CritterCard />}
       {!hudHidden && <TalkBox compact={touch} />}

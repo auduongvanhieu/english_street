@@ -55,6 +55,8 @@ import { NameTag } from './NameTag';
 import { seatTaken, useRestaurant } from '../store/restaurant';
 import { TABLES } from '../world/buildings';
 import { useSeat } from '../store/seat';
+import { useFollow } from '../store/follow';
+import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
 import { POOL_WORLD } from '../world/places/hotel';
 
@@ -153,6 +155,26 @@ export function LocalPlayer({ name }: { name: string }) {
     let mag = Math.min(1, dir.length());
     const keyMag = mag;
     let clickLeft = Infinity; // distance left to the clicked spot (never step past it)
+    // --- following another player: keep walking after them (keys / joystick / a panel stop it) ---
+    const fol = useFollow.getState().target;
+    if (fol) {
+      const tp = useGame.getState().players[fol.id];
+      if (!tp || keyMag > 0.05 || locked) {
+        useFollow.getState().stop();
+        moveTarget.active = false;
+      } else {
+        const d = Math.hypot(tp.x - g.position.x, tp.z - g.position.z);
+        if (d > 90) {
+          useFollow.getState().stop();
+          moveTarget.active = false;
+        } else if (d > (moveTarget.active ? 1.8 : 3)) {
+          if (!moveTarget.active) walkTo(tp.x, tp.z, g.position);
+          moveTarget.x = tp.x;
+          moveTarget.z = tp.z;
+          moveTarget.run = d > 6;
+        } else moveTarget.active = false;
+      }
+    }
     // --- click-to-move (mouse): walk to the clicked spot until there, blocked, or the keys take over ---
     if (moveTarget.active) {
       if (mag > 0.05 || locked) moveTarget.active = false;

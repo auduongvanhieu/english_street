@@ -28,7 +28,7 @@ export function Sheet({ children, onClose, wide, label }: { children: ReactNode;
 
   return (
     <div data-ui className="absolute inset-0 z-30 flex items-end justify-center bg-black/25 sm:items-center sm:p-3" style={{ paddingBottom: 'var(--kb, 0px)' }} role="dialog" aria-label={label}>
-      <div ref={card} className={`flex max-h-[88dvh] w-full flex-col rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:max-h-[92dvh] sm:rounded-2xl ${wide ? 'sm:max-w-xl' : 'sm:max-w-lg'}`}>
+      <div ref={card} className={`flex max-h-[min(88dvh,calc(var(--vvh,100dvh)_-_10px))] w-full flex-col rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl sm:max-h-[min(92dvh,calc(var(--vvh,100dvh)_-_24px))] sm:rounded-2xl ${wide ? 'sm:max-w-xl' : 'sm:max-w-lg'}`}>
         <div className="flex touch-none justify-center pt-2 sm:hidden" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
           <div className="h-1.5 w-10 rounded-full bg-gray-300" />
         </div>

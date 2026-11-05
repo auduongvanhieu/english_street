@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
+import { Sheet, SheetHeader } from './Sheet';
+import { useVoice } from '../store/voice';
+import { useSettings } from '../store/settings';
+import { startStt, type SttHandle } from '../voice/stt';
+import { track } from '../net/analytics';
 import { PROXIMITY_RADIUS, INTERACT_RADIUS } from '@es/shared';
 import { useGame } from '../store/game';
 import { useTalk } from '../store/talk';
+import { useFollow } from '../store/follow';
 import { useVoiceChat } from '../net/voicechat';
 import { ReportButton, TranslateButton } from './Hud';
 import { getPlayerId } from '../net/player';
@@ -17,6 +23,7 @@ export function PlayerPopup() {
   const close = useGame((s) => s.setSelectedPlayer);
   const playEmote = useGame((s) => s.playEmote);
   const talk = useTalk();
+  const following = useFollow((s) => s.target?.id === id);
   const t = useT();
   if (!p || !me) return null;
   const d = Math.hypot(p.x - me.x, p.z - me.z);
@@ -36,6 +43,17 @@ export function PlayerPopup() {
       <div className="flex flex-col gap-2">
         <button type="button" disabled={!near || busy} onClick={() => talk.request(p.id, p.name)} className="min-h-11 rounded-lg bg-blue-600 text-sm font-medium text-white disabled:opacity-50">
           💬 {t('Request to talk')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (following) useFollow.getState().stop();
+            else useFollow.getState().start(p.id, p.name);
+            close(null);
+          }}
+          className={`min-h-11 rounded-lg text-sm font-medium ${following ? 'border border-gray-300 text-gray-700' : 'bg-emerald-600 text-white'}`}
+        >
+          🚶 {following ? t('Stop following') : t('Follow')}
         </button>
         <div className="flex gap-2">
           <button type="button" onClick={() => { playEmote('wave'); close(null); }} className="min-h-10 flex-1 rounded-lg border text-sm">
@@ -83,8 +101,11 @@ export function TalkToast() {
   return null;
 }
 
-/** The private conversation box: text lines, typing indicator, voice state, end button. */
-export function TalkBox({ compact }: { compact: boolean }) {
+/**
+ * The private conversation with another player, laid out like the NPC conversation (NpcPanel): a sheet with the
+ * partner's name and voice state, chat bubbles (listen 🔊 / translate on theirs), 🎤 speech-to-text and Send.
+ */
+export function TalkBox(_props: { compact: boolean }) {
   const partner = useTalk((s) => s.partner);
   const lines = useTalk((s) => s.lines);
   const typing = useTalk((s) => s.partnerTyping);
@@ -92,96 +113,171 @@ export function TalkBox({ compact }: { compact: boolean }) {
   const notifyTyping = useTalk((s) => s.typing);
   const end = useTalk((s) => s.end);
   const vc = useVoiceChat();
+  const voice = useVoice();
+  const micMode = useSettings((s) => s.micMode);
   const t = useT();
   const partnerPlayer = useGame((s) => (partner ? s.players[partner.id] : undefined));
   const [text, setText] = useState('');
+  const [sttError, setSttError] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const lastTyping = useRef(0);
+  const stt = useRef<SttHandle | null>(null);
+  const sttRun = useRef<object | null>(null);
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' });
   }, [lines.length, typing]);
   useEffect(() => {
-    if (partner && !compact) input.current?.focus();
-  }, [partner, compact]);
+    // phones: no automatic keyboard (it would cover the conversation); tap the field to type
+    if (partner && !matchMedia('(pointer: coarse)').matches) input.current?.focus();
+  }, [partner]);
+  useEffect(() => () => stt.current?.abort(), []);
   if (!partner) return null;
   const voiceConnected = vc.connected.includes(partner.id);
+  const status = vc.supported
+    ? vc.mic
+      ? voiceConnected
+        ? vc.muted
+          ? t('voice on · you are muted')
+          : t('voice on · they can hear you')
+        : t('connecting voice…')
+      : partnerPlayer?.voice
+        ? t('listening · turn on your mic to speak')
+        : t('text only · tap 🎙️ to use your voice')
+    : t('text conversation');
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    send(text);
+    const msg = text.trim();
+    if (!msg) return;
+    if (stt.current) {
+      sttRun.current = null;
+      stt.current.abort();
+    }
+    send(msg);
     setText('');
   }
+  function onType(v: string) {
+    setText(v);
+    const now = Date.now();
+    if (now - lastTyping.current > 1500) {
+      lastTyping.current = now;
+      notifyTyping();
+    }
+  }
+  // --- 🎤 speech to text, same behaviour as with NPCs (tap to start/stop, or hold — Settings) ---
+  function micStart() {
+    setSttError(null);
+    voice.stop();
+    const base = text.trim();
+    track('stt_used');
+    const run = {};
+    sttRun.current = run;
+    const live = () => sttRun.current === run;
+    stt.current = startStt({
+      lang: 'en-US',
+      onInterim: (s) => live() && onType(base ? `${base} ${s}` : s),
+      onFinal: (s) => live() && onType(base ? `${base} ${s}` : s),
+      onError: (code) => {
+        if (!live()) return;
+        if (code === 'not-allowed') setSttError(t('Microphone permission denied'));
+        else if (code === 'no-speech') setSttError(micMode === 'hold' ? t('No speech detected. Hold the mic and speak clearly.') : t('No speech detected. Tap the mic and speak clearly.'));
+        else if (code !== 'aborted') setSttError(t('Speech recognition error: {code}', { code }));
+      },
+      onEnd: () => {
+        stt.current = null;
+        voice.setListening(false);
+      },
+    });
+    if (stt.current) voice.setListening(true);
+    else setSttError(t('Voice input is not supported in this browser (try Chrome or Edge).'));
+  }
+  const micDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (micMode !== 'hold' || stt.current) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    micStart();
+  };
+  const micUp = () => micMode === 'hold' && stt.current?.stop();
+  const micClick = () => {
+    if (micMode !== 'tap') return;
+    if (stt.current) stt.current.stop();
+    else micStart();
+  };
 
   return (
-    <div
-      data-ui
-      className={`absolute z-20 flex flex-col rounded-xl bg-white/95 shadow-2xl backdrop-blur ${compact ? 'inset-x-2 max-h-[48dvh]' : 'bottom-3 left-1/2 w-96 max-h-[55vh] -translate-x-1/2'}`}
-      style={compact ? { bottom: 'calc(max(0.5rem, env(safe-area-inset-bottom)) + var(--kb, 0px))' } : undefined}
-    >
-      <header className="flex items-center justify-between gap-2 border-b px-3 py-2">
+    <Sheet onClose={end} label={t('Talking to {name}', { name: partner.name })}>
+      <SheetHeader>
         <div className="min-w-0">
-          <b className="text-sm">💬 {partner.name}</b>
-          <div className="truncate text-[11px] text-gray-500">
-            {vc.supported
-              ? vc.mic
-                ? voiceConnected
-                  ? vc.muted
-                    ? t('voice on · you are muted')
-                    : t('voice on · they can hear you')
-                  : t('connecting voice…')
-                : partnerPlayer?.voice
-                  ? t('listening · turn on your mic to speak')
-                  : t('text only · tap 🎙️ to use your voice')
-              : t('text conversation')}
-          </div>
+          <h2 className="truncate text-lg font-bold leading-tight">💬 {partner.name}</h2>
+          <p className="truncate text-xs text-gray-500">{status}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {vc.supported && (
-            <button type="button" onClick={() => (vc.mic ? vc.toggleMute() : void vc.enable())} className={`min-h-9 min-w-9 rounded-lg px-2 text-sm ${vc.mic && !vc.muted ? 'bg-green-100' : 'bg-gray-100'}`} aria-label={vc.mic ? (vc.muted ? t('Unmute') : t('Mute')) : t('Turn on microphone')}>
-              {vc.mic ? (vc.muted ? '🔇' : '🎤') : '🎙️'}
+            <button type="button" onClick={() => (vc.mic ? vc.toggleMute() : void vc.enable())} className={`min-h-9 min-w-9 rounded-lg px-2 text-sm ${vc.mic && !vc.muted ? 'bg-green-100' : 'bg-gray-100'}`} aria-label={vc.mic ? (vc.muted ? t('Unmute') : t('Mute')) : t('Turn on microphone')} title={t('Voice chat')}>
+              {vc.mic ? (vc.muted ? '🔇' : '🎙️') : '📞'}
             </button>
           )}
-          <button type="button" onClick={end} className="min-h-9 rounded-lg bg-red-50 px-2 text-sm text-red-700" aria-label={t('End conversation')}>
+          <button type="button" onClick={end} className="min-h-9 rounded-lg bg-red-50 px-3 text-sm font-medium text-red-700" aria-label={t('End conversation')}>
             {t('End')}
           </button>
         </div>
-      </header>
-      <div ref={list} className="min-h-24 flex-1 space-y-1 overflow-y-auto px-3 py-2 text-sm">
-        {lines.length === 0 && <p className="text-xs text-gray-400">{t('Say hello in English! Nobody else can read this conversation.')}</p>}
-        {lines.map((l, i) => (
-          <div key={i} className={`flex ${l.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] rounded-2xl px-3 py-1.5 ${l.from === 'me' ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
-              <span dir="ltr">{l.text}</span>
-              {l.from === 'them' && <TranslateButton text={l.text} dark />}
+      </SheetHeader>
+      <div ref={list} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3" style={{ minHeight: 140 }}>
+        {lines.length === 0 && <p className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-900">{t('Say hello in English! Nobody else can read this conversation.')}</p>}
+        {lines.map((l, i) => {
+          const mine = l.from === 'me';
+          return (
+            <div key={i} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex max-w-[85%] items-start gap-1 rounded-2xl px-3 py-2 text-sm ${mine ? 'rounded-br-sm bg-blue-600 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900'}`}>
+                <span dir="ltr">{l.text}</span>
+                {!mine && <TranslateButton text={l.text} dark />}
+                {!mine && voice.ttsSupported && (
+                  <button type="button" onClick={() => useVoice.getState().speakAs('player', l.text, 'en-US')} className="ml-1 shrink-0 opacity-50 hover:opacity-100" aria-label={t('Listen again')} title={t('Listen again')}>
+                    🔊
+                  </button>
+                )}
+              </div>
             </div>
+          );
+        })}
+        {typing && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl rounded-bl-sm bg-gray-100 px-3 py-2 text-sm text-gray-400">{t('{name} is typing…', { name: partner.name })}</div>
           </div>
-        ))}
-        {typing && <div className="text-xs text-gray-400">{t('{name} is typing…', { name: partner.name })}</div>}
+        )}
+        {sttError && <p className="text-sm text-red-600">{sttError}</p>}
       </div>
-      <form onSubmit={submit} className="flex gap-2 border-t p-2">
+      <form onSubmit={submit} className="flex gap-2 border-t p-3">
+        {voice.sttSupported && (
+          <button
+            type="button"
+            onPointerDown={micDown}
+            onPointerUp={micUp}
+            onPointerCancel={micUp}
+            onPointerLeave={micUp}
+            onClick={micClick}
+            aria-label={micMode === 'hold' ? t('Hold to talk') : voice.listening ? t('Tap to stop') : t('Tap to talk')}
+            className={`min-h-11 min-w-11 select-none rounded-lg px-3 py-2 text-lg touch-none ${voice.listening ? 'animate-pulse bg-red-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+          >
+            🎤
+          </button>
+        )}
         <input
           ref={input}
           value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            const now = Date.now();
-            if (now - lastTyping.current > 1500) {
-              lastTyping.current = now;
-              notifyTyping();
-            }
-          }}
-          placeholder={t('Message {name}…', { name: partner.name })}
+          onChange={(e) => onType(e.target.value)}
+          placeholder={voice.listening ? t('Listening…') : t('Message {name}…', { name: partner.name })}
           maxLength={300}
           enterKeyHint="send"
-          className="min-h-11 flex-1 rounded-lg border px-3 text-base sm:min-h-9 sm:text-sm"
+          className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 py-2 text-base sm:text-sm"
         />
-        <button type="submit" disabled={!text.trim()} className="min-h-11 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white disabled:opacity-50 sm:min-h-9">
+        <button type="submit" disabled={!text.trim()} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
           {t('Send')}
         </button>
       </form>
       <span className="hidden">{getPlayerId()}</span>
-    </div>
+    </Sheet>
   );
 }
 
@@ -215,5 +311,20 @@ export function ShoutButton({ compact }: { compact?: boolean }) {
     >
       📢{compact ? '' : held ? ` ${t('Shouting…')}` : ` ${t('Hold to shout')}`}
     </button>
+  );
+}
+
+/** "Following X" chip with a Stop button (keys / joystick also stop it). */
+export function FollowChip() {
+  const target = useFollow((s) => s.target);
+  const t = useT();
+  if (!target) return null;
+  return (
+    <div data-ui className={`${TOP} flex items-center gap-2 rounded-full bg-emerald-600 py-1 pe-1 ps-4 text-sm font-medium text-white shadow-lg`}>
+      🚶 {t('Following {name}', { name: target.name })}
+      <button type="button" onClick={() => useFollow.getState().stop()} className="min-h-9 rounded-full bg-white/20 px-3 text-sm hover:bg-white/30">
+        {t('Stop')}
+      </button>
+    </div>
   );
 }
