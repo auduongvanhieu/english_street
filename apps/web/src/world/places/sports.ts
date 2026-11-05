@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 import { sky } from '../sky';
 
 /**
@@ -39,3 +40,15 @@ registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
 
 /** Real weather says rain or storm: the games move into the sports hall (sky.kind is set every frame by Sky). */
 export const gamesInHall = () => sky.kind === 'rain' || sky.kind === 'storm';
+
+// seats: three steps of bleachers facing the pitch (−z), the bench in the sports hall
+registerSeats(
+  frameSeats(FRAME, [
+    ...[0, 1, 2].flatMap((i) => {
+      const out: [number, number, number, number][] = [];
+      for (let x = BLEACHERS.minX + 0.75; x < BLEACHERS.maxX; x += 1.5) out.push([x, BLEACHERS.minZ + 0.25 + i * 0.45, Math.PI, 0.4 * i - 0.07]);
+      return out;
+    }),
+    ...benchPair((HALL.x0 + HALL.x1) / 2, HALL.z1 - 0.8, Math.PI, 0.8),
+  ]),
+);

@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Home layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from the
@@ -132,3 +133,18 @@ export const LOCAL_BLOCKERS: Aabb[] = [
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: sofa, armchair, dining chairs, garden bench
+registerSeats(
+  frameSeats(FRAME, [
+    [-12.3, -14.55, 0],
+    [-11.5, -14.55, 0],
+    [-10.7, -14.55, 0],
+    [-7.4, -13.8, 0],
+    ...[9.4, 10.6].flatMap((x): [number, number, number][] => [
+      [x, -20.05, 0],
+      [x, -17.95, Math.PI],
+    ]),
+    ...benchPair((BENCH.minX + BENCH.maxX) / 2, -6, 0),
+  ]),
+);

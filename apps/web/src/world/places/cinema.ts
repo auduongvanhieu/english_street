@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Star Cinema & Library in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28),
@@ -82,3 +83,23 @@ export const LOCAL_BLOCKERS: Aabb[] = [
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: screen-room seats (facing the screen, −z), lobby benches, reading chairs, armchair, forecourt benches
+registerSeats(
+  frameSeats(FRAME, [
+    ...SEAT_ROWS.flatMap((z) => SEAT_XS.map((x): [number, number, number] => [x, z, Math.PI])),
+    ...[-15.5, -19.5].flatMap((z): [number, number, number][] => [
+      [-3.75, z - 0.6, Math.PI / 2],
+      [-3.75, z + 0.6, Math.PI / 2],
+    ]),
+    ...READING_TABLES.flatMap((t) =>
+      [-0.65, 0.65].flatMap((dx): [number, number, number][] => [
+        [t.x + dx, t.z - 0.95, 0],
+        [t.x + dx, t.z + 0.95, Math.PI],
+      ]),
+    ),
+    [7, -19.9, 0],
+    ...benchPair(-14, -2, 0),
+    ...benchPair(14, -2, 0),
+  ]),
+);

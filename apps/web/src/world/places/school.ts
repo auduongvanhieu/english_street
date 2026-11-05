@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * School layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from the
@@ -88,3 +89,11 @@ export const LOCAL_BLOCKERS: Aabb[] = [
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: pupils' chairs (facing the board, −z) and the playground benches
+registerSeats(
+  frameSeats(FRAME, [
+    ...DESK_COLS.flatMap((x) => DESK_ROWS.map((z): [number, number, number] => [x, z + 0.6, Math.PI])),
+    ...BENCHES.flatMap((b) => benchPair((b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2, 0)),
+  ]),
+);

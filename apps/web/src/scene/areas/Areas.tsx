@@ -150,8 +150,10 @@ function AreaGate({ a }: { a: AreaDef }) {
 function BusStop({ x, z }: { x: number; z: number }) {
   const open = useGame((s) => s.setUiPanel);
   return (
+    // turned so the open side and the sign face the road (−z); the bench is a seat (world/seats.ts)
     <group
       position={[x + 3, 0, z]}
+      rotation-y={Math.PI}
       onClick={(e) => {
         e.stopPropagation();
         open('bus');
@@ -167,9 +169,11 @@ function BusStop({ x, z }: { x: number; z: number }) {
           p.add(cyl(0.32, 0.32, 0.06, 16), '#2f80ed', { p: [1.6, 2.55, 0.5], r: [Math.PI / 2, 0, 0] });
         }}
       />
-      <Text position={[1.6, 2.55, 0.54]} fontSize={0.3} color="#fff" anchorX="center" anchorY="middle">
-        BUS
-      </Text>
+      {[0.54, 0.46].map((tz, i) => (
+        <Text key={tz} position={[1.6, 2.55, tz]} rotation-y={i ? Math.PI : 0} fontSize={0.3} color="#fff" anchorX="center" anchorY="middle">
+          BUS
+        </Text>
+      ))}
     </group>
   );
 }

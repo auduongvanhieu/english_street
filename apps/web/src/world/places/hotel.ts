@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Riverside Hotel layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from
@@ -43,9 +44,23 @@ export const LOCAL_BLOCKERS: Aabb[] = [
   ...SOFAS,
   COFFEE_TABLE,
   { minX: TROLLEY.x - 0.45, maxX: TROLLEY.x + 0.45, minZ: TROLLEY.z - 0.3, maxZ: TROLLEY.z + 0.3 },
-  POOL,
   ...LOUNGERS.map((l) => ({ minX: l.x - 0.4, maxX: l.x + 0.4, minZ: l.z - 1, maxZ: l.z + 1 })),
   { minX: FLAG.x - 0.15, maxX: FLAG.x + 0.15, minZ: FLAG.z - 0.15, maxZ: FLAG.z + 0.15 },
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: lobby sofas (facing each other), sun loungers, the garden bench
+registerSeats(
+  frameSeats(FRAME, [
+    [3.8, -16.1, 0],
+    [5.2, -16.1, 0],
+    [3.8, -12.9, Math.PI],
+    [5.2, -12.9, Math.PI],
+    ...LOUNGERS.map((l): [number, number, number] => [l.x, l.z + 0.2, 0]),
+    ...benchPair(-19, -1.5, 0),
+  ]),
+);
+
+/** The pool in world coordinates: walk in and you swim (scene/LocalPlayer.tsx). */
+export const POOL_WORLD = FRAME.rect(POOL);

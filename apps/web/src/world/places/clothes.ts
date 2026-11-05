@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Style Corner layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from the
@@ -69,3 +70,14 @@ export const LOCAL_BLOCKERS: Aabb[] = [
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: garden benches (along z, facing their rotation) and the pouf by the fitting rooms
+registerSeats(
+  frameSeats(FRAME, [
+    ...BENCHES.flatMap(([x, z, r]): [number, number, number][] => [
+      [x, z - 0.45, r],
+      [x, z + 0.45, r],
+    ]),
+    [10.4, -14.6, 0],
+  ]),
+);

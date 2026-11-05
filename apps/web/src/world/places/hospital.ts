@@ -1,6 +1,7 @@
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Hospital layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from the
@@ -49,3 +50,15 @@ export const LOCAL_BLOCKERS: Aabb[] = [
 ];
 
 registerBlockers(LOCAL_BLOCKERS.map(FRAME.rect));
+
+// seats: waiting-room chairs and garden benches (all facing +z)
+registerSeats(
+  frameSeats(FRAME, [
+    ...CHAIR_ROWS.flatMap((r) => {
+      const out: [number, number, number][] = [];
+      for (let x = r.x0 + 0.5; x < r.x1; x += 1.0) out.push([x, r.z, 0]);
+      return out;
+    }),
+    ...GARDEN_BENCHES.flatMap((b) => benchPair(b.x, b.z, 0)),
+  ]),
+);

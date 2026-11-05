@@ -169,6 +169,31 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
       p.headY = Math.sin(t * 0.4) * 0.25 * Math.max(0, Math.sin(t * 0.17));
       break;
     }
+    case 'swim': {
+      // front crawl: arms windmill, legs flutter, head up looking ahead
+      st.phase += dt * 5;
+      const s = Math.sin(st.phase);
+      p.lean = 0.55;
+      p.armLX = -1.7 + s * 1.5;
+      p.armRX = -1.7 - s * 1.5;
+      p.armLZ = 0.3;
+      p.armRZ = -0.3;
+      p.legLX = Math.sin(st.phase * 2.5) * 0.35;
+      p.legRX = -p.legLX;
+      p.headX = -0.35;
+      p.hipY = Math.sin(st.phase * 2) * 0.02;
+      break;
+    }
+    case 'tread': {
+      // treading water: arms sculling out to the sides, slow bob
+      p.armLZ = 1.0 + Math.sin(t * 3) * 0.25;
+      p.armRZ = -p.armLZ;
+      p.armLX = p.armRX = -0.3;
+      p.legLX = Math.sin(t * 3) * 0.3;
+      p.legRX = -p.legLX;
+      p.hipY = Math.sin(t * 1.8) * 0.03;
+      break;
+    }
     case 'jump': {
       p.armLZ = 2.2;
       p.armRZ = -2.2;

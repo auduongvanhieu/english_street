@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { BADGES, type AreaContentDto, type AreaId } from '@es/shared';
 import { useArea } from '../../store/area';
 import { useRestaurant } from '../../store/restaurant';
+import { useSeat } from '../../store/seat';
 import { useFarm } from '../../store/farm';
 import { useGame } from '../../store/game';
 import { tk, useLang, useT } from '../../i18n';
@@ -259,7 +260,7 @@ export function SitButton() {
         </button>
       </div>
     );
-  if (!near) return null;
+  if (!near) return <AnySeatButton />;
   return (
     <button
       type="button"
@@ -271,6 +272,25 @@ export function SitButton() {
       className="min-h-12 rounded-full bg-amber-400 px-5 text-base font-semibold text-black shadow-lg ring-2 ring-white/70"
     >
       🪑 {t('Sit down')}
+    </button>
+  );
+}
+
+/** Sit on / get up from any chair, bench, sofa or bleacher step (world/seats.ts). */
+function AnySeatButton() {
+  const t = useT();
+  const seat = useSeat((s) => s.seat);
+  const near = useSeat((s) => s.near);
+  if (seat)
+    return (
+      <button type="button" data-ui onClick={() => useSeat.getState().stand()} className="min-h-12 rounded-full bg-white px-5 text-base font-semibold text-black shadow-lg">
+        🧍 {t('Stand up')}
+      </button>
+    );
+  if (!near) return null;
+  return (
+    <button type="button" data-ui onClick={() => useSeat.getState().sit(near)} className="min-h-12 rounded-full bg-amber-400 px-5 text-base font-semibold text-black shadow-lg ring-2 ring-white/70">
+      🪑 {t('Sit down')} <kbd className="ms-1 hidden rounded bg-black/15 px-1.5 text-xs sm:inline">E</kbd>
     </button>
   );
 }

@@ -54,6 +54,9 @@ import { avatarLook, AvatarSchema } from '@es/shared';
 import { NameTag } from './NameTag';
 import { seatTaken, useRestaurant } from '../store/restaurant';
 import { TABLES } from '../world/buildings';
+import { useSeat } from '../store/seat';
+import { nearestSeat } from '../world/seats';
+import { POOL_WORLD } from '../world/places/hotel';
 
 export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
 
@@ -112,6 +115,9 @@ export function LocalPlayer({ name }: { name: string }) {
     const locked = useGame.getState().panelNpc !== null;
     if (teleport.pending) {
       teleport.pending = false;
+      // moved away (map, bus, test hook): no longer on the chair
+      const gs = useSeat.getState().seat;
+      if (gs && Math.hypot(teleport.x - gs.x, teleport.z - gs.z) > 0.3) useSeat.setState({ seat: null });
       g.position.set(teleport.x, 0, teleport.z);
       g.rotation.y = teleport.rot;
       vy.current = 0;
@@ -176,6 +182,8 @@ export function LocalPlayer({ name }: { name: string }) {
     // --- bus ride: a short script moves the player (walk to the door, ride inside, step off) ---
     const ride = busStep(g, dt, keyMag > 0.05 || jump);
     if (ride) {
+      if (useSeat.getState().seat) useSeat.setState({ seat: null });
+      if (useRestaurant.getState().seat) useRestaurant.getState().stand();
       g.visible = !ride.hidden;
       anim.current = ride.anim;
       if (anim.current !== animState) setAnimState(anim.current);
@@ -203,14 +211,24 @@ export function LocalPlayer({ name }: { name: string }) {
         g.rotation.y = s.rot;
       }
     }
-    const seated = !!useRestaurant.getState().seat;
+    // --- sitting on any other chair / bench / sofa (world/seats.ts) ---
+    const gseat = useSeat.getState().seat;
+    if (gseat && (mag > 0.05 || jump)) useSeat.getState().stand();
+    else if (gseat) {
+      g.position.set(gseat.x, gseat.y ?? 0, gseat.z);
+      g.rotation.y = gseat.rot;
+    }
+    const seated = !!useRestaurant.getState().seat || !!useSeat.getState().seat;
+    // --- in the hotel pool: swim (slower, body in the water) ---
+    const P = POOL_WORLD;
+    const swimming = !seated && g.position.x > P.minX + 0.25 && g.position.x < P.maxX - 0.25 && g.position.z > P.minZ + 0.25 && g.position.z < P.maxZ - 0.25;
 
     // --- movement with collision ---
     if (seated) {
       anim.current = 'sit';
     } else if (mag > 0.05) {
       dir.normalize();
-      const speed = WALK_SPEED * (run ? 2 : 1) * mag;
+      const speed = WALK_SPEED * (run ? 2 : 1) * mag * (swimming ? 0.6 : 1);
       nearbyCircles(g.position.x, g.position.z, posts, circles.current);
       // Sub-steps of ≤ 0.15 m so a long frame on a slow phone cannot tunnel through a thin lamp post.
       const total = Math.min(speed * dt, clickLeft);
@@ -221,9 +239,9 @@ export function LocalPlayer({ name }: { name: string }) {
         g.position.z = nz;
       }
       g.rotation.y = Math.atan2(dir.x, dir.z);
-      anim.current = run ? 'run' : 'walk';
+      anim.current = swimming ? 'swim' : run ? 'run' : 'walk';
     } else {
-      anim.current = locked ? 'talk' : 'idle';
+      anim.current = swimming ? 'tread' : locked ? 'talk' : 'idle';
     }
 
     // --- jump: simple vertical ballistics, ground at y = 0 ---
@@ -248,7 +266,7 @@ export function LocalPlayer({ name }: { name: string }) {
     }
     // One-shot emote overrides the base animation while it lasts.
     const emote = useGame.getState().emote;
-    if (emote && mag <= 0.05 && !seated) anim.current = emote.until > Date.now() ? emote.name : anim.current;
+    if (emote && mag <= 0.05 && !seated && !swimming) anim.current = emote.until > Date.now() ? emote.name : anim.current;
     if (anim.current !== animState) setAnimState(anim.current);
 
     localPos.copy(g.position);
@@ -312,6 +330,9 @@ export function LocalPlayer({ name }: { name: string }) {
           });
       }
       useRestaurant.getState().setNear(near);
+      // nearest free chair / bench anywhere else
+      const free = !near && !useRestaurant.getState().seat && !useSeat.getState().seat;
+      useSeat.getState().setNear(free ? nearestSeat(g.position.x, g.position.z, (st) => !seatTaken(st.x, st.z)) : null);
     }
   });
 

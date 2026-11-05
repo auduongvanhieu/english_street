@@ -55,6 +55,7 @@ import { ShoppingMini } from './ui/area/AreaTabs';
 import { ItemCard } from './ui/area/ItemCard';
 import { BusPanel, MapPanel } from './ui/area/Travel';
 import { useArea } from './store/area';
+import { useSeat } from './store/seat';
 import { useRestaurant } from './store/restaurant';
 import { useFarm } from './store/farm';
 import { useShopping } from './store/shopping';
@@ -62,7 +63,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat };
 }
 
 export default function App() {
@@ -156,6 +157,10 @@ export default function App() {
         toggleHug();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
+      } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useSeat.getState().seat) {
+        useSeat.getState().stand();
+      } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useSeat.getState().near && !useRestaurant.getState().near) {
+        useSeat.getState().sit(useSeat.getState().near!);
       } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && area.nearBoard && area.current && !area.panel) {
         area.setPanel(true);
       } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useRestaurant.getState().near) {

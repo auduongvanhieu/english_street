@@ -2,6 +2,7 @@ import { vnHour } from '@es/shared';
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
+import { benchPair, frameSeats, registerSeats } from '../seats';
 
 /**
  * Station layout in the area's local frame (world/areas.ts areaFrame): x across the yard (-28 … 28), z from the
@@ -143,3 +144,12 @@ export function boardRows(now: number, n = 5): BoardRow[] {
   }
   return rows;
 }
+
+// seats: forecourt and platform benches (facing +z), waiting-room benches inside (facing the front wall… away from it)
+registerSeats(
+  frameSeats(FRAME, [
+    ...BENCHES.flatMap((b) => benchPair(b.x, b.z, 0)),
+    ...benchPair(-25, -5.05, Math.PI, 0.5),
+    ...benchPair(-22.6, -5.05, Math.PI, 0.5),
+  ]),
+);

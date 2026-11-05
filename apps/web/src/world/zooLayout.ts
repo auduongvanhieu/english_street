@@ -1,6 +1,7 @@
 import type { AnimalKind } from '../scene/chibi/buildAnimal';
 import type { Aabb } from './layout';
 import { registerBlockers } from './layout';
+import { benchPair, registerSeats } from './seats';
 
 /**
  * Sunny Hills Zoo (x 50…106, north of the road). Two rows of six enclosures with walkways in front, between
@@ -123,3 +124,6 @@ export function enclosurePath(e: Enclosure, idx: number, margin = 1.3): [number,
 export function feedingNow(serverMs: number): boolean {
   return Math.floor(serverMs / 60000) % 10 < 2;
 }
+
+// the two benches on the middle walkway (scene/areas/Zoo.tsx)
+registerSeats([62, 94].flatMap((x) => benchPair(x, -17.8, 0, 0.45)).map(([x, z, rot]) => ({ x, z, rot })));
