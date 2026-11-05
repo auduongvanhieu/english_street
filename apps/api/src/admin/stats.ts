@@ -33,6 +33,15 @@ async function computeDay(day: string): Promise<Row[]> {
     rows.set(k, r);
   };
   const active = new Set<string>();
+  // device dimensions: counted once per player and day (players join many times)
+  const devSeen = new Set<string>();
+  const devAdd = (pid: string | null, metric: string, key: string | undefined) => {
+    if (!key) return;
+    const k = `${pid}|${metric}|${key}`;
+    if (devSeen.has(k)) return;
+    devSeen.add(k);
+    add(metric, key);
+  };
   for (const e of events) {
     if (isTestPlayer(e.playerId)) continue; // admin "try the NPC" sessions
     const p = (e.props ?? {}) as Record<string, unknown>;
@@ -78,6 +87,16 @@ async function computeDay(day: string): Promise<Row[]> {
       case 'join':
         add('join_device', p.app ? 'app' : p.touch ? 'touch' : 'desktop');
         break;
+      case 'device': {
+        const os = String(p.os ?? '');
+        devAdd(e.playerId, 'dev_os', os || undefined);
+        devAdd(e.playerId, 'dev_os_version', os && p.osVersion ? `${os} ${String(p.osVersion).split('.')[0]}` : undefined);
+        devAdd(e.playerId, 'dev_model', p.model ? String(p.model) : undefined);
+        devAdd(e.playerId, 'dev_network', p.network === 'cellular' ? `cellular${p.radio ? ` ${p.radio}` : ''}` : p.network ? String(p.network) : 'unknown');
+        devAdd(e.playerId, 'dev_kind', String(p.kind ?? 'web'));
+        devAdd(e.playerId, 'dev_browser', p.kind === 'app' ? 'app' : p.browser ? String(p.browser) : undefined);
+        break;
+      }
       case 'translation_report':
         add('translation_report', String(p.area ?? ''));
         break;

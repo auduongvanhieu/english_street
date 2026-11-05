@@ -80,6 +80,10 @@ export function UserDetail({ id }: { id: string }) {
                     </dd>
                     <dt className="text-gray-500">{L('Ngôn ngữ', 'Language')}</dt>
                     <dd>{u.nativeLang || '—'}</dd>
+                    <dt className="text-gray-500">{L('Thiết bị', 'Device')}</dt>
+                    <dd>
+                      <DeviceDetails d={u.device} />
+                    </dd>
                     <dt className="text-gray-500">{L('Tạo lúc', 'Created')}</dt>
                     <dd>{fmtDate(u.createdAt)}</dd>
                     <dt className="text-gray-500">{L('Hoạt động', 'Active')}</dt>
@@ -181,6 +185,34 @@ export function UserDetail({ id }: { id: string }) {
         }}
       </Loaded>
     </Page>
+  );
+}
+
+/** Device of the last join: model, OS, browser / app, network, screen, GPU. */
+function DeviceDetails({ d }: { d: UserRow['device'] }) {
+  const L = useL();
+  if (!d || !d.os) return <span className="text-gray-500">{L('chưa có (người chơi chưa vào lại từ khi bật tính năng này)', 'not known yet (no join since this was added)')}</span>;
+  const net =
+    d.network === 'wifi'
+      ? 'Wi-Fi'
+      : d.network === 'cellular'
+        ? `${L('Dữ liệu di động', 'Mobile data')}${d.radio ? ` ${d.radio}` : ''}`
+        : d.network === 'ethernet'
+          ? L('Mạng dây', 'Cable')
+          : d.network === 'offline'
+            ? 'offline'
+            : L('không rõ', 'unknown');
+  return (
+    <span className="block text-xs leading-5">
+      <b>{d.model || (d.form === 'desktop' ? L('Máy tính', 'Computer') : d.form) || '—'}</b> · {d.os} {d.osVersion}
+      <br />
+      {d.kind === 'app' ? `App ${d.appVersion ?? ''}` : d.browser} · {net}
+      {d.speed ? ` (${d.speed}${d.downlinkMbps ? `, ~${d.downlinkMbps} Mbps` : ''})` : d.downlinkMbps ? ` (~${d.downlinkMbps} Mbps)` : ''}
+      <br />
+      <span className="text-gray-500">
+        {d.screen} {d.gpu ? `· ${d.gpu}` : ''}
+      </span>
+    </span>
   );
 }
 

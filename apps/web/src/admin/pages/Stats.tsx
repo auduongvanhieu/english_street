@@ -127,6 +127,11 @@ function PlayersTab({ d }: { d: Daily }) {
   const langs = byKey(d.rows, 'dau_lang');
   const levels = byKey(d.rows, 'dau_level');
   const devices = byKey(d.rows, 'join_device');
+  const os = byKey(d.rows, 'dev_os_version');
+  const net = byKey(d.rows, 'dev_network');
+  const models = byKey(d.rows, 'dev_model');
+  const browsers = byKey(d.rows, 'dev_browser');
+  const netLabel = (k: string) => (k === 'wifi' ? 'Wi-Fi' : k.startsWith('cellular') ? `${L('Di động', 'Mobile data')}${k.slice(8)}` : k === 'ethernet' ? L('Mạng dây', 'Cable') : L('Không rõ', 'Unknown'));
   const ret = useLoad(() => get<{ week: string; users: number; d1: number; d7: number; d30: number; n1: number; n7: number; n30: number }[]>('/admin/stats/retention'));
   const funnel = useLoad(() => get<{ step: string; n: number }[]>(`/admin/stats/funnel?days=${d.days.length}`), [d.days.length]);
   const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—');
@@ -156,6 +161,28 @@ function PlayersTab({ d }: { d: Daily }) {
         </ChartCard>
         <ChartCard title={L('Thiết bị (lượt vào game)', 'Device (joins)')} table={{ head: ['device', 'n'], rows: devices.map(([k, v]) => [k, v]) }}>
           <BarList rows={devices.map(([k, v]) => ({ key: k, label: k === 'app' ? L('App điện thoại', 'Phone app') : k === 'touch' ? L('Trình duyệt cảm ứng', 'Touch browser') : L('Máy tính', 'Desktop'), value: v }))} />
+        </ChartCard>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <ChartCard title={L('Hệ điều hành (người-ngày)', 'Operating system (player-days)')} table={{ head: ['os', 'n'], rows: os.map(([k, v]) => [k, v]) }}>
+          <BarList rows={os.map(([k, v]) => ({ key: k, label: k, value: v }))} />
+        </ChartCard>
+        <ChartCard
+          title={L('Mạng (người-ngày)', 'Network (player-days)')}
+          note={L('4G/5G chỉ biết được trong app iPhone; Android và trình duyệt chỉ cho biết Wi-Fi hay di động.', '4G/5G is only known in the iPhone app; Android and browsers only tell Wi-Fi or mobile data.')}
+          table={{ head: ['network', 'n'], rows: net.map(([k, v]) => [k, v]) }}
+        >
+          <BarList rows={net.map(([k, v]) => ({ key: k, label: netLabel(k), value: v }))} />
+        </ChartCard>
+        <ChartCard
+          title={L('Đời máy (người-ngày)', 'Device model (player-days)')}
+          note={L('Safari trên iPhone không cho biết đời máy; app thì có.', 'Safari on iPhone hides the model; the app shows it.')}
+          table={{ head: ['model', 'n'], rows: models.map(([k, v]) => [k, v]) }}
+        >
+          <BarList rows={models.map(([k, v]) => ({ key: k, label: k, value: v }))} />
+        </ChartCard>
+        <ChartCard title={L('Trình duyệt / app (người-ngày)', 'Browser / app (player-days)')} table={{ head: ['browser', 'n'], rows: browsers.map(([k, v]) => [k, v]) }}>
+          <BarList rows={browsers.map(([k, v]) => ({ key: k, label: k === 'app' ? L('App điện thoại', 'Phone app') : k, value: v }))} />
         </ChartCard>
       </div>
       <Card title={L('Phễu: người mới đi được tới đâu', 'Funnel: how far new players get')}>

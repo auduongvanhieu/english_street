@@ -27,6 +27,7 @@ const PUBLIC_USER = {
   mutedUntil: true,
   placementDoneAt: true,
   reviewsDone: true,
+  device: true,
 } as const;
 
 const ListQuery = z.object({

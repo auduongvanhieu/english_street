@@ -4,6 +4,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   CLOTH_COLORS,
+  DeviceInfoSchema,
+  maskProfanity,
   avatarLook,
   checkLook,
   itemPrice,
@@ -31,6 +33,7 @@ import { allowAuth, limiter } from '../npc/ratelimit';
 import { areaStats } from './play';
 import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
+import { prisma } from '../plugins/prisma';
 import { isBanned, userStatus } from '../moderation';
 import { HUMAN_PASS_TTL_S, signToken as signShared } from '@es/shared/token';
 
@@ -184,6 +187,26 @@ export function accountRoutes(repo: AttemptRepo) {
       const v = await repo.reviewVocab(id, body.data.id, body.data.grade);
       if (!v) return reply.code(404).send({ error: 'not_found' });
       return toDto(v);
+    });
+
+    // Joining the street: the name the guest chose (accounts keep theirs) and the device they play on.
+    app.post('/me/hello', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`hello:${id}`, 10, 60))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ name: z.string().max(40).optional(), device: z.unknown().optional() }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const clean = maskProfanity((body.data.name ?? '').replace(/[^\p{L}\p{N}\- ]/gu, '').trim().slice(0, 20));
+      const prev = await repo.getUser(id);
+      // guests are known by the name they type; accounts keep their own name
+      await repo.ensureUser(id, !prev?.email && clean.length >= 2 ? clean : (prev?.name ?? 'Guest'));
+      const d = DeviceInfoSchema.safeParse(body.data.device ?? {});
+      if (d.success && repo.name === 'postgres') {
+        await prisma.user.update({ where: { id }, data: { device: d.data as object } }).catch(() => undefined);
+        const { kind, os, osVersion, model, form, browser, network, radio } = d.data;
+        await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio }).filter(([, v]) => v !== undefined)) });
+      }
+      return { ok: true };
     });
 
     // Learner's own language (translations everywhere). '' is not accepted: pick one, 'en' = no translation.

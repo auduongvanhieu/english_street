@@ -57,6 +57,8 @@ model User {
   tokenVersion Int      @default(0)
   /// Admin site two-step sign-in (TOTP secret, base32); null = off.
   totpSecret   String?
+  /// Last device the player joined with (DeviceInfo from @es/shared): model, OS, network…
+  device       Json     @default("{}")
 
   attempts QuestAttempt[]
   vocab    VocabEntry[]

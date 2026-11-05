@@ -2,7 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -53,10 +56,58 @@ class NativeBridge {
       ),
     );
     controller.addJavaScriptHandler(handlerName: 'tts.stop', callback: (_) => _tts.stop());
+    controller.addJavaScriptHandler(handlerName: 'device.info', callback: (_) => _deviceInfo());
     controller.addJavaScriptHandler(handlerName: 'haptic', callback: (args) {
       final kind = _arg(args, 'kind');
       return kind == 'medium' ? HapticFeedback.mediumImpact() : HapticFeedback.lightImpact();
     });
+  }
+
+  // ---------------------------------------------------------------- device (admin stats: model, OS, network)
+  static const _net = MethodChannel('es/net');
+
+  /// Model, OS version and network for the admin site (apps/web/src/net/device.ts merges it).
+  Future<Map<String, Object?>> _deviceInfo() async {
+    final out = <String, Object?>{'kind': 'app'};
+    try {
+      final d = DeviceInfoPlugin();
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final i = await d.iosInfo;
+        out['os'] = i.systemName == 'iPadOS' ? 'iPadOS' : 'iOS';
+        out['osVersion'] = i.systemVersion;
+        out['model'] = i.modelName.isNotEmpty ? i.modelName : i.utsname.machine;
+        out['form'] = i.model.toLowerCase().contains('ipad') ? 'tablet' : 'phone';
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        final a = await d.androidInfo;
+        out['os'] = 'Android';
+        out['osVersion'] = a.version.release;
+        final brand = a.manufacturer.isEmpty ? '' : '${a.manufacturer[0].toUpperCase()}${a.manufacturer.substring(1)} ';
+        out['model'] = a.model.toLowerCase().startsWith(a.manufacturer.toLowerCase()) ? a.model : '$brand${a.model}';
+      }
+    } catch (_) {}
+    try {
+      final c = await Connectivity().checkConnectivity();
+      out['network'] = c.contains(ConnectivityResult.wifi)
+          ? 'wifi'
+          : c.contains(ConnectivityResult.mobile)
+              ? 'cellular'
+              : c.contains(ConnectivityResult.ethernet)
+                  ? 'ethernet'
+                  : c.contains(ConnectivityResult.none)
+                      ? 'offline'
+                      : 'unknown';
+    } catch (_) {}
+    try {
+      // iOS: 5G / 4G / 3G from CoreTelephony; Android: estimated bandwidth (4G/5G needs the phone permission)
+      final r = await _net.invokeMethod<Map<Object?, Object?>>('radio');
+      if (r?['radio'] is String && (r!['radio'] as String).isNotEmpty) out['radio'] = r['radio'];
+      final kbps = r?['downlinkKbps'];
+      if (kbps is int && kbps > 0) out['downlinkMbps'] = kbps / 1000;
+    } catch (_) {}
+    try {
+      out['appVersion'] = (await PackageInfo.fromPlatform()).version;
+    } catch (_) {}
+    return out;
   }
 
   /// Push a JSON event into the page.

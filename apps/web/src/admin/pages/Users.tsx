@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LANGS } from '@es/shared';
+import { LANGS, deviceSummary, type DeviceInfo } from '@es/shared';
 import { get } from '../api';
 import { go } from '../App';
 import { ago, fmtNum, useL } from '../i18n';
@@ -22,6 +22,7 @@ export interface UserRow {
   mutedUntil: string | null;
   placementDoneAt: string | null;
   reviewsDone: number;
+  device?: Partial<DeviceInfo> | null;
 }
 export function UserBadges({ u }: { u: Pick<UserRow, 'email' | 'role' | 'bannedUntil' | 'mutedUntil'> }) {
   const L = useL();
@@ -118,6 +119,7 @@ export function UsersPage() {
                   { key: 'flags', label: '', render: (u) => <UserBadges u={u} /> },
                   { key: 'level', label: L('Trình độ', 'Level'), render: (u) => u.cefrLevel },
                   { key: 'lang', label: L('Ngôn ngữ', 'Lang'), render: (u) => u.nativeLang || '—', wide: true },
+                  { key: 'dev', label: L('Thiết bị', 'Device'), render: (u) => <span className="text-xs text-gray-600">{deviceSummary(u.device) || '—'}</span> },
                   { key: 'xp', label: 'XP', render: (u) => fmtNum(u.xp), className: 'text-right tabular-nums' },
                   { key: 'coins', label: '🪙', render: (u) => fmtNum(u.coins), className: 'text-right tabular-nums' },
                   { key: 'streak', label: '🔥', render: (u) => u.streak, className: 'text-right', wide: true },

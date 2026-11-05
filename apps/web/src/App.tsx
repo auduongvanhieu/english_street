@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { deviceInfo } from './net/device';
 import { rideTo } from './ui/area/Travel';
 import { useBus } from './store/bus';
 import { BusOverlay } from './ui/BusOverlay';
@@ -230,6 +231,10 @@ export default function App() {
     setPicker(false);
     if (deepLink) history.replaceState(null, '', location.pathname);
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
+    // the name a guest typed + the device (admin site: player list, device stats)
+    void deviceInfo()
+      .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device }))
+      .catch(() => undefined);
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {

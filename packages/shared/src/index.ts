@@ -12,3 +12,4 @@ export * from './i18n';
 export * from './schemas/area';
 export * from './farm';
 export * from './world';
+export * from './device';
