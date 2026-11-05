@@ -1,33 +1,69 @@
-import { useRef } from 'react';
+import { Suspense, lazy, useRef, type ComponentType, type LazyExoticComponent } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import { AREAS, BUS_STOPS, FRONT_Z, GATE_X, areaAt, type AreaDef } from '../../world/areas';
+import type { AreaId } from '@es/shared';
+import { AREAS, BRIDGE_X, BUS_STOPS, SOUTH_MIN_Z, areaAt, areaById, areaFrame, frontZ, type AreaDef } from '../../world/areas';
+// Blockers of every area register when these load: they must not wait for the (lazy) scenes.
+import '../../world/zooLayout';
+import '../../world/farmLayout';
+import '../../world/buildings';
+import '../../world/places';
 import { localPos } from '../LocalPlayer';
 import { useArea } from '../../store/area';
 import { useGame } from '../../store/game';
-import { Merged, box, cyl, sphere } from './kit';
-import { Zoo } from './Zoo';
-import { Farm } from './Farm';
-import { Supermarket } from './Supermarket';
-import { Restaurant } from './Restaurant';
+import { Merged, NearArea, Sign, box, cyl, sphere } from './kit';
 
-/** Everything of the extended street: the two welcome gates, bus stops, area gates and the four areas. */
+/** Each area scene is its own chunk, loaded the first time the player comes near (NearArea), dropped when far. */
+const named = <K extends string>(p: Promise<Record<K, ComponentType>>, k: K) => p.then((m) => ({ default: m[k] }));
+const SCENES: Record<AreaId, LazyExoticComponent<ComponentType>> = {
+  zoo: lazy(() => named(import('./Zoo'), 'Zoo')),
+  farm: lazy(() => named(import('./Farm'), 'Farm')),
+  supermarket: lazy(() => named(import('./Supermarket'), 'Supermarket')),
+  restaurant: lazy(() => named(import('./Restaurant'), 'Restaurant')),
+  home: lazy(() => import('./places/Home')),
+  school: lazy(() => import('./places/School')),
+  clothes: lazy(() => import('./places/Clothes')),
+  cinema: lazy(() => import('./places/Cinema')),
+  station: lazy(() => import('./places/Station')),
+  hospital: lazy(() => import('./places/Hospital')),
+  hotel: lazy(() => import('./places/Hotel')),
+  sports: lazy(() => import('./places/Sports')),
+};
+
+const gateLabel = (ids: AreaId[], dir: -1 | 1) => (dir < 0 ? '← ' : '') + ids.map((id) => areaById(id).name).join(' · ') + (dir > 0 ? ' →' : '');
+
+/** Everything of the extended streets: welcome gates, bus stops, area gates, signposts and the areas. */
 export function Areas() {
   return (
     <group>
       <AreaWatcher />
-      <StreetGate x={-GATE_X} label="← FreshWay Supermarket · Grand Garden Restaurant" />
-      <StreetGate x={GATE_X} label="Sunny Hills Zoo · Green Valley Farm →" />
+      <StreetGate x={-46} label={gateLabel(['supermarket', 'restaurant'], -1)} />
+      <StreetGate x={46} label={gateLabel(['zoo', 'farm'], 1)} />
+      <StreetGate x={-170} label={gateLabel(['clothes', 'cinema'], -1)} />
+      <StreetGate x={170} label={gateLabel(['school', 'home'], 1)} />
+      {/* signposts at both ends of each bridge */}
+      {[-1, 1].map((s) => (
+        <group key={s}>
+          <Sign x={s * (BRIDGE_X + 1.9)} z={15.6} text="Bridge → South Bank" sub={s < 0 ? `${areaById('station').name} · ${areaById('hotel').name}` : `${areaById('sports').name} · ${areaById('hospital').name}`} color="#2f6b8a" />
+          <Sign x={s * (BRIDGE_X + 1.9)} z={SOUTH_MIN_Z + 1.4} rot={Math.PI} text="Bridge → Main Street" color="#2f6b8a" />
+        </group>
+      ))}
       {AREAS.map((a) => (
         <AreaGate key={a.id} a={a} />
       ))}
       {BUS_STOPS.map((s) => (
         <BusStop key={s.id} x={s.x} z={s.z} />
       ))}
-      <Zoo />
-      <Farm />
-      <Supermarket />
-      <Restaurant />
+      {AREAS.map((a) => {
+        const Scene = SCENES[a.id];
+        return (
+          <NearArea key={a.id} area={a}>
+            <Suspense fallback={null}>
+              <Scene />
+            </Suspense>
+          </NearArea>
+        );
+      })}
     </group>
   );
 }
@@ -72,8 +108,12 @@ function StreetGate({ x, label }: { x: number; label: string }) {
 /** Colourful arch over the gap in an area's front fence, with its name. */
 function AreaGate({ a }: { a: AreaDef }) {
   const w = a.doorW + 0.8;
+  const f = areaFrame(a);
+  // fence ends relative to the door, in the gate's own (possibly turned) frame
+  const left = -f.half - f.door;
+  const right = f.half - f.door;
   return (
-    <group position={[a.doorX, 0, FRONT_Z]}>
+    <group position={[a.doorX, 0, frontZ(a)]} rotation-y={f.rot}>
       <Merged
         build={(p) => {
           for (const sx of [-1, 1]) p.add(box(0.4, 6.2, 0.4), a.color, { p: [(sx * w) / 2, 3.1, 0] });
@@ -81,8 +121,8 @@ function AreaGate({ a }: { a: AreaDef }) {
           // front fence of the yard (gap in the middle)
           const half = a.doorW / 2;
           for (const [x0, x1] of [
-            [a.x0 - a.doorX, -half],
-            [half, a.x1 - a.doorX],
+            [left, -half],
+            [half, right],
           ] as const) {
             const len = x1 - x0;
             const n = Math.max(1, Math.round(len / 2));

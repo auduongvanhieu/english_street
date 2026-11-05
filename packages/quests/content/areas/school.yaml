@@ -1,0 +1,16 @@
+id: school
+title: school
+intro: Coming soon.
+categories:
+  - { id: main, label: Words }
+groups: []
+items:
+  - id: hello
+    en: hello
+    icon: 👋
+    pos: phrase
+    category: main
+    sentences:
+      - { en: Hello!, level: A1 }
+phrases: []
+quiz: []

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { BADGES, type AreaContentDto, type AreaId } from '@es/shared';
 import { useArea } from '../../store/area';
 import { useRestaurant } from '../../store/restaurant';
@@ -12,6 +12,7 @@ import { Sheet, SheetHeader } from '../Sheet';
 import { Line } from './common';
 import { Quiz } from './Quiz';
 import { FarmTab, MenuTab, ShoppingTab } from './AreaTabs';
+import { ACTIVITIES } from './activities';
 
 /** Tabs per area: the area's own activity first, then words, phrases and a quiz. */
 const EXTRA_TAB: Partial<Record<AreaId, { id: string; label: string }>> = {
@@ -20,7 +21,20 @@ const EXTRA_TAB: Partial<Record<AreaId, { id: string; label: string }>> = {
   supermarket: { id: 'shop', label: tk('🛒 Shopping') },
 };
 const NONE: string[] = [];
-const ITEMS_LABEL: Record<AreaId, string> = { zoo: tk('🦁 Animals'), farm: tk('🐄 Words'), restaurant: tk('🍽️ Food words'), supermarket: tk('🥛 Products') };
+const ITEMS_LABEL: Record<AreaId, string> = {
+  zoo: tk('🦁 Animals'),
+  farm: tk('🐄 Words'),
+  restaurant: tk('🍽️ Food words'),
+  supermarket: tk('🥛 Products'),
+  home: tk('🛋️ Home words'),
+  school: tk('✏️ School words'),
+  clothes: tk('👗 Clothes words'),
+  cinema: tk('🎞️ Film & book words'),
+  station: tk('🎫 Travel words'),
+  hospital: tk('🩺 Health words'),
+  hotel: tk('🛏️ Hotel words'),
+  sports: tk('🏅 Sports words'),
+};
 
 export function AreaChip() {
   const t = useT();
@@ -118,7 +132,8 @@ export function AreaPanel() {
   }, [current, panel, content, load]);
   if (!current || !panel) return null;
   const a = areaById(current);
-  const extra = EXTRA_TAB[current];
+  const act = ACTIVITIES[current];
+  const extra = EXTRA_TAB[current] ?? (act ? { id: 'activity', label: act.label } : undefined);
   const tabs = [...(extra ? [extra] : []), { id: 'items', label: ITEMS_LABEL[current] }, { id: 'phrases', label: tk('💬 Phrases') }, { id: 'quiz', label: tk('❓ Quiz') }];
   const active = tabs.some((x) => x.id === tab) ? tab : tabs[0]!.id;
   return (
@@ -158,6 +173,10 @@ export function AreaPanel() {
           <FarmTab content={content} />
         ) : active === 'menu' ? (
           <MenuTab content={content} />
+        ) : active === 'activity' && act ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-gray-500">{t('Loading…')}</div>}>
+            <act.C content={content} />
+          </Suspense>
         ) : (
           <ShoppingTab content={content} />
         )}

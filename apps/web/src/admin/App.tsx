@@ -1,3 +1,4 @@
+import type { AreaId } from '@es/shared';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSession } from './api';
 import { useAdminLang, useL } from './i18n';
@@ -66,6 +67,14 @@ const NAV: { vi: string; en: string; items: NavItem[] }[] = [
       { path: 'area/zoo', icon: '🦁', vi: 'Sở thú', en: 'Zoo' },
       { path: 'area/supermarket', icon: '🛒', vi: 'Siêu thị', en: 'Supermarket' },
       { path: 'area/restaurant', icon: '🍽️', vi: 'Nhà hàng', en: 'Restaurant' },
+      { path: 'area/home', icon: '🏠', vi: 'Ngôi nhà', en: 'Home' },
+      { path: 'area/school', icon: '🏫', vi: 'Trường học', en: 'School' },
+      { path: 'area/clothes', icon: '👕', vi: 'Shop quần áo', en: 'Clothes shop' },
+      { path: 'area/cinema', icon: '🎬', vi: 'Rạp phim & thư viện', en: 'Cinema & library' },
+      { path: 'area/station', icon: '🚉', vi: 'Nhà ga', en: 'Station' },
+      { path: 'area/hospital', icon: '💊', vi: 'Bệnh viện', en: 'Hospital' },
+      { path: 'area/hotel', icon: '🏨', vi: 'Khách sạn', en: 'Hotel' },
+      { path: 'area/sports', icon: '⚽', vi: 'Công viên thể thao', en: 'Sports park' },
       { path: 'world', icon: '🌍', vi: 'Tên thú, luật nông trại, hết hàng', en: 'Animal names, farm rules, sold out' },
       { path: 'translations', icon: '🌐', vi: 'Bản dịch', en: 'Translations' },
     ],
@@ -151,7 +160,7 @@ function Routes({ route }: { route: string[] }): ReactNode {
     case 'placement':
       return b ? <DocEditor kind={a} id={b} isNew={c === 'new'} /> : <ContentList kind={a} />;
     case 'area':
-      return <AreaEditor id={b as 'zoo'} />;
+      return <AreaEditor id={b as AreaId} />;
     case 'world':
       return <WorldEditor />;
     case 'translations':

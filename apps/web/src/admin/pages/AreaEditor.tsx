@@ -1,17 +1,24 @@
 import { useMemo, useState } from 'react';
-import type { AreaContent, AreaItem, AreaQuizQuestion } from '@es/shared';
+import type { AreaContent, AreaId, AreaItem, AreaQuizQuestion } from '@es/shared';
 import { get } from '../api';
 import { EditorShell, ListEditor, useDoc } from '../content';
 import { useL } from '../i18n';
 import { Badge, Btn, Card, Check, Field, ListInput, Modal, Num, Page, Select, Table, Text, Area, Loaded, useLoad } from '../ui';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
-type AreaId = 'zoo' | 'farm' | 'restaurant' | 'supermarket';
 const AREA_TITLE: Record<AreaId, [string, string, string]> = {
   zoo: ['Sở thú', 'Zoo', '🦁'],
   farm: ['Nông trại', 'Farm', '🐄'],
   restaurant: ['Nhà hàng — thực đơn', 'Restaurant — menu', '🍽️'],
   supermarket: ['Siêu thị — sản phẩm', 'Supermarket — products', '🛒'],
+  home: ['Ngôi nhà', 'Cozy Home', '🏠'],
+  school: ['Trường học', 'Maple School', '🏫'],
+  clothes: ['Shop quần áo', 'Style Corner — clothes', '👕'],
+  cinema: ['Rạp phim & thư viện', 'Star Cinema & Library', '🎬'],
+  station: ['Nhà ga', 'Central Station', '🚉'],
+  hospital: ['Bệnh viện & nhà thuốc', 'City Hospital', '💊'],
+  hotel: ['Khách sạn', 'Riverside Hotel', '🏨'],
+  sports: ['Công viên thể thao', 'Sunny Sports Park', '⚽'],
 };
 
 export function AreaEditor({ id }: { id: AreaId }) {
@@ -37,7 +44,9 @@ export function AreaEditor({ id }: { id: AreaId }) {
 
 function AreaHint({ id }: { id: AreaId }) {
   const L = useL();
-  const text: Record<AreaId, string> = {
+  const generic = L('Thẻ từ, mẫu câu và quiz của khu. Ẩn một từ để tạm bỏ khỏi game.', 'Word cards, phrases and quiz of this area. Hide a word to take it out for now.');
+  const text: Partial<Record<AreaId, string>> = {
+    clothes: L('Quần áo: giá ($) dùng ở phòng thử đồ. Món hết hàng / giảm giá đặt ở mục "hết hàng" của trang Thế giới.', 'Clothes: prices ($) are used in the fitting room. Sold-out items are set under "sold out" on the World page.'),
     zoo: L('Thẻ từ về con vật. Tên riêng của từng con trong chuồng sửa ở mục "Tên thú, luật nông trại".', 'Animal word cards. The names of the animals in each enclosure live under "Animal names, farm rules".'),
     farm: L('Thẻ từ của nông trại. Giá bán, sản lượng và thời gian lớn của cây trồng sửa ở mục "Tên thú, luật nông trại".', 'Farm word cards. Crop prices, harvest size and growing time live under "Animal names, farm rules".'),
     restaurant: L('Thực đơn: giá ($), mô tả (ghi chú), chất gây dị ứng. NPC và quest cặp đôi dùng giá ở đây. Món hết hàng hôm nay đặt ở mục "hết hàng".', 'Menu: price ($), description (note), allergens. The NPCs and pair quests use these prices. Sold-out dishes are set under "sold out".'),
@@ -45,7 +54,7 @@ function AreaHint({ id }: { id: AreaId }) {
   };
   return (
     <p className="mb-3 text-sm text-gray-600">
-      {text[id]}{' '}
+      {text[id] ?? generic}{' '}
       <a className="text-blue-700 underline" href="#/world">
         {L('Mở', 'Open')} →
       </a>

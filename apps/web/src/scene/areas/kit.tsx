@@ -6,7 +6,7 @@ import { Part, box, cyl, sphere } from '../chibi/buildChibi';
 import { chibiMaterial } from '../chibi/buildChibi';
 import { localPos } from '../LocalPlayer';
 import { useSettings } from '../../store/settings';
-import type { AreaDef } from '../../world/areas';
+import { areaFrame, type AreaDef } from '../../world/areas';
 
 export { Part, box, cyl, sphere };
 
@@ -100,25 +100,42 @@ export function Sign({ x, z, text, sub, rot = 0, color = '#2f6b3a', w, y = 1.5 }
   );
 }
 
-/** Mounts children only while the local player is within `range` metres of the area (x-wise). Checked twice a second. */
+/**
+ * Mounts children only while the local player is within `range` metres of the area (x-wise, and on its side
+ * of the river). Checked twice a second.
+ */
 export function NearArea({ area, range, children }: { area: AreaDef; range?: number; children: React.ReactNode }) {
   const low = useSettings((s) => s.quality) === 'low';
   const r = range ?? (low ? 25 : 42);
-  const near = useNear(area.x0 - r, area.x1 + r);
+  const near = useNear(area.x0 - r, area.x1 + r, area.side === 'north' ? -999 : 8, area.side === 'north' ? 30 : 999);
   return near ? <>{children}</> : null;
 }
 
-export function useNear(x0: number, x1: number) {
-  const [near, setNear] = useState(() => localPos.x > x0 && localPos.x < x1);
+export function useNear(x0: number, x1: number, z0 = -999, z1 = 999) {
+  const test = () => localPos.x > x0 && localPos.x < x1 && localPos.z > z0 && localPos.z < z1;
+  const [near, setNear] = useState(test);
   const acc = useRef(0);
   useFrame((_, dt) => {
     acc.current += dt;
     if (acc.current < 0.5) return;
     acc.current = 0;
-    const n = localPos.x > x0 && localPos.x < x1;
+    const n = test();
     if (n !== near) setNear(n);
   });
   return near;
+}
+
+/**
+ * The local frame of an area as a group: children are written in local coordinates (origin = middle of the
+ * front fence, local -z into the yard, see world/areas.ts areaFrame), so one scene works north or south of a road.
+ */
+export function AreaGroup({ area, children }: { area: AreaDef; children: React.ReactNode }) {
+  const f = areaFrame(area);
+  return (
+    <group position={[f.ox, 0, f.oz]} rotation-y={f.rot}>
+      {children}
+    </group>
+  );
 }
 
 /** Instanced copies of one small merged prop (e.g. products on shelves). */

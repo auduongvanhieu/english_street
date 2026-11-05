@@ -33,8 +33,8 @@ export function GroundClick() {
   });
   return (
     <group>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, -10]} material={hitMat} onClick={onClick}>
-        <planeGeometry args={[400, 90]} />
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 24]} material={hitMat} onClick={onClick}>
+        <planeGeometry args={[620, 116]} />
       </mesh>
       <mesh ref={ring} rotation-x={-Math.PI / 2} visible={false} renderOrder={3}>
         <ringGeometry args={[0.32, 0.45, 28]} />

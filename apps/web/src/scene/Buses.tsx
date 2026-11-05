@@ -8,7 +8,7 @@ import { chibiMaterial } from './chibi/buildChibi';
 import { useGame } from '../store/game';
 import { localBusTag } from '../store/bus';
 import { serverNow } from '../net/client';
-import { BUS_LANE_Z, busPose, decodeBus, tagLive, type BusTag, type StopId } from '../world/bus';
+import { busPose, decodeBus, tagLive, type BusTag, type StopId } from '../world/bus';
 
 /**
  * The shared buses: one per (stop, slot) that somebody is boarding or arriving with. Every client derives the
@@ -113,7 +113,7 @@ function Bus({ stop, slot }: { stop: StopId; slot: number }) {
   });
   const mat = chibiMaterial();
   return (
-    <group ref={g} position={[0, 0, BUS_LANE_Z]}>
+    <group ref={g}>
       <mesh geometry={geo.bodyGeo} material={mat} castShadow receiveShadow />
       <mesh ref={doorL} geometry={geo.doorGeo} material={mat} position={[-2.72, 1.45, 1.25]} scale={[0.5, 1, 1]} />
       <mesh ref={doorR} geometry={geo.doorGeo} material={mat} position={[-2.08, 1.45, 1.25]} scale={[0.5, 1, 1]} />

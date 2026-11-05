@@ -5,7 +5,7 @@ import { serverNow } from '../net/client';
 import { useWorld } from '../store/world';
 import { sky, updateSky } from '../world/sky';
 import { TILE } from '../world/layout';
-import { LAMP_ARM, LAMP_H, LAMP_POST_Z } from '../world/layout';
+import { LAMP_ARM, LAMP_H, LAMP_POST_Z, LAMP_ROADS } from '../world/layout';
 import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { cloudTexture } from './Horizon';
 import { localPos } from './LocalPlayer';
@@ -258,10 +258,10 @@ export function Rain({ low }: { low: boolean }) {
 /** Lamp heads: every even column, both kerbs, at the end of the arm over the road (world/layout.ts). */
 const LAMP_Y = LAMP_H - 0.14;
 const LAMP_Z = LAMP_POST_Z - LAMP_ARM;
-const LAMP_X_MAX = 85; // tiles, as far as the road runs (Horizon ROAD_END_X)
+/** [x, z of the head, road centre z] for every lamp. */
 function lampSpots() {
-  const out: [number, number][] = [];
-  for (let tx = -LAMP_X_MAX; tx <= LAMP_X_MAX; tx++) if (tx % 2 === 0) for (const s of [-1, 1]) out.push([tx * TILE, s * LAMP_Z]);
+  const out: [number, number, number][] = [];
+  for (const { road, txMax } of LAMP_ROADS) for (let tx = -txMax; tx <= txMax; tx++) if (tx % 2 === 0) for (const s of [-1, 1]) out.push([tx * TILE, road + s * LAMP_Z, road]);
   return out;
 }
 
@@ -316,11 +316,12 @@ export function StreetLamps({ low }: { low: boolean }) {
     const turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
     const none = new THREE.Quaternion();
     const one = new THREE.Vector3(1, 1, 1);
-    spots.forEach(([x, z], i) => {
-      posts.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0, Math.sign(z) * LAMP_POST_Z), z > 0 ? none : turn, one));
+    spots.forEach(([x, z, road], i) => {
+      const side = Math.sign(z - road);
+      posts.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0, road + side * LAMP_POST_Z), side > 0 ? none : turn, one));
       bulbs.current?.setMatrixAt(i, m.makeTranslation(x, LAMP_Y, z));
       // the pool sits a little towards the road centre, under the lamp arm
-      pools.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0.03, z * 0.8), q, new THREE.Vector3(5, 5, 1)));
+      pools.current?.setMatrixAt(i, m.compose(new THREE.Vector3(x, 0.03, road + (z - road) * 0.8), q, new THREE.Vector3(5, 5, 1)));
     });
     for (const im of [bulbs.current, pools.current, posts.current]) {
       if (!im) continue;
@@ -340,15 +341,17 @@ export function StreetLamps({ low }: { low: boolean }) {
     // real point lights at the lamps nearest the player
     if (!low) {
       const base = Math.round(localPos.x / (2 * TILE)) * 2 * TILE;
+      const road = localPos.z > 30 ? LAMP_ROADS[1]!.road : 0;
+      const rz = localPos.z - road;
       const near: [number, number][] = [
         [base, LAMP_Z],
         [base, -LAMP_Z],
-        [base + (localPos.x > base ? 8 : -8), Math.sign(localPos.z || 1) * LAMP_Z],
+        [base + (localPos.x > base ? 8 : -8), Math.sign(rz || 1) * LAMP_Z],
       ];
       lights.current.forEach((l, i) => {
         if (!l) return;
         // just under the lamp head, towards the road, so the post itself is not floodlit
-        l.position.set(near[i]![0], LAMP_Y - 0.45, near[i]![1] * 0.85);
+        l.position.set(near[i]![0], LAMP_Y - 0.45, road + near[i]![1] * 0.85);
         l.distance = 12;
         l.intensity = k * 4;
       });

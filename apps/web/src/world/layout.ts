@@ -1,5 +1,5 @@
 import { WORLD_BOUNDS } from '@es/shared';
-import { STREET_END_X, areaFenceBlockers, walkable } from './areas';
+import { SOUTH_END_X, SOUTH_ROAD_Z, STREET_END_X, areaFenceBlockers, walkable } from './areas';
 
 /** One Kenney city tile = TILE world units (metres). */
 export const TILE = 4;
@@ -67,14 +67,19 @@ export const PAVE_Z = (PAVE_OUTER + ROAD_HALF) / 2;
 export const LAMP_POST_Z = ROAD_HALF - 0.3;
 export const LAMP_H = 4.2;
 export const LAMP_ARM = 1.2;
-/** Road and its two pavements at column tx (shared by the street and its continuation beyond the fences). */
-export function streetCross(tx: number): TilePlacement[] {
+/** Road and its two pavements at column tx (shared by the street and its continuation beyond the fences). `z0` = road centre. */
+export function streetCross(tx: number, z0 = 0): TilePlacement[] {
   return [
-    { model: 'pavement', tx, tz: -1, z: -PAVE_Z, sz: PAVE_SZ },
-    { model: 'road-straight', tx, tz: 0, rot: ROAD_ROT, sz: ROAD_SZ },
-    { model: 'pavement', tx, tz: 1, z: PAVE_Z, sz: PAVE_SZ },
+    { model: 'pavement', tx, tz: -1, z: z0 - PAVE_Z, sz: PAVE_SZ },
+    { model: 'road-straight', tx, tz: 0, z: z0 || undefined, rot: ROAD_ROT, sz: ROAD_SZ },
+    { model: 'pavement', tx, tz: 1, z: z0 + PAVE_Z, sz: PAVE_SZ },
   ];
 }
+/** Lamp columns: the main road as far as it runs, the south-bank road between its ends. `road` = centre z. */
+export const LAMP_ROADS: { road: number; txMax: number }[] = [
+  { road: 0, txMax: 85 },
+  { road: SOUTH_ROAD_Z, txMax: Math.floor(SOUTH_END_X / TILE) },
+];
 
 export interface ShopDef {
   id: string;
@@ -167,10 +172,13 @@ export interface Circle {
 /** Street lamp posts (even tx, both kerbs), as round obstacles. */
 export function buildLampPosts(): Circle[] {
   const out: Circle[] = [];
-  // The street (and its lamp posts) continues to the end fences.
-  for (let tx = -42; tx <= 42; tx++) {
-    if (tx % 2 !== 0) continue;
-    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * LAMP_POST_Z, r: 0.2, h: 5 });
+  // The streets (and their lamp posts) continue to the end fences.
+  for (const { road, txMax } of LAMP_ROADS) {
+    const max = Math.min(txMax, Math.ceil(STREET_END_X / TILE));
+    for (let tx = -max; tx <= max; tx++) {
+      if (tx % 2 !== 0) continue;
+      for (const s of [-1, 1]) out.push({ x: tx * TILE, z: road + s * LAMP_POST_Z, r: 0.2, h: 5 });
+    }
   }
   return out;
 }

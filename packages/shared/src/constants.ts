@@ -23,11 +23,12 @@ export const PROXIMITY_RADIUS = 8;
 /** Walkable world bounds (world units). Street runs along X; shops are north (negative Z). */
 /** maxZ reaches the river's grass bank (water starts at z = 18) so you can pick up a duck. */
 /**
- * Outer box of everything walkable: the street runs to the end fences at x = ±170 and the themed areas
- * (zoo, farm, supermarket, restaurant) reach north to z = -30. The exact walkable shape (street corridor +
- * area yards) is checked client-side in apps/web/src/world/areas.ts; the server only clamps to this box.
+ * Outer box of everything walkable: the main street runs to the end fences at x = ±294 with the themed areas
+ * north of it (to z = -29.5); across the river (bridges at x = ±50) the south-bank road has more areas south
+ * of it (to z = 77.5). The exact walkable shape is checked client-side in apps/web/src/world/areas.ts; the
+ * server only clamps to this box.
  */
-export const WORLD_BOUNDS = { minX: -169.5, maxX: 169.5, minZ: -29.5, maxZ: 17.2 } as const;
+export const WORLD_BOUNDS = { minX: -293.5, maxX: 293.5, minZ: -29.5, maxZ: 77.5 } as const;
 /** Distance from an NPC within which the player can start talking. */
 export const INTERACT_RADIUS = 2.6;
 /** Distance within which a shout (text or voice) is heard. */

@@ -23,11 +23,32 @@ export const BADGES = [
   { id: 'farm-hand', name: 'Farm Hand', desc: 'Learn 15 words at the farm and pass a farm quiz', icon: '🐄' },
   { id: 'foodie', name: 'Foodie', desc: 'Learn 15 words at the restaurant and pass a restaurant quiz', icon: '🍽️' },
   { id: 'smart-shopper', name: 'Smart Shopper', desc: 'Learn 15 words at the supermarket and pass a supermarket quiz', icon: '🛒' },
+  { id: 'home-sweet-home', name: 'Home Sweet Home', desc: 'Learn 15 words at Cozy Home and pass a home quiz', icon: '🏠' },
+  { id: 'star-pupil', name: 'Star Pupil', desc: 'Learn 15 words at Maple School and pass a school quiz', icon: '🏫' },
+  { id: 'fashionista', name: 'Fashionista', desc: 'Learn 15 words at Style Corner and pass a clothes quiz', icon: '👕' },
+  { id: 'film-buff', name: 'Film Buff', desc: 'Learn 15 words at the cinema and library and pass a quiz there', icon: '🎬' },
+  { id: 'globetrotter', name: 'Globetrotter', desc: 'Learn 15 words at Central Station and pass a station quiz', icon: '🚉' },
+  { id: 'first-aider', name: 'First Aider', desc: 'Learn 15 words at City Hospital and pass a hospital quiz', icon: '💊' },
+  { id: 'hotel-pro', name: 'Hotel Pro', desc: 'Learn 15 words at Riverside Hotel and pass a hotel quiz', icon: '🏨' },
+  { id: 'sports-star', name: 'Sports Star', desc: 'Learn 15 words at Sunny Sports Park and pass a sports quiz', icon: '⚽' },
 ] as const;
 export type BadgeId = (typeof BADGES)[number]['id'];
 /** Word cards to open in an area for its badge (with a passed quiz). */
 export const AREA_BADGE_WORDS = 15;
-export const AREA_BADGE = { zoo: 'zoo-explorer', farm: 'farm-hand', restaurant: 'foodie', supermarket: 'smart-shopper' } as const;
+export const AREA_BADGE = {
+  zoo: 'zoo-explorer',
+  farm: 'farm-hand',
+  restaurant: 'foodie',
+  supermarket: 'smart-shopper',
+  home: 'home-sweet-home',
+  school: 'star-pupil',
+  clothes: 'fashionista',
+  cinema: 'film-buff',
+  station: 'globetrotter',
+  hospital: 'first-aider',
+  hotel: 'hotel-pro',
+  sports: 'sports-star',
+} as const;
 
 /** @deprecated kept as an alias: the avatar is now a full character look (see avatar.ts). */
 export const AvatarConfigV2Schema = AvatarSchema;

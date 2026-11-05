@@ -1,5 +1,5 @@
-import type { AreaId } from '@es/shared';
-import { BUS_STOPS } from './areas';
+import { AREA_IDS } from '@es/shared';
+import { BUS_STOPS, SOUTH_ROAD_Z, type StopId } from './areas';
 
 /**
  * Bus rides with a real bus. Buses run in shared "slots" every BUS_SLOT_MS on the server clock: everyone who
@@ -12,14 +12,18 @@ import { BUS_STOPS } from './areas';
  *    0 … 2.6 doors open; riders walk in (boarding) or step out (arriving)
  *  2.6 … 6   bus pulls away to the west and leaves
  */
-export type StopId = 'main' | AreaId;
+export type { StopId };
 export const BUS_SLOT_MS = 4000;
 /** Bus centre line on the road (south lane) and where the door is relative to the centre (bus faces −x). */
 export const BUS_LANE_Z = 1.4;
 export const DOOR_DX = -2.4;
-export const DOOR_Z = BUS_LANE_Z + 1.35;
+const DOOR_DZ = BUS_LANE_Z + 1.35;
+/** Centre z of the road a stop is on (main street 0, south bank SOUTH_ROAD_Z). */
+export const stopRoad = (id: StopId) => BUS_STOPS.find((s) => s.id === id)?.road ?? 0;
+/** z of the bus door on the pavement side. */
+export const doorZ = (id: StopId) => stopRoad(id) + DOOR_DZ;
 /** Where riders wait / step off on the pavement. */
-export const kerbPoint = (stopX: number) => ({ x: stopX + DOOR_DX, z: 3.9 });
+export const kerbPoint = (id: StopId) => ({ x: stopX(id) + DOOR_DX, z: stopRoad(id) + 3.9 });
 const IN_FROM = 26; // metres east of the stop when it appears
 const OUT_TO = 34;
 export const T_ARRIVE = -3;
@@ -50,7 +54,7 @@ export function busPose(stop: StopId, slot: number, serverNow: number): BusPose 
   if (t < 0) x = sx + IN_FROM * (t / T_ARRIVE) ** 2; // braking
   else if (t > T_LEAVE) x = sx - OUT_TO * ((t - T_LEAVE) / (T_GONE - T_LEAVE)) ** 2; // pulling away
   const door = t < T_DOORS_OPEN - 0.3 || t > T_DOORS_CLOSE + 0.3 ? 0 : t < T_DOORS_OPEN ? (t - (T_DOORS_OPEN - 0.3)) / 0.3 : t > T_DOORS_CLOSE ? 1 - (t - T_DOORS_CLOSE) / 0.3 : 1;
-  return { x, z: BUS_LANE_Z, door: Math.max(0, Math.min(1, door)), visible: t >= T_ARRIVE - 0.2 && t <= T_GONE };
+  return { x, z: stopRoad(stop) + BUS_LANE_Z, door: Math.max(0, Math.min(1, door)), visible: t >= T_ARRIVE - 0.2 && t <= T_GONE };
 }
 
 export interface BusTag {
@@ -58,7 +62,7 @@ export interface BusTag {
   stop: StopId;
   slot: number;
 }
-const RE = /^([da]):(main|zoo|farm|supermarket|restaurant):(\d{1,12})$/;
+const RE = new RegExp(`^([da]):(main|${AREA_IDS.join('|')}):(\\d{1,12})$`);
 export const encodeBus = (b: BusTag) => `${b.phase}:${b.stop}:${b.slot}`;
 export function decodeBus(s: string | undefined): BusTag | null {
   const m = s ? RE.exec(s) : null;
@@ -77,9 +81,11 @@ export const tagLive = (b: BusTag, serverNow: number) => {
   return t >= T_ARRIVE - 25 && t <= T_GONE;
 };
 
-/** Nearest stop to a position. */
-export function nearestStop(x: number): StopId {
-  let best = BUS_STOPS[0]!;
-  for (const s of BUS_STOPS) if (Math.abs(s.x - x) < Math.abs(best.x - x)) best = s;
+/** Nearest stop to a position, on the same side of the river. */
+export function nearestStop(x: number, z = 0): StopId {
+  const road = z > (SOUTH_ROAD_Z + 17) / 2 + 4 ? SOUTH_ROAD_Z : 0;
+  const list = BUS_STOPS.filter((s) => s.road === road);
+  let best = list[0]!;
+  for (const s of list) if (Math.abs(s.x - x) < Math.abs(best.x - x)) best = s;
   return best.id;
 }

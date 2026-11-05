@@ -3,7 +3,7 @@ import { WORLD_BOUNDS } from '@es/shared';
 import { api, get } from '../api';
 import { BarList, ChartCard, DailyColumns, HeatMap, StatTile, type MapShape } from '../charts';
 import { fmtNum, useL } from '../i18n';
-import { AREAS } from '../../world/areas';
+import { AREAS, BRIDGE_X, SOUTH_END_X, SOUTH_FRONT_Z, SOUTH_MIN_Z, yardRect } from '../../world/areas';
 import { SHOPS, TILE } from '../../world/layout';
 import { AsyncBtn, Btn, Card, Loaded, Page, Select, Tabs, useLoad } from '../ui';
 
@@ -36,7 +36,21 @@ function downloadCsv(name: string, head: string[], rows: (string | number)[][]) 
   URL.revokeObjectURL(a.href);
 }
 
-const AREA_LABEL: Record<string, [string, string]> = { zoo: ['🦁 Sở thú', '🦁 Zoo'], farm: ['🐄 Nông trại', '🐄 Farm'], restaurant: ['🍽️ Nhà hàng', '🍽️ Restaurant'], supermarket: ['🛒 Siêu thị', '🛒 Supermarket'], main: ['🏙️ Phố chính', '🏙️ Main street'] };
+const AREA_LABEL: Record<string, [string, string]> = {
+  zoo: ['🦁 Sở thú', '🦁 Zoo'],
+  farm: ['🐄 Nông trại', '🐄 Farm'],
+  restaurant: ['🍽️ Nhà hàng', '🍽️ Restaurant'],
+  supermarket: ['🛒 Siêu thị', '🛒 Supermarket'],
+  home: ['🏠 Ngôi nhà', '🏠 Home'],
+  school: ['🏫 Trường học', '🏫 School'],
+  clothes: ['👕 Shop quần áo', '👕 Clothes shop'],
+  cinema: ['🎬 Rạp phim & thư viện', '🎬 Cinema & library'],
+  station: ['🚉 Nhà ga', '🚉 Station'],
+  hospital: ['💊 Bệnh viện', '💊 Hospital'],
+  hotel: ['🏨 Khách sạn', '🏨 Hotel'],
+  sports: ['⚽ Công viên thể thao', '⚽ Sports park'],
+  main: ['🏙️ Phố chính', '🏙️ Main street'],
+};
 
 export function StatsPage() {
   const L = useL();
@@ -310,7 +324,12 @@ function EconomyTab({ d }: { d: Daily }) {
 /** Street map: themed areas, street corridor and shop fronts. */
 function mapShapes(): MapShape[] {
   const shapes: MapShape[] = [{ kind: 'street', x0: WORLD_BOUNDS.minX, x1: WORLD_BOUNDS.maxX, z0: -5.5, z1: 17.2 }];
-  for (const a of AREAS) shapes.push({ kind: 'area', x0: a.x0, x1: a.x1, z0: WORLD_BOUNDS.minZ, z1: -6, label: `${a.icon} ${a.name}` });
+  shapes.push({ kind: 'street', x0: -SOUTH_END_X, x1: SOUTH_END_X, z0: SOUTH_MIN_Z, z1: SOUTH_FRONT_Z });
+  for (const x of [-BRIDGE_X, BRIDGE_X]) shapes.push({ kind: 'street', x0: x - 1, x1: x + 1, z0: 17.2, z1: SOUTH_MIN_Z });
+  for (const a of AREAS) {
+    const r = yardRect(a);
+    shapes.push({ kind: 'area', x0: a.x0, x1: a.x1, z0: r.minZ, z1: r.maxZ, label: `${a.icon} ${a.name}` });
+  }
   for (const s of SHOPS) shapes.push({ kind: 'shop', x0: s.tx * TILE - 2, x1: s.tx * TILE + 2, z0: -8 - 2, z1: -6, label: s.label.split(' ').slice(0, 2).join(' ') });
   return shapes;
 }

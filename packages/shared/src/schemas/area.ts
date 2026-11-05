@@ -6,8 +6,27 @@ import { CEFR_LEVELS } from '../constants';
  * packages/quests/content/areas/<id>.yaml (English, the source) and translations in
  * packages/quests/content/areas/i18n/<lang>.json (generated, see apps/api/scripts/i18n-translate.ts).
  */
-export const AREA_IDS = ['zoo', 'farm', 'restaurant', 'supermarket'] as const;
+export const AREA_IDS = ['zoo', 'farm', 'restaurant', 'supermarket', 'home', 'school', 'clothes', 'cinema', 'station', 'hospital', 'hotel', 'sports'] as const;
 export type AreaId = (typeof AREA_IDS)[number];
+
+/**
+ * Names and looks of every area, shared by the game, the API and the admin site. Where an area sits on the
+ * map is in apps/web/src/world/areas.ts.
+ */
+export const AREA_INFO: Record<AreaId, { icon: string; name: string; short: string; color: string; level: string; topic: string }> = {
+  zoo: { icon: '🦁', name: 'Sunny Hills Zoo', short: 'Zoo', color: '#f2a93b', level: 'A1–B1', topic: 'Animals' },
+  farm: { icon: '🐄', name: 'Green Valley Farm', short: 'Farm', color: '#8bc34a', level: 'A1–B1', topic: 'Farm, plants and food' },
+  supermarket: { icon: '🛒', name: 'FreshWay Supermarket', short: 'Supermarket', color: '#38b2ac', level: 'A1–A2', topic: 'Shopping and groceries' },
+  restaurant: { icon: '🍽️', name: 'The Grand Garden Restaurant', short: 'Restaurant', color: '#e05f5f', level: 'A2–B1', topic: 'Food and ordering' },
+  home: { icon: '🏠', name: 'Cozy Home', short: 'Home', color: '#f08a5d', level: 'A1', topic: 'Home, furniture and daily routine' },
+  school: { icon: '🏫', name: 'Maple School', short: 'School', color: '#5b8def', level: 'A1–A2', topic: 'School, subjects and the classroom' },
+  clothes: { icon: '👕', name: 'Style Corner', short: 'Clothes', color: '#d16ba5', level: 'A1–A2', topic: 'Clothes, colours and sizes' },
+  cinema: { icon: '🎬', name: 'Star Cinema & Library', short: 'Cinema', color: '#7e57c2', level: 'A2–B2', topic: 'Films, books and opinions' },
+  station: { icon: '🚉', name: 'Central Station', short: 'Station', color: '#607d8b', level: 'A2', topic: 'Trains, tickets and travel' },
+  hospital: { icon: '💊', name: 'City Hospital', short: 'Hospital', color: '#26a69a', level: 'A2–B1', topic: 'Body, illness and medicine' },
+  hotel: { icon: '🏨', name: 'Riverside Hotel', short: 'Hotel', color: '#c0a062', level: 'A2–B1', topic: 'Hotels and booking' },
+  sports: { icon: '⚽', name: 'Sunny Sports Park', short: 'Sports', color: '#43a047', level: 'A1–B1', topic: 'Sports and hobbies' },
+};
 export const AreaIdSchema = z.enum(AREA_IDS);
 
 export const AreaSentenceSchema = z.object({ en: z.string(), level: z.enum(CEFR_LEVELS).default('A1') });

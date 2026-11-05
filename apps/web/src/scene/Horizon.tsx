@@ -4,10 +4,18 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { END_FENCE_X, MODEL_URL, TILE, streetCross, type TileModel } from '../world/layout';
-import { AREAS, GATE_X } from '../world/areas';
+import { AREAS, BRIDGE_X, GATES_X, SOUTH_BACK_Z, SOUTH_END_X, SOUTH_ROAD_Z, yardRect } from '../world/areas';
 
 /** Inside an area's yard footprint (its own scene draws the ground there). */
-const inYard = (x: number, z: number) => z < -4 && z > -33 && AREAS.some((a) => x > a.x0 - 2 && x < a.x1 + 2);
+const inYard = (x: number, z: number) =>
+  AREAS.some((a) => {
+    const r = yardRect(a);
+    return x > r.minX - 2 && x < r.maxX + 2 && z > r.minZ - 3.5 && z < r.maxZ + 2;
+  });
+/** The south-bank district (road, areas, the park between the bridges): no farmland, hay or tree clusters. */
+const inSouth = (x: number, z: number) => Math.abs(x) < SOUTH_END_X + 6 && z > 36 && z < SOUTH_BACK_Z + 6;
+/** Next to a bridge foot: no trees in the way. */
+const nearBridge = (x: number) => Math.abs(Math.abs(x) - BRIDGE_X) < 5;
 /** South park rows of the farm are its fields. */
 const inFarmField = (x: number, z: number) => z > 5 && z < 16 && x > 110 && x < 166;
 /** The zoo's petting corner (zooLayout.ts PETTING): plain grass tiles there, no trees. */
@@ -80,6 +88,8 @@ function Fields() {
           float inside = step(abs(vWp.x), ${(END_FENCE_X + 2).toFixed(1)}) * step(${(STREET_MIN_Z - 10).toFixed(1)}, vWp.z);
           float outside = step(${(END_FENCE_X + 2).toFixed(1)}, abs(vWp.x)) * step(${(STREET_MIN_Z + 7.6).toFixed(1)}, vWp.z);
           float nearStreet = max(inside, outside) * step(abs(vWp.x), ${(ROAD_END_X + 40).toFixed(1)}) * step(vWp.z, ${(RIVER_FAR_Z + 8).toFixed(1)});
+          // the south-bank district across the bridges
+          nearStreet = max(nearStreet, step(abs(vWp.x), ${(SOUTH_END_X + 2).toFixed(1)}) * step(vWp.z, ${(SOUTH_BACK_Z + 3).toFixed(1)}));
           float band = mod(floor(vWp.z / 9.0) + floor(vWp.x / 26.0) * 2.0, 3.0);
           vec3 f1 = vec3(0.50, 0.72, 0.35);
           vec3 f2 = vec3(0.70, 0.78, 0.38);
@@ -136,17 +146,21 @@ function Fences() {
         }
       }
     };
-    // both ends of the street (x = ±170), from behind the area yards to the river
+    // both ends of the street (x = ±294), from behind the area yards to the river
     for (const sx of [-1, 1]) line(sx * END_FENCE_X, -32, sx * END_FENCE_X, RIVER_NEAR_Z - 1);
-    // the old ends (x = ±46) are gates now: fence only north of the pavement and on the river bank side
-    for (const sx of [-1, 1]) {
-      line(sx * GATE_X, STREET_MIN_Z - 2, sx * GATE_X, -6.2);
-      line(sx * GATE_X, 6.2, sx * GATE_X, RIVER_NEAR_Z - 1);
-    }
+    // the old ends (x = ±46, ±170) are gates now: fence only north of the pavement and on the river bank side
+    for (const gx of GATES_X)
+      for (const sx of [-1, 1]) {
+        line(sx * gx, STREET_MIN_Z - 2, sx * gx, -6.2);
+        line(sx * gx, 6.2, sx * gx, RIVER_NEAR_Z - 1);
+      }
+    // the south bank: both ends of its road and a hedge-line fence behind its areas
+    for (const sx of [-1, 1]) line(sx * (SOUTH_END_X + 1), RIVER_FAR_Z + 1, sx * (SOUTH_END_X + 1), SOUTH_BACK_Z + 1.5);
+    line(-SOUTH_END_X - 1, SOUTH_BACK_Z + 1.5, SOUTH_END_X + 1, SOUTH_BACK_Z + 1.5);
     // outside the end fences: a field fence along the north pavement of the riverside road
     for (const sx of [-1, 1]) line(sx * (END_FENCE_X + 0.5), STREET_MIN_Z + 7.6, sx * ROAD_END_X, STREET_MIN_Z + 7.6);
-    // far bank
-    line(-ROAD_END_X, RIVER_FAR_Z + 2, ROAD_END_X, RIVER_FAR_Z + 2);
+    // far bank (open where the south-bank district is)
+    for (const sx of [-1, 1]) line(sx * (SOUTH_END_X + 1), RIVER_FAR_Z + 2, sx * ROAD_END_X, RIVER_FAR_Z + 2);
     return { posts, rails };
   }, []);
   return (
@@ -173,6 +187,7 @@ function HayBales() {
       if (Math.abs(x) < 39 * TILE + 10 && z > STREET_MIN_Z - 12 && z < RIVER_FAR_Z + 10) continue;
       if (z > RIVER_NEAR_Z - 3 && z < RIVER_FAR_Z + 3) continue;
       if (z > STREET_MIN_Z + 4 && z < RIVER_NEAR_Z) continue; // the riverside road beyond the end fences
+      if (inSouth(x, z)) continue;
       const rot = new THREE.Quaternion().setFromAxisAngle(up, r() * Math.PI).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2));
       out.push(new THREE.Matrix4().compose(new THREE.Vector3(x, GROUND_Y + 0.7, z), rot, new THREE.Vector3(1, 1, 1)));
     }
@@ -252,8 +267,9 @@ function backdropPlacements(low: boolean): Placement[] {
       push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
       push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: -2 * TILE, rot: 0, scaleY: 1 });
       for (const t of streetCross(tx)) push({ model: t.model, x: tx * TILE, z: t.z ?? 0, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
-      push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
-      push({ model: Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
+      const open = nearBridge(tx * TILE);
+      push({ model: !open && Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
+      push({ model: !open && Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
     }
     if (low && Math.abs(tx) > 32) continue;
     // row A (tz -6) and row B (tz -9): houses with gardens/trees in between; row B a little taller on average
@@ -267,14 +283,25 @@ function backdropPlacements(low: boolean): Placement[] {
     }
     // gardens between and behind the rows
     for (const tz of [-4, -5, -7, -8, -10]) push({ model: r() < 0.45 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
-    // river bank row (tz 4): grass with a few trees
-    push({ model: r() < 0.3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+    // river bank row (tz 4): grass with a few trees (none at the bridge feet)
+    const treeHere = r() < 0.3 && !nearBridge(tx * TILE);
+    push({ model: treeHere ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+  }
+  // the south-bank road with its pavements, a lawn strip down to the river, and a little park between the bridges
+  const southMax = Math.floor(SOUTH_END_X / TILE);
+  for (let tx = -southMax; tx <= southMax; tx++) {
+    const x = tx * TILE;
+    for (const t of streetCross(tx, SOUTH_ROAD_Z)) push({ model: t.model, x, z: t.z ?? SOUTH_ROAD_Z, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
+    push({ model: !nearBridge(x) && Math.abs(tx) % 4 === 1 ? 'grass-trees' : 'grass', x, z: SOUTH_ROAD_Z - 8, rot: 0, scaleY: 1 });
+    if (Math.abs(x) < BRIDGE_X - 3)
+      for (const [k, tz] of [56, 60, 64, 68, 72, 76].entries()) push({ model: (tx + k) % 3 === 0 ? 'grass-trees-tall' : (tx + k) % 3 === 1 ? 'grass-trees' : 'grass', x, z: tz, rot: 0, scaleY: 1 });
   }
   // far bank and the two ends: scattered tree clusters
   const clusters = low ? 30 : 70;
   for (let i = 0; i < clusters; i++) {
     const x = (r() - 0.5) * (ROAD_END_X * 2 - 40);
     const z = RIVER_FAR_Z + 6 + r() * 70;
+    if (inSouth(x, z)) continue;
     out.push({ model: 'grass-trees-tall', x, z, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.6 });
   }
   return out;
@@ -457,8 +484,8 @@ function River({ low }: { low: boolean }) {
       <mesh geometry={rims} position={[0, GROUND_Y - 0.02, 0]} receiveShadow>
         <meshStandardMaterial color="#d8c58f" roughness={1} />
       </mesh>
-      <Bridge x={-STREET_HALF_X - 6} />
-      <Bridge x={STREET_HALF_X + 6} />
+      <Bridge x={-BRIDGE_X} />
+      <Bridge x={BRIDGE_X} />
       {!low && (
         <>
           <Boat seed={1} baseX={-30} speed={1.1} sail="#f4f4f4" hull="#b23a3a" />
@@ -483,15 +510,17 @@ function Bridge({ x }: { x: number }) {
   const geo = useMemo(() => {
     const parts: THREE.BufferGeometry[] = [];
     const w = RIVER_FAR_Z - RIVER_NEAR_Z + 4;
-    parts.push(colored(new THREE.BoxGeometry(2.4, 0.25, w), '#9c7a52'));
-    for (const sx of [-1.1, 1.1]) {
+    parts.push(colored(new THREE.BoxGeometry(3.2, 0.25, w), '#9c7a52'));
+    for (let i = -w / 2 + 0.6; i < w / 2; i += 1.2) parts.push(colored(new THREE.BoxGeometry(3.0, 0.03, 0.08).translate(0, 0.135, i), '#7f6142')); // planks
+    for (const sx of [-1.45, 1.45]) {
       parts.push(colored(new THREE.BoxGeometry(0.12, 0.08, w).translate(sx, 0.9, 0), '#7a5a38'));
       for (let i = -w / 2 + 1; i < w / 2; i += 2.2) parts.push(colored(new THREE.BoxGeometry(0.12, 0.9, 0.12).translate(sx, 0.45, i), '#7a5a38'));
     }
     return mergeGeometries(parts, false)!;
   }, []);
   return (
-    <mesh geometry={geo} position={[x, GROUND_Y + 0.35, (RIVER_FAR_Z + RIVER_NEAR_Z) / 2]}>
+    // the deck is walkable (world/areas.ts onBridge): its top sits at the street level
+    <mesh geometry={geo} position={[x, -0.11, (RIVER_FAR_Z + RIVER_NEAR_Z) / 2]} receiveShadow castShadow>
       <meshStandardMaterial vertexColors roughness={0.9} />
     </mesh>
   );
