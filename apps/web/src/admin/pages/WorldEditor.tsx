@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { CROPS, MAX_PLOTS, farmDefaults, type AreaContent, type WorldConfig } from '@es/shared';
+import { CROPS, MAX_PLOTS, WeatherConfigSchema, farmDefaults, type AreaContent, type WeatherConfig, type WorldConfig } from '@es/shared';
 import { get } from '../api';
 import { EditorShell, useDoc } from '../content';
 import { useL } from '../i18n';
 import { ENCLOSURES } from '../../world/zooLayout';
 import { CRITTERS } from '../../world/critters';
-import { Badge, Btn, Card, Check, Field, ListInput, Num, Page, Tabs, Text, useLoad } from '../ui';
+import { Badge, Btn, Card, Check, Field, ListInput, Num, Page, Select, Tabs, Text, useLoad } from '../ui';
 
 /** Defaults shown as placeholders: the code values (zoo spec, critters, farm constants). */
 const FARM_DEF = farmDefaults();
@@ -15,9 +15,9 @@ const CRITTER_DEF = new Map(CRITTERS.map((c) => [c.id, c.name]));
 export function WorldEditor() {
   const L = useL();
   const doc = useDoc<WorldConfig>('world', 'world');
-  const [tab, setTab] = useState<'farm' | 'zoo' | 'critters' | 'soldout'>('farm');
+  const [tab, setTab] = useState<'farm' | 'zoo' | 'critters' | 'soldout' | 'weather'>('farm');
   return (
-    <Page title={`🌍 ${L('Tên thú, luật nông trại, hết hàng', 'Animal names, farm rules, sold out')}`}>
+    <Page title={`🌍 ${L('Tên thú, luật nông trại, hết hàng, thời tiết', 'Animal names, farm rules, sold out, weather')}`}>
       <EditorShell
         doc={doc}
         form={(d, set) => (
@@ -30,9 +30,10 @@ export function WorldEditor() {
                 { id: 'zoo', label: `🦁 ${L('Tên thú sở thú', 'Zoo animal names')}` },
                 { id: 'critters', label: `🐈 ${L('Thú trên phố & góc vuốt ve', 'Street & petting-corner pets')}` },
                 { id: 'soldout', label: `🚫 ${L('Hết hàng hôm nay', 'Sold out today')}` },
+                { id: 'weather', label: `⛅ ${L('Thời tiết & giờ', 'Weather & time')}` },
               ]}
             />
-            {tab === 'farm' ? <FarmTab d={d} set={set} /> : tab === 'zoo' ? <ZooTab d={d} set={set} /> : tab === 'critters' ? <CritterTab d={d} set={set} /> : <SoldOutTab d={d} set={set} />}
+            {tab === 'farm' ? <FarmTab d={d} set={set} /> : tab === 'zoo' ? <ZooTab d={d} set={set} /> : tab === 'critters' ? <CritterTab d={d} set={set} /> : tab === 'soldout' ? <SoldOutTab d={d} set={set} /> : <WeatherTab d={d} set={set} />}
           </>
         )}
       />
@@ -203,6 +204,97 @@ function SoldOutTab({ d, set }: { d: WorldConfig; set: (d: WorldConfig) => void 
     <>
       {block('restaurant', restaurant.data?.data)}
       {block('supermarket', market.data?.data)}
+    </>
+  );
+}
+
+const CITIES: { name: string; lat: number; lon: number }[] = [
+  { name: 'Ho Chi Minh City', lat: 10.82, lon: 106.63 },
+  { name: 'Hanoi', lat: 21.03, lon: 105.85 },
+  { name: 'Da Nang', lat: 16.05, lon: 108.2 },
+  { name: 'Hue', lat: 16.46, lon: 107.59 },
+  { name: 'Hai Phong', lat: 20.86, lon: 106.68 },
+  { name: 'Can Tho', lat: 10.03, lon: 105.78 },
+  { name: 'Nha Trang', lat: 12.24, lon: 109.19 },
+  { name: 'Da Lat', lat: 11.94, lon: 108.44 },
+];
+
+/** Where the street's real weather comes from, or a fixed weather / time of day (events, screenshots). */
+function WeatherTab({ d, set }: { d: WorldConfig; set: (d: WorldConfig) => void }) {
+  const L = useL();
+  const w: WeatherConfig = d.weather ?? WeatherConfigSchema.parse({});
+  const setW = (p: Partial<WeatherConfig>) => set({ ...d, weather: { ...w, ...p } });
+  const now = useLoad(() => get<{ now: { kind: string; tempC: number | null; cloud: number; place: string; updatedAt: string } | null }>('/world'), []);
+  const city = CITIES.find((c) => c.lat === w.lat && c.lon === w.lon)?.name ?? '';
+  return (
+    <>
+      <Card title={L('Thời tiết thật', 'Live weather')}>
+        <p className="mb-3 text-sm text-gray-600">
+          {L(
+            'Bầu trời trong game theo giờ Việt Nam (ngày, hoàng hôn, đêm có trăng sao) và thời tiết thật ở nơi chọn dưới đây (nắng, mây, mưa, giông, sương mù), lấy từ Open-Meteo mỗi 10 phút. Mọi người chơi thấy cùng một bầu trời.',
+            'The sky follows Vietnam time (day, sunset, night with moon and stars) and the real weather at the place below (sun, cloud, rain, storm, fog), from Open-Meteo every 10 minutes. Every player sees the same sky.',
+          )}
+        </p>
+        <div className="grid gap-3 md:grid-cols-4">
+          <Field label={L('Thành phố', 'City')}>
+            <Select
+              value={city}
+              onChange={(v) => {
+                const c = CITIES.find((x) => x.name === v);
+                if (c) setW({ place: c.name, lat: c.lat, lon: c.lon });
+              }}
+              options={[...(city ? [] : [{ value: '', label: L('Toạ độ riêng', 'Custom place') }]), ...CITIES.map((c) => ({ value: c.name, label: c.name }))]}
+            />
+          </Field>
+          <Field label={L('Tên hiện trong game', 'Name shown in the game')}>
+            <Text value={w.place} onChange={(v) => setW({ place: v })} />
+          </Field>
+          <Field label={L('Vĩ độ', 'Latitude')}>
+            <Num value={w.lat} step={0.01} min={-90} max={90} onChange={(v) => setW({ lat: v ?? 0 })} />
+          </Field>
+          <Field label={L('Kinh độ', 'Longitude')}>
+            <Num value={w.lon} step={0.01} min={-180} max={180} onChange={(v) => setW({ lon: v ?? 0 })} />
+          </Field>
+        </div>
+        {now.data?.now ? (
+          <p className="mt-3 text-sm text-gray-600">
+            {L('Đang hiện', 'Showing now')}: <b>{now.data.now.kind}</b> · {now.data.now.tempC ?? '—'}°C · {L('mây', 'cloud')} {now.data.now.cloud}% · {now.data.now.place}
+          </p>
+        ) : null}
+      </Card>
+      <Card title={L('Cố định (sự kiện, chụp ảnh)', 'Fixed (events, screenshots)')}>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field label={L('Thời tiết', 'Weather')} hint={L('"Thật" = theo thời tiết ngoài đời', '"Live" = the real weather')}>
+            <Select
+              value={w.mode}
+              onChange={(v) => setW({ mode: v })}
+              options={[
+                { value: 'live', label: L('Thật', 'Live') },
+                { value: 'clear', label: L('Nắng', 'Sunny') },
+                { value: 'partly', label: L('Ít mây', 'Partly cloudy') },
+                { value: 'cloudy', label: L('Nhiều mây', 'Cloudy') },
+                { value: 'fog', label: L('Sương mù', 'Fog') },
+                { value: 'drizzle', label: L('Mưa phùn', 'Drizzle') },
+                { value: 'rain', label: L('Mưa', 'Rain') },
+                { value: 'storm', label: L('Giông', 'Thunderstorm') },
+              ]}
+            />
+          </Field>
+          <Field label={L('Giờ trong ngày', 'Time of day')} hint={L('"Thật" = giờ Việt Nam', '"Live" = Vietnam time')}>
+            <Select
+              value={w.clock}
+              onChange={(v) => setW({ clock: v })}
+              options={[
+                { value: 'live', label: L('Thật', 'Live') },
+                { value: 'morning', label: L('Sáng (8:00)', 'Morning (8:00)') },
+                { value: 'noon', label: L('Trưa (12:30)', 'Noon (12:30)') },
+                { value: 'dusk', label: L('Hoàng hôn', 'Sunset') },
+                { value: 'night', label: L('Đêm (22:00)', 'Night (22:00)') },
+              ]}
+            />
+          </Field>
+        </div>
+      </Card>
     </>
   );
 }

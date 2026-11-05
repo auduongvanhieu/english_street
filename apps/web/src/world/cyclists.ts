@@ -37,7 +37,7 @@ export interface Cyclist {
 /** Ride from one end of the backdrop to the other (well past the playable street on both sides). */
 export const RIDE_FROM = -185;
 export const RIDE_TO = 185;
-const LANE = 1.15;
+const LANE = 1.9;
 
 export const CYCLISTS: Cyclist[] = [
   { id: 'bike-1', name: 'Sam', shirt: '#e5533d', helmet: '#f5f5f5', frame: '#2b5fb3', skin: '#eec1a0', hair: '#a0682f', hairStyle: 'spiky', shorts: '#24365c', dir: 1, speed: 5.5, period: 92, offset: 0, greeting: 'On your left!', sentence: 'Sam rides his bicycle to work every morning.', word: { en: 'bicycle', vi: 'xe đạp' }, kind: 'cyclist', sound: 'bell' },

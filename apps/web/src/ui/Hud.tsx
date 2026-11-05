@@ -134,7 +134,7 @@ export function HintToast({ touch }: { touch: boolean }) {
   if (!show) return null;
   return (
     <div className={`pointer-events-none absolute left-1/2 z-10 max-w-[90vw] -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-center text-xs text-white ${touch ? 'top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)]' : 'bottom-3'}`}>
-      {touch ? t('Joystick to move · drag to look around · walk up to a shop and tap Talk · 🗺️ map and 🚌 bus to the zoo, farm, supermarket and restaurant') : t('WASD / arrows to move · Shift to run · E to talk or sit · F to hug a pet · M map · G area guide · Enter to chat · 1-5 emotes · drag to look around')}
+      {touch ? t('Joystick to move · drag to look around · walk up to a shop and tap Talk · 🗺️ map and 🚌 bus to the zoo, farm, supermarket and restaurant') : t('WASD / arrows or click to move · Shift to run · E to talk or sit · F to hug a pet · M map · G area guide · Enter to chat · 1-5 emotes · drag to look around')}
     </div>
   );
 }

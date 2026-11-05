@@ -18,8 +18,11 @@ function ensure(): boolean {
   return true;
 }
 
+/** Birds keep quiet at night and in the rain (scene/Sky.tsx). */
+export const ambientBirds = { on: true };
+
 function chirp() {
-  if (!ctx || !master) return;
+  if (!ctx || !master || !ambientBirds.on) return;
   const t = ctx.currentTime;
   const n = 2 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) {

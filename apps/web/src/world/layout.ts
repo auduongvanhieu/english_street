@@ -45,6 +45,28 @@ export interface TilePlacement {
   tz: number;
   /** Y rotation in radians */
   rot?: number;
+  /** World z of the tile centre when it is not tz * TILE (pavements beside the widened road). */
+  z?: number;
+  /** Stretch along world z (the road is wider than one tile, the pavements narrower). */
+  sz?: number;
+}
+
+/**
+ * The road is 6.4 m wide (two 3.2 m lanes, room for the 2.4 m bus) instead of one 4 m tile: the road tile is
+ * stretched across, and the pavements on both sides give up the difference (2.8 m left of each).
+ */
+export const ROAD_HALF = 3.2;
+export const ROAD_SZ = (ROAD_HALF * 2) / TILE;
+const PAVE_OUTER = 1.5 * TILE;
+export const PAVE_SZ = (PAVE_OUTER - ROAD_HALF) / TILE;
+export const PAVE_Z = (PAVE_OUTER + ROAD_HALF) / 2;
+/** Road and its two pavements at column tx (shared by the street and its continuation beyond the fences). */
+export function streetCross(tx: number): TilePlacement[] {
+  return [
+    { model: 'pavement', tx, tz: -1, z: -PAVE_Z, sz: PAVE_SZ },
+    { model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', tx, tz: 0, rot: ROAD_ROT, sz: ROAD_SZ },
+    { model: 'pavement', tx, tz: 1, z: PAVE_Z, sz: PAVE_SZ },
+  ];
 }
 
 export interface ShopDef {
@@ -83,11 +105,8 @@ export function buildTiles(): TilePlacement[] {
     tiles.push({ model: tx % 3 === 0 ? 'grass-trees-tall' : 'grass', tx, tz: -3 });
     // shop row: trees between shops
     if (!shopAt.has(tx)) tiles.push({ model: tx % 2 === 0 ? 'grass-trees' : 'grass', tx, tz: SHOP_ROW_TZ });
-    // pavements
-    tiles.push({ model: 'pavement', tx, tz: -1 });
-    tiles.push({ model: 'pavement', tx, tz: 1 });
-    // road
-    tiles.push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', tx, tz: 0, rot: ROAD_ROT });
+    // road and pavements
+    tiles.push(...streetCross(tx));
     // south: small park
     if (tx === 0) tiles.push({ model: 'pavement-fountain', tx, tz: 2 });
     else tiles.push({ model: tx % 2 === 0 ? 'grass-trees' : 'grass', tx, tz: 2 });
@@ -144,7 +163,7 @@ export function buildLampPosts(): Circle[] {
   // The street (and its lamp posts) continues to the end fences.
   for (let tx = -42; tx <= 42; tx++) {
     if (tx % 2 !== 0) continue;
-    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * 0.45 * TILE, r: 0.18, h: 5 });
+    for (const s of [-1, 1]) out.push({ x: tx * TILE, z: s * 0.45 * TILE * ROAD_SZ, r: 0.18, h: 5 });
   }
   return out;
 }

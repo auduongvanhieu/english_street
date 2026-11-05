@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { deviceInfo } from './net/device';
 import { rideTo } from './ui/area/Travel';
+import { sky, skyDebug } from './world/sky';
+import { moveTarget } from './input/clickMove';
 import { useBus } from './store/bus';
 import { BusOverlay } from './ui/BusOverlay';
 import { isStaffTab, startWorldSync, useWorld } from './store/world';
@@ -43,6 +45,7 @@ import { HugButton } from './ui/HugButton';
 import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
+import { WeatherChip } from './ui/WeatherChip';
 import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
 import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
@@ -59,7 +62,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget };
 }
 
 export default function App() {
@@ -275,6 +278,7 @@ export default function App() {
       </Suspense>
 
       <HintToast touch={touch} />
+      {!touch && <WeatherChip compact={false} />}
       <Notices />
       <BusOverlay />
       {npcError && <div className="absolute left-1/2 top-24 -translate-x-1/2 rounded bg-black/60 px-3 py-1 text-xs text-yellow-300">{t('NPCs unavailable: API server not reachable.')}</div>}
@@ -283,6 +287,7 @@ export default function App() {
         <>
           {/* top-right: utility buttons */}
           <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
+            <WeatherChip compact />
             <VoiceChatButton compact />
             <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
             <SettingsButton compact />

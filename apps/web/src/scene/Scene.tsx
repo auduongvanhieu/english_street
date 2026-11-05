@@ -1,8 +1,10 @@
 import { memo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import { KeyboardControls, Sky } from '@react-three/drei';
-import { HORIZON_COLOR, Horizon } from './Horizon';
+import { KeyboardControls } from '@react-three/drei';
+import { Horizon } from './Horizon';
+import { Clouds, Rain, SkyController, SkyDome, StreetLamps } from './Sky';
+import { GroundClick } from './GroundClick';
 import { City } from './City';
 import { LocalPlayer, type Controls } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
@@ -37,11 +39,15 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         dpr={low ? 1 : [1, 1.5]}
         gl={{ antialias: !low, powerPreference: low ? 'default' : 'high-performance' }}
       >
-        <Sky sunPosition={[50, 40, 20]} />
-        {/* Fog in the horizon colour: the fields fade out instead of ending at the camera's far plane. */}
-        <fog attach="fog" args={[HORIZON_COLOR, 70, 150]} />
-        <hemisphereLight args={['#dff3ff', '#6b8f4e', low ? 0.9 : 0.6]} />
+        {/* Sky, fog and lights follow the Vietnam clock and the real weather (world/sky.ts); the fog has the
+            horizon colour so the fields fade out instead of ending at the camera's far plane. */}
+        <SkyController low={low} />
+        <SkyDome />
         <SunFollow low={low} />
+        <StreetLamps low={low} />
+        <Clouds low={low} />
+        <Rain low={low} />
+        <GroundClick />
         <Suspense fallback={null}>
           <City />
           <Npcs />

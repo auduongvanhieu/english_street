@@ -74,7 +74,12 @@ function InstancedTiles({ model, placements }: { model: TileModel; placements: T
   const placementMatrices = useMemo(() => {
     const q = new THREE.Quaternion();
     const s = new THREE.Vector3(TILE, TILE, TILE);
-    return placements.map((t) => new THREE.Matrix4().compose(new THREE.Vector3(t.tx * TILE, TILE_Y, t.tz * TILE), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.rot ?? 0), s));
+    return placements.map((t) =>
+      new THREE.Matrix4()
+        .makeScale(1, 1, t.sz ?? 1)
+        .multiply(new THREE.Matrix4().compose(new THREE.Vector3(), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), t.rot ?? 0), s))
+        .setPosition(t.tx * TILE, TILE_Y, t.z ?? t.tz * TILE),
+    );
   }, [placements]);
   return (
     <>

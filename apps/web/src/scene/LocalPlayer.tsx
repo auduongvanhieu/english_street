@@ -12,6 +12,7 @@ import { useSettings } from '../store/settings';
 import { joystick, jumpInput } from '../input/joystick';
 import { hopSound } from '../audio/ambient';
 import { cameraOrbit } from '../input/camera';
+import { moveTarget } from '../input/clickMove';
 import { buildBlockers, buildLampPosts, resolveMove, type Circle } from '../world/layout';
 import { CRITTERS, poseAt } from '../world/critters';
 import { CYCLISTS } from '../world/cyclists';
@@ -66,6 +67,19 @@ export function teleportTo(x: number, z: number, rot = Math.PI) {
   Object.assign(teleport, { pending: true, x, z, rot });
 }
 const SPAWN = new THREE.Vector3(0, 0, 4);
+
+/**
+ * Third-person camera behind the player. With tilt (looking at the sky) it drops to head height and looks up.
+ */
+function placeCamera(camera: THREE.Camera, p: THREE.Vector3, dt: number, snap: boolean) {
+  cameraOrbit.tilt += (cameraOrbit.tiltTarget - cameraOrbit.tilt) * (1 - Math.pow(0.02, dt));
+  const k = cameraOrbit.tilt;
+  const back = cameraOrbit.dist * 0.84 * (1 - 0.35 * k);
+  camTarget.set(p.x + Math.sin(cameraOrbit.yaw) * back, cameraOrbit.dist * 0.55 * (1 - 0.8 * k) + 0.9 * k, p.z + Math.cos(cameraOrbit.yaw) * back);
+  if (snap) camera.position.copy(camTarget);
+  else camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
+  camera.lookAt(p.x, 0.95 + p.y * 0.3 + k * 3, p.z);
+}
 const dir = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
 
@@ -102,8 +116,8 @@ export function LocalPlayer({ name }: { name: string }) {
       g.rotation.y = teleport.rot;
       vy.current = 0;
       airborne.current = false;
-      const back = cameraOrbit.dist * 0.84;
-      camera.position.set(teleport.x + Math.sin(cameraOrbit.yaw) * back, cameraOrbit.dist * 0.55, teleport.z + Math.cos(cameraOrbit.yaw) * back);
+      moveTarget.active = false;
+      placeCamera(camera, g.position, dt, true);
     }
 
     // --- input ---
@@ -130,21 +144,45 @@ export function LocalPlayer({ name }: { name: string }) {
     const cy = Math.cos(cameraOrbit.yaw);
     const sy = Math.sin(cameraOrbit.yaw);
     dir.set(ix * cy + iz * sy, 0, -ix * sy + iz * cy);
-    const mag = Math.min(1, dir.length());
+    let mag = Math.min(1, dir.length());
+    const keyMag = mag;
+    let clickLeft = Infinity; // distance left to the clicked spot (never step past it)
+    // --- click-to-move (mouse): walk to the clicked spot until there, blocked, or the keys take over ---
+    if (moveTarget.active) {
+      if (mag > 0.05 || locked) moveTarget.active = false;
+      else {
+        const dx = moveTarget.x - g.position.x;
+        const dz = moveTarget.z - g.position.z;
+        const d = Math.hypot(dx, dz);
+        // (the first frame only starts walking: a long frame on a slow device must not count as "stuck")
+        if (moveTarget.started) moveTarget.check -= dt;
+        moveTarget.started = true;
+        if (moveTarget.check <= 0) {
+          // no real progress in the last half second: something is in the way
+          if (moveTarget.lastDist - d < 0.25) moveTarget.active = false;
+          moveTarget.lastDist = d;
+          moveTarget.check = 0.5;
+        }
+        if (d < 0.2) moveTarget.active = false;
+        if (moveTarget.active) {
+          dir.set(dx / d, 0, dz / d);
+          mag = 1;
+          clickLeft = d;
+          run = moveTarget.run && d > 2;
+        }
+      }
+    }
 
     // --- bus ride: a short script moves the player (walk to the door, ride inside, step off) ---
-    const ride = busStep(g, dt, mag > 0.05 || jump);
+    const ride = busStep(g, dt, keyMag > 0.05 || jump);
     if (ride) {
       g.visible = !ride.hidden;
       anim.current = ride.anim;
       if (anim.current !== animState) setAnimState(anim.current);
       localPos.copy(g.position);
       localHeading.y = g.rotation.y;
-      const bk = cameraOrbit.dist * 0.84;
-      camTarget.set(g.position.x + sy * bk, cameraOrbit.dist * 0.55, g.position.z + cy * bk);
-      if (ride.snap) camera.position.copy(camTarget);
-      else camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
-      camera.lookAt(g.position.x, 0.95, g.position.z);
+      moveTarget.active = false;
+      placeCamera(camera, g.position, dt, !!ride.snap);
       sendAcc.current += dt;
       if (sendAcc.current >= 1 / INPUT_RATE_HZ) {
         sendAcc.current = 0;
@@ -175,7 +213,7 @@ export function LocalPlayer({ name }: { name: string }) {
       const speed = WALK_SPEED * (run ? 2 : 1) * mag;
       nearbyCircles(g.position.x, g.position.z, posts, circles.current);
       // Sub-steps of ≤ 0.15 m so a long frame on a slow phone cannot tunnel through a thin lamp post.
-      const total = speed * dt;
+      const total = Math.min(speed * dt, clickLeft);
       const steps = Math.max(1, Math.ceil(total / 0.15));
       for (let i = 0; i < steps; i++) {
         const [nx, nz] = resolveMove(g.position.x, g.position.z, (dir.x * total) / steps, (dir.z * total) / steps, blockers, circles.current, g.position.y);
@@ -210,17 +248,14 @@ export function LocalPlayer({ name }: { name: string }) {
     }
     // One-shot emote overrides the base animation while it lasts.
     const emote = useGame.getState().emote;
-    if (emote && !moving(ix, iz) && !seated) anim.current = emote.until > Date.now() ? emote.name : anim.current;
+    if (emote && mag <= 0.05 && !seated) anim.current = emote.until > Date.now() ? emote.name : anim.current;
     if (anim.current !== animState) setAnimState(anim.current);
 
     localPos.copy(g.position);
     localHeading.y = g.rotation.y;
 
     // --- third-person camera ---
-    const back = cameraOrbit.dist * 0.84;
-    camTarget.set(g.position.x + sy * back, cameraOrbit.dist * 0.55, g.position.z + cy * back);
-    camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
-    camera.lookAt(g.position.x, 0.95 + g.position.y * 0.3, g.position.z);
+    placeCamera(camera, g.position, dt, false);
 
     // --- network ---
     sendAcc.current += dt;
@@ -286,8 +321,4 @@ export function LocalPlayer({ name }: { name: string }) {
       <NameTag name={name} />
     </group>
   );
-}
-
-function moving(ix: number, iz: number) {
-  return Math.hypot(ix, iz) > 0.05;
 }

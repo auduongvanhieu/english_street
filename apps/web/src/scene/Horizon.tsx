@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { END_FENCE_X, MODEL_URL, TILE, type TileModel } from '../world/layout';
+import { END_FENCE_X, MODEL_URL, TILE, streetCross, type TileModel } from '../world/layout';
 import { AREAS, GATE_X } from '../world/areas';
 
 /** Inside an area's yard footprint (its own scene draws the ground there). */
@@ -13,6 +13,7 @@ const inFarmField = (x: number, z: number) => z > 5 && z < 16 && x > 110 && x < 
 /** The zoo's petting corner (zooLayout.ts PETTING): plain grass tiles there, no trees. */
 const inPetting = (x: number, z: number) => z > 5 && z < 16 && x > 81 && x < 103;
 import { serverNow } from '../net/client';
+import { sky } from '../world/sky';
 import { useSettings } from '../store/settings';
 
 /**
@@ -55,7 +56,6 @@ export function Horizon() {
       <Fields />
       <Backdrop low={low} />
       <River low={low} />
-      {!low && <Clouds />}
     </group>
   );
 }
@@ -222,6 +222,8 @@ interface Placement {
   z: number;
   rot: number;
   scaleY: number;
+  /** Stretch along world z (road / pavements). */
+  sz?: number;
   tint?: [number, number, number];
 }
 
@@ -239,9 +241,7 @@ function backdropPlacements(low: boolean): Placement[] {
   for (let tx = -ext; tx <= ext; tx++) {
     if (outsideFence(tx * TILE)) {
       // the riverside road: pavements, lamp posts every other tile, a grass bank down to the river
-      push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
-      push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
-      push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
+      for (const t of streetCross(tx)) push({ model: t.model, x: tx * TILE, z: t.z ?? 0, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
       push({ model: Math.abs(tx) % 5 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
       push({ model: 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
       push({ model: Math.abs(tx) % 7 === 3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: 0, scaleY: 1 });
@@ -251,9 +251,7 @@ function backdropPlacements(low: boolean): Placement[] {
       const grassy = (k: number) => (k === 0 ? 'grass-trees-tall' : k === 1 ? 'grass-trees' : 'grass') as TileModel;
       push({ model: grassy(Math.abs(tx) % 3), x: tx * TILE, z: -3 * TILE, rot: 0, scaleY: 1 });
       push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: -2 * TILE, rot: 0, scaleY: 1 });
-      push({ model: 'pavement', x: tx * TILE, z: -1 * TILE, rot: 0, scaleY: 1 });
-      push({ model: tx % 2 === 0 ? 'road-straight-lightposts' : 'road-straight', x: tx * TILE, z: 0, rot: Math.PI / 2, scaleY: 1 });
-      push({ model: 'pavement', x: tx * TILE, z: 1 * TILE, rot: 0, scaleY: 1 });
+      for (const t of streetCross(tx)) push({ model: t.model, x: tx * TILE, z: t.z ?? 0, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
       push({ model: Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
       push({ model: Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
     }
@@ -337,7 +335,10 @@ function InstancedPart({ geometry, material, local, placements }: { geometry: TH
     const q = new THREE.Quaternion();
     const white = new THREE.Color('#ffffff');
     placements.forEach((p, i) => {
-      const m = new THREE.Matrix4().compose(new THREE.Vector3(p.x, TILE_Y, p.z), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.rot), new THREE.Vector3(TILE, TILE * p.scaleY, TILE));
+      const m = new THREE.Matrix4()
+        .makeScale(1, 1, p.sz ?? 1)
+        .multiply(new THREE.Matrix4().compose(new THREE.Vector3(), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.rot), new THREE.Vector3(TILE, TILE * p.scaleY, TILE)))
+        .setPosition(p.x, TILE_Y, p.z);
       mesh.setMatrixAt(i, tmp.multiplyMatrices(m, local));
       mesh.setColorAt(i, p.tint ? new THREE.Color(p.tint[0], p.tint[1], p.tint[2]) : white);
     });
@@ -391,6 +392,8 @@ const waterFrag = /* glsl */ `
   uniform vec3 uShallow;
   uniform vec3 uSky;
   uniform vec3 uSun;
+  uniform float uLight;
+  uniform float uSpec;
   varying vec3 vWp;
   void main() {
     // analytic normal from two small ripple waves
@@ -401,10 +404,10 @@ const waterFrag = /* glsl */ `
     vec3 n = normalize(vec3(-dx, 1.0, -dz));
     vec3 v = normalize(cameraPosition - vWp);
     float fres = pow(1.0 - max(dot(v, n), 0.0), 3.0);
-    vec3 col = mix(uDeep, uShallow, 0.35 + 0.3 * sin(a1 * 0.5) * sin(a2 * 0.5));
+    vec3 col = mix(uDeep, uShallow, 0.35 + 0.3 * sin(a1 * 0.5) * sin(a2 * 0.5)) * uLight;
     col = mix(col, uSky, fres * 0.7);
     float spec = pow(max(dot(reflect(-normalize(uSun), n), v), 0.0), 90.0);
-    col += spec * 0.8;
+    col += spec * 0.8 * uSpec;
     gl_FragColor = vec4(col, 1.0);
     #include <fog_fragment>
   }`;
@@ -427,13 +430,23 @@ function River({ low }: { low: boolean }) {
           uShallow: { value: new THREE.Color('#5fb4e0') },
           uSky: { value: new THREE.Color(HORIZON_COLOR) },
           uSun: { value: new THREE.Vector3(30, 40, 20) },
+          uLight: { value: 1 },
+          uSpec: { value: 1 },
         },
       ]),
     });
   }, [low]);
   const rims = useMemo(() => mergeGeometries([new THREE.BoxGeometry(length, 0.08, 1.4).translate(0, 0, RIVER_NEAR_Z), new THREE.BoxGeometry(length, 0.08, 1.4).translate(0, 0, RIVER_FAR_Z)], false)!, []);
   useFrame(() => {
-    if (mat instanceof THREE.ShaderMaterial) mat.uniforms.uTime!.value = (serverNow() / 1000) % 3600;
+    if (mat instanceof THREE.ShaderMaterial) {
+      const u = mat.uniforms;
+      u.uTime!.value = (serverNow() / 1000) % 3600;
+      // the water follows the sky: darker at night and under cloud, the sun (or moon) glints on it
+      (u.uSky!.value as THREE.Color).copy(sky.horizon);
+      (u.uSun!.value as THREE.Vector3).copy(sky.lightDir);
+      u.uLight!.value = 0.12 + 0.88 * sky.day * (1 - 0.35 * sky.overcast);
+      u.uSpec!.value = Math.min(1, sky.lightIntensity) * (1 - sky.overcast * 0.8);
+    }
   });
   return (
     <group>
@@ -515,7 +528,7 @@ function Boat({ seed, baseX, speed, sail, hull }: { seed: number; baseX: number;
 
 /* ----------------------------------------------------------------------------------------------- clouds */
 
-function cloudTexture() {
+export function cloudTexture() {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 64;
@@ -535,30 +548,4 @@ function cloudTexture() {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
-}
-
-function Clouds() {
-  const invalidate = useThree((s) => s.invalidate);
-  const tex = useMemo(cloudTexture, []);
-  const mat = useMemo(() => new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 }), [tex]);
-  const sprites = useMemo(() => {
-    const r = rng(5);
-    return Array.from({ length: 7 }, (_, i) => ({ x: (r() - 0.5) * 220, y: 34 + r() * 14, z: -90 + r() * 170, w: 26 + r() * 22, speed: 0.3 + r() * 0.4, i }));
-  }, []);
-  const refs = useRef<(THREE.Sprite | null)[]>([]);
-  useFrame(() => {
-    const t = serverNow() / 1000;
-    sprites.forEach((s, i) => {
-      const sp = refs.current[i];
-      if (sp) sp.position.x = ((((s.x + t * s.speed) % 260) + 260) % 260) - 130;
-    });
-    invalidate();
-  });
-  return (
-    <group>
-      {sprites.map((s, i) => (
-        <sprite key={i} ref={(el) => (refs.current[i] = el)} material={mat} position={[s.x, s.y, s.z]} scale={[s.w, s.w * 0.5, 1]} />
-      ))}
-    </group>
-  );
 }

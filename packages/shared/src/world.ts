@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FarmConfigSchema } from './farm';
+import { WeatherConfigSchema, type WeatherDto } from './weather';
 
 const name = z.string().trim().min(1).max(20);
 
@@ -15,6 +16,8 @@ export const WorldConfigSchema = z.object({
   critterNames: z.record(z.string(), name).default({}),
   /** Area id → item ids that are sold out today (restaurant dishes, supermarket products). */
   soldOut: z.record(z.string(), z.array(z.string())).default({}),
+  /** Where the street's weather comes from, or a fixed weather / time of day. */
+  weather: WeatherConfigSchema.default(() => WeatherConfigSchema.parse({})),
 });
 export type WorldConfig = z.infer<typeof WorldConfigSchema>;
 
@@ -25,4 +28,6 @@ export interface WorldDto extends WorldConfig {
   announcements: { id: string; text: string; level: 'info' | 'warning'; endsAt: string }[];
   /** Maintenance message ('' = none): the game shows it instead of the street. */
   maintenance: string;
+  /** Weather right now (null when the API could not fetch it yet). */
+  now: WeatherDto | null;
 }

@@ -3,6 +3,7 @@ import type { WorldDto } from '@es/shared';
 import { contentVersion, loadWorld } from '@es/quests';
 import { prisma } from '../plugins/prisma';
 import { setting } from '../settings';
+import { currentWeather } from '../weather';
 
 let annCache: { at: number; list: WorldDto['announcements'] } = { at: 0, list: [] };
 let dbOn = false;
@@ -23,6 +24,6 @@ export async function activeAnnouncements(): Promise<WorldDto['announcements']> 
 export async function worldRoutes(app: FastifyInstance) {
   app.get('/world', async (_req, reply): Promise<WorldDto> => {
     reply.header('cache-control', 'no-store');
-    return { ...loadWorld(), version: contentVersion(), announcements: await activeAnnouncements(), maintenance: setting('maintenance') };
+    return { ...loadWorld(), version: contentVersion(), announcements: await activeAnnouncements(), maintenance: setting('maintenance'), now: await currentWeather() };
   });
 }

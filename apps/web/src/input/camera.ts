@@ -2,8 +2,12 @@
  * Third-person camera orbit state, written by pointer gestures on the canvas and read by LocalPlayer.
  * yaw: rotation around the player (radians, 0 = camera behind the player looking down -Z).
  * dist: distance from the player; pitch is derived from dist so zooming in also lowers the camera.
+ * tilt: 0 normal … 1 looking up at the sky (vertical drag, or the sky button by the weather chip).
  */
-export const cameraOrbit = { yaw: 0, dist: 10, minDist: 5, maxDist: 16 };
+export const cameraOrbit = { yaw: 0, dist: 10, minDist: 5, maxDist: 16, tilt: 0, tiltTarget: 0 };
+/** Kind of the last pointer that went down on the canvas (click-to-move is for the mouse only). */
+export const lastPointer = { type: 'mouse' };
+const TILT_SPEED = 0.004; // per CSS pixel of vertical drag: drag up to look up at the sky
 
 const ROTATE_SPEED = 0.006; // radians per CSS pixel
 const WHEEL_SPEED = 0.01;
@@ -25,6 +29,7 @@ export function attachCameraGestures(el: HTMLElement): () => void {
     if (isUi(e.target)) return;
     if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    lastPointer.type = e.pointerType;
     if (pointers.size === 2) pinchDist = spread();
     dragging = true;
     // No pointer capture here: capturing on the container would steal pointerup from the canvas and
@@ -39,6 +44,7 @@ export function attachCameraGestures(el: HTMLElement): () => void {
     const cur = { x: e.clientX, y: e.clientY };
     if (pointers.size === 1) {
       cameraOrbit.yaw -= (cur.x - prev.x) * ROTATE_SPEED;
+      cameraOrbit.tiltTarget = Math.min(1, Math.max(0, cameraOrbit.tiltTarget - (cur.y - prev.y) * TILT_SPEED));
     }
     pointers.set(e.pointerId, cur);
     if (pointers.size === 2) {
