@@ -40,5 +40,5 @@ export function Sheet({ children, onClose, wide, label }: { children: ReactNode;
 
 /** Header strip used inside Sheet; on phones dragging it down also closes the sheet. */
 export function SheetHeader({ children }: { children: ReactNode }) {
-  return <header className="flex items-start justify-between border-b px-4 py-3 sm:px-5">{children}</header>;
+  return <header className="flex shrink-0 items-start justify-between border-b px-4 py-3 sm:px-5">{children}</header>;
 }

@@ -152,7 +152,7 @@ export function AreaPanel() {
           ✕
         </button>
       </SheetHeader>
-      <div className="flex gap-1 overflow-x-auto border-b px-3 sm:px-5">
+      <div className="flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b px-3 sm:px-5">
         {tabs.map((x) => (
           <button key={x.id} type="button" onClick={() => setTab(x.id)} className={`min-h-10 shrink-0 border-b-2 px-2.5 text-sm ${active === x.id ? 'border-blue-600 font-semibold text-blue-700' : 'border-transparent text-gray-600'}`}>
             {t(x.label)}
