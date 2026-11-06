@@ -1,14 +1,13 @@
 import { memo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import { KeyboardControls } from '@react-three/drei';
 import { Horizon } from './Horizon';
 import { NightLights } from './NightLights';
 import { InteriorLights } from './InteriorLights';
 import { Clouds, Rain, SkyController, SkyDome, StreetLamps } from './Sky';
 import { GroundClick } from './GroundClick';
 import { City } from './City';
-import { LocalPlayer, type Controls } from './LocalPlayer';
+import { LocalPlayer } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
 import { Critters } from './Critters';
@@ -21,20 +20,14 @@ import { Areas } from './areas/Areas';
 import { SunFollow } from './SunFollow';
 import { useSettings } from '../store/settings';
 
-const KEYMAP: { name: Controls; keys: string[] }[] = [
-  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-  { name: 'back', keys: ['ArrowDown', 'KeyS'] },
-  { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
-  { name: 'right', keys: ['ArrowRight', 'KeyD'] },
-  { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
-];
+/** Movement keys: see input/keys.ts (robust against Vietnamese input methods). */
 
 /** Memoised: HUD state changes in App must never re-render (and re-diff) the whole 3D tree. */
 export default memo(function Scene({ playerName }: { playerName: string }) {
   const quality = useSettings((s) => s.quality);
   const low = quality === 'low';
   return (
-    <KeyboardControls map={KEYMAP}>
+    <>
       <Canvas
         key={quality} // shadow map settings are fixed at renderer creation
         shadows={low ? false : { type: THREE.PCFShadowMap }}
@@ -73,6 +66,6 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         </Suspense>
         <PerfProbe />
       </Canvas>
-    </KeyboardControls>
+    </>
   );
 });

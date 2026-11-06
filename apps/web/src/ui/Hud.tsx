@@ -64,11 +64,13 @@ export function Collapsible({ id, icon, title, children, reverse }: { id: string
       {open ? '✕' : icon}
     </HudButton>
   );
+  // on short screens (phones held sideways) the opened buttons line up in a row: a column would run off the bottom
+  const items = open ? <div className="flex flex-col items-end gap-2 [@media(max-height:500px)]:flex-row-reverse">{children}</div> : null;
   return (
     <>
-      {reverse && open ? children : null}
+      {reverse ? items : null}
       {btn}
-      {!reverse && open ? children : null}
+      {!reverse ? items : null}
     </>
   );
 }
@@ -418,8 +420,9 @@ export function FeedbackButton({ compact }: { compact?: boolean }) {
           💬 {t('Feedback')}
         </button>
       )}
+      {/* fixed: centred on the screen, not on the button (on phones the button sits in the narrow right-hand column) */}
       {open && (
-        <div data-ui className="absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2 rounded-xl bg-white p-4 shadow-2xl">
+        <div data-ui className="fixed left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-50 max-h-[calc(100dvh-5rem)] w-[92vw] max-w-sm -translate-x-1/2 overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
           <form onSubmit={submit}>
             <div className="mb-2 flex items-center justify-between">
               <b className="text-sm">{t('Tell us what you think')}</b>

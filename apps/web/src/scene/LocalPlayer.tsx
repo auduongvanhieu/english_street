@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import { busStep, joinRide, matchArrival, useBus } from '../store/bus';
 import { decodeBus } from '../world/bus';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useKeyboardControls } from '@react-three/drei';
+import { getControls, installKeys } from '../input/keys';
+
+installKeys();
 import * as THREE from 'three';
 import { GRAVITY, INPUT_RATE_HZ, INTERACT_RADIUS, JUMP_SPEED, WALK_SPEED } from '@es/shared';
 import { sendInput } from '../net/client';
@@ -63,7 +65,7 @@ import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
 import { POOL_WORLD } from '../world/places/hotel';
 
-export type Controls = 'forward' | 'back' | 'left' | 'right' | 'run';
+export type { Controls } from '../input/keys';
 
 /** Live local position (mutable, read by RemotePlayers for distance culling without React churn). */
 export const localPos = new THREE.Vector3(0, 0, 4);
@@ -98,7 +100,7 @@ function typingInField() {
 
 export function LocalPlayer({ name }: { name: string }) {
   const ref = useRef<THREE.Group>(null);
-  const [, get] = useKeyboardControls<Controls>();
+  const get = getControls;
   const camera = useThree((s) => s.camera);
   const blockers = useMemo(buildBlockers, []);
   const posts = useMemo(buildLampPosts, []);
