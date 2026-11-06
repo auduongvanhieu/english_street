@@ -23,6 +23,8 @@ export interface UserRow {
   placementDoneAt: string | null;
   reviewsDone: number;
   device?: Partial<DeviceInfo> | null;
+  /** IP they last joined from ('' = not seen since IPs were recorded) */
+  lastIp?: string;
 }
 export function UserBadges({ u }: { u: Pick<UserRow, 'email' | 'role' | 'bannedUntil' | 'mutedUntil'> }) {
   const L = useL();
@@ -61,7 +63,7 @@ export function UsersPage() {
             setPage(1);
           }}
         >
-          <Text value={q} onChange={setQ} placeholder={L('Tên, email hoặc id…', 'Name, e-mail or id…')} aria-label={L('Tìm', 'Search')} />
+          <Text value={q} onChange={setQ} placeholder={L('Tên, email, id hoặc IP…', 'Name, e-mail, id or IP…')} aria-label={L('Tìm', 'Search')} />
           <Select
             aria-label={L('Loại', 'Kind')}
             value={kind}
@@ -120,6 +122,7 @@ export function UsersPage() {
                   { key: 'level', label: L('Trình độ', 'Level'), render: (u) => u.cefrLevel },
                   { key: 'lang', label: L('Ngôn ngữ', 'Lang'), render: (u) => u.nativeLang || '—', wide: true },
                   { key: 'dev', label: L('Thiết bị', 'Device'), render: (u) => <span className="text-xs text-gray-600">{deviceSummary(u.device) || '—'}</span> },
+                  { key: 'ip', label: 'IP', render: (u) => <span className="font-mono text-xs text-gray-600">{u.lastIp || '—'}</span>, wide: true },
                   { key: 'xp', label: 'XP', render: (u) => fmtNum(u.xp), className: 'text-right tabular-nums' },
                   { key: 'coins', label: '🪙', render: (u) => fmtNum(u.coins), className: 'text-right tabular-nums' },
                   { key: 'streak', label: '🔥', render: (u) => u.streak, className: 'text-right', wide: true },

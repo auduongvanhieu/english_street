@@ -84,6 +84,8 @@ export function UserDetail({ id }: { id: string }) {
                     <dd>
                       <DeviceDetails d={u.device} />
                     </dd>
+                    <dt className="text-gray-500">IP</dt>
+                    <dd className="font-mono text-xs">{u.lastIp || '—'}</dd>
                     <dt className="text-gray-500">{L('Tạo lúc', 'Created')}</dt>
                     <dd>{fmtDate(u.createdAt)}</dd>
                     <dt className="text-gray-500">{L('Hoạt động', 'Active')}</dt>

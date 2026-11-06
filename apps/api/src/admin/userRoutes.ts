@@ -28,6 +28,7 @@ const PUBLIC_USER = {
   placementDoneAt: true,
   reviewsDone: true,
   device: true,
+  lastIp: true,
 } as const;
 
 const ListQuery = z.object({
@@ -61,7 +62,7 @@ export function adminUserRoutes(app: FastifyInstance) {
     const now = new Date();
     const where: Prisma.UserWhereInput = {
       NOT: { id: { startsWith: 'admin-test-' } },
-      ...(text ? { OR: [{ name: { contains: text, mode: 'insensitive' } }, { email: { contains: text, mode: 'insensitive' } }, { id: text }] } : {}),
+      ...(text ? { OR: [{ name: { contains: text, mode: 'insensitive' } }, { email: { contains: text, mode: 'insensitive' } }, { id: text }, { lastIp: { startsWith: text } }] } : {}),
       ...(level ? { cefrLevel: level } : {}),
       ...(lang ? { nativeLang: lang } : {}),
       ...(active ? { lastActiveAt: { gte: new Date(Date.now() - active * 86_400_000) } } : {}),

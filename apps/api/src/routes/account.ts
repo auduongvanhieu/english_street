@@ -208,6 +208,8 @@ export function accountRoutes(repo: AttemptRepo) {
       const prev = await repo.getUser(id);
       // guests are known by the name they type; accounts keep their own name
       await repo.ensureUser(id, !prev?.email && clean.length >= 2 ? clean : (prev?.name ?? 'Guest'));
+      // the IP they play from (admin site: players list); behind nginx req.ip is the client (TRUST_PROXY)
+      if (repo.name === 'postgres') await prisma.user.update({ where: { id }, data: { lastIp: (req.ip ?? '').slice(0, 64) } }).catch(() => undefined);
       const d = DeviceInfoSchema.safeParse(body.data.device ?? {});
       if (d.success && repo.name === 'postgres') {
         await prisma.user.update({ where: { id }, data: { device: d.data as object } }).catch(() => undefined);

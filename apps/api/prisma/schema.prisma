@@ -59,6 +59,8 @@ model User {
   totpSecret   String?
   /// Last device the player joined with (DeviceInfo from @es/shared): model, OS, network…
   device       Json     @default("{}")
+  /// IP address the player last joined from (POST /me/hello; admin site only).
+  lastIp       String   @default("")
 
   attempts QuestAttempt[]
   vocab    VocabEntry[]
