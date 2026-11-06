@@ -123,7 +123,8 @@ export function buildTiles(): TilePlacement[] {
     // road and pavements
     tiles.push(...streetCross(tx));
     // south: small park
-    if (tx === 0) tiles.push({ model: 'pavement-fountain', tx, tz: 2 });
+    // the fountain itself is a Blender LPM model drawn on this pavement tile (scene/City.tsx, assets-src/lpm/recipes/fountain.py)
+    if (tx === 0) tiles.push({ model: 'pavement', tx, tz: 2 });
     else tiles.push({ model: tx % 2 === 0 ? 'grass-trees' : 'grass', tx, tz: 2 });
     tiles.push({ model: tx % 3 === 1 ? 'grass-willow' : 'grass', tx, tz: 3 });
   }

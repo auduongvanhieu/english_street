@@ -10,3 +10,5 @@ build/
 coverage/
 apps/api/src/generated/
 .sm-uploads/
+_work/
+__pycache__/

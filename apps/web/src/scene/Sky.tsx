@@ -10,6 +10,7 @@ import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { cloudTexture } from './Horizon';
 import { glowTexture } from './nightGlow';
 import { localPos } from './LocalPlayer';
+import { preloadLpm, useLpmGeometry } from './LpmModel';
 import { ambientBirds } from '../audio/ambient';
 
 /**
@@ -266,19 +267,8 @@ function lampSpots() {
   return out;
 }
 
-/** One lamp post at the origin, its arm reaching towards −z (over the road for a post on the +z kerb). */
-let postGeo: THREE.BufferGeometry | null = null;
-function lampPostGeometry() {
-  if (postGeo) return postGeo;
-  const p = new Part();
-  p.add(box(0.42, 0.36, 0.42), '#5d6573', { p: [0, 0.18, 0] });
-  p.add(box(0.18, LAMP_H, 0.18), '#7b8494', { p: [0, LAMP_H / 2, 0] });
-  p.add(box(0.22, 0.22, 0.22), '#7b8494', { p: [0, LAMP_H, 0] });
-  p.add(box(0.14, 0.14, LAMP_ARM), '#7b8494', { p: [0, LAMP_H, -LAMP_ARM / 2] });
-  p.add(box(0.44, 0.18, 0.56), '#4b5260', { p: [0, LAMP_H - 0.02, -LAMP_ARM] });
-  postGeo = p.build();
-  return postGeo;
-}
+/** One lamp post at the origin, its arm reaching towards −z: Blender LPM asset assets-src/lpm/recipes/street_lamp.py. */
+preloadLpm('street_lamp');
 
 /** Bulbs, halos and pools of light under every street lamp; a few real lights near the player on high quality. */
 export function StreetLamps({ low }: { low: boolean }) {
@@ -289,7 +279,7 @@ export function StreetLamps({ low }: { low: boolean }) {
   const poolMat = useMemo(() => new THREE.MeshBasicMaterial({ map: tex, color: '#ffcf70', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.5 }), [tex]);
   const bulbs = useRef<THREE.InstancedMesh>(null);
   const posts = useRef<THREE.InstancedMesh>(null);
-  const postGeometry = useMemo(lampPostGeometry, []);
+  const postGeometry = useLpmGeometry('street_lamp');
   const pools = useRef<THREE.InstancedMesh>(null);
   const haloGeo = useMemo(() => {
     const g = new THREE.BufferGeometry();

@@ -14,14 +14,18 @@ import {
   type TileModel,
   type TilePlacement,
 } from '../world/layout';
+import { LpmModel, preloadLpm } from './LpmModel';
 
 /** Tiles sit with their top surface at y≈0 (road thickness 0.05 tile). */
 const TILE_Y = -0.05 * TILE;
 
+/** Top of the pavement tile (0.06 tile thick). */
+const PAVEMENT_TOP = MODEL_HEIGHT.pavement * TILE + TILE_Y;
+preloadLpm('fountain');
+
 const ALL_MODELS: TileModel[] = [
   'road-straight',
   'pavement',
-  'pavement-fountain',
   'grass',
   'grass-trees',
   'grass-trees-tall',
@@ -48,6 +52,8 @@ export function City() {
       {SHOPS.map((s) => (
         <Shop key={s.id} shop={s} />
       ))}
+      {/* park fountain on the pavement tile at (0, 2): inside the ±1.2 m blocker from buildBlockers() */}
+      <LpmModel slug="fountain" position={[0, PAVEMENT_TOP, 2 * TILE]} />
     </group>
   );
 }

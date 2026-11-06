@@ -2,6 +2,7 @@
 
 | Folder | Source | License |
 |---|---|---|
+| `lpm/` | English Street originals, built in Blender with [blender-lpm-skill](https://github.com/ozanzeng/blender-LPM-skill) (MIT toolkit); recipes in `assets-src/lpm/recipes/` | project's own |
 | `city/` | Kenney — [Starter Kit City Builder](https://github.com/KenneyNL/Starter-Kit-City-Builder) (models + `Textures/colormap.png`) | CC0 1.0 |
 
 Consider supporting the creators: https://kenney.nl/donate · https://www.patreon.com/quaternius

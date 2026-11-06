@@ -8,6 +8,7 @@ import { sky } from '../world/sky';
 import { MODEL_URL, SHOPS, SHOP_ROW_TZ, TILE, buildTiles, type TileModel } from '../world/layout';
 import { BRIDGE_X, SOUTH_END_X, STREET_END_X } from '../world/areas';
 import { Part, box, chibiMaterial } from './chibi/buildChibi';
+import { preloadLpm, useLpmGeometry } from './LpmModel';
 import { RIVER_FAR_Z, RIVER_NEAR_Z, TILE_Y, backdropPlacements } from './Horizon';
 import { FAIRY, bulbMat, glowGeometry, glowPointsMat, poolMat, reflectMat, updateNightGlow, type Glow } from './nightGlow';
 
@@ -35,17 +36,8 @@ function lanternPosts() {
   return out;
 }
 
-let postGeo: THREE.BufferGeometry | null = null;
-function lanternPostGeometry() {
-  if (postGeo) return postGeo;
-  const p = new Part();
-  p.add(box(0.34, 0.2, 0.34), '#4b5260', { p: [0, 0.1, 0] });
-  p.add(box(0.1, LANTERN_H - 0.2, 0.1), '#2f3540', { p: [0, (LANTERN_H - 0.2) / 2, 0] });
-  p.add(box(0.4, 0.07, 0.4), '#2f3540', { p: [0, LANTERN_H + 0.2, 0] });
-  p.add(box(0.2, 0.08, 0.2), '#2f3540', { p: [0, LANTERN_H + 0.27, 0] });
-  postGeo = p.build();
-  return postGeo;
-}
+/** The post itself: Blender LPM asset assets-src/lpm/recipes/lantern_post.py (cage open around the bulb at LANTERN_H). */
+preloadLpm('lantern_post');
 
 /** Crown vertices of a tree tile (tile-local, metres before the tile scale): where the fairy lights hang. */
 function crownPoints(scene: THREE.Object3D, n: number) {
@@ -93,6 +85,7 @@ export function NightLights({ low }: { low: boolean }) {
   const tall = useTileScene('grass-trees-tall');
   const willow = useTileScene('grass-willow');
   const posts = useMemo(lanternPosts, []);
+  const postGeometry = useLpmGeometry('lantern_post');
 
   const glows = useMemo(() => {
     const g: Glow[] = [];
@@ -165,7 +158,7 @@ export function NightLights({ low }: { low: boolean }) {
 
   return (
     <group>
-      <instancedMesh ref={postRef} args={[lanternPostGeometry(), chibiMaterial(), posts.length]} castShadow={!low} receiveShadow frustumCulled={false} />
+      <instancedMesh ref={postRef} args={[postGeometry, chibiMaterial(), posts.length]} castShadow={!low} receiveShadow frustumCulled={false} />
       <instancedMesh ref={bulbRef} args={[undefined, bulbMat, posts.length + shopLamps]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
       </instancedMesh>

@@ -1,6 +1,8 @@
 import { Suspense, lazy, useRef, type ComponentType, type LazyExoticComponent } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { AreaId } from '@es/shared';
 import { AREAS, BRIDGE_X, BUS_STOPS, SOUTH_MIN_Z, areaAt, areaById, areaFrame, frontZ, type AreaDef } from '../../world/areas';
 // Blockers of every area register when these load: they must not wait for the (lazy) scenes.
@@ -14,6 +16,15 @@ import { localPos } from '../LocalPlayer';
 import { useArea } from '../../store/area';
 import { useGame } from '../../store/game';
 import { Merged, NearArea, Sign, box, cyl, sphere } from './kit';
+import { LpmModel, preloadLpm } from '../LpmModel';
+import { windowMat } from '../nightGlow';
+
+preloadLpm('bus_shelter');
+/** Both faces of the shelter's advert light box (poster faces at x = 1.245 / 1.115, centre y 1.15, z -0.04). */
+const AD_GLOW = mergeGeometries([
+  new THREE.PlaneGeometry(0.7, 1.3).rotateY(Math.PI / 2).translate(1.247, 1.15, -0.04),
+  new THREE.PlaneGeometry(0.7, 1.3).rotateY(-Math.PI / 2).translate(1.113, 1.15, -0.04),
+]);
 
 /** Each area scene is its own chunk, loaded the first time the player comes near (NearArea), dropped when far. */
 const named = <K extends string>(p: Promise<Record<K, ComponentType>>, k: K) => p.then((m) => ({ default: m[k] }));
@@ -159,18 +170,12 @@ function BusStop({ x, z }: { x: number; z: number }) {
         open('bus');
       }}
     >
-      <Merged
-        build={(p) => {
-          for (const dx of [-1.1, 1.1]) p.add(box(0.1, 2.3, 0.1), '#596273', { p: [dx, 1.15, 0.5] });
-          p.add(box(2.5, 0.1, 1.3), '#2f80ed', { p: [0, 2.35, 0.1] });
-          p.add(box(2.4, 1.6, 0.05), '#cfe6ff', { p: [0, 1.25, -0.45] });
-          p.add(box(1.8, 0.08, 0.4), '#a0703c', { p: [0, 0.5, -0.2] });
-          p.add(cyl(0.05, 0.05, 2.6, 8), '#596273', { p: [1.6, 1.3, 0.5] });
-          p.add(cyl(0.32, 0.32, 0.06, 16), '#2f80ed', { p: [1.6, 2.55, 0.5], r: [Math.PI / 2, 0, 0] });
-        }}
-      />
+      {/* Blender LPM asset: assets-src/lpm/recipes/bus_shelter.py (bench seat 0.5 m, sign disc at (1.85, 2.55, 0.5)) */}
+      <LpmModel slug="bus_shelter" />
+      {/* the advert light box glows at night */}
+      <mesh geometry={AD_GLOW} material={windowMat} renderOrder={2} />
       {[0.54, 0.46].map((tz, i) => (
-        <Text key={tz} position={[1.6, 2.55, tz]} rotation-y={i ? Math.PI : 0} fontSize={0.3} color="#fff" anchorX="center" anchorY="middle">
+        <Text key={tz} position={[1.85, 2.55, tz]} rotation-y={i ? Math.PI : 0} fontSize={0.3} color="#fff" anchorX="center" anchorY="middle">
           BUS
         </Text>
       ))}
