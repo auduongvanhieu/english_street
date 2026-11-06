@@ -6,7 +6,6 @@ import {
   SHOUT_COOLDOWN_MS,
   SHOUT_RADIUS,
   STREET_ROOM_MAX_CLIENTS,
-  TALK_DROP_RADIUS,
   MAX_JUMP_Y,
   MAIN_ZONE_NAME,
   STREET_ROOM,
@@ -72,7 +71,7 @@ async function checkBan(uid: string, tokenVersion?: number) {
 export class StreetRoom extends Room<{ state: StreetState }> {
   maxClients = STREET_ROOM_MAX_CLIENTS;
   /** Pending talk requests: target sessionId -> requester sessionId. */
-  private talkRequests = new Map<string, string>();
+  private talkRequests = new Map<string, { from: string; call: boolean }>();
   private lastShoutAt = new Map<string, number>();
   private lastAvatarAt = new Map<string, number>();
   /** Zone identity (also published as room metadata for the zone list). */
@@ -232,7 +231,6 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     let lastHeat = Date.now();
     this.setSimulationInterval(() => {
       this.expireBubbles();
-      this.dropDistantTalks();
       if (Date.now() - lastHeat >= HEAT_EVERY_MS) {
         lastHeat = Date.now();
         this.state.players.forEach((p: Player) => sampleHeat(p.x, p.z));
@@ -288,25 +286,27 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     const near = dist2(me, other) <= (PROXIMITY_RADIUS + INTERACT_RADIUS) ** 2;
     switch (msg.type) {
       case 'request': {
-        if (!near) return;
+        const call = msg.call === true;
+        if (!near && !call) return;
         if (me.talkWith || other.talkWith) return client.send(MSG.TALK, { to: msg.to, from: msg.to, type: 'end', reason: 'busy' });
-        this.talkRequests.set(msg.to, client.sessionId);
-        target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'request', name: me.name });
+        this.talkRequests.set(msg.to, { from: client.sessionId, call });
+        target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'request', name: me.name, call });
         return;
       }
       case 'accept': {
-        if (this.talkRequests.get(client.sessionId) !== msg.to) return;
+        const req = this.talkRequests.get(client.sessionId);
+        if (req?.from !== msg.to) return;
         this.talkRequests.delete(client.sessionId);
-        if (!near || me.talkWith || other.talkWith) return client.send(MSG.TALK, { to: msg.to, from: msg.to, type: 'end', reason: 'busy' });
+        if ((!near && !req.call) || me.talkWith || other.talkWith) return client.send(MSG.TALK, { to: msg.to, from: msg.to, type: 'end', reason: 'busy' });
         me.talkWith = msg.to;
         other.talkWith = client.sessionId;
-        client.send(MSG.TALK, { to: client.sessionId, from: msg.to, type: 'start', name: other.name });
-        target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'start', name: me.name });
-        console.log(`[street] talk: ${me.name} <-> ${other.name}`);
+        client.send(MSG.TALK, { to: client.sessionId, from: msg.to, type: 'start', name: other.name, call: req.call });
+        target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'start', name: me.name, call: req.call });
+        console.log(`[street] ${req.call ? 'call' : 'talk'}: ${me.name} <-> ${other.name}`);
         return;
       }
       case 'decline': {
-        if (this.talkRequests.get(client.sessionId) === msg.to) this.talkRequests.delete(client.sessionId);
+        if (this.talkRequests.get(client.sessionId)?.from === msg.to) this.talkRequests.delete(client.sessionId);
         target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'decline' });
         return;
       }
@@ -323,6 +323,11 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       }
       case 'end': {
         if (me.talkWith === msg.to) this.endTalk(client.sessionId, 'left');
+        else if (this.talkRequests.get(msg.to)?.from === client.sessionId) {
+          // the caller hung up before an answer
+          this.talkRequests.delete(msg.to);
+          target.send(MSG.TALK, { to: msg.to, from: client.sessionId, type: 'end', reason: 'left' });
+        }
         return;
       }
     }
@@ -339,14 +344,6 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     for (const [a, b] of [[sessionId, otherId], [otherId, sessionId]] as const) {
       this.clients.find((c) => c.sessionId === a)?.send(MSG.TALK, { to: a, from: b, type: 'end', reason });
     }
-  }
-
-  private dropDistantTalks() {
-    this.state.players.forEach((p: Player) => {
-      if (!p.talkWith) return;
-      const q = this.state.players.get(p.talkWith);
-      if (!q || dist2(p, q) > TALK_DROP_RADIUS * TALK_DROP_RADIUS) this.endTalk(p.id, 'distance');
-    });
   }
 
   onJoin(client: Client, options: Partial<JoinOptions>) {
@@ -399,7 +396,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     if (typeof to !== 'string' || to === from.sessionId) return null;
     const a = this.state.players.get(from.sessionId);
     const b = this.state.players.get(to);
-    if (!a || !b || dist2(a, b) > RELAY_RADIUS * RELAY_RADIUS) return null;
+    // talk/call partners stay connected however far apart they walk
+    if (!a || !b || (a.talkWith !== to && dist2(a, b) > RELAY_RADIUS * RELAY_RADIUS)) return null;
     return this.clients.find((c) => c.sessionId === to) ?? null;
   }
 

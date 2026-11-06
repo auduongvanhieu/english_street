@@ -195,6 +195,11 @@ function newPeer(id: string, initiator: boolean): Peer {
     if (pc.connectionState === 'connected') syncConnected();
     if (pc.connectionState === 'failed' || pc.connectionState === 'closed') dropPeer(id);
   };
+  // an offer can get lost (e.g. it arrived while the other side was still switching its mic on): if the link
+  // is not up after a while, start over (tick() reconnects)
+  window.setTimeout(() => {
+    if (peers.get(id) === peer && pc.connectionState !== 'connected') dropPeer(id);
+  }, 6_000);
   return peer;
 }
 

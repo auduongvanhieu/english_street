@@ -35,5 +35,5 @@ export const INTERACT_RADIUS = 2.6;
 export const SHOUT_RADIUS = 24;
 /** Minimum time between two shouts from the same player. */
 export const SHOUT_COOLDOWN_MS = 5000;
-/** A private talk ends automatically when the two players drift further apart than this. */
+/** (unused since talks and calls go on at any distance) */
 export const TALK_DROP_RADIUS = PROXIMITY_RADIUS * 2;

@@ -100,10 +100,11 @@ export interface ChatDelivery {
 
 /** One-to-one talk. `to` is the other player's sessionId; the server adds `from` and sends `start`/`end` itself. */
 export type TalkMessage = { to: string; from?: string } & (
-  | { type: 'request'; name: string }
+  /** call: a voice call (any distance, mic on) instead of a text chat with someone nearby */
+  | { type: 'request'; name: string; call?: boolean }
   | { type: 'accept' }
   | { type: 'decline' }
-  | { type: 'start'; name: string }
+  | { type: 'start'; name: string; call?: boolean }
   | { type: 'msg'; text: string }
   | { type: 'typing' }
   | { type: 'end'; reason?: 'left' | 'distance' | 'busy' }

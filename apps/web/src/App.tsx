@@ -25,7 +25,7 @@ import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
-import { PlayerPopup, ShoutButton, TalkBox, TalkToast, FollowChip } from './ui/Talk';
+import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
 import { setAmbientVolume } from './audio/ambient';
 import { exposeSession, isNativeApp, onNative } from './native/bridge';
@@ -90,7 +90,7 @@ export default function App() {
   const busy = useGame((s) => s.panelNpc !== null || s.uiPanel !== null);
   const uiPanel = useGame((s) => s.uiPanel);
   const inPair = usePair((s) => !!s.state || s.loading || !!s.summaries);
-  const inTalk = useTalk((s) => !!s.partner);
+  const inTalk = useTalk((s) => !!s.partner && s.open);
   useKeyboardInset();
   // Admin maintenance switch: the street is closed (staff can continue from an admin tab).
   const maintenance = useWorld((s) => s.cfg?.maintenance ?? '');
@@ -352,6 +352,7 @@ export default function App() {
       <ZoneChip compact={touch} onChange={() => { setPicker(true); leaveRoom(); }} />
       <InviteToast />
       <TalkToast />
+      {!hudHidden && <TalkBar />}
       <FollowChip />
       {!hudHidden && <PlayerPopup />}
       {!hudHidden && <CritterCard />}

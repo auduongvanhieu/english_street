@@ -24,6 +24,7 @@ export function PlayerPopup() {
   const playEmote = useGame((s) => s.playEmote);
   const talk = useTalk();
   const following = useFollow((s) => s.target?.id === id);
+  const vc = useVoiceChat();
   const t = useT();
   if (!p || !me) return null;
   const d = Math.hypot(p.x - me.x, p.z - me.z);
@@ -34,7 +35,7 @@ export function PlayerPopup() {
       <div className="mb-2 flex items-center justify-between">
         <div>
           <b className="text-sm">{p.name}</b>
-          <div className="text-xs text-gray-500">{near ? t('nearby') : t('{distance} m away — walk closer to talk', { distance: Math.round(d) })}{p.talkWith ? ` · ${t('in a conversation')}` : ''}</div>
+          <div className="text-xs text-gray-500">{near ? t('nearby') : t('{distance} m away — walk closer to chat, or call', { distance: Math.round(d) })}{p.talkWith ? ` · ${t('in a conversation')}` : ''}</div>
         </div>
         <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 text-sm text-gray-500" aria-label={t('Close player menu')}>
           ✕
@@ -44,6 +45,11 @@ export function PlayerPopup() {
         <button type="button" disabled={!near || busy} onClick={() => talk.request(p.id, p.name)} className="min-h-11 rounded-lg bg-blue-600 text-sm font-medium text-white disabled:opacity-50">
           💬 {t('Request to talk')}
         </button>
+        {vc.supported && (
+          <button type="button" disabled={busy} onClick={() => talk.request(p.id, p.name, true)} className="min-h-11 rounded-lg bg-green-600 text-sm font-medium text-white disabled:opacity-50">
+            📞 {t('Voice call (any distance)')}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -68,26 +74,68 @@ export function PlayerPopup() {
   );
 }
 
-/** Incoming request / waiting / notices for private talks. */
+/** A soft phone ring (two short beeps every 2 s) while someone is calling us. */
+function useRing(on: boolean) {
+  useEffect(() => {
+    if (!on) return;
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const beep = (at: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0, at);
+      g.gain.linearRampToValueAtTime(0.12, at + 0.02);
+      g.gain.setValueAtTime(0.12, at + 0.18);
+      g.gain.linearRampToValueAtTime(0, at + 0.22);
+      o.connect(g).connect(ctx.destination);
+      o.start(at);
+      o.stop(at + 0.25);
+    };
+    const ring = () => {
+      void ctx.resume();
+      beep(ctx.currentTime + 0.01);
+      beep(ctx.currentTime + 0.32);
+    };
+    ring();
+    const timer = window.setInterval(ring, 2000);
+    return () => {
+      window.clearInterval(timer);
+      void ctx.close();
+    };
+  }, [on]);
+}
+
+/** Incoming request or call / waiting (with cancel) / notices for private talks. */
 export function TalkToast() {
   const inc = useTalk((s) => s.incoming);
   const pending = useTalk((s) => s.pendingTo);
   const notice = useTalk((s) => s.notice);
   const accept = useTalk((s) => s.accept);
   const decline = useTalk((s) => s.decline);
+  const cancel = useTalk((s) => s.cancel);
   const t = useT();
+  useRing(!!inc?.call);
+  // nobody answers for 30 s: let it go
+  useEffect(() => {
+    if (!inc) return;
+    const timer = window.setTimeout(() => useTalk.getState().decline(), 30_000);
+    return () => window.clearTimeout(timer);
+  }, [inc]);
   if (inc) {
-    const [before, after = ''] = t('{name} would like to talk with you.').split('{name}');
+    const [before, after = ''] = (inc.call ? t('{name} is calling you.') : t('{name} would like to talk with you.')).split('{name}');
     return (
       <div data-ui className={`${TOP} w-[92vw] max-w-sm rounded-xl bg-white p-4 shadow-2xl`}>
         <p className="text-sm">
+          {inc.call ? <span className="mr-1 inline-block animate-bounce">📞</span> : null}
           {before}
           <b>{inc.name}</b>
           {after}
         </p>
         <div className="mt-3 flex gap-2">
-          <button type="button" onClick={accept} className="min-h-11 flex-1 rounded-lg bg-blue-600 text-sm font-medium text-white">
-            {t('Accept')}
+          <button type="button" onClick={accept} className={`min-h-11 flex-1 rounded-lg text-sm font-medium text-white ${inc.call ? 'bg-green-600' : 'bg-blue-600'}`}>
+            {inc.call ? `📞 ${t('Answer the call')}` : t('Accept')}
           </button>
           <button type="button" onClick={decline} className="min-h-11 flex-1 rounded-lg border text-sm">
             {t('Not now')}
@@ -96,9 +144,79 @@ export function TalkToast() {
       </div>
     );
   }
-  if (pending) return <div className={`${TOP} rounded-xl bg-white/90 px-4 py-2 text-sm shadow`}>{t('Asking {name}…', { name: pending.name })}</div>;
+  if (pending)
+    return (
+      <div data-ui className={`${TOP} flex items-center gap-3 rounded-xl bg-white/95 py-1.5 pl-4 pr-1.5 text-sm shadow`}>
+        <span>{pending.call ? `📞 ${t('Calling {name}…', { name: pending.name })}` : t('Asking {name}…', { name: pending.name })}</span>
+        <button type="button" onClick={cancel} className="min-h-9 rounded-lg bg-red-50 px-3 text-sm font-medium text-red-700">
+          {t('Cancel')}
+        </button>
+      </div>
+    );
   if (notice) return <div className={`${TOP} rounded-xl bg-white/90 px-4 py-2 text-sm shadow`}>{notice}</div>;
   return null;
+}
+
+/**
+ * The talk or call while its chat window is closed: a small bar at the top so you can walk, play and do
+ * other things meanwhile. Shows the call timer and mute for calls, the last message and unread count for chats.
+ */
+export function TalkBar() {
+  const partner = useTalk((s) => s.partner);
+  const open = useTalk((s) => s.open);
+  const call = useTalk((s) => s.call);
+  const startedAt = useTalk((s) => s.startedAt);
+  const unread = useTalk((s) => s.unread);
+  const typing = useTalk((s) => s.partnerTyping);
+  const last = useTalk((s) => s.lines[s.lines.length - 1]);
+  const setOpen = useTalk((s) => s.setOpen);
+  const end = useTalk((s) => s.end);
+  const vc = useVoiceChat();
+  const t = useT();
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!partner || open || !call) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [partner, open, call]);
+  if (!partner || open) return null;
+  const secs = Math.max(0, Math.floor((now - startedAt) / 1000));
+  const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  const connected = vc.connected.includes(partner.id);
+  const sub = call
+    ? !vc.mic
+      ? t('microphone off')
+      : connected
+        ? `${clock}${vc.muted ? ` · ${t('muted')}` : ''}`
+        : t('connecting voice…')
+    : typing
+      ? t('{name} is typing…', { name: partner.name })
+      : last
+        ? `${last.from === 'me' ? `${t('You')}: ` : ''}${last.text}`
+        : t('Tap to open the chat');
+  return (
+    <div data-ui className={`${TOP} flex w-[min(92vw,22rem)] items-center gap-2 rounded-2xl p-1.5 pl-3 shadow-xl ${call ? 'bg-green-700 text-white' : 'bg-white text-gray-900'}`} role="status" aria-label={call ? t('Call with {name}', { name: partner.name }) : t('Talking to {name}', { name: partner.name })}>
+      <button type="button" onClick={() => setOpen(true)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+        <span className={`text-lg ${call && connected && !vc.muted ? 'animate-pulse' : ''}`}>{call ? '📞' : '💬'}</span>
+        <span className="min-w-0">
+          <b className="block truncate text-sm leading-tight">{partner.name}</b>
+          <span className={`block truncate text-xs ${call ? 'text-green-100' : 'text-gray-500'}`}>{sub}</span>
+        </span>
+      </button>
+      {call && (
+        <button type="button" onClick={() => (vc.mic ? vc.toggleMute() : void vc.enable())} className={`min-h-10 min-w-10 rounded-full text-lg ${vc.mic && !vc.muted ? 'bg-white/20' : 'bg-white text-gray-900'}`} aria-label={vc.mic ? (vc.muted ? t('Unmute') : t('Mute')) : t('Turn on microphone')} title={vc.mic ? (vc.muted ? t('Unmute') : t('Mute')) : t('Turn on microphone')}>
+          {vc.mic && !vc.muted ? '🎙️' : '🔇'}
+        </button>
+      )}
+      <button type="button" onClick={() => setOpen(true)} className={`relative min-h-10 min-w-10 rounded-full text-lg ${call ? 'bg-white/20' : 'bg-gray-100'}`} aria-label={t('Open chat')} title={t('Open chat')}>
+        💬
+        {unread > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1 text-xs font-bold text-white">{unread}</span>}
+      </button>
+      <button type="button" onClick={end} className="min-h-10 min-w-10 rounded-full bg-red-600 text-lg text-white" aria-label={call ? t('Hang up') : t('End conversation')} title={call ? t('Hang up') : t('End conversation')}>
+        {call ? '☎️' : '✕'}
+      </button>
+    </div>
+  );
 }
 
 /**
@@ -112,6 +230,9 @@ export function TalkBox(_props: { compact: boolean }) {
   const send = useTalk((s) => s.send);
   const notifyTyping = useTalk((s) => s.typing);
   const end = useTalk((s) => s.end);
+  const open = useTalk((s) => s.open);
+  const call = useTalk((s) => s.call);
+  const setOpen = useTalk((s) => s.setOpen);
   const vc = useVoiceChat();
   const voice = useVoice();
   const micMode = useSettings((s) => s.micMode);
@@ -129,19 +250,10 @@ export function TalkBox(_props: { compact: boolean }) {
   }, [lines.length, typing]);
   useEffect(() => {
     // phones: no automatic keyboard (it would cover the conversation); tap the field to type
-    if (partner && !matchMedia('(pointer: coarse)').matches) input.current?.focus();
-  }, [partner]);
+    if (partner && open && !matchMedia('(pointer: coarse)').matches) input.current?.focus();
+  }, [partner, open]);
   useEffect(() => () => stt.current?.abort(), []);
-  // read each new message from the partner aloud as it arrives (like an NPC's reply; 🔇 in Settings mutes it)
-  const spokeUpTo = useRef(lines.length);
-  useEffect(() => {
-    if (lines.length < spokeUpTo.current) spokeUpTo.current = 0; // a new conversation
-    const fresh = lines.slice(spokeUpTo.current).filter((l) => l.from === 'them');
-    spokeUpTo.current = lines.length;
-    const last = fresh[fresh.length - 1];
-    if (last && !useVoice.getState().listening) useVoice.getState().speakAs('player', last.text, 'en-US');
-  }, [lines]);
-  if (!partner) return null;
+  if (!partner || !open) return null;
   const voiceConnected = vc.connected.includes(partner.id);
   const status = vc.supported
     ? vc.mic
@@ -215,10 +327,10 @@ export function TalkBox(_props: { compact: boolean }) {
   };
 
   return (
-    <Sheet onClose={end} label={t('Talking to {name}', { name: partner.name })}>
+    <Sheet onClose={() => setOpen(false)} label={t('Talking to {name}', { name: partner.name })}>
       <SheetHeader>
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-bold leading-tight">💬 {partner.name}</h2>
+          <h2 className="truncate text-lg font-bold leading-tight">{call ? '📞' : '💬'} {partner.name}</h2>
           <p className="truncate text-xs text-gray-500">{status}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -227,6 +339,9 @@ export function TalkBox(_props: { compact: boolean }) {
               {vc.mic ? (vc.muted ? '🔇' : '🎙️') : '📞'}
             </button>
           )}
+          <button type="button" onClick={() => setOpen(false)} className="min-h-9 rounded-lg bg-gray-100 px-2 text-sm" aria-label={t('Minimize — keep talking while you play')} title={t('Minimize — keep talking while you play')}>
+            ▾ {t('Minimize')}
+          </button>
           <button type="button" onClick={end} className="min-h-9 rounded-lg bg-red-50 px-3 text-sm font-medium text-red-700" aria-label={t('End conversation')}>
             {t('End')}
           </button>
