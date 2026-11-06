@@ -46,6 +46,10 @@ ES_PALETTE = [
     ("ink", "#2a2230", 0.0, 0.8),
     ("water", "#4fa3e0", 0.0, 0.2),
     ("water_light", "#bfe6fb", 0.0, 0.2),
+    ("leaf", "#7fb04a", 0.0, 0.8),
+    ("leaf_light", "#9dc95f", 0.0, 0.8),
+    ("leaf_dark", "#5f9440", 0.0, 0.8),
+    ("bark", "#6e4c33", 0.0, 0.9),
 ]
 
 
@@ -120,10 +124,14 @@ def glass(name, parts, color="#cfe6ff", kind="glass", alpha=0.35):
     return ob
 
 
-def export_web(ob, pal, extra=(), slug=None):
-    """Write apps/web/public/models/lpm/<slug>.glb and _work/lpm/<slug>/<Name>.blend; print a ##JSON## report."""
+def export_web(ob, pal, extra=(), slug=None, spread=0.0):
+    """Write apps/web/public/models/lpm/<slug>.glb and _work/lpm/<slug>/<Name>.blend; print a ##JSON## report.
+    spread (float step along X, or one (dx, dy, dz) per object): GLB keeps every object at its pivot, but the review .blend lays them out along X (multi-part GLBs
+    such as bird kinds / boat variants would otherwise overlap in the 5-view sheet)."""
     slug = slug or ob.name.removeprefix("SM_").lower()
-    _vertex_colors(ob, pal)
+    for o in (ob, *extra):          # every palette-painted object (not glass/water) gets COLOR_0
+        if o.data.attributes.get("lpm_color"):
+            _vertex_colors(o, pal)
     os.makedirs(WEB_DIR, exist_ok=True)
     work = os.path.join(WORK_DIR, slug)
     os.makedirs(work, exist_ok=True)
@@ -138,6 +146,11 @@ def export_web(ob, pal, extra=(), slug=None):
         export_materials="EXPORT", export_image_format="AUTO", export_extras=True, export_animations=False,
         export_skins=False, export_morph=False, export_cameras=False, export_lights=False,
     )
+    if spread:
+        from mathutils import Matrix
+        for i, o in enumerate((ob, *extra)):   # mesh data, so transforms stay applied
+            off = spread[i] if isinstance(spread, (list, tuple)) else (i * spread, 0, 0)
+            o.data.transform(Matrix.Translation(off))
     blend = os.path.join(work, f"{ob.name}.blend")
     bpy.ops.wm.save_as_mainfile(filepath=blend, compress=True)
     xs = [v.co for v in ob.data.vertices]

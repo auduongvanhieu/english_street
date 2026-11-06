@@ -83,6 +83,25 @@ export class Part {
     this.list.push(geo);
     return this;
   }
+  /** Add a geometry that already carries per-vertex colours (an LPM GLB mesh: RGBA COLOR_0) - the source is not modified. */
+  addColored(g: THREE.BufferGeometry, x: Xf = {}) {
+    const geo = g.index ? g.toNonIndexed() : g.clone();
+    for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'color') geo.deleteAttribute(name);
+    const s = x.s === undefined ? [1, 1, 1] : typeof x.s === 'number' ? [x.s, x.s, x.s] : x.s;
+    this.e.set(...(x.r ?? [0, 0, 0]));
+    this.q.setFromEuler(this.e);
+    this.m.compose(new THREE.Vector3(...(x.p ?? [0, 0, 0])), this.q, new THREE.Vector3(s[0], s[1], s[2]));
+    geo.applyMatrix4(this.m);
+    const src = geo.getAttribute('color');
+    if (src.itemSize !== 3) {
+      const n = src.count;
+      const col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) col.set([src.getX(i), src.getY(i), src.getZ(i)], i * 3);
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    }
+    this.list.push(geo);
+    return this;
+  }
   build(): THREE.BufferGeometry {
     const g = mergeGeometries(this.list, false)!;
     for (const x of this.list) x.dispose();

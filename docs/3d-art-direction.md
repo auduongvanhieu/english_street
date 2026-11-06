@@ -80,8 +80,9 @@ Colour rules:
 | Recipe | `assets-src/lpm/recipes/<slug>.py`, slug in `snake_case` |
 | Blender object | `SM_<PascalCase>` (+ `_glass`, `_water`, `_COL`) |
 | Web output | `apps/web/public/models/lpm/<slug>.glb` (committed) |
-| Work output | `_work/lpm/<slug>/` — `.blend`, `views/sheet.png`, `inspect.json`, `gates.md` (git-ignored, recreate with `build.py`) |
-| Load in game | `scene/LpmModel.tsx`: `<LpmModel slug=… />` for a single object, `useLpmGeometry(slug)` for an `InstancedMesh`; add the slug to the `LpmSlug` type and call `preloadLpm(slug)` |
+| Work output | `_work/lpm/<slug>/` — `.blend`, `views/sheet.png`, `inspect.json`, `gates.md` (git-ignored, recreate with `build.py`). Multi-part GLBs: `export_web(spread=…)` lays the parts out in the review `.blend` only |
+| Floating pivot | flying/floating assets (bird, boat) are listed in `FLOATING` in `build.py` (gate `--allow-floating`) |
+| Load in game | `scene/LpmModel.tsx`: `<LpmModel slug=… />` for a single object, `useLpmGeometry(slug)` for an `InstancedMesh`, `useLpmParts(slug)` for multi-part GLBs with animated parts (bird wings, boat variants), `Part.addColored()` to merge into a code-built mesh; add the slug to the `LpmSlug` type and call `preloadLpm(slug)` |
 | GLB | Y up, transforms applied, flat normals, COLOR_0, no animation/skin/camera/light |
 
 ## 6. Budgets per asset group
@@ -122,9 +123,12 @@ Whole-scene budgets (docs/PERF.md):
 | Main Street fountain | LPM `fountain` | 1 (centre of the scene) | ✅ rebuilt (was a Kenney tile with a blob of water) |
 | Street lamp | LPM `street_lamp` | ~230 | ✅ rebuilt (was a box "L") |
 | Riverside lantern post | LPM `lantern_post` | ~45 | ✅ rebuilt (was a box post) |
+| Birds (3 kinds: pigeon, gull, sparrow) | LPM `bird` (separate body + wing, wing pivot at the shoulder) | 36 in the sky | ✅ rebuilt (was a sphere + box wings) |
+| River sailboats (red / blue) | LPM `boat` | 2 | ✅ rebuilt (was a box with the bow sticking out the side) |
+| Weeping willow (riverside tree tiles) | LPM `willow`, merged into the tree tile via `Part.addColored` | ~55 | ✅ rebuilt (was ~3,000 tris of tubes, now 1,124) |
 | Bus | code (`Buses.tsx`, rounded boxes) | ≤ 9 | kept: already detailed, door animation |
 | Shops / backdrop houses / roads | Kenney city kit | many | kept: consistent Kenney style, lit windows already added |
-| Trees, flowers, grass | Kenney + Quaternius | many | kept; next: the dark-green grass tufts read as messy twigs |
+| Other trees, flowers, grass | code (`treeTiles.ts`) + Quaternius | many | kept; next: the dark-green grass tufts read as messy twigs |
 | Farm, zoo, restaurant, supermarket, places | code (`Part` / `Merged`) | 1 each | next: rebuild per area, starting with the most visited |
 | Chibi, animals, critters | code (`buildChibi`, `buildAnimal`, `buildCritter`) | many | kept: animated and posed in code, rebuilding them would risk the rigs |
 

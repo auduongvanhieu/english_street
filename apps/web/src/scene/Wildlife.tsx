@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Part, box, chibiMaterial, cyl, sphere } from './chibi/buildChibi';
 import { localPos } from './LocalPlayer';
+import { preloadLpm, useLpmParts } from './LpmModel';
 import { RIVER_FAR_Z, RIVER_NEAR_Z } from './Horizon';
 import { BRIDGE_X } from '../world/areas';
 import { sky } from '../world/sky';
@@ -140,18 +141,10 @@ function splash(r: { t: number; x: number; z: number }, x: number, z: number) {
 // ------------------------------------------------------------------------------------------------ birds
 const FLOCK = 6;
 
-function birdParts(color: string) {
-  const body = new Part();
-  body.add(sphere(0.12, 0, Math.PI, 0, Math.PI * 2, 10, 6), color, { s: [0.8, 0.75, 2] });
-  body.add(sphere(0.09, 0, Math.PI, 0, Math.PI * 2, 10, 6), color, { p: [0, 0.05, 0.22] });
-  body.add(cyl(0, 0.03, 0.08, 6), '#f2b233', { p: [0, 0.04, 0.33], r: [Math.PI / 2, 0, 0] });
-  body.add(box(0.14, 0.015, 0.12), color, { p: [0, 0, -0.27] });
-  const wing = new Part();
-  // a wing reaching out along +x from the shoulder, tapered
-  wing.add(box(0.5, 0.02, 0.2), color, { p: [0.25, 0, 0] });
-  wing.add(box(0.25, 0.018, 0.13), color, { p: [0.6, 0, -0.03] });
-  return { body: body.build(), wing: wing.build() };
-}
+/** Body + wing of each kind (dark pigeon, white gull, brown sparrow): Blender LPM asset assets-src/lpm/recipes/bird.py.
+ *  The wing's pivot is the shoulder, reaching along +x with its leading edge towards +z (the flight direction). */
+const BIRD_KINDS = ['dark', 'white', 'brown'] as const;
+preloadLpm('bird');
 
 interface Flock {
   start: number;
@@ -175,7 +168,8 @@ function newFlock(now: number, delay: number): Flock {
 }
 
 function Birds({ flocks }: { flocks: number }) {
-  const kinds = useMemo(() => [birdParts('#3b3f46'), birdParts('#f4f4f2'), birdParts('#8a5a3a')], []);
+  const parts = useLpmParts('bird');
+  const kinds = useMemo(() => BIRD_KINDS.map((k) => ({ body: parts[`SM_Bird_body_${k}`]!, wing: parts[`SM_Bird_wing_${k}`]! })), [parts]);
   const groups = useRef<(THREE.Group | null)[]>([]);
   const wings = useRef<(THREE.Group | null)[]>([]);
   const bodies = useRef<(THREE.Mesh | null)[]>([]);
@@ -241,7 +235,8 @@ function Birds({ flocks }: { flocks: number }) {
                 <mesh ref={(m) => void (bodies.current[i] = m)} geometry={k.body} material={chibiMaterial()} />
                 {[0, 1].map((s) => (
                   <group key={s} ref={(g) => void (wings.current[i * 2 + s] = g)} position={[s ? -0.06 : 0.06, 0.03, 0.04]} rotation-y={s ? Math.PI : 0}>
-                    <mesh ref={(m) => void (wingMeshes.current[i * 2 + s] = m)} geometry={k.wing} material={chibiMaterial()} />
+                    {/* the left wing group is turned around; flip z back so its leading edge still faces forward */}
+                    <mesh ref={(m) => void (wingMeshes.current[i * 2 + s] = m)} geometry={k.wing} material={chibiMaterial()} scale={[1, 1, s ? -1 : 1]} />
                   </group>
                 ))}
               </group>

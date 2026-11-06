@@ -16,6 +16,7 @@ triangles are). Measured via `window.__esPerf` after joining and dismissing the 
 | 2026-11-04 | Step 2 / phase 11 (flora + critters) | iPhone 13 390×664 | low | 133 | ~174k |
 | 2026-11-06 | before LPM assets — Main Street / river bank | 1400×900 | high | 354 / 394 | 1.469M / 1.508M |
 | 2026-11-06 | LPM assets (bus shelter, fountain, street lamp ×~230, lantern ×~45) — Main Street / river bank | 1400×900 | high | 353–375 / 420–436 | 1.537M / 1.598M (+4.6% / +6%) |
+| 2026-11-06 | + LPM birds, sailboats, willows — Main Street / river bank | 1400×900 | high | 388 / 442 | 1.465M / 1.517M (willow ~3k → 1.1k tris) |
 
 Budgets (see the Step 2 plan): ≤ 450 draw calls on high, ≤ 250 on low, ≥ 30 FPS on a mid-range phone.
 Real-device FPS should be checked with the ⚡/✨ quality toggle; the `perf` analytics event records it per session

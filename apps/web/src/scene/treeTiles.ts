@@ -5,10 +5,14 @@ import { MODEL_URL, TILE, type TileModel } from '../world/layout';
 import { Part, chibiMaterial, cyl } from './chibi/buildChibi';
 import { useSettings } from '../store/settings';
 import { nightWindows } from './nightGlow';
+import { preloadLpm, useLpmGeometry } from './LpmModel';
+
+preloadLpm('willow');
 
 /**
  * Our own trees for the two Kenney "grass with trees" tiles (the stock cone pines looked stiff): a grass tile
- * plus low-poly broadleaf trees, a weeping willow, flowering and plain bushes, all in one vertex-coloured mesh.
+ * plus low-poly broadleaf trees, a weeping willow (Blender LPM model), flowering and plain bushes, all in one
+ * vertex-coloured mesh.
  * The result looks like a loaded GLB scene, so the street (City), the backdrop (Horizon) and the night fairy
  * lights (NightLights, crown vertices) use it unchanged.
  */
@@ -21,6 +25,7 @@ export function useTileScene(model: TileModel): THREE.Object3D {
   const tree = isTreeTile(model);
   const base = useGLTF(MODEL_URL(tree ? 'grass' : model)).scene;
   const low = useSettings((s) => s.quality) === 'low';
+  const willowModel = useLpmGeometry('willow');
   return useMemo(() => {
     if (!tree) {
       if (model.startsWith('building-')) nightWindows(base);
@@ -31,14 +36,14 @@ export function useTileScene(model: TileModel): THREE.Object3D {
     if (!g) {
       g = new THREE.Group();
       g.add(base.clone());
-      const mesh = new THREE.Mesh(buildTrees(model, low), chibiMaterial());
+      const mesh = new THREE.Mesh(buildTrees(model, low, willowModel), chibiMaterial());
       mesh.castShadow = true;
       g.add(mesh);
       g.updateMatrixWorld(true);
       cache.set(key, g);
     }
     return g;
-  }, [tree, model, base, low]);
+  }, [tree, model, base, low, willowModel]);
 }
 
 /* ------------------------------------------------------------------ builders (metres; scaled to tile units) */
@@ -80,54 +85,10 @@ function roundTree(p: Part, x: number, z: number, s: number, r: () => number, le
   p.add(blob(0.5 * s), leaves[2]!, { p: [x - 0.1 * s, cy + 0.55 * s, z + 0.1 * s], s: [1, 0.8, 1] });
 }
 
-/** Weeping willow: leaning trunk, a rounded crown and dense curtains of thin hanging leaves. */
-function willow(p: Part, x: number, z: number, s: number, r: () => number) {
-  const top: V = [x + 0.15 * s, GROUND + 1.9 * s, z - 0.05 * s];
-  trunk(p, [x, GROUND, z], top, 0.24 * s, 0.13 * s, '#6e4c33');
-  trunk(p, [x + 0.08 * s, GROUND + 1.3 * s, z], [x - 0.45 * s, GROUND + 2.1 * s, z + 0.3 * s], 0.09 * s, 0.05 * s, '#6e4c33');
-  const cy = GROUND + 2.45 * s;
-  // crown: a cluster of soft blobs, lighter on top
-  p.add(blob(0.75 * s), '#7aa947', { p: [top[0], cy, top[2]], s: [1, 0.8, 1] });
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 + 0.3;
-    p.add(blob(0.5 * s), i % 2 ? '#86b54f' : '#76a644', { p: [top[0] + Math.cos(a) * 0.6 * s, cy - 0.12 * s, top[2] + Math.sin(a) * 0.6 * s], s: [1, 0.8, 1] });
-  }
-  p.add(blob(0.45 * s), '#9cc85e', { p: [top[0] - 0.1 * s, cy + 0.42 * s, top[2] + 0.05 * s], s: [1, 0.75, 1] });
-  // hanging strands in two rings (outer ones longer), starting inside the crown: each strand is a soft tube that
-  // bows gently outwards, swells and narrows like a chain of leaves and tapers to a rounded tip (smooth normals)
-  const shades = ['#7fb04a', '#8fbe55', '#6fa142', '#9dc95f'];
-  const rings = (lowDetail ? [[0.55, 10, 1.0], [0.95, 18, 1.45]] : [[0.55, 13, 1.0], [0.95, 24, 1.45]]) as [number, number, number][];
-  const segs = lowDetail ? 5 : 8;
-  const sides = lowDetail ? 3 : 4;
-  for (const [ring, count, base] of rings) {
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2 + r() * 0.25 + ring;
-      const rad = (ring + r() * 0.15) * s;
-      const len = (base + r() * 0.5) * s;
-      const bow = (0.08 + r() * 0.08) * s;
-      const beads = 3 + Math.floor(r() * 2);
-      const out = (t: number) => bow * Math.sin(Math.PI * t * 0.75) + 0.12 * s * t * ring;
-      const path = new THREE.CatmullRomCurve3([0, 0.25, 0.5, 0.75, 1].map((t) => new THREE.Vector3(out(t), -len * t, 0)));
-      const g = new THREE.TubeGeometry(path, segs, 1, sides, false);
-      // shape the tube: per ring, scale the cross-section around the path point
-      const pos = g.getAttribute('position');
-      const c = new THREE.Vector3();
-      const v = new THREE.Vector3();
-      for (let k = 0; k < pos.count; k++) {
-        const ringIdx = Math.floor(k / (sides + 1));
-        const t = ringIdx / segs;
-        path.getPointAt(t, c);
-        const taper = (0.06 - 0.03 * t) * s * (t > 0.86 ? Math.max(0.12, (1 - t) / 0.14) : 1);
-        const w = taper * (0.72 + 0.28 * Math.abs(Math.sin(t * Math.PI * beads)));
-        v.fromBufferAttribute(pos, k).sub(c).multiplyScalar(w).add(c);
-        pos.setXYZ(k, v.x, v.y, v.z);
-      }
-      g.computeVertexNormals();
-      g.rotateY(-a);
-      g.translate(top[0] + Math.cos(a) * rad, cy - 0.05 * s, top[2] + Math.sin(a) * rad);
-      p.add(g, shades[(i + count) % shades.length]!);
-    }
-  }
+/** Weeping willow: Blender LPM asset assets-src/lpm/recipes/willow.py (pivot at the trunk foot, metres). */
+let willowGeo: THREE.BufferGeometry | null = null;
+function willow(p: Part, x: number, z: number, s: number) {
+  if (willowGeo) p.addColored(willowGeo, { p: [x, GROUND, z], s });
 }
 
 /** Tall tree with an oval crown (like a linden), stacked blobs narrowing to the top. */
@@ -170,8 +131,9 @@ function meadow(p: Part, pts: [number, number][], colors: string[]) {
   });
 }
 
-export function buildTrees(model: TileModel, low = false): THREE.BufferGeometry {
+export function buildTrees(model: TileModel, low = false, willowModel?: THREE.BufferGeometry): THREE.BufferGeometry {
   lowDetail = low;
+  willowGeo = willowModel ?? null;
   const p = new Part();
   if (model === 'grass-trees') {
     const r = rng(7);
@@ -181,7 +143,7 @@ export function buildTrees(model: TileModel, low = false): THREE.BufferGeometry 
     meadow(p, [[0.6, -1.3], [0.8, -1.1], [-1.6, -1.4], [1.5, -0.3]], ['#ffd54f', '#ffffff', '#ce93d8']);
   } else if (model === 'grass-willow') {
     const r = rng(19);
-    willow(p, 0.15, -0.1, 1.05, r);
+    willow(p, 0.15, -0.1, 1.05);
     bush(p, -1.4, 1.25, 0.8, r, ['#fff176', '#ffffff']);
     meadow(p, [[1.4, 1.3], [1.6, 1.0], [-1.5, -1.5]], ['#ffd54f', '#90caf9', '#ffffff']);
   } else {

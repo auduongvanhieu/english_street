@@ -10,7 +10,7 @@ import { chibiMaterial } from './chibi/buildChibi';
  * Each GLB carries flat normals and one vertex colour per face, so it is drawn with the same toon material as every
  * code-built prop. Meshes named "*_glass" / "*_water" get the shared glass / water material instead.
  */
-export type LpmSlug = 'bus_shelter' | 'fountain' | 'street_lamp' | 'lantern_post';
+export type LpmSlug = 'bus_shelter' | 'fountain' | 'street_lamp' | 'lantern_post' | 'bird' | 'boat' | 'willow';
 export const LPM_URL = (slug: LpmSlug) => `/models/lpm/${slug}.glb`;
 
 export const lpmGlassMat = new THREE.MeshStandardMaterial({ color: '#cfe6ff', transparent: true, opacity: 0.32, roughness: 0.15, metalness: 0, depthWrite: false });
@@ -20,6 +20,7 @@ export const lpmWaterMat = new THREE.MeshStandardMaterial({ color: '#cfeeff', tr
 type Kind = 'solid' | 'glass' | 'water';
 const KIND_MAT = { glass: lpmGlassMat, water: lpmWaterMat } as const;
 interface Piece {
+  name: string;
   geometry: THREE.BufferGeometry;
   kind: Kind;
 }
@@ -34,7 +35,7 @@ function pieces(slug: LpmSlug, scene: THREE.Object3D): Piece[] {
     scene.traverse((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh) return;
-      out!.push({ geometry: m.geometry.clone().applyMatrix4(m.matrixWorld), kind: m.name.endsWith('_glass') ? 'glass' : m.name.endsWith('_water') ? 'water' : 'solid' });
+      out!.push({ name: m.name, geometry: m.geometry.clone().applyMatrix4(m.matrixWorld), kind: m.name.endsWith('_glass') ? 'glass' : m.name.endsWith('_water') ? 'water' : 'solid' });
     });
     cache.set(slug, out);
   }
@@ -60,6 +61,12 @@ export function useLpmGeometry(slug: LpmSlug): THREE.BufferGeometry {
     const solid = pieces(slug, scene).filter((p) => p.kind === 'solid');
     return solid.length === 1 ? solid[0]!.geometry : mergeGeometries(solid.map((p) => p.geometry), false);
   }, [slug, scene]);
+}
+
+/** Every mesh of a multi-part LPM asset by object name (e.g. 'SM_Bird_wing_dark'), for parts the game animates. */
+export function useLpmParts(slug: LpmSlug): Record<string, THREE.BufferGeometry> {
+  const { scene } = useGLTF(LPM_URL(slug));
+  return useMemo(() => Object.fromEntries(pieces(slug, scene).map((p) => [p.name, p.geometry])), [slug, scene]);
 }
 
 export const preloadLpm = (slug: LpmSlug) => useGLTF.preload(LPM_URL(slug));

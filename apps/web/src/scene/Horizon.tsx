@@ -24,6 +24,8 @@ const inPetting = (x: number, z: number) => z > 5 && z < 16 && x > 81 && x < 103
 import { serverNow } from '../net/client';
 import { sky } from '../world/sky';
 import { useSettings } from '../store/settings';
+import { chibiMaterial } from './chibi/buildChibi';
+import { preloadLpm, useLpmParts } from './LpmModel';
 
 /**
  * Everything beyond the playable street so the horizon is never a flat green plane:
@@ -490,8 +492,8 @@ function River({ low }: { low: boolean }) {
       <Bridge x={BRIDGE_X} />
       {!low && (
         <>
-          <Boat seed={1} baseX={-30} speed={1.1} sail="#f4f4f4" hull="#b23a3a" />
-          <Boat seed={2} baseX={40} speed={-0.8} sail="#ffe08a" hull="#2f5f9e" />
+          <Boat seed={1} baseX={-30} speed={1.1} variant="red" />
+          <Boat seed={2} baseX={40} speed={-0.8} variant="blue" />
         </>
       )}
     </group>
@@ -528,17 +530,11 @@ function Bridge({ x }: { x: number }) {
   );
 }
 
-function Boat({ seed, baseX, speed, sail, hull }: { seed: number; baseX: number; speed: number; sail: string; hull: string }) {
+/** Sailboat drifting along the river: Blender LPM asset assets-src/lpm/recipes/boat.py (bow towards −x, pivot on the waterline). */
+preloadLpm('boat');
+function Boat({ seed, baseX, speed, variant }: { seed: number; baseX: number; speed: number; variant: 'red' | 'blue' }) {
   const ref = useRef<THREE.Group>(null);
-  const geo = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [];
-    parts.push(colored(new THREE.BoxGeometry(3.2, 0.7, 1.3), hull));
-    parts.push(colored(new THREE.ConeGeometry(0.65, 1.2, 4).rotateX(Math.PI / 2).rotateY(Math.PI / 4).translate(0, 0, -2.2).scale(1, 0.55, 1).translate(0, 0, 0), hull)); // bow
-    parts.push(colored(new THREE.BoxGeometry(1.2, 0.5, 0.9).translate(-0.4, 0.6, 0), '#e9dcc2')); // cabin
-    parts.push(colored(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 6).translate(0.6, 1.9, 0), '#5a4631')); // mast
-    parts.push(colored(new THREE.PlaneGeometry(1.6, 2.2).translate(0.6 - 0.8, 2.2, 0.02), sail)); // sail
-    return mergeGeometries(parts, false)!;
-  }, [hull, sail]);
+  const geo = useLpmParts('boat')[`SM_Boat_${variant}`]!;
   useFrame(() => {
     const g = ref.current;
     if (!g) return;
@@ -550,9 +546,7 @@ function Boat({ seed, baseX, speed, sail, hull }: { seed: number; baseX: number;
   });
   return (
     <group ref={ref}>
-      <mesh geometry={geo}>
-        <meshStandardMaterial vertexColors side={THREE.DoubleSide} roughness={0.8} />
-      </mesh>
+      <mesh geometry={geo} material={chibiMaterial()} />
     </group>
   );
 }

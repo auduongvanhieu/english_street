@@ -22,13 +22,17 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 SKILL = ROOT / ".claude" / "skills" / "blender-lpm-skill" / "scripts"
-# slug -> (gate class, triangle budget)
+# slug -> (gate class, triangle budget); FLOATING = pivot is not on the ground by contract (birds, boats)
 GATES = {
     "bus_shelter": ("static-prop", 1200),
     "fountain": ("environment-module", 1500),
     "street_lamp": ("static-prop", 300),
     "lantern_post": ("static-prop", 250),
+    "bird": ("static-prop", 750),
+    "boat": ("hard-surface", 1200),
+    "willow": ("environment-module", 1500),
 }
+FLOATING = {"bird", "boat"}
 
 
 def blender_env() -> dict:
@@ -64,7 +68,8 @@ def build(slug: str, render: bool) -> bool:
         print(ins.stdout[-2000:]); print(f"!! {slug}: inspect failed"); return False
     cls, budget = GATES.get(slug, ("static-prop", rep.get("budget") or 1200))
     g = subprocess.run([sys.executable, str(SKILL / "gate_report.py"), str(work / "inspect.json"), "--class", cls,
-                        "--budget", str(budget), "--out", str(work / "gates.md")], cwd=ROOT, capture_output=True, text=True)
+                        "--budget", str(budget), "--out", str(work / "gates.md"),
+                        *(["--allow-floating"] if slug in FLOATING else [])], cwd=ROOT, capture_output=True, text=True)
     ok = g.returncode == 0
     print(f"{'PASS' if ok else 'FAIL'} {slug}: {rep['tris']} tris (+{sum(rep['extra'].values())} helper) / {budget}, "
           f"{rep['glb_bytes'] / 1024:.0f} KB -> {rep['glb']}" + (f"  views: {work / 'views' / 'sheet.png'}" if render else ""))
