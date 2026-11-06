@@ -12,45 +12,35 @@ import { useArea } from '../../store/area';
 import { Animal } from './Animal';
 import { Ground, Merged, NearArea, Sign, box, cyl, fenceRect, sphere, tree } from './kit';
 import { buildPlot } from './crops';
+import { preloadLpm, useLpmParts } from '../LpmModel';
+
+/** Farm buildings and props: Blender LPM kit assets-src/lpm/recipes/farm_kit.py, merged into the farm's one mesh. */
+preloadLpm('farm_kit');
 
 function FarmStatic() {
+  const kit = useLpmParts('farm_kit');
   return (
     <Merged
+      deps={[kit]}
       build={(p) => {
         for (const pen of PENS) fenceRect(p, pen.x0, pen.x1, pen.z0, pen.z1, '#8a6a44', 1.05);
-        // red barn with a white-trimmed roof and big door
+        // red barn (gambrel roof, cupola), front at BARN.maxZ; the night panes sit on its windows
         const bx = (BARN.minX + BARN.maxX) / 2;
         const bz = (BARN.minZ + BARN.maxZ) / 2;
         const bw = BARN.maxX - BARN.minX;
-        const bd = BARN.maxZ - BARN.minZ;
-        p.add(box(bw, 4.2, bd), '#c0392b', { p: [bx, 2.1, bz] });
-        for (const sx of [-1, 1]) p.add(box(bw * 0.56, 0.25, bd + 0.6), '#5a3b30', { p: [bx + (sx * bw) / 4.2, 5.0, bz], r: [0, 0, -sx * 0.5] });
-        p.add(box(bw + 0.1, 0.2, 0.2), '#ffffff', { p: [bx, 4.2, BARN.maxZ + 0.02] });
-        p.add(box(4, 3.2, 0.08), '#8c2a20', { p: [bx, 1.6, BARN.maxZ + 0.03] });
-        for (const d of [-1, 1]) p.add(box(0.15, 4.4, 0.1), '#ffffff', { p: [bx + d * 1.4, 1.6, BARN.maxZ + 0.06], r: [0, 0, d * 0.6] });
-        // hayloft window above the door and two side windows, lit at night
-        p.add(box(1.6, 1.1, 0.08), '#5a3b30', { p: [bx, 3.55, BARN.maxZ + 0.04] });
+        p.addColored(kit.SM_Barn!, { p: [bx, 0, bz] });
         p.panes.push({ p: [bx, 3.55, BARN.maxZ + 0.1], w: 1.3, h: 0.85 });
-        for (const d of [-1, 1]) {
-          p.add(box(1.5, 1.1, 0.08), '#ffffff', { p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.04] });
-          p.add(box(1.3, 0.9, 0.06), '#4a6070', { p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.07] });
-          p.panes.push({ p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.11], w: 1.25, h: 0.85 });
-        }
+        for (const d of [-1, 1]) p.panes.push({ p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.11], w: 1.25, h: 0.85 });
         p.lights.push({ p: [bx + 2.4, 3.0, BARN.maxZ + 0.3], c: '#ffd27a', s: 1.8, tw: 0.05 });
-        // hay bales next to the barn
-        for (const [x, z] of [[144, -18.2], [145.3, -18.4], [144.6, -17.6]] as const) p.add(cyl(0.55, 0.55, 0.9, 10), '#e0b84f', { p: [x, 0.55, z], r: [0, 0, Math.PI / 2] });
-        // windmill tower
-        p.add(cyl(0.7, 1.2, 6, 8), '#efe6d2', { p: [WINDMILL.x, 3, WINDMILL.z] });
-        p.add(new THREE.ConeGeometry(1.0, 1.4, 8), '#7a3b2e', { p: [WINDMILL.x, 6.7, WINDMILL.z] });
-        // chicken coop
-        const cx = (COOP.minX + COOP.maxX) / 2;
-        const cz = (COOP.minZ + COOP.maxZ) / 2;
-        p.add(box(COOP.maxX - COOP.minX, 1.5, COOP.maxZ - COOP.minZ), '#e9c46a', { p: [cx, 1.05, cz] });
-        for (const sx of [-1, 1]) p.add(cyl(0.08, 0.08, 0.3, 6), '#7a5536', { p: [cx + sx, 0.15, cz] });
-        p.add(box(COOP.maxX - COOP.minX + 0.4, 0.15, COOP.maxZ - COOP.minZ + 0.4), '#9c4a2e', { p: [cx, 1.85, cz] });
-        // troughs
-        p.add(box(2.4, 0.4, 0.6), '#7a5536', { p: [120, 0.2, -18.2] });
-        p.add(box(1.6, 0.35, 0.5), '#7a5536', { p: [117, 0.18, -9.4] });
+        // round hay bales next to the barn
+        for (const [x, z, r] of [[144, -18.2, 0], [145.3, -18.4, 0.3], [144.6, -17.4, -0.2]] as const) p.addColored(kit.SM_HayBale!, { p: [x, 0, z], r: [0, r, 0] });
+        // windmill tower (the sails turn in <Sails>)
+        p.addColored(kit.SM_WindmillTower!, { p: [WINDMILL.x, 0, WINDMILL.z] });
+        // chicken coop on legs, ramp towards the run
+        p.addColored(kit.SM_Coop!, { p: [(COOP.minX + COOP.maxX) / 2, 0, (COOP.minZ + COOP.maxZ) / 2] });
+        // water troughs
+        p.addColored(kit.SM_Trough!, { p: [120, 0, -18.2] });
+        p.addColored(kit.SM_Trough!, { p: [117, 0, -9.4], s: [0.67, 1, 0.83] });
         // garden plots (soil beds with a wooden border)
         for (const pl of PLOTS) {
           p.add(box(PLOT_SIZE, 0.12, PLOT_SIZE), '#6b4a30', { p: [pl.x, 0.06, pl.z] });
@@ -73,13 +63,8 @@ function FarmStatic() {
             p.add(cyl(0.012, 0.012, 0.07, 4), '#5a3b22', { p: [ax, 1.8 + y * 0.78 + 0.11, az] });
           }
         }
-        // market stall
-        p.add(box(3.2, 0.9, 1), '#a0703c', { p: [STALL.x, 0.45, STALL.z] });
-        for (const sx of [-1.5, 1.5]) p.add(box(0.1, 2.4, 0.1), '#7a5536', { p: [STALL.x + sx, 1.2, STALL.z - 0.4] });
-        for (let i = 0; i < 6; i++) p.add(box(0.55, 0.12, 1.4), i % 2 ? '#ffffff' : '#e5533d', { p: [STALL.x - 1.4 + i * 0.56, 2.45, STALL.z + 0.1], r: [0.25, 0, 0] });
-        for (let i = 0; i < 4; i++) p.add(box(0.6, 0.25, 0.5), '#c98a52', { p: [STALL.x - 1.1 + i * 0.73, 1.0, STALL.z] });
-        for (const [i, c] of [[0, '#f08a2c'], [1, '#e5533d'], [2, '#f2d14a'], [3, '#e23b4e']] as const)
-          for (let k = 0; k < 4; k++) p.add(sphere(0.09, 0, Math.PI, 0, Math.PI * 2, 6, 4), c, { p: [STALL.x - 1.25 + i * 0.73 + (k % 2) * 0.18, 1.2, STALL.z - 0.1 + Math.floor(k / 2) * 0.18] });
+        // market stall: counter faces the pavement (-z), so the kit's front (+z) is turned round
+        p.addColored(kit.SM_Stall!, { p: [STALL.x, 0, STALL.z], r: [0, Math.PI, 0] });
       }}
     />
   );
@@ -87,20 +72,13 @@ function FarmStatic() {
 
 /** Windmill sails turning slowly. */
 function Sails() {
+  const kit = useLpmParts('farm_kit');
   const ref = useRef<THREE.Group>(null);
   useFrame((_, dt) => ref.current && (ref.current.rotation.z += dt * 0.6));
   return (
     <group position={[WINDMILL.x, 5.6, WINDMILL.z + 1.0]}>
       <group ref={ref}>
-        <Merged
-          build={(p) => {
-            p.add(cyl(0.18, 0.18, 0.3, 10), '#5a3b30', { r: [Math.PI / 2, 0, 0] });
-            for (let i = 0; i < 4; i++) {
-              const a = (i * Math.PI) / 2;
-              p.add(box(0.5, 2.4, 0.05), '#f6f1e4', { p: [Math.cos(a + Math.PI / 2) * 1.35, Math.sin(a + Math.PI / 2) * 1.35, 0], r: [0, 0, a] });
-            }
-          }}
-        />
+        <Merged deps={[kit]} build={(p) => p.addColored(kit.SM_WindmillSails!)} />
       </group>
     </group>
   );

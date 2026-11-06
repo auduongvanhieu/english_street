@@ -3,13 +3,16 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { SHOPS, SHOP_ROW_TZ, TILE, buildTiles } from '../world/layout';
 import { useSettings } from '../store/settings';
+import { chibiMaterial } from './chibi/buildChibi';
+import { LPM_URL } from './LpmModel';
 
 /**
  * Flowers and grass tufts scattered over the grass tiles, one InstancedMesh per source mesh
  * (9 draw calls total). Placement is seeded, so every client sees the same meadow.
  */
 const FLOWERS = '/models/flora/flowers.glb';
-const GRASS = '/models/flora/grass.glb';
+/** Grass tufts: Blender LPM asset assets-src/lpm/recipes/grass_tuft.py (2 variants, toon material). */
+const GRASS = LPM_URL('grass_tuft');
 useGLTF.preload(FLOWERS, false, true);
 useGLTF.preload(GRASS, false, true);
 
@@ -55,13 +58,13 @@ export function Flora() {
   return (
     <group>
       <Scatter url={FLOWERS} spots={flowerSpots} unit={0.55} />
-      <Scatter url={GRASS} spots={grassSpots} unit={0.5} />
+      <Scatter url={GRASS} spots={grassSpots} unit={0.42} material={chibiMaterial()} />
     </group>
   );
 }
 
 /** Distribute `spots` round-robin across the meshes inside the GLB; each mesh becomes one InstancedMesh. */
-function Scatter({ url, spots, unit }: { url: string; spots: Spot[]; unit: number }) {
+function Scatter({ url, spots, unit, material }: { url: string; spots: Spot[]; unit: number; material?: THREE.Material }) {
   const { scene } = useGLTF(url, false, true);
   const parts = useMemo(() => {
     scene.updateMatrixWorld(true);
@@ -71,10 +74,10 @@ function Scatter({ url, spots, unit }: { url: string; spots: Spot[]; unit: numbe
       if (!m.isMesh) return;
       m.geometry.computeBoundingBox();
       const b = m.geometry.boundingBox!;
-      list.push({ geometry: m.geometry, material: m.material as THREE.Material, size: Math.max(b.max.y - b.min.y, 0.01) });
+      list.push({ geometry: m.geometry, material: material ?? (m.material as THREE.Material), size: Math.max(b.max.y - b.min.y, 0.01) });
     });
     return list;
-  }, [scene]);
+  }, [scene, material]);
   return (
     <>
       {parts.map((p, i) => (

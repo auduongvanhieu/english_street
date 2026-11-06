@@ -128,9 +128,12 @@ Whole-scene budgets (docs/PERF.md):
 | Weeping willow (riverside tree tiles) | LPM `willow`, merged into the tree tile via `Part.addColored` | ~55 | ✅ rebuilt (was ~3,000 tris of tubes, now 1,124) |
 | Bus | code (`Buses.tsx`, rounded boxes) | ≤ 9 | kept: already detailed, door animation |
 | Shops / backdrop houses / roads | Kenney city kit | many | kept: consistent Kenney style, lit windows already added |
-| Other trees, flowers, grass | code (`treeTiles.ts`) + Quaternius | many | kept; next: the dark-green grass tufts read as messy twigs |
-| Farm, zoo, restaurant, supermarket, places | code (`Part` / `Merged`) | 1 each | next: rebuild per area, starting with the most visited |
-| Chibi, animals, critters | code (`buildChibi`, `buildAnimal`, `buildCritter`) | many | kept: animated and posed in code, rebuilding them would risk the rigs |
+| Grass tufts (2 variants) | LPM `grass_tuft` (instanced, ~110 / 70 tris) | thousands | ✅ rebuilt (Quaternius clumps ~290 tris read as dark twigs) |
+| Other trees, flowers | code (`treeTiles.ts`, `kit.tree`) + Quaternius | many | kept |
+| Farm: barn, coop, windmill (+ turning sails), troughs, hay bales, market stall | LPM `farm_kit`, merged into the farm mesh (`Part.addColored`) | 1 area | ✅ rebuilt |
+| Zoo: zookeeper hut, benches, rocks (tinted per habitat), bear cave, hay feeder, hutch | LPM `zoo_kit`, merged into the zoo mesh | 1 area | ✅ rebuilt; fences, pools and bamboo still code |
+| Restaurant, supermarket, places | code (`Part` / `Merged`) | 1 each | next: rebuild per area |
+| Chibi, animals, critters | code (`buildChibi`, `buildAnimal`, `buildCritter`) | many | kept in code: rounded chibi style + joint rig; the zebra was rebuilt in code on 2026-11-06 on a horse frame (neck, long head, mane, body/leg stripes) to stay consistent with the other animals |
 
 ## 9. Procedure (required for every asset)
 

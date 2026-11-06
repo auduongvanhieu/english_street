@@ -196,16 +196,44 @@ const builders: Record<AnimalKind, () => AnimalParts> = {
     return finish(b);
   },
   zebra() {
-    const b = quad({ bodyR: 0.18, bodyS: [0.8, 0.82, 1.3], headR: 0.14, headAt: [0, 0.48, 0.24], hipY: 0.22, legR: 0.045, legX: 0.08, legZ: 0.14, tailAt: [0, 0.38, -0.24], fur: '#f7f7f7', light: '#ffffff', hoof: '#2a2a2a' });
+    // a striped horse: same frame as horse() (long neck, long head, tall legs) so it no longer reads as a dog or panda
+    const W = '#f6f5f0';
+    const K = '#1d1d22';
+    const b = quad({ bodyR: 0.19, bodyS: [0.82, 0.85, 1.4], headR: 0.14, headAt: [0, 0.6, 0.3], hipY: 0.25, legR: 0.046, legX: 0.085, legZ: 0.16, tailAt: [0, 0.42, -0.27], fur: W, light: W, hoof: K });
     const bodyY = b.bodyY;
-    for (const z of [-0.16, -0.08, 0, 0.08, 0.16]) stripe(b.body, '#1f1f24', [0, bodyY + 0.02, z], 0.15, [0, Math.PI / 2, Math.PI * 0.2], Math.PI * 0.6, 0.02);
-    b.body.add(capsule(0.06, 0.12), '#f7f7f7', { p: [0, bodyY + 0.13, 0.18], r: [0.6, 0, 0] });
+    const SX = 0.19 * 0.82;
+    const SY = 0.19 * 0.85;
+    const SZ = 0.19 * 1.4;
+    // body stripes: rings round the body cross-section, fitted to the ellipsoid at each z, open under the belly;
+    // the back ones lean backwards and the front ones forwards (the zebra's chevron pattern)
+    for (const z of [-0.22, -0.165, -0.11, -0.055, 0, 0.055, 0.11, 0.165, 0.21]) {
+      const k = Math.sqrt(Math.max(0.05, 1 - (z / SZ) ** 2)) * 1.02;
+      const lean = z < -0.05 ? 0.35 : z > 0.1 ? -0.25 : 0;
+      b.body.add(new THREE.TorusGeometry(1, 0.11, 5, 18, Math.PI * 1.3), K, { p: [0, bodyY, z], r: [lean, 0, -Math.PI * 0.15], s: [SX * k, SY * k, 0.16] });
+    }
+    // neck rising to the head, with stripes and an upright two-tone mane
+    const neck = { y: bodyY + 0.17, z: 0.2, tilt: 0.55 };
+    b.body.add(capsule(0.075, 0.18), W, { p: [0, neck.y, neck.z], r: [neck.tilt, 0, 0] });
+    for (const t of [-0.07, 0, 0.07]) {
+      b.body.add(new THREE.TorusGeometry(0.078, 0.012, 5, 14, Math.PI * 1.4), K, { p: [0, neck.y + t * Math.cos(neck.tilt), neck.z + t * Math.sin(neck.tilt)], r: [neck.tilt + Math.PI / 2, 0, Math.PI * 0.8], s: [1, 1, 1] });
+    }
+    for (let i = 0; i < 7; i++) {
+      const t = -0.13 + i * 0.045;
+      b.body.add(box(0.035, 0.07, 0.04), i % 2 ? W : K, { p: [0, neck.y + t * Math.cos(neck.tilt) + 0.07, neck.z - 0.055 + t * Math.sin(neck.tilt)], r: [neck.tilt, 0, 0] });
+    }
+    // head: long dark muzzle, forehead stripes, white ears with black tips, a forelock
     const r = 0.14;
-    b.head.add(box(0.03, r * 0.9, r * 1.0), '#1f1f24', { p: [0, r * 0.75, -r * 0.4], r: [-0.3, 0, 0] });
-    for (const y of [0.25, 0.5]) stripe(b.head, '#1f1f24', [0, r * y, r * 0.1], r * 0.98, [Math.PI / 2, 0, 0], Math.PI * 0.5, 0.012);
-    muzzle(b.head, r, '#2b2b30', '#111111', 0.8, -0.3, [1.0, 0.85, 1.1]);
-    for (const sx of [-1, 1]) b.head.add(new THREE.ConeGeometry(r * 0.22, r * 0.55, 6), '#f7f7f7', { p: [sx * r * 0.45, r * 0.95, -r * 0.1], r: [0, 0, -sx * 0.25] });
-    tailTuft(b.tail, '#f7f7f7', '#1f1f24', 0.2, -1.1);
+    muzzle(b.head, r, '#2a2a30', '#0d0d10', 0.85, -0.3, [0.95, 0.85, 1.25]);
+    for (const [y, w] of [[0.5, 0.55], [0.25, 0.7], [0.0, 0.8]] as const)
+      b.head.add(new THREE.TorusGeometry(r * 1.0, r * 0.045, 5, 14, Math.PI * w), K, { p: [0, r * y * 0.4, 0], r: [Math.PI / 2 - 0.5 - y, 0, Math.PI / 2 - (Math.PI * w) / 2], s: [1, 1, 1] });
+    b.head.add(sphere(r * 0.28, 0, Math.PI, 0, Math.PI * 2, 8, 6), K, { p: [0, r * 0.8, r * 0.35], s: [1, 0.6, 1] });
+    for (const sx of [-1, 1]) {
+      b.head.add(new THREE.ConeGeometry(r * 0.22, r * 0.6, 6), W, { p: [sx * r * 0.42, r * 1.0, -r * 0.1], r: [0, 0, -sx * 0.25] });
+      b.head.add(new THREE.ConeGeometry(r * 0.1, r * 0.2, 6), K, { p: [sx * r * 0.5, r * 1.3, -r * 0.1], r: [0, 0, -sx * 0.25] });
+    }
+    // striped legs (each leg part is shared by the front / back pair)
+    for (const leg of [b.legF, b.legB]) for (const y of [0.06, 0.11, 0.16]) leg.add(new THREE.TorusGeometry(0.047, 0.011, 5, 12), K, { p: [0, -y, 0], r: [Math.PI / 2, 0, 0] });
+    tailTuft(b.tail, W, K, 0.2, -1.2);
     return finish(b);
   },
   monkey() {

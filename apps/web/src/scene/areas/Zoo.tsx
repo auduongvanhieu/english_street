@@ -1,8 +1,16 @@
 import { useMemo } from 'react';
+import type * as THREE from 'three';
 import { ENCLOSURES, HUT, PETTING, PETTING_FEEDER, PETTING_HUTCH, enclosurePath, type Enclosure, type Habitat } from '../../world/zooLayout';
 import { FRONT_Z, YARD_MIN_Z, areaById } from '../../world/areas';
 import { Animal } from './Animal';
-import { Ground, Merged, NearArea, Sign, fenceRect, rock, tree, box, cyl, sphere, type Part } from './kit';
+import { Ground, Merged, NearArea, Sign, fenceRect, tree, box, cyl, sphere, type Part } from './kit';
+import { preloadLpm, useLpmParts } from '../LpmModel';
+
+/** Hut, bench, rocks, cave, feeder, hutch: Blender LPM kit assets-src/lpm/recipes/zoo_kit.py (merged into the zoo mesh). */
+preloadLpm('zoo_kit');
+type Kit = Record<string, THREE.BufferGeometry>;
+/** A faceted boulder cluster, tinted per habitat (s = size, the rotation varies with the position). */
+const rock = (p: Part, kit: Kit, x: number, z: number, s = 1, color = '#9a9a92') => p.addColored(kit.SM_Rock!, { p: [x, 0, z], s, r: [0, (x * 1.7 + z) % (Math.PI * 2), 0] }, color);
 
 const HABITAT_GROUND: Record<Habitat, string> = {
   savanna: '#d9c27a',
@@ -14,14 +22,14 @@ const HABITAT_GROUND: Record<Habitat, string> = {
 };
 
 /** Habitat dressing inside one enclosure: trees, rocks, pools, bamboo. */
-function dress(p: Part, e: Enclosure) {
+function dress(p: Part, e: Enclosure, kit: Kit) {
   const cx = (e.x0 + e.x1) / 2;
   const cz = (e.z0 + e.z1) / 2;
   const back = e.z0 + 1;
   switch (e.habitat) {
     case 'savanna':
       tree(p, e.x0 + 1.2, back + 0.3, 1.1, '#8fb34a');
-      rock(p, e.x1 - 1.5, back + 0.6, 1.1, '#c9a978');
+      rock(p, kit, e.x1 - 1.5, back + 0.6, 1.1, '#c9a978');
       break;
     case 'grass':
       tree(p, e.x0 + 1.2, back + 0.4, 1.2);
@@ -37,7 +45,7 @@ function dress(p: Part, e: Enclosure) {
       // pool with an ice-white rim
       p.add(cyl(2.2, 2.2, 0.05, 24), '#5ab0dc', { p: [cx, 0.035, cz - 0.5] });
       p.add(cyl(2.35, 2.35, 0.04, 24), '#ffffff', { p: [cx, 0.02, cz - 0.5] });
-      rock(p, e.x1 - 1, back + 0.5, 0.8, '#eef5f8');
+      rock(p, kit, e.x1 - 1, back + 0.5, 0.8, '#eef5f8');
       break;
     case 'bamboo':
       for (let i = 0; i < 9; i++) {
@@ -48,10 +56,9 @@ function dress(p: Part, e: Enclosure) {
       }
       break;
     case 'rocks':
-      rock(p, e.x0 + 1.4, back + 0.6, 1.6);
-      rock(p, e.x1 - 1.6, back + 0.8, 1.3);
-      p.add(sphere(1.2, 0, Math.PI / 2, 0, Math.PI * 2, 12, 6), '#6f6a60', { p: [cx, 0, back + 0.5], s: [1.2, 1, 0.8] }); // cave
-      p.add(sphere(0.6, 0, Math.PI / 2, 0, Math.PI * 2, 10, 5), '#2a2622', { p: [cx, 0, back + 1.25], s: [1, 1, 0.3] });
+      rock(p, kit, e.x0 + 1.4, back + 0.6, 1.6);
+      rock(p, kit, e.x1 - 1.6, back + 0.8, 1.3);
+      p.addColored(kit.SM_Cave!, { p: [cx, 0, back + 0.6] }, '#8a8478'); // cave, mouth facing the visitors
       break;
     case 'pond':
       p.add(cyl(2.3, 2.3, 0.05, 24), '#4a9ac4', { p: [cx, 0.035, cz], s: [1.1, 1, 0.75] });
@@ -61,40 +68,31 @@ function dress(p: Part, e: Enclosure) {
 }
 
 function ZooStatic() {
+  const kit = useLpmParts('zoo_kit');
   return (
     <Merged
+      deps={[kit]}
       build={(p) => {
         for (const e of ENCLOSURES) {
           fenceRect(p, e.x0, e.x1, e.z0, e.z1, e.habitat === 'water' ? '#d8dde2' : '#8a6a44', 1.05);
-          dress(p, e);
+          dress(p, e, kit);
         }
         // zookeeper hut
         const hx = (HUT.minX + HUT.maxX) / 2;
         const hz = (HUT.minZ + HUT.maxZ) / 2;
-        p.add(box(HUT.maxX - HUT.minX, 2.4, HUT.maxZ - HUT.minZ), '#e9d3a8', { p: [hx, 1.2, hz] });
-        p.add(box(HUT.maxX - HUT.minX + 0.6, 0.25, HUT.maxZ - HUT.minZ + 0.6), '#b5552f', { p: [hx, 2.5, hz] });
-        p.add(box(1, 1.7, 0.06), '#7a5536', { p: [hx, 0.85, HUT.maxZ + 0.02] });
-        for (const d of [-1, 1]) {
-          p.add(box(0.9, 0.7, 0.06), '#4a6070', { p: [hx + d * 1.3, 1.4, HUT.maxZ + 0.03] });
-          p.panes.push({ p: [hx + d * 1.3, 1.4, HUT.maxZ + 0.07], w: 0.85, h: 0.65 });
-        }
+        p.addColored(kit.SM_ZooHut!, { p: [hx, 0, hz] });
+        for (const d of [-1, 1]) p.panes.push({ p: [hx + d * 1.3, 1.4, HUT.maxZ + 0.07], w: 0.85, h: 0.65 });
         p.lights.push({ p: [hx + 0.75, 2.0, HUT.maxZ + 0.25], c: '#ffd27a', s: 1.5, tw: 0.05 });
         // benches + bins along the middle walkway
-        for (const x of [62, 94]) {
-          p.add(box(1.8, 0.1, 0.5), '#a0703c', { p: [x, 0.45, -17.8] });
-          for (const dx of [-0.75, 0.75]) p.add(box(0.1, 0.45, 0.45), '#555', { p: [x + dx, 0.22, -17.8] });
-        }
+        for (const x of [62, 94]) p.addColored(kit.SM_Bench!, { p: [x, 0, -17.8] });
         // petting corner across the road: low white fence with a gate, hay feeder, guinea-pig hutch, straw bales
         const P = PETTING;
         fenceRect(p, P.x0, P.x1, P.z0, P.z1, '#f4efe4', 0.75, [], [[P.gateX - P.gateW / 2, P.gateX + P.gateW / 2]]);
-        p.add(box(1.8, 0.5, 0.8), '#a0703c', { p: [PETTING_FEEDER.x, 0.4, PETTING_FEEDER.z] });
-        p.add(box(1.6, 0.25, 0.6), '#e8c860', { p: [PETTING_FEEDER.x, 0.72, PETTING_FEEDER.z] });
+        p.addColored(kit.SM_Feeder!, { p: [PETTING_FEEDER.x, 0, PETTING_FEEDER.z] });
         const H = PETTING_HUTCH;
         const px = (H.minX + H.maxX) / 2;
         const hz2 = (H.minZ + H.maxZ) / 2;
-        p.add(box(H.maxX - H.minX, 0.7, H.maxZ - H.minZ), '#d98c4a', { p: [px, 0.45, hz2] });
-        p.add(box(H.maxX - H.minX + 0.2, 0.08, H.maxZ - H.minZ + 0.25), '#8a4a2a', { p: [px, 0.84, hz2], r: [0.12, 0, 0] });
-        p.add(box(0.5, 0.35, 0.04), '#3a2a22', { p: [px, 0.32, H.minZ - 0.01] });
+        p.addColored(kit.SM_Hutch!, { p: [px, 0, hz2], r: [0, Math.PI, 0] }); // opening on its -z side, like before
         for (const [x, z] of [[98.6, 8.4], [85.6, 8.2]] as const) p.add(cyl(0.45, 0.45, 0.6, 10), '#e8c860', { p: [x, 0.3, z], r: [0, 0, Math.PI / 2] });
         tree(p, 101.5, 15.6, 0.8);
         // trees in the corners of the yard
