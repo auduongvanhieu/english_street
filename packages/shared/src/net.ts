@@ -42,6 +42,7 @@ export const MSG = {
   SPORT: 'sport',
   BOAT: 'boat',
   SETTINGS: 'settings',
+  JOURNEY: 'journey',
 } as const;
 
 /** Close codes the server uses when it removes a player (client shows why). */

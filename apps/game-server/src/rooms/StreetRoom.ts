@@ -475,6 +475,16 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     }
     return n;
   }
+  /** Send a message to every open game of a user (by account / guest id). */
+  sendToUser(uid: string, type: string, payload: unknown) {
+    let n = 0;
+    for (const c of this.clients) {
+      if (this.who.get(c.sessionId)?.uid !== uid) continue;
+      c.send(type, payload);
+      n += 1;
+    }
+    return n;
+  }
   /** Admin changed this player's in-game settings: send them to every open game of theirs. */
   pushSettings(uid: string, settings: PlayerSettings) {
     let n = 0;

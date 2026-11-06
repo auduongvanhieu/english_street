@@ -70,6 +70,18 @@ Trang chi tiết người chơi có thẻ **Cài đặt trong game**: đồ ho�
 - Bấm **Lưu và áp dụng**: nếu người chơi đang online, server game đẩy cài đặt xuống máy họ và đổi ngay, có thông báo nhỏ trong game. Nếu đang offline, cài đặt được giữ lại và áp dụng ở lần vào game tiếp theo.
 - Mục **Thiết bị** có dòng 🎨 Đồ hoạ: chất lượng, FPS đo được, tỉ lệ điểm ảnh, số draw call.
 
+### Hành trình (hệ thống nhiệm vụ)
+Trang **⭐ Hành trình**:
+- số người đã bắt đầu;
+- số người đi tới mỗi chương (12 chương), để thấy người chơi hay dừng ở đâu;
+- tem hộ chiếu theo khu;
+- nhiệm vụ khu đã làm;
+- việc hằng ngày hôm nay;
+- số bạn được mời đã vào;
+- thử thách tuần (tiến độ chung, số người góp, đã trả thưởng chưa).
+
+Trang chi tiết người chơi có nút **⭐ Đặt lại hành trình**. Nội dung nhiệm vụ nằm trong code (`packages/shared/src/journey.ts`, chữ hiển thị ở `apps/web/src/ui/journey/journeyText.ts`), chưa sửa được từ admin.
+
 ## Thống kê
 - **Nơi được ghé nhiều nhất**: lượt vào và thời gian ở lại từng khu, NPC được nói chuyện nhiều nhất, xe buýt.
 - **Bản đồ nhiệt**: vị trí người chơi được ghi 30 giây một lần.

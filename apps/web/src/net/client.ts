@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type PlayerSettings, type BoatEvent, type BoatSend, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type JourneyEvent, type PlayerSettings, type BoatEvent, type BoatSend, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -58,6 +58,8 @@ export const boatStates = new Map<string, BoatLike & { at: number }>();
 const boatHandlers = new Set<(id: string, b: BoatLike | null) => void>();
 /** Occupancy changes (someone got in / out) and removals. */
 export const onBoatState = (fn: (id: string, b: BoatLike | null) => void) => (boatHandlers.add(fn), () => boatHandlers.delete(fn));
+const journeyHandlers = new Set<(m: JourneyEvent) => void>();
+export const onJourney = (fn: (m: JourneyEvent) => void) => (journeyHandlers.add(fn), () => journeyHandlers.delete(fn));
 const boatEventHandlers = new Set<(m: BoatEvent) => void>();
 export const onBoatEvent = (fn: (m: BoatEvent) => void) => (boatEventHandlers.add(fn), () => boatEventHandlers.delete(fn));
 
@@ -269,6 +271,7 @@ function bindRoom(r: Room<StreetStateLike>) {
   });
   r.onMessage<SportEvent>(MSG.SPORT, (m) => sportHandlers.forEach((h) => h(m)));
   r.onMessage<BoatEvent>(MSG.BOAT, (m) => boatEventHandlers.forEach((h) => h(m)));
+  r.onMessage<JourneyEvent>(MSG.JOURNEY, (m) => journeyHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
     if (!m || typeof m.text !== 'string') return;
     useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });

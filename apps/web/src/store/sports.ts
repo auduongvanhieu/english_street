@@ -7,6 +7,7 @@ import { haptic } from '../native/bridge';
 import { localPos } from '../scene/LocalPlayer';
 import { t } from '../i18n';
 import { useProfile } from './profile';
+import { useGame } from './game';
 import { useVoice } from './voice';
 
 /**
@@ -72,6 +73,9 @@ export function initSports() {
       coachSay(`${GOAL_LINES[Math.floor(Math.random() * GOAL_LINES.length)]} ${ev.by} scores for the ${team} team. It's ${ev.red} to ${ev.blue}.`);
       s.showBanner(`⚽ ${t('GOAL!')} ${team} · ${ev.red} : ${ev.blue}`);
       if (s.team === ev.team) haptic('medium');
+      // my own goal (the server names the last player who touched the ball)
+      const g = useGame.getState();
+      if (s.team === ev.team && g.sessionId && g.players[g.sessionId]?.name === ev.by) track('football_goal');
       return;
     }
     // full time

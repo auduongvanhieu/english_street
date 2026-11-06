@@ -35,6 +35,8 @@ import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
 import { Tutorial } from './ui/Tutorial';
+import { JourneyToasts, NextStepChip } from './ui/journey/JourneyHud';
+import { initJourney, useJourney } from './store/journey';
 import { Icon } from './ui/icons';
 import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
 import type { PlayerSettings } from '@es/shared';
@@ -88,7 +90,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney };
 }
 
 export default function App() {
@@ -141,6 +143,7 @@ export default function App() {
     const offSports = initSports();
     const offBoats = initBoats();
     const offSettings = watchPlayerSettings();
+    const offJourney = initJourney();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -152,6 +155,7 @@ export default function App() {
       offSports();
       offBoats();
       offSettings();
+      offJourney();
       offWatch();
       offNative();
     };
@@ -301,9 +305,13 @@ export default function App() {
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
     // the name a guest typed + the device (admin site: player list, device stats)
     void deviceInfo()
-      .then((device) => post<{ ok: boolean; settings?: PlayerSettings }>(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device: { ...device, gfx: { quality: useSettings.getState().quality }, settings: currentPlayerSettings() } }))
+      .then((device) => post<{ ok: boolean; settings?: PlayerSettings }>(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, invitedBy: localStorage.getItem('es:invitedBy') ?? undefined, device: { ...device, gfx: { quality: useSettings.getState().quality }, settings: currentPlayerSettings() } }))
       // settings an admin changed while I was away
-      .then((r) => r?.settings && applyPlayerSettings(r.settings))
+      .then((r) => {
+        if (r?.settings) applyPlayerSettings(r.settings);
+        // the journey needs the player to exist on the server first
+        void useJourney.getState().load();
+      })
       .catch(() => undefined);
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
@@ -347,6 +355,8 @@ export default function App() {
       <TutorialStarter />
       <Tutorial touch={touch} />
       {tutorialOn ? null : <HintToast touch={touch} />}
+      {tutorialOn ? null : <NextStepChip touch={touch} />}
+      <JourneyToasts />
       {!touch && <WeatherChip compact={false} />}
       <Notices />
       <BusOverlay />

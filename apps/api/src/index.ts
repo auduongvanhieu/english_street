@@ -22,6 +22,9 @@ import { registerAuth } from './auth';
 import { accountRoutes } from './routes/account';
 import { connectRedis, createStore, type Session } from './npc/store';
 import { createAttemptRepo } from './npc/attempts';
+import { Journey, withJourney } from './journey/engine';
+import { journeyRoutes } from './routes/journey';
+import { gameJourney } from './admin/game';
 import { MemoryFriendRepo, PrismaFriendRepo, setFriendRepo } from './friends';
 import { friendRoutes } from './routes/friends';
 import { NpcService } from './npc/service';
@@ -43,6 +46,9 @@ const sessions = createStore<Session>(redis, 'sess');
 const pairs = createStore<PairSession>(redis, 'pair');
 const translations = createStore<{ text?: string; vi?: string }>(redis, 'tr', 30 * 24 * 3600); // translation cache: 30 days
 const dbOn = attempts.name === 'postgres';
+// quests that guide players through the game: every logged event counts towards them
+const journey = new Journey(attempts, (uid, ev) => gameJourney(uid, ev));
+withJourney(attempts, () => journey);
 setFriendRepo(dbOn ? new PrismaFriendRepo() : new MemoryFriendRepo());
 enableModeration(dbOn);
 enableAnnouncements(dbOn);
@@ -93,6 +99,7 @@ await app.register(friendRoutes);
 await app.register(areaRoutes);
 await app.register(worldRoutes);
 await app.register(playRoutes(attempts));
+await app.register(journeyRoutes(journey));
 await app.register(shopRoutes(attempts));
 await app.register(minigameRoutes(attempts));
 await app.register(bookRoutes(attempts));

@@ -297,6 +297,15 @@ function ModerationButtons({ id, d, self, reload, post }: { id: string; d: Detai
         🔑 {L('Mật khẩu tạm', 'Temporary password')}
       </AsyncBtn>
       <AsyncBtn
+        onRun={async () => {
+          if (!(await confirmDialog(L('Đặt lại Hành trình (chương, tem, việc hôm nay) của người này về đầu?', "Start this player's Journey (chapters, stamps, today's tasks) again?")))) return;
+          await post('/journey/reset');
+          toast(L('Đã đặt lại hành trình', 'Journey reset'));
+        }}
+      >
+        ⭐ {L('Đặt lại hành trình', 'Reset journey')}
+      </AsyncBtn>
+      <AsyncBtn
         kind="danger"
         disabled={self}
         onRun={async () => {

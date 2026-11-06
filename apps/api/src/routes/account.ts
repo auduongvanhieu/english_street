@@ -202,7 +202,7 @@ export function accountRoutes(repo: AttemptRepo) {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await limiter.allow(`hello:${id}`, 10, 60))) return reply.code(429).send({ error: 'rate_limited' });
-      const body = z.object({ name: z.string().max(40).optional(), device: z.unknown().optional() }).safeParse(req.body);
+      const body = z.object({ name: z.string().max(40).optional(), device: z.unknown().optional(), invitedBy: z.string().min(8).max(64).optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const clean = maskProfanity((body.data.name ?? '').normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').trim().slice(0, 20));
       const prev = await repo.getUser(id);
@@ -215,6 +215,16 @@ export function accountRoutes(repo: AttemptRepo) {
         await prisma.user.update({ where: { id }, data: { device: d.data as object } }).catch(() => undefined);
         const { kind, os, osVersion, model, form, browser, network, radio } = d.data;
         await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio }).filter(([, v]) => v !== undefined)) });
+      }
+      // came with a friend's invite link: remember it once, for a new player only (paid when they finish chapter 2)
+      const inviter = body.data.invitedBy;
+      if (inviter && inviter !== id) {
+        const me = await repo.getUser(id);
+        const mgs = (me?.gameState ?? {}) as Record<string, unknown>;
+        // "new" = has not reached chapter 3 of the journey yet (the invite pays at chapter 2)
+        const jd = ((mgs.journey as { done?: string[] } | undefined)?.done ?? []) as string[];
+        const isNew = !!me && !jd.includes('m02-coffee') && me.xp < 200;
+        if (isNew && !mgs.invitedBy && (await repo.getUser(inviter))) await repo.updateUser(id, { gameState: { ...mgs, invitedBy: inviter } });
       }
       // settings an admin changed while the player was away: applied by the game now, then forgotten
       const u = await repo.getUser(id);

@@ -140,7 +140,7 @@ export class NpcService {
       playerId,
       props: { npcId: s.npcId, questId: s.questId ?? '', level, source, subtitles, lang, correction_types: turn.corrections.map((c) => c.type), goals: turn.goals_completed.length },
     });
-    if (summary) await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: s.questId ?? '', status: summary.status, score: summary.score, turns: s.turns } });
+    if (summary) await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: s.questId ?? '', npc: s.npcId, status: summary.status, score: summary.score, turns: s.turns } });
     return { turn, state: this.state(s, quest), summary };
   }
 
@@ -155,7 +155,7 @@ export class NpcService {
     if (quest && s.attemptId) {
       summary = this.summarize(s, quest, 'abandoned');
       await this.attempts.update(s.attemptId, { status: 'abandoned', finishedAt: new Date(), turns: s.turns, goalsDone: s.goalsDone });
-      await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: quest.id, status: 'abandoned', score: summary.score, turns: s.turns } });
+      await this.attempts.logEvent({ name: 'quest_end', playerId, props: { questId: quest.id, npc: s.npcId, status: 'abandoned', score: summary.score, turns: s.turns } });
     }
     await this.sessions.set(s.id, s);
     return summary;

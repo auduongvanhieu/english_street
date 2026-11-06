@@ -29,7 +29,7 @@ export function Tutorial({ touch }: { touch: boolean }) {
     daily: t('Tasks: open 📋 Daily at the top right to see what to do today. Finishing tasks gives you XP and coins.'),
     map: t('Travel: open 🗺️ Map to see the whole town — the zoo, the farm, the hotel, the sports park, the river… Tap a place to go there, or take the bus 🚌.'),
     chat: t('Chat: type a message in English in the box at the bottom and press Enter. Players near you will see it.'),
-    done: t("You're ready! Walk into the shops and areas, use 🔊 to hear words and 📓 Notebook to review them. Have fun!"),
+    done: t("You're ready! Your first task is in the box at the top left — tap 📍 to go there. All tasks are in 📋 My journey. Have fun!"),
   };
   const i = TUTORIAL_STEPS.indexOf(step);
   const auto = step !== 'welcome' && step !== 'done';

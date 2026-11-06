@@ -8,6 +8,7 @@
     "build": "tsc --noEmit",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/journey/engine.test.ts",
     "prisma": "prisma",
     "postinstall": "prisma generate",
     "eval:npc": "tsx scripts/npc-eval.ts",

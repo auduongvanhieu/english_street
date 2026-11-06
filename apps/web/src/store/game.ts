@@ -150,6 +150,9 @@ export const useGame = create<GameState>((set) => ({
   interactTarget: null,
   setInteractTarget: (interactTarget) => set({ interactTarget }),
   panelNpc: null,
-  openPanel: (panelNpc) => set({ panelNpc }),
+  openPanel: (panelNpc) => {
+    set({ panelNpc });
+    void import('../net/analytics').then((a) => a.track('npc_open', { npc: panelNpc }));
+  },
   closePanel: () => set({ panelNpc: null }),
 }));

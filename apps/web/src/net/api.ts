@@ -43,7 +43,7 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
   return (await res.json()) as T;
 }
 export const post = <T>(path: string, body: unknown) => request<T>('POST', path, body);
-const get = <T>(path: string) => request<T>('GET', path);
+export const get = <T>(path: string) => request<T>('GET', path);
 
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
 

@@ -8,6 +8,7 @@ import { Overview } from './pages/Overview';
 import { UsersPage } from './pages/Users';
 import { UserDetail } from './pages/UserDetail';
 import { OnlinePage } from './pages/Online';
+import { JourneyPage } from './pages/Journey';
 import { ReportsPage } from './pages/Reports';
 import { ContentList } from './pages/ContentList';
 import { DocEditor } from './pages/DocEditor';
@@ -47,6 +48,7 @@ const NAV: { vi: string; en: string; items: NavItem[] }[] = [
       { path: 'users', icon: '👥', vi: 'Người chơi', en: 'Players', adminOnly: true },
       { path: 'online', icon: '🟢', vi: 'Đang online', en: 'Online', adminOnly: true },
       { path: 'reports', icon: '🚩', vi: 'Báo cáo & góp ý', en: 'Reports & feedback', adminOnly: true },
+      { path: 'journey', icon: '⭐', vi: 'Hành trình', en: 'Journey', adminOnly: true },
     ],
   },
   {
@@ -152,6 +154,8 @@ function Routes({ route }: { route: string[] }): ReactNode {
       return b ? <UserDetail id={b} /> : <UsersPage />;
     case 'online':
       return <OnlinePage />;
+    case 'journey':
+      return <JourneyPage />;
     case 'reports':
       return <ReportsPage />;
     case 'npc':

@@ -1,3 +1,5 @@
+import { useJourney } from '../../store/journey';
+import { MAIN_STEPS, stepById } from '@es/shared';
 import { useEffect, useState } from 'react';
 import { AREA_INFO, type AreaId } from '@es/shared';
 import { useGame } from '../../store/game';
@@ -107,7 +109,23 @@ function openThread(id: string) {
 }
 
 /** 🗺️ Street map: areas, the main street, you and other players; tap a place to take the bus there. */
+/** Areas where the journey has something for me now (current chapter, tracked and today's tasks). */
+function useJourneyAreas() {
+  const view = useJourney((s) => s.view);
+  const out = new Set<string>();
+  if (view) {
+    const ids = [MAIN_STEPS[view.chapter]?.id, ...view.state.tracked, ...view.state.daily.filter((d) => !view.state.dailyDone.includes(d))];
+    for (const id of ids) {
+      const st = id ? stepById(id) : undefined;
+      if (st?.guide && 'area' in st.guide) out.add(st.guide.area);
+      if (st?.area && st.area !== 'river') out.add(st.area);
+    }
+  }
+  return { journeyAreas: out, journeyStamps: view?.stamps ?? [] };
+}
+
 export function MapPanel() {
+  const { journeyAreas, journeyStamps } = useJourneyAreas();
   const t = useT();
   const close = useGame((s) => s.setUiPanel);
   const players = useGame((s) => s.players);
@@ -144,6 +162,8 @@ export function MapPanel() {
               Main Street · shops
             </text>
             {AREAS.map((a) => {
+              const task = journeyAreas.has(a.id);
+              const stamped = journeyStamps.includes(a.id);
               const z0 = Math.min(frontZ(a), backZ(a));
               const z1 = Math.max(frontZ(a), backZ(a));
               const cy = (sz(z0) + sz(z1)) / 2;
@@ -156,6 +176,13 @@ export function MapPanel() {
                   <text x={sx((a.x0 + a.x1) / 2)} y={cy + 10} fontSize={6.5} textAnchor="middle" fill="#fff" fontWeight={700}>
                     {AREA_INFO[a.id].short}
                   </text>
+                  {/* journey: a task waits here (yellow dot) / the passport stamp is done (tick) */}
+                  {task ? <circle cx={sx(a.x1) - 5} cy={sz(z0) + 5} r={3.6} fill="#facc15" stroke="#fff" strokeWidth={1} /> : null}
+                  {stamped ? (
+                    <text x={sx(a.x0) + 5} y={sz(z0) + 8} fontSize={7} textAnchor="middle">
+                      ✅
+                    </text>
+                  ) : null}
                 </g>
               );
             })}

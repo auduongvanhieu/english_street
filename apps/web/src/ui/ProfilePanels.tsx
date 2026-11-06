@@ -1,3 +1,6 @@
+import { useJourney } from '../store/journey';
+import { AREA_INFO } from '@es/shared';
+import { JourneyPanel } from './journey/JourneyPanel';
 import { Icon } from './icons';
 import { useEffect, useState } from 'react';
 import { AREAS } from '../world/areas';
@@ -122,13 +125,14 @@ function ProfilePanel() {
         <span>🏅 {p.badges.length}</span>
         {p.quota && <span title={t('NPC conversation turns left today')}>💬 {t('{n} left', { n: p.quota.turnsLeftToday })}</span>}
       </div>
+      <JourneyBadges />
       <div className="space-y-2">
         {!p.placementDone && (
           <button type="button" onClick={() => open('placement')} className="flex min-h-12 w-full items-center rounded-xl bg-yellow-400 px-4 text-left text-base font-medium text-black">
             🎯 {t('Take the 2-minute level test')}
           </button>
         )}
-        <Item to="daily">📋 {t("Today's quests & badges")}</Item>
+        <Item to="daily">📋 {t('My journey: quests, passport, today')}</Item>
         <Item to="notebook">📓 {t('Notebook')}</Item>
         <Item to="avatar">🎨 {t('Character & shop')}</Item>
       </div>
@@ -136,7 +140,7 @@ function ProfilePanel() {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+export function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   const t = useT();
   const close = useGame((s) => s.setUiPanel);
   return (
@@ -154,7 +158,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 export function UiPanels() {
   const which = useGame((s) => s.uiPanel);
-  if (which === 'daily') return <DailyPanel />;
+  if (which === 'daily') return <JourneyPanel />;
   if (which === 'notebook') return <NotebookPanel />;
   if (which === 'avatar') return <AvatarCreator />;
   if (which === 'placement') return <PlacementPanel />;
@@ -164,13 +168,15 @@ export function UiPanels() {
 }
 
 // ---------------------------------------------------------------- daily + badges
-function DailyPanel() {
+/** Today's NPC quests, area word progress and badges (a tab of the Journey book). */
+export function DailyContent() {
   const t = useT();
   const p = useProfile((s) => s.profile);
   const npcs = useGame((s) => s.npcs);
   if (!p) return null;
   return (
-    <Panel title={`📋 ${t("Today's quests")}`}>
+    <>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Conversation quests of the day')}</h3>
       <ul className="space-y-2">
         {p.daily.map((d) => (
           <li key={d.questId} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${d.done ? 'bg-green-50' : ''}`}>
@@ -225,7 +231,7 @@ function DailyPanel() {
       <p className="mt-4 text-xs text-gray-500">
         {t('{quests} quests completed · {reviews} flashcards reviewed', { quests: p.stats.questsCompleted, reviews: p.stats.reviewsDone })}
       </p>
-    </Panel>
+    </>
   );
 }
 
@@ -379,4 +385,25 @@ function Meaning({ word, meaning, lang }: { word: string; meaning: string; lang:
   const tr = useMeaning(same ? undefined : word);
   if (same) return <>{meaning}</>;
   return <>{tr ?? '…'}</>;
+}
+
+/** Passport stamps and the journey title, on the profile. */
+function JourneyBadges() {
+  const t = useT();
+  const view = useJourney((s) => s.view);
+  if (!view) return null;
+  const citizen = view.state.done.includes('m12-citizen');
+  return (
+    <div className="mb-4 rounded-xl border bg-gray-50 p-3">
+      {citizen ? <div className="mb-1 font-semibold text-amber-700">🏅 English Street Citizen</div> : null}
+      <div className="text-xs text-gray-600">{t('Journey: chapter {n} of {total} · stamps {s}/{st}', { n: Math.min(view.chapter + 1, 12), total: 12, s: view.stamps.length, st: 13 })}</div>
+      <div className="mt-1 flex flex-wrap gap-1 text-lg">
+        {view.stamps.map((a) => (
+          <span key={a} title={a} className="rounded-full bg-green-100 px-1 ring-1 ring-green-300">
+            {a === 'river' ? '🚣' : AREA_INFO[a as keyof typeof AREA_INFO]?.icon}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }

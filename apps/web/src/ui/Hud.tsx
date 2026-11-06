@@ -257,7 +257,10 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
       sendShout(msg);
       track('shout');
       setShout(false);
-    } else if (msg) sendChat(msg);
+    } else if (msg) {
+      sendChat(msg);
+      track('chat_send');
+    }
     setChat('');
     if (compact) onClose();
     else input.current?.blur();

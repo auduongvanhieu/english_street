@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { CEFR_LEVELS, CROPS, FarmStateSchema, PlayerSettingsSchema, emptyFarm, maskProfanity } from '@es/shared';
+import { AREA_STEPS, CEFR_LEVELS, CROPS, FarmStateSchema, MAIN_STEPS, PlayerSettingsSchema, STAMP_AREAS, emptyFarm, maskProfanity, type JourneyState } from '@es/shared';
+import { chapterOf, stampsOf, today } from '../journey/engine';
 import { prisma } from '../plugins/prisma';
 import { hashPassword } from '../auth';
 import { forgetStatus } from '../moderation';
@@ -186,6 +187,45 @@ export function adminUserRoutes(app: FastifyInstance) {
     await prisma.user.update({ where: { id: req.params.id }, data });
     await audit(req, 'user.settings', req.params.id, null, body.data);
     return { applied, pending: !applied };
+  });
+
+  /** Journey overview: how far players got (chapters), stamps per area, today's tasks, the weekly challenge. */
+  app.get('/admin/journey', async () => {
+    const users = await prisma.user.findMany({ select: { gameState: true } });
+    const reached = MAIN_STEPS.map(() => 0);
+    const stamps: Record<string, number> = Object.fromEntries(STAMP_AREAS.map((a) => [a, 0]));
+    const areaTasks: Record<string, number> = Object.fromEntries(AREA_STEPS.map((s) => [s.id, 0]));
+    let players = 0;
+    let dailyAll = 0;
+    let dailyAny = 0;
+    let invited = 0;
+    const day = today();
+    for (const u of users) {
+      const j = (u.gameState as { journey?: JourneyState } | null)?.journey;
+      if (!j) continue;
+      players += 1;
+      const ch = chapterOf(j);
+      for (let i = 0; i < Math.min(ch + 1, MAIN_STEPS.length); i++) reached[i]! += 1;
+      for (const a of stampsOf(j)) stamps[a]! += 1;
+      for (const id of j.done) if (id in areaTasks) areaTasks[id]! += 1;
+      if (j.day === day && j.dailyDone.length) dailyAny += 1;
+      if (j.day === day && j.dailyBonus) dailyAll += 1;
+      invited += j.invited ?? 0;
+    }
+    const week = await prisma.setting.findUnique({ where: { key: 'journey:week' } }).catch(() => null);
+    return { players, chapters: MAIN_STEPS.map((s, i) => ({ id: s.id, reached: reached[i] })), stamps, areaTasks, dailyAny, dailyAll, invited, week: week?.value ?? null };
+  });
+
+  /** Start a player's journey again (progress counted again from new events, no back-fill). */
+  app.post<{ Params: { id: string } }>('/admin/users/:id/journey/reset', async (req, reply) => {
+    const u = await prisma.user.findUnique({ where: { id: req.params.id }, select: { gameState: true } });
+    if (!u) return reply.code(404).send({ error: 'not_found' });
+    const gs = { ...((u.gameState as Record<string, unknown>) ?? {}) };
+    const before = gs.journey ?? null;
+    gs.journey = { done: [], prog: {}, day: '', daily: [], dailyDone: [], dailyProg: {}, dailyBonus: false, tracked: [] };
+    await prisma.user.update({ where: { id: req.params.id }, data: { gameState: gs as Prisma.InputJsonValue } });
+    await audit(req, 'user.journey_reset', req.params.id, before, null);
+    return { ok: true };
   });
 
   /** Sign out everywhere (every token minted before stops working). */
