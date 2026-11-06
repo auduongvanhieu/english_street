@@ -1,3 +1,4 @@
+import { Icon, type IconName } from './icons';
 import { useEffect, useState } from 'react';
 import { NIGHT_WORD, WEATHER_WORD } from '@es/shared';
 import { useWorld } from '../store/world';
@@ -12,6 +13,15 @@ const hhmm = (h: number) => `${String(Math.floor(h)).padStart(2, '0')}:${String(
  * Weather and Vietnam time at the top of the screen (the street's sky follows both). Tap: the English
  * sentence for the weather (with a speaker), the place, and a button to look up at the sky.
  */
+/** Line icon for the sky right now (phone HUD). */
+function skyIcon(night: boolean, kind: string): IconName {
+  if (kind === 'storm') return 'storm';
+  if (kind === 'rain' || kind === 'drizzle') return 'rain';
+  if (kind === 'fog') return 'fog';
+  if (kind === 'cloudy') return 'cloud';
+  return night ? 'moon' : 'sun';
+}
+
 export function WeatherChip({ compact }: { compact: boolean }) {
   const now = useWorld((s) => s.cfg?.now ?? null);
   const [, tick] = useState(0);
@@ -43,10 +53,10 @@ export function WeatherChip({ compact }: { compact: boolean }) {
           onClick={() => setOpen((o) => !o)}
           title={t('Weather')}
           aria-label={t('Weather')}
-          className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-black/45 text-white shadow backdrop-blur-sm active:scale-95"
+          className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-white/85 text-slate-700 shadow-md ring-1 ring-black/5 backdrop-blur-md active:scale-95"
         >
-          <span className="text-lg leading-none">{icon}</span>
-          <span className="text-[9px] leading-none tabular-nums">{hhmm(sky.hour)}</span>
+          <Icon name={skyIcon(night, sky.kind)} size={18} />
+          <span className="mt-0.5 text-[9px] font-semibold leading-none tabular-nums">{hhmm(sky.hour)}</span>
         </button>
       ) : (
       <div className="flex items-center gap-1">

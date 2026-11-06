@@ -269,8 +269,8 @@ function AnySeatButton({ compact }: { compact?: boolean }) {
   const t = useT();
   const seat = useSeat((s) => s.seat);
   const near = useSeat((s) => s.near);
-  if (compact && seat) return <ActionCircle onClick={() => useSeat.getState().stand()} icon="🧍" label={t('Stand up')} color="bg-white" />;
-  if (compact && near) return <ActionCircle onClick={() => useSeat.getState().sit(near)} icon="🪑" label={t('Sit down')} color="bg-amber-400" />;
+  if (compact && seat) return <ActionCircle onClick={() => useSeat.getState().stand()} icon="stand" label={t('Stand up')} color="bg-slate-500" />;
+  if (compact && near) return <ActionCircle onClick={() => useSeat.getState().sit(near)} icon="chair" label={t('Sit down')} color="bg-emerald-500" />;
   if (seat)
     return (
       <button type="button" data-ui onClick={() => useSeat.getState().stand()} className="min-h-12 rounded-full bg-white px-5 text-base font-semibold text-black shadow-lg">

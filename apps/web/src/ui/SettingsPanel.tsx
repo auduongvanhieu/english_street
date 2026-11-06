@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useTutorial } from '../store/tutorial';
 import { useGame } from '../store/game';
 import { useProfile } from '../store/profile';
@@ -15,7 +16,7 @@ export function SettingsButton({ compact }: { compact?: boolean }) {
   if (compact)
     return (
       <HudButton onClick={() => open('settings')} title={t('Settings')}>
-        ⚙️
+        <Icon name="settings" />
       </HudButton>
     );
   return (

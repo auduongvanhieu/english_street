@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import { Sheet, SheetHeader } from './Sheet';
 import { useVoice } from '../store/voice';
@@ -421,7 +422,7 @@ export function ShoutButton({ compact }: { compact?: boolean }) {
     setHeld(false);
     void vc.setShouting(false);
   };
-  const cls = held ? 'bg-red-600' : 'bg-black/45 hover:bg-black/60';
+  const cls = compact ? (held ? 'bg-red-500 text-white ring-1 ring-red-300' : 'bg-white/85 text-slate-700 ring-1 ring-black/5 shadow-md') : held ? 'bg-red-600 text-white' : 'bg-black/45 text-white hover:bg-black/60';
   return (
     <button
       type="button"
@@ -431,9 +432,9 @@ export function ShoutButton({ compact }: { compact?: boolean }) {
       onPointerLeave={up}
       title={t('Hold to shout (voice heard across the street)')}
       aria-label={t('Hold to shout')}
-      className={`touch-none select-none text-white shadow backdrop-blur-sm ${compact ? 'flex h-14 w-14 items-center justify-center rounded-full text-2xl' : 'rounded-lg px-2 py-1 text-xs'} ${cls}`}
+      className={`touch-none select-none shadow backdrop-blur-md ${compact ? 'flex h-11 w-11 items-center justify-center rounded-full' : 'rounded-lg px-2 py-1 text-xs'} ${cls}`}
     >
-      📢{compact ? '' : held ? ` ${t('Shouting…')}` : ` ${t('Hold to shout')}`}
+      {compact ? <Icon name="megaphone" /> : `📢 ${held ? t('Shouting…') : t('Hold to shout')}`}
     </button>
   );
 }

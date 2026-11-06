@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AREA_INFO, DM_MAX, INTERIOR_BOUNDS, hotelRoomAt, inRect } from '@es/shared';
 import { Sheet, SheetHeader } from './Sheet';
@@ -60,7 +61,9 @@ export function PlayersButton({ compact }: { compact: boolean }) {
   if (compact)
     return (
       <span className="relative">
-        <HudButton onClick={open} title={t('Players')}>👥</HudButton>
+        <HudButton onClick={open} title={t('Players')}>
+          <Icon name="users" />
+        </HudButton>
         {badge}
       </span>
     );

@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useEffect, useState } from 'react';
 import { AREAS } from '../world/areas';
 import { BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
@@ -46,7 +47,11 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
             <span className="block h-1.5 rounded bg-yellow-400" style={{ width: `${pct}%` }} />
           </span>
         </span>
-        {!p.placementDone && <span className="rounded bg-yellow-400 px-1.5 py-0.5 font-medium text-black">🎯</span>}
+        {!p.placementDone && (
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-slate-900">
+            <Icon name="target" size={14} />
+          </span>
+        )}
       </button>
     );
   }

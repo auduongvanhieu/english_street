@@ -35,6 +35,7 @@ import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
 import { Tutorial } from './ui/Tutorial';
+import { Icon } from './ui/icons';
 import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
 import type { PlayerSettings } from '@es/shared';
 import { KitchenHud } from './ui/KitchenHud';
@@ -357,12 +358,16 @@ export default function App() {
           <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <WeatherChip compact />
             <PlayersButton compact />
-            <Collapsible id="top" icon="☰" title={t('More buttons')}>
+            <Collapsible id="top" icon="menu" title={t('More buttons')} row>
               <VoiceChatButton compact />
-              <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
+              <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>
+                <Icon name="map" />
+              </HudButton>
               <SettingsButton compact />
               <FeedbackButton compact />
-              <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>🚪</HudButton>
+              <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>
+                <Icon name="exit" />
+              </HudButton>
             </Collapsible>
           </div>
           {/* bottom-right: actions */}
@@ -372,12 +377,14 @@ export default function App() {
               <TalkButton compact />
               <UseButton />
               <HugButton touch />
-              <Collapsible id="actions" icon="⋯" title={t('More actions')} reverse>
+              <Collapsible id="actions" icon="more" title={t('More actions')} reverse>
                 <EmoteBar compact />
                 <ShoutButton compact />
               </Collapsible>
               <JumpButton onJump={requestJump} title={t('Jump')} />
-              <HudButton onClick={() => setChatOpen(true)} title={t('Nearby chat')}>💬</HudButton>
+              <HudButton onClick={() => setChatOpen(true)} title={t('Nearby chat')}>
+                <Icon name="chat" />
+              </HudButton>
             </div>
           )}
           {!hudHidden && !chatOpen && !inTalk && <Joystick />}

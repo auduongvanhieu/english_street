@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { useEffect, useState, type FormEvent } from 'react';
 import { StreetBackdrop } from './StreetBackdrop';
 import { STREET_ROOM_MAX_CLIENTS, ZONE_CODE_RE, ZONE_NAME_MAX, ZONE_NAME_MIN, type ZoneInfo, type ZoneSelection } from '@es/shared';
@@ -184,7 +185,7 @@ export function ZoneChip({ compact, onChange }: { compact: boolean; onChange: ()
   return (
     <div data-ui className={`absolute ${compact ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)]' : 'left-3 top-14'} text-xs`}>
       <button type="button" onClick={() => setOpen((o) => !o)} title={t('Zone')} className="flex min-h-8 items-center gap-1.5 rounded-full bg-black/50 px-3 text-white backdrop-blur-sm">
-        <span>{zone.kind === 'main' ? '🏙️' : zone.locked ? '🔒' : '🏘️'}</span>
+        <Icon name="pin" size={15} />
         <span dir="auto" className="max-w-28 truncate font-semibold">{zone.name}</span>
         <span className="opacity-80">· {count}</span>
       </button>

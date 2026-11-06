@@ -7,7 +7,7 @@ export function UseButton() {
   const near = useNearUsable((s) => s.near);
   const talk = useGame((s) => s.interactTarget);
   if (!near || talk) return null;
-  return <ActionCircle onClick={() => useNearest()} icon={near.icon} label={near.disabled ?? near.label} color={near.disabled ? 'bg-gray-300' : 'bg-sky-300'} />;
+  return <ActionCircle onClick={() => useNearest()} icon="hand" badge={near.icon} label={near.disabled ?? near.label} color={near.disabled ? 'bg-slate-400' : 'bg-sky-500'} />;
 }
 
 /** Keyboard: "E · Open the door" under the player, like the talk prompt. */

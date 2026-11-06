@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Icon, type IconName } from './icons';
 import { EMOTES, type Emote } from '@es/shared';
 import { useGame } from '../store/game';
 import { useVoiceChat } from '../net/voicechat';
@@ -45,12 +46,17 @@ export function JumpButton({ onJump, title }: { onJump: () => void; title: strin
         if (e.detail === 0) onJump();
       }}
       onContextMenu={(e) => e.preventDefault()}
-      className="flex h-14 w-14 shrink-0 touch-none select-none items-center justify-center rounded-full bg-black/45 text-2xl text-white shadow backdrop-blur-sm active:scale-95"
+      className={`${HUD_BTN} ${HUD_OFF} h-14 w-14 touch-none select-none`}
     >
-      ⤒
+      <Icon name="jump" size={26} />
     </button>
   );
 }
+
+/** One look for every round HUD button on phones: frosted white, slate icon; "on" = sky blue. */
+const HUD_BTN = 'flex shrink-0 items-center justify-center rounded-full shadow-md ring-1 backdrop-blur-md transition active:scale-95';
+const HUD_OFF = 'bg-white/85 text-slate-700 ring-black/5 hover:bg-white';
+const HUD_ON = 'bg-sky-500 text-white ring-sky-300';
 
 export function HudButton({ onClick, title, active, children, className = '', big }: { onClick: () => void; title: string; active?: boolean; children: React.ReactNode; className?: string; big?: boolean }) {
   return (
@@ -60,25 +66,31 @@ export function HudButton({ onClick, title, active, children, className = '', bi
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={`flex shrink-0 items-center justify-center rounded-full text-white shadow backdrop-blur-sm active:scale-95 ${big ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'} ${active ? 'bg-green-600' : 'bg-black/45 hover:bg-black/60'} ${className}`}
+      className={`${HUD_BTN} ${big ? 'h-14 w-14 text-2xl' : 'h-11 w-11 text-xl'} ${active ? HUD_ON : HUD_OFF} ${className}`}
     >
       {children}
     </button>
   );
 }
 
-/** Round action button for phones (icon only, small badge in the corner) instead of a long text pill. */
-export function ActionCircle({ onClick, icon, badge, label, color }: { onClick: () => void; icon: string; badge?: string; label: string; color: string }) {
+/**
+ * Contextual action for phones (talk, sit, use, hug): a filled colour circle with a white line icon, and what it
+ * does written in a small pill beside it.
+ */
+export function ActionCircle({ onClick, icon, badge, label, color }: { onClick: () => void; icon: IconName | string; badge?: string; label: string; color: string }) {
   return (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl shadow-lg ring-2 ring-white/70 active:scale-95 ${color}`}>
-      {icon}
+    <button type="button" onClick={onClick} title={label} aria-label={label} className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-lg ring-2 ring-white/80 transition active:scale-95 ${color}`}>
+      {isIcon(icon) ? <Icon name={icon} size={26} /> : <span className="text-2xl">{icon}</span>}
+      <span className="pointer-events-none absolute right-full mr-2 max-w-[11rem] truncate rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-medium text-white shadow backdrop-blur-sm">{label}</span>
       {badge ? <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm shadow">{badge}</span> : null}
     </button>
   );
 }
+const ICONS = new Set<string>(['menu', 'close', 'more', 'users', 'map', 'settings', 'feedback', 'exit', 'mic', 'micOff', 'voice', 'chat', 'talk', 'jump', 'smile', 'megaphone', 'chair', 'stand', 'hand', 'heart', 'drop', 'sun', 'moon', 'cloud', 'rain', 'storm', 'fog', 'target', 'pin', 'graphics', 'bolt']);
+const isIcon = (v: string): v is IconName => ICONS.has(v);
 
 /** A group of HUD buttons behind a ☰ / ⋯ toggle (phones); open/closed is remembered. */
-export function Collapsible({ id, icon, title, children, reverse }: { id: string; icon: string; title: string; children: React.ReactNode; reverse?: boolean }) {
+export function Collapsible({ id, icon, title, children, reverse, row }: { id: string; icon: IconName; title: string; children: React.ReactNode; reverse?: boolean; row?: boolean }) {
   const key = `es.hud.${id}`;
   const [open, setOpen] = useState(() => localStorage.getItem(key) === '1');
   const toggle = () =>
@@ -88,9 +100,17 @@ export function Collapsible({ id, icon, title, children, reverse }: { id: string
     });
   const btn = (
     <HudButton onClick={toggle} title={title} active={open}>
-      {open ? '✕' : icon}
+      <Icon name={open ? 'close' : icon} />
     </HudButton>
   );
+  // row: the buttons open in a line to the left of the toggle (top-right menu, so it never covers the action column)
+  if (row)
+    return (
+      <div className="relative">
+        {btn}
+        {open ? <div className="absolute right-full top-0 mr-2 flex flex-row-reverse items-center gap-2">{children}</div> : null}
+      </div>
+    );
   // on short screens (phones held sideways) the opened buttons line up in a row: a column would run off the bottom
   const items = open ? <div className="flex flex-col items-end gap-2 [@media(max-height:500px)]:flex-row-reverse">{children}</div> : null;
   return (
@@ -116,7 +136,7 @@ export function EmoteBar({ compact }: { compact?: boolean }) {
             </HudButton>
           ))}
         <HudButton onClick={() => setOpen((o) => !o)} title={t('Emotes')} active={open}>
-          😀
+          <Icon name="smile" />
         </HudButton>
       </div>
     );
@@ -141,12 +161,12 @@ export function VoiceChatButton({ compact }: { compact?: boolean }) {
     return (
       <div className="flex items-center gap-2">
         {vc.enabled && (
-          <HudButton onClick={vc.toggleMute} title={vc.muted ? t('Unmute microphone') : t('Mute microphone')} className={vc.muted ? '!bg-red-600' : ''}>
-            {vc.muted ? '🔇' : '🎤'}
+          <HudButton onClick={vc.toggleMute} title={vc.muted ? t('Unmute microphone') : t('Mute microphone')} className={vc.muted ? '!bg-red-500 !text-white !ring-red-300' : ''}>
+            <Icon name={vc.muted ? 'micOff' : 'mic'} />
           </HudButton>
         )}
         <HudButton onClick={toggle} title={vc.enabled ? t('Voice chat on') : t('Voice chat off')} active={vc.enabled}>
-          🎙️
+          <Icon name="voice" />
         </HudButton>
         {vc.error && <span className="rounded bg-black/50 px-2 py-1 text-xs text-yellow-300">{vc.error}</span>}
       </div>
@@ -174,7 +194,7 @@ export function TalkButton({ compact }: { compact?: boolean }) {
   const open = useGame((s) => s.openPanel);
   const t = useT();
   if (!npc) return null;
-  if (compact) return <ActionCircle onClick={() => open(npc.id)} icon="💬" label={t('Talk to {name}', { name: npc.name })} color="bg-yellow-400" />;
+  if (compact) return <ActionCircle onClick={() => open(npc.id)} icon="talk" label={t('Talk to {name}', { name: npc.name })} color="bg-amber-500" />;
   return (
     <button
       type="button"
@@ -441,7 +461,9 @@ export function FeedbackButton({ compact }: { compact?: boolean }) {
   return (
     <>
       {compact ? (
-        <HudButton onClick={() => setOpen(true)} title={t('Send feedback')}>📣</HudButton>
+        <HudButton onClick={() => setOpen(true)} title={t('Send feedback')}>
+          <Icon name="feedback" />
+        </HudButton>
       ) : (
         <button type="button" onClick={() => setOpen(true)} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title={t('Send feedback to the team')}>
           💬 {t('Feedback')}
