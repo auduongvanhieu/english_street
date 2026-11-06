@@ -1,0 +1,60 @@
+id: a-new-friend-at-school
+title: A New Friend at School
+level: A1
+price: 3
+cover: { emoji: "🏫", color: "#4a90e2" }
+summary: It is Nam's first day at the school on English Street. He is shy. Can he find a friend?
+tags: [school, friends]
+chapters:
+  - title: The First Day
+    pages:
+      - pic: "👦🎒"
+        text: |
+          Nam is seven years old. Today is his first day at a new school. He has a blue bag,
+          two pencils and a green apple. "I'm a little scared," he says. Dad holds his hand.
+          "You are a brave boy," says Dad. "Have a good day!"
+      - pic: "🏫👩‍🏫"
+        text: |
+          The school is big and yellow. The teacher is Miss Lee. She has short black hair and a big smile.
+          "Good morning, everyone! This is Nam. He is new," she says. All the children look at Nam.
+          Nam's face is red. "Hello," he says very quietly.
+      - pic: "🪑😶"
+        text: |
+          Nam sits at a desk next to the window. The other children talk and laugh.
+          Nam does not know them. He looks at his apple. "Nobody wants to talk to me," he thinks.
+    questions:
+      - q: What colour is Nam's bag?
+        options: [Red, Blue, Green]
+        answer: 1
+      - q: Who is Miss Lee?
+        options: [Nam's teacher, Nam's mum, A new student]
+        answer: 0
+      - q: How does Nam feel at his desk?
+        options: [Very happy, Angry, A little sad]
+        answer: 2
+  - title: Lunch Time
+    pages:
+      - pic: "🍱👧"
+        text: |
+          At lunch time, a girl sits next to Nam. She has a pink lunch box. "Hi! I'm Linh," she says.
+          "Do you like football?" Nam smiles. "Yes! I love football!" Linh laughs. "Me too!"
+      - pic: "🍎🍪"
+        text: |
+          Linh has two cookies. Nam has his green apple. "Do you want a cookie?" asks Linh.
+          "Yes, please. Do you want some apple?" says Nam. They share their food.
+          "Your apple is very good," says Linh.
+      - pic: "⚽😄"
+        text: |
+          After lunch, Nam and Linh play football in the school yard. Nam kicks the ball.
+          Goal! Two more boys come and play too. At three o'clock, Dad comes to the school.
+          "How was your day?" he asks. "Great! I have a new friend," says Nam.
+    questions:
+      - q: What does Linh have in her lunch box?
+        options: [Cookies, Rice, Bananas]
+        answer: 0
+      - q: What do Nam and Linh play after lunch?
+        options: [Basketball, Tennis, Football]
+        answer: 2
+      - q: What time does Dad come to the school?
+        options: [At one o'clock, At three o'clock, At five o'clock]
+        answer: 1

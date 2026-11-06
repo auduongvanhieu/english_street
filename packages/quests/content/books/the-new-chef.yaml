@@ -1,0 +1,129 @@
+id: the-new-chef
+title: The New Chef
+author: English Street
+level: B1
+price: 8
+cover: { emoji: "👩‍🍳", color: "#e67e22" }
+summary: Mai has just got her first job as a cook at the busiest restaurant on English Street. Can she survive her first week?
+tags: [food, work, friendship]
+chapters:
+  - title: Monday Morning
+    pages:
+      - pic: "👩‍🍳🏪"
+        text: |
+          Mai had dreamed about working in a real kitchen since she was ten years old. Her grandmother had
+          taught her to cook pho in a tiny kitchen in Hanoi, and Mai had been cooking ever since. Now she
+          was twenty-two, and she was standing outside The Blue Door, the busiest restaurant on English
+          Street. Her new white jacket was a little too big. Her hands were shaking. "If I make a mistake
+          today," she thought, "they'll send me home before lunch."
+      - pic: "🧔🔪"
+        text: |
+          The head chef was a tall man called Marco. He had a loud voice and a grey beard, and he did not
+          smile. "You're the new one," he said. "Can you chop onions?" "Yes, Chef," said Mai. He gave her a
+          box of onions as big as a suitcase. "Fine. Chop all of these. Small pieces, all the same size.
+          You have thirty minutes." Then he walked away. Mai looked at the box and took a deep breath.
+          Nobody had told her that a chef's first job was crying over onions.
+      - pic: "🧅😭"
+        text: |
+          While she was chopping, a young man with red hair came over. "Hi, I'm Ollie. I make the desserts,"
+          he said. "Don't worry about Marco. He told me that I was the worst cook he had ever met. That was
+          three years ago." Mai laughed, even though tears from the onions were running down her face. "Does
+          he ever say anything nice?" she asked. Ollie thought about it. "Once he said my chocolate cake was
+          'not terrible'. I nearly fainted."
+      - pic: "⏱️✅"
+        text: |
+          Twenty-eight minutes later, Mai had finished. Marco came back and picked up a handful of onion
+          pieces. He looked at them closely, the way a jeweller looks at a diamond. Mai waited. Her heart
+          was beating fast. Finally, he put them down. "Good," he said. "Now the carrots." It was only one
+          word, but Mai felt as if she had won a prize. Ollie, who was watching from the dessert station,
+          gave her a secret thumbs up.
+    questions:
+      - q: Who had taught Mai to cook?
+        options: [Her grandmother, Chef Marco, Her teacher at school]
+        answer: 0
+      - q: What did Ollie say Marco had told him three years ago?
+        options: [That he was the best dessert chef, That he was the worst cook he had ever met, That he should go home]
+        answer: 1
+      - q: Why did Mai feel "as if she had won a prize"?
+        options: [Marco gave her money, She finished early and could go home, Marco said her work was good]
+        answer: 2
+  - title: The Terrible Wednesday
+    pages:
+      - pic: "🔥🍳"
+        text: |
+          By Wednesday Mai was feeling more confident. Marco had moved her to the grill, where she cooked
+          the fish and the vegetables. That evening the restaurant was completely full. There was a big
+          table of fourteen people who were celebrating a birthday, and every ticket that came into the
+          kitchen seemed to say "urgent". Pans were hissing, plates were flying, and Marco was shouting
+          orders like a captain in a storm. "Two salmon! One sea bass! Faster, faster!"
+      - pic: "🐟💥"
+        text: |
+          Then it happened. Mai was carrying a tray of six perfect salmon fillets when a waiter pushed open
+          the kitchen door. The door hit her arm, and the tray fell to the floor with a terrible crash. For
+          a second the whole kitchen went silent. Everybody was looking at her. The salmon was lying on the
+          floor in a sad pink pile. "I'm so sorry," Mai said. Her face was burning. "I'll clean it up. I'll
+          pay for it." She was sure Marco would tell her to leave.
+      - pic: "🧔🗣️"
+        text: |
+          But Marco didn't shout. He walked over, looked at the mess and said calmly, "Ollie, clean the
+          floor. Mai, start six more salmon. You have eight minutes." Then he turned to the waiter. "And
+          you, use the other door. That's what it's for." Mai cooked faster than she had ever cooked in
+          her life. Eight minutes later, six new salmon fillets went out to the birthday table. Nobody
+          outside the kitchen ever knew what had happened.
+      - pic: "🌙🍜"
+        text: |
+          After the restaurant closed, Mai sat on a box behind the kitchen. She felt tired and ashamed. Marco
+          came out and sat next to her. "On my first day as a cook," he said, "I dropped a whole wedding cake.
+          Three floors of it." Mai stared at him. "Really?" "Really. The chef told me that if I cried, he
+          would fire me. So I didn't cry. I made another cake." He stood up. "Mistakes happen. What matters
+          is what you do next. Go home and sleep."
+    questions:
+      - q: Why did Mai drop the tray of salmon?
+        options: [She tripped over a box, A waiter opened the door into her arm, Marco shouted at her]
+        answer: 1
+      - q: How did Marco react to the accident?
+        options: [He stayed calm and told everyone what to do, He shouted at Mai, He told Mai to go home]
+        answer: 0
+      - q: Why did Marco tell Mai about the wedding cake?
+        options: [To show that he was a better cook, To explain why he hates cakes, To help her feel better about her mistake]
+        answer: 2
+  - title: Family Dinner
+    pages:
+      - pic: "📋🍽️"
+        text: |
+          On Friday afternoon, before the restaurant opened, Marco called everybody into the kitchen. "Every
+          week, one of you cooks the family meal for the staff," he said. "This week it's the new girl. Mai,
+          you have two hours. Cook anything you like." Mai's stomach turned over. Cooking for Marco, Ollie,
+          the waiters and the dishwashers was more frightening than cooking for customers. These people knew
+          food. If her dish was bad, everybody would know.
+      - pic: "🍲👵"
+        text: |
+          Mai thought about it for a long time. Then she remembered her grandmother's small kitchen and the
+          smell that had filled it every Sunday morning. She decided to cook pho. She roasted onions and
+          ginger until they were black, toasted star anise and cinnamon, and let the beef bones cook slowly.
+          Ollie came to watch. "What's that amazing smell?" he asked. "My childhood," said Mai, and she
+          smiled for the first time all week without feeling nervous.
+      - pic: "🥢😋"
+        text: |
+          At five o'clock, fifteen people sat around the long steel table with big bowls of soup in front of
+          them. Mai showed them how to add the herbs, the lime and the chilli. For a few minutes nobody spoke.
+          There was only the sound of happy eating. The dishwasher, an old man who had worked there for
+          twenty years, asked for a second bowl. Then a third. Everybody turned to look at Marco, who was
+          eating slowly with his eyes closed.
+      - pic: "⭐👩‍🍳"
+        text: |
+          Finally, Marco put down his spoon. "Mai," he said, "this is not terrible." Ollie nearly fell off
+          his chair. Everyone laughed and clapped. Then Marco added something that nobody expected. "From next
+          month, we'll put this on the menu. Pho, by Chef Mai." Mai couldn't speak. She thought about her
+          grandmother and wished she could see her now. Her first week at The Blue Door had been the hardest
+          week of her life, and the best.
+    questions:
+      - q: Why was Mai nervous about cooking the family meal?
+        options: [She had never cooked before, The people she was cooking for knew a lot about food, There were no ingredients]
+        answer: 1
+      - q: What did Mai mean when she said the smell was "my childhood"?
+        options: [It reminded her of her grandmother's kitchen, She had burned the food, She learned to cook it at school]
+        answer: 0
+      - q: Why did Ollie nearly fall off his chair?
+        options: [He was very tired, The chair was broken, Marco used the same words he had once used for Ollie's cake]
+        answer: 2

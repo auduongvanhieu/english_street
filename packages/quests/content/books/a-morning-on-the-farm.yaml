@@ -1,0 +1,59 @@
+id: a-morning-on-the-farm
+title: A Morning on the Farm
+level: A1
+price: 3
+cover: { emoji: "🐄", color: "#a0522d" }
+summary: Leo stays with Uncle Joe on the farm. He gets up early to find eggs, milk a cow and ride a tractor.
+tags: [farm, animals, family]
+chapters:
+  - title: Eggs for Breakfast
+    pages:
+      - pic: "🐓🌅"
+        text: |
+          "Cock-a-doodle-doo!" Leo opens his eyes. It is five o'clock in the morning. It is very early!
+          Leo is on Uncle Joe's farm for the weekend. "Good morning, Leo!" says Uncle Joe. "Come on.
+          We have a lot of work."
+      - pic: "🐔🥚"
+        text: |
+          First they go to the chickens. "Can you find the eggs?" asks Uncle Joe. Leo gives him a basket.
+          Leo looks in the straw. One egg, two eggs, three eggs! A brown chicken looks at him.
+          "Sorry, Mrs Chicken," says Leo. "Thank you for the eggs!"
+      - pic: "🍳🍞"
+        text: |
+          They go to the kitchen. Aunt Rose cooks the eggs. Leo eats two eggs and some bread with butter.
+          "These are the best eggs in the world!" he says. Aunt Rose laughs. "Because you found them!"
+    questions:
+      - q: What time does Leo wake up?
+        options: [At five o'clock, At seven o'clock, At nine o'clock]
+        answer: 0
+      - q: How many eggs does Leo find?
+        options: [Two, Five, Three]
+        answer: 2
+      - q: Who cooks the eggs?
+        options: [Uncle Joe, Aunt Rose, Leo]
+        answer: 1
+  - title: Daisy and the Tractor
+    pages:
+      - pic: "🐄🥛"
+        text: |
+          Next they go to the cow. Her name is Daisy. She is black and white. "Now we get the milk,"
+          says Uncle Joe. Leo sits on a small chair. He tries, but no milk comes. Daisy says, "Moo!"
+          Uncle Joe helps him. Then the milk comes. "I did it!" says Leo.
+      - pic: "🚜🌾"
+        text: |
+          After that, Uncle Joe shows Leo the big red tractor. "Do you want to ride with me?" he asks.
+          "Yes, please!" They drive slowly to the field. The tractor is very loud. Leo waves to the sheep.
+      - pic: "😴🛏️"
+        text: |
+          At ten o'clock, they go back to the house. Leo sits on the sofa. "Farm work is fun," he says,
+          "but I am very tired!" Two minutes later, he is asleep. Uncle Joe smiles. "Good work, farmer Leo."
+    questions:
+      - q: What colour is Daisy?
+        options: [Brown, Black and white, All white]
+        answer: 1
+      - q: What colour is the tractor?
+        options: [Red, Green, Blue]
+        answer: 0
+      - q: What does Leo do on the sofa?
+        options: [He reads a book, He eats lunch, He falls asleep]
+        answer: 2

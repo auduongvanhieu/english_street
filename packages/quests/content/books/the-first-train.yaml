@@ -1,0 +1,65 @@
+id: the-first-train
+title: The First Train
+level: A2
+price: 6
+cover: { emoji: "🚆", color: "#c0392b" }
+summary: Ana is fourteen and she is taking the train to her grandma's house alone for the first time. What can go wrong?
+tags: [travel, train, family]
+chapters:
+  - title: At the Station
+    pages:
+      - pic: "👧🎒🚉"
+        text: |
+          Ana was very excited. For the first time, she was going to take the train alone. Her grandma lived in Seaview, two hours away.
+          At the station on English Street, Dad gave her a ticket and a sandwich. "The train leaves from platform 3 at ten fifteen. Change at Riverton. Call me when you arrive."
+          "Dad, I'm fourteen," said Ana. "I can do it!"
+      - pic: "📋🔀😕"
+        text: |
+          Ana looked at the big board. "Seaview... platform 3... 10:15." But then the board changed. Now it said "Platform 5".
+          Lots of people started to hurry. Ana picked up her bag and followed them down the stairs and up the stairs again. She was out of breath but she found platform 5 just in time.
+      - pic: "🚆💺🧶"
+        text: |
+          She got on the train and found a seat by the window. An old woman with a big bag of wool was sitting opposite her. She was knitting a long green scarf.
+          "Where are you going, dear?" the woman asked.
+          "To Seaview, to see my grandma," said Ana proudly. "I'm travelling alone."
+    questions:
+      - q: Where was Ana going?
+        options: [To school, To her grandma's house in Seaview, To her dad's office]
+        answer: 1
+      - q: What changed on the board?
+        options: [The platform number, The time of the train, The price of the ticket]
+        answer: 0
+      - q: What was the old woman doing on the train?
+        options: [Reading a newspaper, Eating a sandwich, Knitting a scarf]
+        answer: 2
+  - title: Change at Riverton
+    pages:
+      - pic: "😴🚆💤"
+        text: |
+          The train was warm and the sound of the wheels was soft. Ana ate her sandwich and looked at the fields and cows. Slowly, her eyes closed.
+          "Dear! Wake up!" The old woman was shaking her arm. "This is Riverton. Don't you need to change here?"
+      - pic: "🏃‍♀️🚪💨"
+        text: |
+          Ana jumped up, grabbed her bag and ran out just before the doors closed. "Thank you!" she shouted. The woman waved through the window.
+          On the platform, Ana found a ticket inspector. "Excuse me, which platform is the train to Seaview?"
+          "Platform 2, in five minutes," he said. "You're lucky. It's the last one this morning."
+      - pic: "🌊🚉👵"
+        text: |
+          An hour later, Ana arrived in Seaview. She could see the sea from the station. Grandma was waiting on the platform with open arms.
+          "You did it!" said Grandma. "All by yourself!"
+          "Well," said Ana, "almost by myself. A nice old woman helped me." She phoned Dad and told him everything.
+      - pic: "🧣😲👵"
+        text: |
+          Just then, someone tapped Ana on the shoulder. It was the old woman with the wool!
+          "Hello again, Margaret," she said to Grandma. "I came on the next train. Your granddaughter sleeps like a baby!"
+          Grandma laughed. "Ana, this is my friend Rose. I asked her to watch you on the train. Your dad doesn't know!"
+    questions:
+      - q: Why did the old woman wake Ana up?
+        options: [The train was on fire, Ana had to change trains at Riverton, Ana was snoring too loudly]
+        answer: 1
+      - q: Why was Ana lucky at Riverton?
+        options: [She found some money, She got a free ticket, She caught the last morning train to Seaview]
+        answer: 2
+      - q: Who was the old woman?
+        options: [Grandma's friend Rose, A ticket inspector, Ana's teacher]
+        answer: 0

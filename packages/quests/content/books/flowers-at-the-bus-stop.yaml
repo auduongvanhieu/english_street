@@ -1,0 +1,129 @@
+id: flowers-at-the-bus-stop
+title: Flowers at the Bus Stop
+author: English Street
+level: B1
+price: 8
+cover: { emoji: "💐", color: "#e86a92" }
+summary: Every Monday, fresh flowers appear at the bus stop on English Street. Nobody knows who leaves them, so Linh decides to find out.
+tags: [mystery, friendship, community]
+chapters:
+  - title: The First Bouquet
+    pages:
+      - pic: "🚏💐"
+        text: |
+          Linh had been waiting for the number 7 bus every morning for two years, so she knew the bus stop
+          on English Street very well. It had a red roof, a cracked bench and a timetable that was always
+          wrong. But one Monday in March, something was different. Someone had tied a small bunch of yellow
+          tulips to the pole, just under the timetable. There was no card and no name. The flowers were
+          fresh, and drops of water were still shining on the petals.
+      - pic: "👵🤔"
+        text: |
+          "Did you see who put those there?" Linh asked Mrs Patel, who was waiting with her shopping bag.
+          "No, dear," said Mrs Patel. "They were already here when I arrived. Perhaps it's a young man in
+          love. Perhaps he's trying to impress a girl who takes this bus." Linh laughed. "Then he should
+          write her name on them, or she won't know they're for her!" The bus arrived, and Linh forgot
+          about the tulips for the rest of the day.
+      - pic: "🌼📅"
+        text: |
+          But the next Monday there were new flowers: white daisies this time. And the Monday after that,
+          there were purple irises. The old flowers were always gone, and the new ones were always fresh.
+          People at the bus stop started talking about them. A student thought they were part of an art
+          project. The man from the bakery said the city council must be paying for them. Linh was
+          sure that nobody really knew the answer, and that made her very curious.
+      - pic: "📱🔎"
+        text: |
+          That evening Linh told her friend Sam about the mystery. Sam worked at the café across the road.
+          "If I were you," he said, "I'd come very early next Monday and wait. Whoever it is must come
+          before seven, because I open the café at seven and the flowers are always there already." Linh
+          thought about it. Getting up at five o'clock was not her idea of fun. "All right," she said
+          finally. "If I don't find out, I won't be able to sleep anyway."
+    questions:
+      - q: What was different about the bus stop that Monday in March?
+        options: [The bench had been repaired, Someone had left flowers there, The timetable was correct]
+        answer: 1
+      - q: What did Mrs Patel think about the flowers?
+        options: [A young man was trying to impress a girl, The council had paid for them, They were part of an art project]
+        answer: 0
+      - q: Why did Sam think the person came before seven o'clock?
+        options: [He had seen someone at six, The bus came at seven, The flowers were always there when he opened the café]
+        answer: 2
+  - title: The Early Morning Watch
+    pages:
+      - pic: "🌙⏰"
+        text: |
+          On Monday Linh's alarm rang at five. It was still dark and very cold. She put on her warmest
+          jacket and walked to English Street, where she hid in the doorway of the bookshop opposite the
+          bus stop. The street was silent. A cat crossed the road. A delivery van passed. At half past five,
+          Sam brought her a hot coffee through the back door of the café. "Anything?" he whispered. "Nothing
+          yet," said Linh. "But my feet have turned into ice."
+      - pic: "🚲👀"
+        text: |
+          At ten to six, she heard a squeaky bicycle. A young man with a big backpack stopped at the bus
+          stop. Linh held her breath. Was he the one? But he only looked at the timetable, said something
+          rude about it and cycled away again. Linh was beginning to feel silly. "Perhaps nobody will come
+          today," she thought. "Perhaps the person saw me and changed their mind." She was just about to
+          give up when she noticed a slow, small figure coming round the corner.
+      - pic: "👴🌷"
+        text: |
+          It was an old man in a long grey coat. He was walking with a stick in one hand and a bunch of pink
+          roses in the other. He walked very carefully, because the pavement was wet. When he reached the
+          bus stop, he took out a piece of string and tied the roses to the pole. He took away last week's
+          irises, which had begun to die. Then he stood there for a long time, looking at the empty road,
+          as if he was waiting for a bus that never came.
+      - pic: "🚶‍♀️❓"
+        text: |
+          Linh had expected to feel excited when she solved the mystery. Instead she felt something else:
+          she felt sad, and she did not know why. The old man sat down on the cracked bench and closed his
+          eyes. Linh crossed the road quietly. "Good morning," she said. "I'm sorry to disturb you. The
+          flowers are beautiful. Are they for someone special?" The old man opened his eyes and looked at
+          her for a moment. Then he smiled. "Yes," he said. "They're for my wife."
+    questions:
+      - q: Where did Linh hide while she was watching the bus stop?
+        options: [Inside the café, In the doorway of the bookshop, Behind the bus stop]
+        answer: 1
+      - q: Why did the young man on the bicycle stop at the bus stop?
+        options: [To look at the timetable, To leave flowers, To meet Linh]
+        answer: 0
+      - q: How did Linh feel when she finally saw the old man with the flowers?
+        options: [Angry and tired, Proud of herself, Surprisingly sad]
+        answer: 2
+  - title: The Story of the Number 7
+    pages:
+      - pic: "💑🚌"
+        text: |
+          His name was Mr Hughes, and he told Linh his story. Sixty years earlier, he had been waiting at
+          this same bus stop on a rainy Monday. A young woman with a yellow umbrella had been standing next
+          to him. "She asked me if the number 7 was late," he said. "I told her it was always late. She
+          laughed, and I knew at that moment that I would marry her." They had taken the number 7 together
+          every Monday for years, and every Monday he had bought her flowers.
+      - pic: "🕯️💐"
+        text: |
+          "Rose died last winter," Mr Hughes said quietly. "Our children live far away now. I had nothing to
+          do on Mondays, so I started buying flowers again. It's silly, I know. But when I put them here, I
+          feel that she is still waiting for the bus with me." Linh's eyes filled with tears. "It isn't
+          silly at all," she said. "Everyone here loves your flowers. They talk about them every week. You
+          have made this bus stop the nicest place on English Street."
+      - pic: "☕👥"
+        text: |
+          Sam came out of the café with three cups of hot chocolate, and the three of them sat on the bench
+          together. When the other passengers arrived, Linh told them, with Mr Hughes's permission, who the
+          mystery flower giver was. Mrs Patel hugged him. The student asked if she could paint a picture of
+          the roses. The man from the bakery promised to bring Mr Hughes a fresh croissant every Monday.
+          The old man laughed. "I haven't had this much company for months," he said.
+      - pic: "🌻🚏"
+        text: |
+          Now, if you go to the bus stop on English Street on a Monday morning, you will still find
+          flowers there. But they are not only from Mr Hughes. Linh brings sunflowers, Mrs Patel brings
+          herbs from her garden, and the children from the school have made a little sign that says "Rose's
+          Stop". Mr Hughes still comes every week. He sits on the bench, which the council has finally
+          repaired, and he talks to everyone. And the number 7 bus is still always late.
+    questions:
+      - q: Where had Mr Hughes met his wife Rose?
+        options: [At a flower shop, At the same bus stop, At the café on English Street]
+        answer: 1
+      - q: Why did Mr Hughes start leaving flowers at the bus stop?
+        options: [It made him feel that Rose was still with him, The council asked him to, He wanted to sell them]
+        answer: 0
+      - q: What does the ending tell us about the people on English Street?
+        options: [They were annoyed by the flowers, They forgot about Mr Hughes, They came together as a community]
+        answer: 2

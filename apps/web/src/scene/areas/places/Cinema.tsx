@@ -9,6 +9,8 @@ import { localPos } from '../../LocalPlayer';
 import {
   AREA,
   BOOKSHELVES,
+  BOOK_DISPLAY,
+  BOOK_SPOTS,
   BOX_OFFICE,
   BUILDING,
   FRAME,
@@ -25,6 +27,11 @@ import { FILMS } from '../../../ui/area/activities/cinemaData';
 import { openCinema } from '../../../store/cinema';
 import { BuildingShell } from '../Building';
 import { AreaGroup, Ground, Merged, box, cyl, sphere, tree, type Part } from '../kit';
+import { useLpmParts } from '../../LpmModel';
+import { chibiMaterial } from '../../chibi/buildChibi';
+import { useBooks } from '../../../store/books';
+import { useUsable } from '../../../world/usables';
+import { t as tr } from '../../../i18n';
 
 const WALL_H = 3.2;
 const BOOK_COLORS = [
@@ -371,6 +378,64 @@ function PosterTitle({
 }
 
 /** Star Cinema & Library: walk-in building, cinema foyer and screen room on the left, library on the right. */
+/** Tiers of the display rack (library_kit.py contract): ledge front (z, y), covers lean back 15°. */
+const TIERS: [number, number][] = [
+  [0.22, 0.3],
+  [0.02, 0.72],
+  [-0.18, 1.14],
+];
+const LEAN = (15 * Math.PI) / 180;
+
+/** "New books": the LPM rack with nine real covers (title + level) and an A-frame sign; walk up and browse. */
+function BookDisplay() {
+  const parts = useLpmParts('library_kit');
+  const cards = useBooks((s) => s.cards);
+  useEffect(() => {
+    if (!useBooks.getState().cards.length) void import('../../../net/api').then((m) => m.fetchBooks().then((r) => useBooks.setState({ cards: r.books }))).catch(() => undefined);
+  }, []);
+  for (const [i, sp] of BOOK_SPOTS.entries()) {
+    const [x, z] = FRAME.toWorld(sp.x, sp.z);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useUsable({ id: `library-${i}`, x, z, r: 1.6, icon: '📚', label: tr('Browse the books'), use: () => void useBooks.getState().show('library') });
+  }
+  // a mix of levels: the newest-looking three of A1, A2 and B1/B2
+  const pick = [...cards.filter((c) => c.level === 'A1').slice(0, 3), ...cards.filter((c) => c.level === 'A2').slice(0, 3), ...cards.filter((c) => c.level === 'B1' || c.level === 'B2').slice(0, 3)];
+  const { x, z } = BOOK_DISPLAY;
+  return (
+    <group>
+      <group position={[x, 0, z]} onClick={(e) => (e.stopPropagation(), void useBooks.getState().show('library'))}>
+        <mesh geometry={parts['SM_LB_Display']!} material={chibiMaterial()} castShadow receiveShadow />
+        {pick.map((c, i) => {
+          const [tz, ty] = TIERS[2 - Math.floor(i / 3)]!;
+          const bx = ((i % 3) - 1) * 0.55;
+          const cy = ty + 0.25 * Math.cos(LEAN);
+          const cz = tz - 0.25 * Math.sin(LEAN) - 0.01;
+          return (
+            <group key={c.id} position={[bx, cy, cz]} rotation-x={-LEAN}>
+              <mesh>
+                <boxGeometry args={[0.38, 0.46, 0.03]} />
+                <meshStandardMaterial color={c.cover.color} roughness={0.8} />
+              </mesh>
+              <Text position={[0, 0.06, 0.02]} fontSize={0.05} maxWidth={0.33} color="#ffffff" anchorX="center" anchorY="middle" textAlign="center" outlineWidth={0.004} outlineColor="#00000055">
+                {c.title}
+              </Text>
+              <Text position={[0, -0.17, 0.02]} fontSize={0.045} color="#ffffff" anchorX="center" anchorY="middle">
+                {c.level}
+              </Text>
+            </group>
+          );
+        })}
+      </group>
+      <group position={[x + 1.5, 0, z + 0.6]} rotation-y={-0.4}>
+        <mesh geometry={parts['SM_LB_Sign']!} material={chibiMaterial()} castShadow />
+        <Text position={[0, 0.62, 0.115]} rotation-x={-0.2} fontSize={0.09} maxWidth={0.5} color="#ffffff" anchorX="center" anchorY="middle" textAlign="center">
+          {'NEW\nBOOKS\nRead free!'}
+        </Text>
+      </group>
+    </group>
+  );
+}
+
 export default function Cinema() {
   // same test as BuildingShell: outside props in front of the door hide with the front wall
   const [inside, setInside] = useState(false);
@@ -392,7 +457,7 @@ export default function Cinema() {
   };
   const books = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
-    openCinema('books');
+    void useBooks.getState().show('library');
   };
   const bo = BOX_OFFICE;
   const sb = SNACK_BAR;
@@ -433,6 +498,7 @@ export default function Cinema() {
         <Merged build={boxOffice} onClick={tickets} />
         <Merged build={libraryFurniture} onClick={books} />
         <Merged build={libraryShelves} onClick={books} castShadow={false} />
+        <BookDisplay />
         {/* the screen plays a short cartoon while you are in the building; click = buy tickets */}
         <CartoonScreen playing={inside} onClick={tickets} />
         {POSTERS.map((f, i) =>

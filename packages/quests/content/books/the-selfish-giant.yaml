@@ -1,0 +1,126 @@
+id: the-selfish-giant
+title: The Selfish Giant
+author: "Oscar Wilde (retold)"
+level: B2
+price: 13
+cover: { emoji: "🌳", color: "#3f8f5a" }
+summary: A giant builds a wall to keep children out of his beautiful garden, and finds that spring refuses to come in either.
+tags: [classic, fairy-tale, seasons]
+chapters:
+  - title: The Wall
+    pages:
+      - pic: "🌸🧒"
+        text: |
+          Every afternoon, on their way home from school, the children used to go and play in the Giant's
+          garden. It was a large, lovely garden, with soft green grass carpeted with flowers that looked like
+          stars. There were twelve peach trees that burst into delicate blossom in spring and bore rich fruit
+          in autumn. The birds sat in the branches and sang so sweetly that the children would stop their
+          games to listen. "How happy we are here!" they called to one another.
+      - pic: "🧌😠"
+        text: |
+          One day the Giant came back. He had been away visiting his friend, the Cornish ogre, and had stayed
+          with him for seven years. Having said everything he had to say, for his conversation was limited,
+          he decided to return to his own castle. When he arrived, he found the children playing in his
+          garden. "What are you doing here?" he roared in a voice like thunder, and the children scattered
+          in every direction. "My own garden is my own garden," he declared. "Nobody may play in it but me."
+      - pic: "🧱🪧"
+        text: |
+          So he built a high wall all the way round it, and put up a notice board that said: TRESPASSERS WILL
+          BE PROSECUTED. He was a very selfish giant. The poor children now had nowhere to play. They tried
+          playing on the road, but it was dusty and full of hard stones, and they didn't like it. After
+          school they would wander around the high wall and talk about the beautiful garden inside. "How
+          happy we were there," they said to each other, with heavy hearts.
+    questions:
+      - q: Why had the Giant been away from his garden?
+        options: [He had been visiting a friend for seven years, He had been ill, He had been building a new castle]
+        answer: 0
+      - q: The text says the Giant's "conversation was limited". What is the writer suggesting?
+        options: [The Giant was very shy, The Giant spoke many languages, The Giant did not have very much to say]
+        answer: 2
+      - q: Why did the children not enjoy playing on the road?
+        options: [The Giant chased them away, It was dusty and stony, Their parents did not allow it]
+        answer: 1
+  - title: The Endless Winter
+    pages:
+      - pic: "❄️🌨️"
+        text: |
+          Then spring came, and all over the country there were little blossoms and little birds. Only in the
+          garden of the Selfish Giant was it still winter. The birds didn't care to sing there, as there were
+          no children, and the trees forgot to blossom. Once a beautiful flower put its head out from the
+          grass, but when it saw the notice board, it felt so sorry for the children that it slipped back
+          into the ground and went off to sleep. The only ones who were pleased were the Snow and the Frost.
+      - pic: "🌬️🧊"
+        text: |
+          "Spring has forgotten this garden," they cried, "so we will live here all year round." The Snow
+          covered the grass with her great white cloak, and the Frost painted all the trees silver. Then they
+          invited the North Wind to stay with them, and he came. He was wrapped in furs, and he roared all
+          day about the garden and blew the chimney pots down. "This is a delightful spot," he said. "We must
+          ask the Hail to visit." So the Hail came, and rattled on the castle roof until he had broken most
+          of the slates.
+      - pic: "🪟🧌"
+        text: |
+          "I cannot understand why the spring is so late in coming," said the Selfish Giant, as he sat at the
+          window and looked out at his cold white garden. "I hope there will be a change in the weather."
+          But the spring never came, nor the summer. The autumn gave golden fruit to every garden, but to the
+          Giant's garden she gave none. "He is too selfish," she said. So it was always winter there, and
+          the North Wind and the Hail and the Frost and the Snow danced about through the trees.
+      - pic: "🐦🎶"
+        text: |
+          One morning the Giant was lying awake in bed when he heard some lovely music. It sounded so sweet
+          that he thought the King's musicians must be passing by. In fact it was only a little bird singing
+          outside his window, but it was so long since he had heard a bird in his garden that it seemed to
+          him the most beautiful music in the world. Then the Hail stopped dancing over his head, the North
+          Wind ceased roaring, and a delicious perfume drifted in through the open window.
+    questions:
+      - q: Why did the flower go back into the ground?
+        options: [It was too cold, It felt sorry for the children when it saw the notice, The Giant stepped on it]
+        answer: 1
+      - q: Why did the Snow and the Frost feel pleased?
+        options: [They could stay in the garden all year, The Giant had invited them, The children had come back]
+        answer: 0
+      - q: Why did the bird's song seem like "the most beautiful music in the world" to the Giant?
+        options: [The King's musicians were playing, He had always loved music, He had not heard a bird in his garden for a very long time]
+        answer: 2
+  - title: The Little Boy
+    pages:
+      - pic: "🌳🧒"
+        text: |
+          The Giant jumped out of bed and looked out. Through a little hole in the wall the children had crept
+          in, and they were sitting in the branches of the trees. In every tree he could see a little child,
+          and the trees were so glad to have them back that they had covered themselves with blossom. Only in
+          one far corner was it still winter. There stood a tiny boy who was too small to reach the branches,
+          crying bitterly as he wandered round and round the tree.
+      - pic: "🧌💔"
+        text: |
+          The Giant's heart melted as he looked out. "How selfish I have been!" he said. "Now I know why the
+          spring would not come here. I will put that poor little boy on the top of the tree, and then I will
+          knock down the wall, and my garden shall be the children's playground for ever." He crept downstairs
+          and into the garden. But when the children saw him, they were so frightened that they all ran away,
+          and the garden became winter again. Only the little boy did not run, because his eyes were so full
+          of tears that he did not see the Giant coming.
+      - pic: "🤗🌼"
+        text: |
+          The Giant stole up behind him, took him gently in his hand and put him up into the tree. At once the
+          tree broke into blossom, and the birds came and sang on it. The little boy stretched out his arms,
+          flung them round the Giant's neck and kissed him. When the other children saw that the Giant was no
+          longer wicked, they came running back, and with them came the spring. "It is your garden now, little
+          children," said the Giant, and he took a great axe and knocked down the wall.
+      - pic: "👴🌟"
+        text: |
+          The children played there every day, but the little boy never came back, and the Giant missed him
+          dearly. Years went by, and the Giant grew old and weak. One winter morning he saw, in the far corner,
+          a tree covered with white blossom, and underneath it stood the little boy. On his hands and feet
+          were the marks of nails. "Who has dared to wound you?" cried the Giant. "These are the wounds of
+          love," said the child. "You let me play once in your garden. Today you shall come with me to my
+          garden, which is Paradise." That afternoon the children found the Giant lying dead under the tree,
+          all covered with white blossoms.
+    questions:
+      - q: What happened to the garden when the children ran away from the Giant?
+        options: [It became winter again, It burst into flowers, It was destroyed by the Hail]
+        answer: 0
+      - q: The Giant "stole up behind" the boy. What does "stole up" mean here?
+        options: [Took something that was not his, Moved quietly and gently towards someone, Shouted loudly at someone]
+        answer: 1
+      - q: What is the main message of the story?
+        options: [Gardens need a lot of hard work, Giants are always dangerous, Sharing and kindness bring happiness to everyone]
+        answer: 2

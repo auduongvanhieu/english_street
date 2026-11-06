@@ -1,0 +1,64 @@
+id: the-night-the-film-broke
+title: The Night the Film Broke
+level: A2
+price: 7
+cover: { emoji: "🎬", color: "#5b2c6f" }
+summary: The big new film stops in the middle and the screen goes black. While they wait, the people in the cinema start telling their own stories.
+tags: [cinema, stories, friends]
+chapters:
+  - title: The Screen Goes Black
+    pages:
+      - pic: "🎬🍿🎟️"
+        text: |
+          On Friday evening, the cinema on English Street was full. Everyone wanted to see "Dragon Island", the biggest film of the year.
+          Mai sat in row F with her brother Duc and a huge box of popcorn. "I've waited six months for this," she whispered.
+          The lights went down. The music started. On the screen, a dragon was flying over the sea.
+      - pic: "🐉⬛😮"
+        text: |
+          Forty minutes later, the hero was standing in front of the dragon. He lifted his sword and... the screen went black. The sound stopped.
+          For a moment, nobody moved. Then a baby started crying, and everybody started talking at once.
+          "What happened?" "Is it part of the film?" "I want my money back!"
+      - pic: "🔦👨‍🔧🙏"
+        text: |
+          The lights came on. The cinema manager, Mr Green, ran to the front with a torch. He looked very worried.
+          "Ladies and gentlemen, I'm very sorry. The projector is broken. Our technician is coming, but she's going to need about half an hour to fix it."
+          Some people stood up to leave. Mr Green looked even more worried.
+    questions:
+      - q: Who did Mai go to the cinema with?
+        options: [Her friend, Her brother, Her mum]
+        answer: 1
+      - q: When did the film stop?
+        options: [At the very beginning, After the end, At an exciting moment with the dragon]
+        answer: 2
+      - q: Why did the film stop?
+        options: [The projector was broken, There was a fire, The manager wanted to go home]
+        answer: 0
+  - title: Stories in the Dark
+    pages:
+      - pic: "👵🎤📖"
+        text: |
+          Then an old woman in the front row stood up. "Well, I'm not going home," she said. "When I was a girl, there were no films in this town. We told stories. Who wants to hear one?"
+          A few people laughed, but they sat down again. Mr Green gave her his microphone.
+      - pic: "👵🐟✨"
+        text: |
+          The old woman told a story about a fisherman who caught a golden fish. The fish could talk, and it gave him three wishes. But the fisherman wished for a bigger boat, a bigger house and a bigger boat again!
+          Everybody laughed. When she finished, the whole cinema clapped.
+      - pic: "👦🎤😄"
+        text: |
+          Then a man told a funny story about his first day as a bus driver, when he drove the bus to the wrong town. A little girl told a story about her cat, who was afraid of mice.
+          Mai's heart was beating fast. She put up her hand. "I've got a story too," she said, and her brother stared at her.
+      - pic: "👧✨🎬"
+        text: |
+          Mai told the story of a girl who found a dragon's egg under her bed. Everyone listened quietly. Just as she finished, the lights went down and the film started again.
+          After the film, people were talking in the street. But they weren't talking about "Dragon Island". "That girl's story was better," said a man.
+          Mr Green smiled and gave everyone a free ticket for next Friday. "Stories at half past seven," he said. "Film at eight!"
+    questions:
+      - q: Why did people sit down again instead of leaving?
+        options: [The doors were locked, An old woman offered to tell them a story, The film started again at once]
+        answer: 1
+      - q: What was funny about the fisherman's wishes?
+        options: [He wished for nothing, He wished for the fish to go home, He wished for a bigger boat two times]
+        answer: 2
+      - q: What did Mr Green decide to do at the end?
+        options: [Have stories before the film next Friday, Close the cinema, Buy a new projector]
+        answer: 0

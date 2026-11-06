@@ -1,0 +1,129 @@
+id: the-night-shift
+title: The Night Shift
+author: English Street
+level: B2
+price: 14
+cover: { emoji: "🌙", color: "#34495e" }
+summary: Nurse Thao works nights at the hospital on English Street. Her grumpy new patient turns out to be a forgotten football legend.
+tags: [hospital, football, friendship]
+chapters:
+  - title: Bed Twelve
+    pages:
+      - pic: "🏥🌙"
+        text: |
+          Thao had been working night shifts at St Mary's Hospital for almost three years, and she had grown
+          to love the strange, quiet world of the ward after midnight. The corridors hummed, the machines
+          beeped softly, and the city outside the windows slowly went to sleep. Her friends thought she was
+          mad. "How can you live upside down like that?" they asked. But Thao liked the night. People told
+          you the truth at three in the morning, when they couldn't sleep and there was nobody else to listen.
+      - pic: "👴😠"
+        text: |
+          On Tuesday a new patient was admitted to bed twelve. His name was Frank Doyle, he was eighty-one,
+          and he had broken his hip after a fall in his kitchen. According to the day nurses, he had been
+          impossible from the moment he arrived. He had refused his dinner, complained about the pillows and
+          called the young doctor "a schoolboy in a white coat". "Good luck with that one," said Karen, as
+          she handed over the keys. "He's as stubborn as a mule."
+      - pic: "☕🛏️"
+        text: |
+          At two in the morning, Thao saw that the light above bed twelve was still on. Mr Doyle was sitting
+          up, staring at the dark window. "Can't sleep?" she asked. "Hospitals," he grunted. "Too much noise,
+          too many questions, and the tea tastes like dishwater." Thao smiled. "I can't do anything about the
+          noise or the questions," she said. "But I make the best tea in the building. Milk and two sugars?"
+          He looked at her suspiciously. "One sugar. I'm an athlete."
+      - pic: "⚽📺"
+        text: |
+          When she came back with the tea, the old man was watching football highlights on the small screen
+          above his bed with the sound turned down. "Rubbish," he muttered, as a young striker missed an
+          open goal. "In my day you'd have been dropped for that." Thao sat on the edge of the visitor's
+          chair. "You played?" He took a long sip of tea before answering. "Once upon a time," he said, and
+          for a moment his eyes seemed to be looking at something very far away.
+    questions:
+      - q: Why did Thao like working at night?
+        options: [The pay was better, People were more honest when they couldn't sleep, She had fewer patients]
+        answer: 1
+      - q: Karen said Mr Doyle was "as stubborn as a mule". What did she mean?
+        options: [He refused to change his mind or cooperate, He was very strong, He was very slow]
+        answer: 0
+      - q: Why did Mr Doyle ask for only one sugar?
+        options: [He was on a strict diet, He did not like sweet tea, He joked that he was still an athlete]
+        answer: 2
+  - title: The Man Behind the Grumbles
+    pages:
+      - pic: "📰🔍"
+        text: |
+          The next evening, before her shift, Thao typed "Frank Doyle football" into her phone. She almost
+          dropped it. The search results were full of black-and-white photographs of a young man with wild
+          hair, flying through the air to head a ball into the net. Frankie Doyle, the newspapers had called
+          him, the "Flying Doctor", because he had studied medicine for a year before football took over his
+          life. In 1966 he had scored the winning goal in a cup final in front of ninety thousand people.
+      - pic: "🏆🧓"
+        text: |
+          "You never told me you were famous," Thao said that night, as she checked his blood pressure. Mr
+          Doyle snorted. "Famous? That was sixty years ago. Nobody remembers. The young lads on the ward
+          think I'm just a grumpy old man who complains about the tea." "You are a grumpy old man who
+          complains about the tea," said Thao, and to her surprise he burst out laughing. It was the first
+          time she had heard him laugh, and it changed his whole face.
+      - pic: "🦵😔"
+        text: |
+          Over the following nights, the story came out bit by bit. A terrible knee injury had ended his
+          career when he was only twenty-eight. In those days there were no big salaries, so he had gone to
+          work in a car factory. His wife Margaret had passed away five years ago, and his only son lived
+          in Australia. "When you've been somebody," he said quietly, "it's hard to get used to being nobody."
+          Thao realised that his rudeness was simply a wall he had built to keep loneliness out.
+      - pic: "🚶‍♂️🩼"
+        text: |
+          But there was a more urgent problem. The physiotherapists said he was refusing to do his exercises.
+          If he didn't start walking soon, he would lose his strength and might never go home. "What's the
+          point?" he said, when Thao raised the subject. "I'm eighty-one. I've had my innings." Thao folded
+          her arms. "That's funny," she said. "I read that in 1966 you were two goals down at half-time, and
+          the newspapers said it was game over. Was it?"
+    questions:
+      - q: Why was Frank Doyle called the "Flying Doctor"?
+        options: [He flew planes for a hospital, He had studied medicine before becoming a footballer, He worked as a doctor after football]
+        answer: 1
+      - q: What did Thao realise about Mr Doyle's rudeness?
+        options: [It was a way of protecting himself from loneliness, It was caused by his medicine, He was rude to everybody he met]
+        answer: 0
+      - q: Why did Thao mention the 1966 cup final?
+        options: [She wanted to ask for his autograph, She wanted to talk about modern football, She wanted to remind him that he had never given up before]
+        answer: 2
+  - title: Second Half
+    pages:
+      - pic: "💪🌅"
+        text: |
+          Mr Doyle stared at her for a long moment. "We won three-two," he said finally. "I know," said Thao.
+          "So, are you going to do your exercises, or shall I tell the whole ward that the Flying Doctor is
+          scared of a walking frame?" He grumbled something unprintable, but the next morning the day nurse
+          left Thao a note: "Bed 12 walked to the window and back! What did you say to him?" Thao smiled to
+          herself and didn't reply. Some things were better kept between night owls.
+      - pic: "📸🎉"
+        text: |
+          Meanwhile Thao had hatched a plan. She contacted the football club where Mr Doyle had played, and
+          sent them a photo of him in his hospital bed, wearing an old scarf in the club's colours that she
+          had found in his bag. She also found his son's email address with the help of the hospital social
+          worker. She didn't tell Mr Doyle anything. "If nothing comes of it," she thought, "at least I won't
+          have raised his hopes for no reason."
+      - pic: "👕⚽"
+        text: |
+          On Saturday afternoon, Thao came in early. The ward was buzzing. Two current players from the club,
+          tall young men in tracksuits, were standing nervously beside bed twelve with a signed shirt that
+          said DOYLE 9. "My grandad used to talk about you all the time," one of them said. "You're the reason
+          I wanted to play." Mr Doyle was speechless for the first time since he had arrived. Then the young
+          nurse held up a tablet, and a familiar face appeared on the screen.
+      - pic: "📱❤️"
+        text: |
+          "Dad," said the man on the screen, from a kitchen on the other side of the world. "I'm booking a
+          flight. I'll be there next week to help you home." The old man's eyes filled with tears, and he
+          pretended it was the hospital air. That night, when the ward was quiet again, Mr Doyle called Thao
+          over. "You're a sneaky one, nurse," he said, holding her hand. "Best substitute I ever had." "Drink
+          your tea," said Thao, smiling. "It's one sugar. You're an athlete."
+    questions:
+      - q: What did the day nurse's note tell Thao?
+        options: [Mr Doyle had refused to eat again, Mr Doyle had walked to the window and back, Mr Doyle wanted to see her]
+        answer: 1
+      - q: Why didn't Thao tell Mr Doyle about her plan?
+        options: [She didn't want to disappoint him if it failed, The hospital did not allow it, She forgot to tell him]
+        answer: 0
+      - q: Why did Mr Doyle say the tears were because of "the hospital air"?
+        options: [He had an allergy, The ward was very cold, He was too proud to admit he was emotional]
+        answer: 2

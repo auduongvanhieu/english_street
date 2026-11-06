@@ -25,7 +25,7 @@ apps/web          React + React Three Fiber client (Vite)
 apps/api          Fastify REST API + Prisma + Claude (NPC AI)
 apps/game-server  Colyseus realtime server (vị trí, chat gần)
 packages/shared   Zod schemas + types dùng chung
-packages/quests   Nội dung NPC persona + quest (YAML)
+packages/quests   Nội dung NPC persona, quest, sách đọc (YAML)
 infra             docker-compose dev (Postgres, Redis) + Dockerfile, compose production, Caddy
 docs              GDD, DEPLOY.md, ảnh chụp
 ```

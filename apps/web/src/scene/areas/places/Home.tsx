@@ -6,6 +6,17 @@ import { AREA, BENCH, FLOWER_BEDS, FRAME, FURNITURE, HOUSE, INNER_H, INNER_WALLS
 import { localPos } from '../../LocalPlayer';
 import { useArea } from '../../../store/area';
 import { AreaGroup, Ground, Merged, box, cyl, sphere, tree, type Part } from '../kit';
+import { useBooks } from '../../../store/books';
+import { useUsable } from '../../../world/usables';
+import { t as tr } from '../../../i18n';
+
+/** The living-room bookcase holds the books you bought in the library: walk up to it and read them here. */
+function MyBookshelf() {
+  const bc = FURNITURE.find((f) => f.item === 'bookcase')!;
+  const [x, z] = FRAME.toWorld(bc.x, bc.z + bc.d / 2 + 0.7);
+  useUsable({ id: 'home-bookshelf', x, z, r: 1.5, icon: '📚', label: tr('My bookshelf'), use: () => void useBooks.getState().show('home') });
+  return null;
+}
 
 const WALL_H = 3.0;
 const H = HOUSE;
@@ -313,6 +324,7 @@ export default function Home() {
   const inside = useInside();
   return (
     <AreaGroup area={AREA}>
+      <MyBookshelf />
       <Ground x0={-28} x1={28} z0={-23.5} z1={0} color="#a9d67f" y={0.006} />
       <Ground x0={-1.6} x1={1.6} z0={H.z1} z1={0} color="#cdbf9f" y={0.01} />
       <Merged build={shell} />

@@ -1,0 +1,58 @@
+id: picnic-by-the-river
+title: Picnic by the River
+level: A1
+price: 4
+cover: { emoji: "🚣", color: "#2d9cdb" }
+summary: The Tran family has a picnic by the river on Sunday. Then they take a boat. But where is Dad's hat?
+tags: [family, river, boats, food]
+chapters:
+  - title: A Sunny Sunday
+    pages:
+      - pic: "☀️🧺"
+        text: |
+          It is Sunday. The sun is hot and the sky is blue. "Let's have a picnic by the river!" says Mum.
+          Everyone says yes. Mum makes sandwiches. Dad takes water and fruit. Little Hoa takes her teddy bear.
+      - pic: "🌳🥪"
+        text: |
+          They walk to the river. They sit on a big blanket under a tree. They eat sandwiches, bananas and
+          watermelon. Hoa gives a piece of bread to the ducks. "Quack, quack!" say the ducks. "They say thank you,"
+          says Hoa.
+      - pic: "🎣👨"
+        text: |
+          Next to them, an old man is fishing. "Do you catch many fish?" asks Dad. The man laughs.
+          "No, I catch many old shoes!" He shows them a very old boot. Everyone laughs.
+    questions:
+      - q: Who makes the sandwiches?
+        options: [Dad, Hoa, Mum]
+        answer: 2
+      - q: What does Hoa give to the ducks?
+        options: [Bread, Watermelon, Bananas]
+        answer: 0
+      - q: What does the old man catch?
+        options: [A big fish, An old boot, A hat]
+        answer: 1
+  - title: The Boat Ride
+    pages:
+      - pic: "🚣🌊"
+        text: |
+          After lunch, they go to the boat house. "One boat for one hour, please," says Dad.
+          It costs five dollars. They put on life jackets. Dad and Mum row the boat. Hoa holds her teddy bear.
+      - pic: "🎩💨"
+        text: |
+          The river is beautiful. They see fish in the water and birds in the trees. Then the wind comes.
+          Whoosh! Dad's hat flies off his head. It falls in the water! "My hat!" says Dad. The hat swims away.
+      - pic: "🎣🎩😂"
+        text: |
+          They row back to the old man. "Excuse me, can you help us?" asks Mum. The old man throws his line.
+          He catches the hat! "Look! Today I catch a hat, not a shoe!" he says. Dad puts on his wet hat.
+          "Best picnic ever!" says Hoa.
+    questions:
+      - q: How much does the boat cost for one hour?
+        options: [Ten dollars, Five dollars, Two dollars]
+        answer: 1
+      - q: Why does Dad's hat fall in the water?
+        options: [Hoa takes it, A bird takes it, The wind blows it]
+        answer: 2
+      - q: Who catches the hat?
+        options: [The old man, Mum, Hoa]
+        answer: 0

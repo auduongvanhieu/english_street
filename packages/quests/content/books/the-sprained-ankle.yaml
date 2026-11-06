@@ -1,0 +1,68 @@
+id: the-sprained-ankle
+title: The Sprained Ankle
+level: A2
+price: 5
+cover: { emoji: "🏀", color: "#e67e22" }
+summary: Leo wants to win the basketball game in the sports park, but he lands badly. Now he has to visit the doctor at the hospital.
+tags: [health, sport, hospital]
+chapters:
+  - title: The Big Jump
+    pages:
+      - pic: "🏀⛹️‍♂️🔥"
+        text: |
+          It was Saturday afternoon in the sports park. Leo and his friends were playing basketball. The score was 20 to 20. The next basket was going to win the game.
+          "Give me the ball!" shouted Leo. His friend Kim threw it to him. Leo ran towards the basket. He felt like a star.
+      - pic: "⛹️‍♂️💥😖"
+        text: |
+          He jumped higher than ever and threw the ball. It went in! But when Leo came down, he landed on the side of his foot. He heard a small sound and felt a sharp pain.
+          "Ow! My ankle!" He fell onto the ground and held his foot.
+      - pic: "🦶🧊😬"
+        text: |
+          His friends ran over. "Are you OK? Can you stand up?" asked Kim.
+          Leo tried, but it hurt too much. His ankle was getting bigger and bigger. Kim got some ice from the café and put it on his foot.
+          "We need to go to the hospital," she said. "It's just down the street."
+      - pic: "🚕🏥"
+        text: |
+          They took a taxi to the hospital. Leo sat in the back with his foot up on Kim's bag.
+          "At least we won," he said with a weak smile.
+          "Yes," said Kim. "But next time, maybe don't jump like a kangaroo!"
+    questions:
+      - q: Why was Leo's last basket important?
+        options: [It was his first basket ever, It won the game, The coach was watching]
+        answer: 1
+      - q: How did Leo hurt his ankle?
+        options: [He fell off his bike, Kim threw the ball at it, He landed badly after a jump]
+        answer: 2
+      - q: What did Kim do to help first?
+        options: [She put ice on his ankle, She called his mum, She gave him some medicine]
+        answer: 0
+  - title: At the Hospital
+    pages:
+      - pic: "🏥⏳🪑"
+        text: |
+          At the hospital, a nurse asked Leo some questions. "What's your name? How old are you? How did it happen?" Then they waited. There were lots of people in the waiting room. A small boy had a toy stuck on his finger.
+          After forty minutes, the nurse called, "Leo Martin? Dr Shah can see you now."
+      - pic: "👩‍⚕️🦶🩻"
+        text: |
+          Dr Shah looked carefully at his ankle and moved it gently. "Does this hurt? And this?"
+          "Ow! Yes!" said Leo.
+          She sent him for an X-ray. Then she looked at the picture on her computer. "Good news. It isn't broken. You've got a sprained ankle. That means you stretched the soft parts inside it too much."
+      - pic: "🩹🛋️🧊"
+        text: |
+          "You need to rest it for two weeks," said Dr Shah. "Put ice on it three times a day and keep your foot up on a pillow. You can use crutches to walk. And no basketball!"
+          "Two weeks?" said Leo sadly. "But we've got a big game next Saturday!"
+      - pic: "🩼📣😄"
+        text: |
+          Next Saturday, Leo went to the sports park on his crutches. He couldn't play, so the team made him the coach for the day. He sat on the bench and shouted ideas to his friends.
+          They won by ten points. "You're a better coach than a player," laughed Kim.
+          "I know," said Leo. "And coaches never sprain their ankles!"
+    questions:
+      - q: What did the X-ray show?
+        options: [The ankle was broken, The ankle was not broken, There was nothing wrong at all]
+        answer: 1
+      - q: Which of these did Dr Shah NOT tell Leo to do?
+        options: [Put ice on it, Keep his foot up, Play basketball every day]
+        answer: 2
+      - q: How did Leo help his team the next Saturday?
+        options: [He was their coach, He played for ten minutes, He sold drinks to the crowd]
+        answer: 0

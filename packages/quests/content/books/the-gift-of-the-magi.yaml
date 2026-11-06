@@ -1,0 +1,125 @@
+id: the-gift-of-the-magi
+title: The Gift of the Magi
+author: "O. Henry (retold)"
+level: B1
+price: 9
+cover: { emoji: "🎁", color: "#8e44ad" }
+summary: A poor young couple in New York each want to buy the other a perfect Christmas present. But what will they have to give up?
+tags: [classic, love, christmas]
+chapters:
+  - title: One Dollar and Eighty-Seven Cents
+    pages:
+      - pic: "💵🪙"
+        text: |
+          One dollar and eighty-seven cents. That was all. Della counted it three times, and it was still
+          one dollar and eighty-seven cents. Tomorrow would be Christmas. For months she had been saving
+          every penny she could. She had argued with the grocer and the butcher over small prices until
+          her cheeks were red. But food was expensive, and the rent was high. Now she sat on the old sofa
+          in their small flat and cried, because she had so little money for a present for Jim.
+      - pic: "🏠🛋️"
+        text: |
+          Della and her husband, James Dillingham Young, lived in a cheap furnished flat in New York. They
+          paid eight dollars a week for it. When Jim had been earning thirty dollars a week, life had felt
+          easier. Now he was earning only twenty. But every evening, when Jim came home and climbed the
+          stairs, Della ran to him and hugged him. They were poor, but they loved each other very much,
+          and that made their little home warm.
+      - pic: "⌚👱‍♀️"
+        text: |
+          The Youngs owned two things that they were very proud of. One was Jim's gold watch, which had
+          belonged to his father and his grandfather. The other was Della's hair. It was long and brown
+          and shining, and when she let it down, it fell below her knees like a waterfall. "If the Queen
+          of Sheba lived across the street," Della sometimes thought, "her jewels would look poor next
+          to my hair." And if King Solomon had been the porter, Jim would have pulled out his watch every
+          time he passed, just to make him jealous.
+    questions:
+      - q: Why was Della crying at the beginning of the story?
+        options: [She had argued with the grocer, She had very little money for Jim's present, Jim had lost his job]
+        answer: 1
+      - q: What had happened to Jim's pay?
+        options: [It had gone down from thirty to twenty dollars, It had doubled, He had not been paid for months]
+        answer: 0
+      - q: The story says the Queen of Sheba's jewels "would look poor". What does this tell us about Della's hair?
+        options: [It was very old, It was not very nice, It was extremely beautiful]
+        answer: 2
+  - title: Della's Decision
+    pages:
+      - pic: "🪞💭"
+        text: |
+          Suddenly Della stood up and looked at herself in the narrow mirror between the windows. Her eyes
+          were shining, but her face had gone pale. Quickly she pulled down her hair and let it fall to
+          its full length. For a minute she stood still, and one or two tears fell on the worn red carpet.
+          Then she put on her old brown jacket and her old brown hat. With the bright light still in her
+          eyes, she ran out of the door and down the stairs to the street.
+      - pic: "✂️💇‍♀️"
+        text: |
+          She stopped at a sign that said: "Madame Sofronie. Hair Goods of All Kinds." Della ran up the
+          stairs. Madame was a large, cold woman. "Will you buy my hair?" Della asked. "I buy hair," said
+          Madame. "Take your hat off and let's have a look at it." Down came the brown waterfall. Madame
+          lifted the hair with an expert hand. "Twenty dollars," she said. "Give it to me quickly," said
+          Della. A few minutes later, her beautiful hair was gone.
+      - pic: "🛍️⛓️"
+        text: |
+          For the next two hours Della searched the shops for Jim's present. At last she found it: a
+          simple platinum chain for his watch. It was plain and good, just like Jim. It cost twenty-one
+          dollars, and she hurried home with the eighty-seven cents that were left. Jim had a wonderful
+          watch, but he used an old leather strap instead of a chain, so he was sometimes ashamed to look
+          at the time in front of other people. "Now he can look at it proudly," Della thought.
+      - pic: "🔥😟"
+        text: |
+          At home, Della heated her curling irons and worked on what was left of her hair. Forty minutes
+          later, her head was covered with tiny curls, and she looked like a schoolboy. "If Jim doesn't
+          kill me before he takes a second look," she said to herself, "he'll say I look like a chorus
+          girl. But what could I do with one dollar and eighty-seven cents?" At seven o'clock the coffee
+          was ready. She heard his step on the stairs and whispered, "Please, God, make him think I am
+          still pretty."
+    questions:
+      - q: How much money did Madame Sofronie pay for Della's hair?
+        options: [Eight dollars, Twenty dollars, Twenty-one dollars]
+        answer: 1
+      - q: Why did Della think a chain was a perfect gift for Jim?
+        options: [Jim had lost his old chain, Jim was ashamed of the leather strap on his watch, Jim had asked her for one]
+        answer: 1
+      - q: What was Della most worried about before Jim came home?
+        options: [That the coffee was cold, That Jim would not like the chain, That Jim would not find her pretty anymore]
+        answer: 2
+  - title: The Two Gifts
+    pages:
+      - pic: "🚪😳"
+        text: |
+          Jim came in and closed the door. He looked thin and serious. He was only twenty-two, and he needed
+          a new coat and he had no gloves. He stopped inside the door and stared at Della. There was an
+          expression in his eyes that she could not read. It was not anger, or surprise, or horror. He
+          simply looked at her with that strange expression. "Jim, darling," she cried, "don't look at me
+          like that. I had my hair cut off and sold because I couldn't live through Christmas without
+          giving you a present. It will grow again."
+      - pic: "📦🪮"
+        text: |
+          Jim seemed to wake up. He took Della in his arms. Then he pulled a small package from his coat
+          pocket and put it on the table. "Open that, Dell," he said, "and you'll understand why I was
+          shocked." Della tore off the paper. Then she gave a cry of joy, which quickly turned to tears.
+          Inside lay a set of beautiful combs, with jewelled edges, the very combs she had admired for so
+          long in a shop window on Broadway. Now she had them, but the hair they were made for was gone.
+      - pic: "⛓️⌚"
+        text: |
+          Della held the combs close to her heart. At last she looked up with a smile and said, "My hair
+          grows so fast, Jim!" Then she remembered his present and held out the chain on her open hand.
+          "Isn't it lovely, Jim? Give me your watch. I want to see how it looks on it." But Jim fell back
+          onto the sofa, put his hands behind his head and smiled. "Dell," he said, "let's put our presents
+          away for a while. I sold the watch to get the money for your combs."
+      - pic: "👑💝"
+        text: |
+          The Magi, as you know, were wise men who brought gifts to the baby Jesus. They invented the art
+          of giving Christmas presents. Here I have told you the simple story of two foolish young people
+          in a small flat who gave up the greatest treasures of their house for each other. But I want to
+          say one last word to the wise people of today. Of all who give gifts, these two were the wisest.
+          They are the true Magi.
+    questions:
+      - q: What had Jim bought for Della?
+        options: [A set of beautiful combs, A gold watch, A new coat]
+        answer: 0
+      - q: How did Jim get the money for his present?
+        options: [He borrowed it from a friend, He sold his gold watch, He worked extra hours]
+        answer: 1
+      - q: Why does the writer say Della and Jim were "the wisest"?
+        options: [Because they saved a lot of money, Because they bought expensive presents, Because they gave up their treasures out of love]
+        answer: 2

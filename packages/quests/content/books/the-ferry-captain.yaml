@@ -1,0 +1,129 @@
+id: the-ferry-captain
+title: The Ferry Captain
+author: English Street
+level: B1
+price: 9
+cover: { emoji: "⛴️", color: "#2e86ab" }
+summary: Captain Rosa has never missed a crossing in thirty years. Then one evening a thick fog comes down on the river.
+tags: [river, adventure, courage]
+chapters:
+  - title: Thirty Years Without a Miss
+    pages:
+      - pic: "⛴️🌅"
+        text: |
+          Every morning at six o'clock, the little green ferry called Daisy left the pier at the end of
+          English Street and crossed the river to the old town. Every evening at seven, it came back. The
+          captain was a short, strong woman called Rosa Delgado, and she had been driving the ferry for
+          thirty years. In all that time she had never missed a single crossing. Not in storms, not in snow,
+          not even on the day her daughter was born. She had simply asked her husband to wait.
+      - pic: "📋🧓"
+        text: |
+          People on English Street were proud of Captain Rosa. The newspaper had once written an article
+          about her called "The Woman Who Is Never Late". Above the steering wheel she kept an old notebook
+          in which she had written the date of every crossing she had ever made. "My father was a ferry
+          captain too," she told her passengers. "He said that if people trust you, you must never let them
+          down. Somebody on the other side is always waiting for this boat."
+      - pic: "👦🎒"
+        text: |
+          This summer Rosa had a helper. Her grandson Ben, who was fifteen, had come to stay with her for the
+          holidays. He was more interested in his phone than in boats, but his mother had told him that he
+          had to help. At first he complained about everything: the early mornings, the smell of oil, the
+          ropes that hurt his hands. But slowly he began to enjoy it. He liked the way the river changed
+          colour, and he liked the regular passengers, who all knew his name.
+      - pic: "🧑‍⚕️👴"
+        text: |
+          There was Mr Okafor, who carried his cello across every day to play in the old town. There were
+          two schoolgirls who argued about football. And there was Dr Hanna, a doctor who lived on English
+          Street and worked at the small clinic on the other side. "Your grandmother is a legend," Dr Hanna
+          told Ben one morning. "When I was a child, I thought she was part of the boat." Ben laughed, but
+          he felt proud. He was beginning to understand why his grandmother loved her job.
+    questions:
+      - q: What did Rosa do on the day her daughter was born?
+        options: [She stayed at home, She did her crossings and asked her husband to wait, She asked another captain to drive the ferry]
+        answer: 1
+      - q: According to Rosa's father, why must a captain never miss a crossing?
+        options: [Because someone on the other side is always waiting, Because the boss will be angry, Because the newspaper is watching]
+        answer: 0
+      - q: How did Ben's feelings about the job change?
+        options: [He started to hate it more and more, He never stopped complaining, He began to enjoy it]
+        answer: 2
+  - title: The Fog
+    pages:
+      - pic: "🌫️⛴️"
+        text: |
+          One evening in late August, Rosa was getting ready for the last crossing when Ben pointed at the
+          river. "Grandma, look." A thick white fog was rolling down the water like smoke. In a few minutes
+          the old town had completely disappeared. The lights on the other side were gone. Even the end of
+          the pier was hard to see. Rosa's radio crackled. It was the harbour office. "All boats must stay
+          in port tonight," a voice said. "Visibility is less than ten metres."
+      - pic: "📻😟"
+        text: |
+          Rosa sat down slowly. Ben had never seen her look so old. "Thirty years," she said quietly. "Thirty
+          years and not one missed crossing." Ben didn't know what to say. "But Grandma, nobody can cross in
+          this. It's not your fault." Rosa nodded. She knew he was right. She had always said that a good
+          captain was a careful captain. If she took the boat out in fog like this, she would be putting
+          her passengers in danger. She picked up the notebook and a pen.
+      - pic: "📞🏥"
+        text: |
+          Before she could write anything, her phone rang. It was Dr Hanna, and her voice sounded very
+          worried. "Rosa, I'm at the clinic in the old town. There's a little boy here with a bad allergic
+          reaction. The ambulance can't come because the bridge road is closed for repairs. We've run out
+          of the medicine he needs, but the pharmacy on English Street has it. If he doesn't get it within
+          an hour, he could be in serious danger." Rosa listened without speaking.
+      - pic: "🧭💭"
+        text: |
+          Rosa put down the phone and looked at the white wall of fog. "The harbour office says no boats," Ben
+          said. "And they're right," said Rosa. "If I had passengers, I wouldn't go. But this isn't a normal
+          crossing." She thought for a long minute. Then she stood up. "Ben, run to the pharmacy and get the
+          medicine. Tell them it's for Dr Hanna. Then come back as fast as you can. I'll call the harbour
+          office and tell them exactly what we're doing."
+    questions:
+      - q: What did the harbour office say on the radio?
+        options: [The ferry must leave early, All boats must stay in port, The bridge was closed]
+        answer: 1
+      - q: Why couldn't the ambulance reach the clinic?
+        options: [The bridge road was closed for repairs, It had broken down, The driver was lost in the fog]
+        answer: 0
+      - q: Why did Rosa decide to cross even though there was fog?
+        options: [She did not want to break her record, The harbour office changed its mind, A sick child needed medicine urgently]
+        answer: 2
+  - title: The Longest Crossing
+    pages:
+      - pic: "🏃‍♂️💊"
+        text: |
+          Ben ran faster than he had ever run. Ten minutes later he jumped onto the boat with a small white
+          bag. Rosa had switched on every light on the Daisy and had put on her old orange life jacket. She
+          gave one to Ben. "You are my eyes tonight," she told him. "Stand at the front. If you see anything,
+          shout." The harbour office had agreed to the trip, and they were watching the boat on their radar.
+          Slowly, Daisy moved away from the pier into the fog.
+      - pic: "🌫️🔦"
+        text: |
+          It was the strangest journey of Ben's life. There was no sky, no shore and no other side, only
+          white everywhere and the sound of the engine. Rosa steered by her compass and her memory. "There
+          should be a big rock on the right in two minutes," she said calmly. And two minutes later, there
+          it was, appearing out of the fog like a sleeping animal. Ben stared at his grandmother. "How did
+          you know that?" "Thirty years," she said, and smiled.
+      - pic: "🔔🛥️"
+        text: |
+          Halfway across, Ben suddenly heard a horn very close. "Boat on the left!" he shouted. Rosa turned the
+          wheel hard and rang Daisy's bell three times. A small fishing boat slid past them, so close that
+          Ben could have touched it. The fisherman, who had been caught in the fog, waved and shouted "Sorry!"
+          Rosa's hands were shaking a little. "Well done," she told Ben. "If you hadn't heard that, we would
+          have hit him." Ben's heart was beating like a drum.
+      - pic: "🏥❤️"
+        text: |
+          Twenty-five minutes after they had left English Street, the lights of the old town pier appeared
+          through the fog. Dr Hanna was waiting there with a torch. She took the bag, said "Thank you!" and
+          ran. An hour later she called: the boy was going to be fine. That night, Rosa opened her notebook
+          and wrote the date of the crossing. Then she gave the pen to Ben. "You write the name of the
+          crew," she said. Under "Captain Rosa Delgado", he wrote: "Ben, first mate."
+    questions:
+      - q: What was Ben's job during the crossing?
+        options: [To steer the boat, To look and listen for danger at the front, To call the harbour office]
+        answer: 1
+      - q: How did Rosa know where the rock was?
+        options: [From her many years of experience on the river, She saw it on the radar, Ben told her]
+        answer: 0
+      - q: What does Rosa's last action with the notebook show?
+        options: [She wanted Ben to do her paperwork, She was too tired to write, She saw Ben as a real member of her crew]
+        answer: 2

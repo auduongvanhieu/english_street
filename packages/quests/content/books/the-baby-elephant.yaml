@@ -1,0 +1,57 @@
+id: the-baby-elephant
+title: The Baby Elephant
+level: A1
+price: 3
+cover: { emoji: "🐘", color: "#8e9aaf" }
+summary: Lucy and her class visit the zoo. A new baby elephant is there, and he wants to play!
+tags: [animals, zoo, school]
+chapters:
+  - title: At the Zoo
+    pages:
+      - pic: "🚌🦁"
+        text: |
+          Today Lucy's class goes to the zoo. They take the bus from the school. Lucy sits next to her friend Tom.
+          "What animal do you want to see?" asks Tom. "Elephants!" says Lucy. "They are big and kind."
+      - pic: "🐒🦒"
+        text: |
+          First they see the monkeys. The monkeys jump and eat bananas. Then they see the giraffes.
+          The giraffes are very tall. "Look! Its neck is so long!" says Tom. A giraffe eats leaves from a tree.
+      - pic: "🧑‍🌾🐘"
+        text: |
+          Next they go to the elephants. The zookeeper, Mr Brown, says, "We have a new baby elephant.
+          His name is Pip. He is only two weeks old." Pip is small, grey and very cute. He stands next to his mum.
+    questions:
+      - q: How does the class go to the zoo?
+        options: [By train, By bus, On foot]
+        answer: 1
+      - q: What do the monkeys eat?
+        options: [Bananas, Leaves, Fish]
+        answer: 0
+      - q: How old is Pip?
+        options: [Two years old, Two months old, Two weeks old]
+        answer: 2
+  - title: Pip Wants to Play
+    pages:
+      - pic: "🐘💦"
+        text: |
+          Pip walks to the water. He puts his trunk in the water. Then he lifts it up and...
+          SPLASH! Water goes on Tom's head! Tom is very wet. All the children laugh. Tom laughs too.
+          "Pip likes you!" says Lucy.
+      - pic: "⚽🐘"
+        text: |
+          Mr Brown gives Pip a big red ball. Pip kicks the ball with his foot. It rolls to his mum.
+          His mum kicks it back. "Pip plays football!" says Lucy. "Yes, every morning," says Mr Brown.
+      - pic: "👋🐘❤️"
+        text: |
+          At two o'clock, it is time to go. The children say, "Goodbye, Pip!" Pip lifts his trunk.
+          It looks like he is waving. On the bus, Lucy draws a picture of Pip. "I want to come back next week," she says.
+    questions:
+      - q: Why is Tom wet?
+        options: [It is raining, Pip splashes water on him, He falls in the river]
+        answer: 1
+      - q: What colour is Pip's ball?
+        options: [Red, Blue, Yellow]
+        answer: 0
+      - q: What does Lucy do on the bus?
+        options: [She sleeps, She eats lunch, She draws a picture]
+        answer: 2

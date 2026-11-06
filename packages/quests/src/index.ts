@@ -217,3 +217,26 @@ export function loadWorld(): WorldConfig {
   }
   return worldCache;
 }
+
+// ---------------------------------------------------------------- books (graded readers)
+import { BookSchema, type Book, type BookCard } from '@es/shared';
+let bookCache: Book[] | null = null;
+/** Every book in content/books (validated; a broken file throws so CI catches it). */
+export function getBooks(): Book[] {
+  if (bookCache) return bookCache;
+  const dir = join(CONTENT_DIR, 'books');
+  const out: Book[] = [];
+  if (existsSync(dir))
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.yaml')).sort()) {
+      const r = BookSchema.safeParse(parse(readFileSync(join(dir, f), 'utf8')));
+      if (!r.success) throw new Error(`books/${f}: ${r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+      if (`${r.data.id}.yaml` !== f) throw new Error(`books/${f}: id must match the file name`);
+      out.push(r.data);
+    }
+  const order = { A1: 0, A2: 1, B1: 2, B2: 3 } as const;
+  bookCache = out.sort((a, b) => order[a.level] - order[b.level] || a.title.localeCompare(b.title));
+  return bookCache;
+}
+export const getBook = (id: string) => getBooks().find((b) => b.id === id) ?? null;
+const wordsOf = (b: Book) => b.chapters.reduce((n, c) => n + c.pages.reduce((m, p) => m + p.text.split(/\s+/).filter(Boolean).length, 0), 0);
+export const bookCards = (): BookCard[] => getBooks().map((b) => ({ id: b.id, title: b.title, author: b.author, level: b.level, price: b.price, cover: b.cover, summary: b.summary, tags: b.tags, chapters: b.chapters.length, words: wordsOf(b) }));

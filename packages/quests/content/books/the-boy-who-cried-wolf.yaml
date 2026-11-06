@@ -1,0 +1,70 @@
+id: the-boy-who-cried-wolf
+title: The Boy Who Cried Wolf
+author: "Aesop (retold)"
+level: A2
+price: 5
+cover: { emoji: "🐺", color: "#8d6e63" }
+summary: Sam looks after the sheep on the farm, but he is bored. So he plays a trick on the village. It is funny... until it isn't.
+tags: [fable, farm, animals]
+chapters:
+  - title: A Boring Job
+    pages:
+      - pic: "👦🐑🐑"
+        text: |
+          Sam was twelve years old. Every summer he helped his uncle on the farm at the end of English Street. His job was to look after the sheep on the hill.
+          It was a very quiet job. The sheep ate grass. Sam sat on a rock. The sheep ate more grass. Sam sat on the rock again.
+          "This is the most boring job in the world," he said.
+      - pic: "👦💡😏"
+        text: |
+          One afternoon, Sam had an idea. He stood up and shouted as loudly as he could.
+          "Wolf! Wolf! Help! A wolf is eating the sheep!"
+          Down in the village, the farmers heard him. They dropped their tools and ran up the hill with sticks.
+      - pic: "👨‍🌾😤🐑"
+        text: |
+          When they arrived, they were hot and out of breath. But there was no wolf. The sheep were eating grass quietly.
+          Sam was laughing. "Ha ha! There's no wolf. It was a joke!"
+          The farmers were angry. "That's not funny, Sam," said Mrs Brown. "Don't do that again."
+      - pic: "👦🤣👨‍🌾"
+        text: |
+          But Sam did it again the next week. "Wolf! Wolf!" Again the farmers ran up the hill. Again there was no wolf. Again Sam laughed.
+          "This is the last time we're coming for a joke," said his uncle. "If you lie, people stop listening to you."
+          Sam only shrugged. He thought it was very funny.
+    questions:
+      - q: Why did Sam shout "Wolf!" the first time?
+        options: [He saw a wolf, He was bored and wanted some fun, A sheep was lost]
+        answer: 1
+      - q: How did the farmers feel when they found no wolf?
+        options: [Happy, Angry, Afraid]
+        answer: 1
+      - q: What did Sam's uncle tell him?
+        options: [People stop listening if you lie, Wolves never come to the farm, He could have a new job]
+        answer: 0
+  - title: The Real Wolf
+    pages:
+      - pic: "🌇🐺👀"
+        text: |
+          A few days later, the sun was going down. Sam was counting the sheep when he saw something grey between the trees. Two yellow eyes were looking at him.
+          It was a real wolf! It was big and hungry, and it was walking slowly towards the sheep.
+      - pic: "👦😱📢"
+        text: |
+          "Wolf! WOLF!" Sam screamed. "Please help! It's a real wolf this time!"
+          In the village, the farmers heard him. Mrs Brown shook her head. "It's that boy again. I'm not going up that hill for another joke."
+          Nobody came. Sam shouted until his voice hurt.
+      - pic: "👦🥄💥"
+        text: |
+          Sam had to do something. He picked up his old metal lunch box and his spoon and banged them together. CLANG! CLANG! CLANG!
+          The wolf stopped. It didn't like the noise at all. It turned around and ran back into the forest. But it took one small lamb with it.
+      - pic: "👦😢👨‍🌾"
+        text: |
+          Sam walked down to the village with tears in his eyes. He told everyone the truth. "I'm sorry. I lied before, so you didn't believe me."
+          From that day, Sam never told a lie again. And the next morning, the little lamb walked back onto the farm by itself, very dirty but safe. The wolf didn't like lamb after all!
+    questions:
+      - q: Why didn't the farmers come the last time?
+        options: [They were asleep, They thought it was another joke, They didn't hear Sam]
+        answer: 1
+      - q: How did Sam scare the wolf away?
+        options: [He threw stones at it, His uncle came with a stick, He made a loud noise with his lunch box]
+        answer: 2
+      - q: What was the surprise at the end?
+        options: [The lamb came back safe, The wolf was a dog, Sam got a new job]
+        answer: 0

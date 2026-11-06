@@ -33,6 +33,8 @@ import { initHotel, useHotel } from './store/hotel';
 import { initSports, useSports } from './store/sports';
 import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
+import { Library } from './ui/books/Library';
+import { useBooks } from './store/books';
 import { SportsHud } from './ui/sports/SportsHud';
 import { MinigameHud } from './ui/sports/MinigameHud';
 import { useMini } from './store/minigames';
@@ -79,7 +81,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks };
 }
 
 export default function App() {
@@ -172,7 +174,8 @@ export default function App() {
       const typing = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
       const area = useArea.getState();
       if (e.key === 'Escape') {
-        if (useBoats.getState().panel) useBoats.getState().open(null);
+        if (useBooks.getState().open) useBooks.getState().close();
+        else if (useBoats.getState().panel) useBoats.getState().open(null);
         else if (useHotel.getState().panel) useHotel.setState({ panel: null });
         else if (area.card) area.openCard(null);
         else if (area.panel) area.setPanel(false);
@@ -408,6 +411,7 @@ export default function App() {
       <BoatPanel />
       <BoatToasts />
       <FishingHud />
+      <Library />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

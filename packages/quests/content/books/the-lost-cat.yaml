@@ -1,0 +1,57 @@
+id: the-lost-cat
+title: The Lost Cat
+level: A1
+price: 3
+cover: { emoji: "🐱", color: "#f2994a" }
+summary: Mia's cat Tom is not at home. Where is he? Mia looks everywhere on English Street.
+tags: [animals, family]
+chapters:
+  - title: Where is Tom?
+    pages:
+      - pic: "🏠🐱"
+        text: |
+          Mia has a cat. His name is Tom. Tom is orange and white. He is small and very funny.
+          Every morning, Tom sleeps on Mia's bed. But today, Tom is not on the bed.
+      - pic: "👧❓"
+        text: |
+          "Tom! Tom! Where are you?" Mia calls. She looks under the bed. No cat.
+          She looks in the kitchen. No cat. She looks in the garden. No cat!
+          Mia is sad. "Mum, I can't find Tom," she says.
+      - pic: "👩‍🦰🗺️"
+        text: |
+          "Don't worry," says Mum. "Cats like to walk. Let's go and look on English Street."
+          Mia puts on her shoes and her red jacket. They go out together.
+    questions:
+      - q: What colour is Tom?
+        options: [Black and white, Orange and white, Grey]
+        answer: 1
+      - q: Where does Tom sleep every morning?
+        options: [On Mia's bed, In the garden, In the kitchen]
+        answer: 0
+      - q: Who goes with Mia to English Street?
+        options: [Her dad, Her friend, Her mum]
+        answer: 2
+  - title: On English Street
+    pages:
+      - pic: "☕🧑‍🍳"
+        text: |
+          First they go to the café. "Hello! Did you see a small orange cat?" Mia asks.
+          The barista smiles. "No, sorry. But try the fish shop. Cats love fish!"
+      - pic: "🐟🏪"
+        text: |
+          They go to the fish shop. Next to the door, there is a small orange and white cat.
+          He is eating a little fish. "Tom!" Mia shouts. Tom looks up and says, "Meow!"
+      - pic: "👧🐱❤️"
+        text: |
+          The fish seller laughs. "Is this your cat? He comes here every day!"
+          Mia picks Tom up and gives him a big hug. "Thank you!" she says. Now Mia is very happy.
+    questions:
+      - q: Where do they go first?
+        options: [The fish shop, The café, The bank]
+        answer: 1
+      - q: What is Tom doing at the fish shop?
+        options: [Sleeping, Eating a fish, Playing with a dog]
+        answer: 1
+      - q: How does Mia feel at the end?
+        options: [Very happy, Angry, Tired]
+        answer: 0

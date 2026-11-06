@@ -1,0 +1,64 @@
+id: the-night-receptionist
+title: The Night Receptionist
+level: A2
+price: 6
+cover: { emoji: "🔑", color: "#2f4e8c" }
+summary: It is midnight. Linh is tired, her room is on the fifth floor, and her key card is gone. Luckily, the night receptionist is still awake.
+tags: [hotel, travel, night]
+chapters:
+  - title: No Key Card
+    pages:
+      - pic: "🏨🌙🧳"
+        text: |
+          Linh arrived at the English Street Hotel late on Friday. She was in town for a job interview on Monday, and she wanted to see the street first.
+          She checked in, left her bag in room 512, and went out for dinner. She ate noodles, walked by the river and looked at the lights. It was a lovely evening.
+      - pic: "🚪❓😟"
+        text: |
+          At midnight, she was standing outside room 512. She looked in her coat pocket. Nothing. She looked in her bag. Lipstick, a phone, a ticket from the café... but no key card.
+          "Oh no," she said. "Where is it?" She looked on the floor of the corridor. It wasn't there either.
+      - pic: "🛗⬇️🛎️"
+        text: |
+          Linh took the lift back down to the lobby. It was very quiet. The lights were low, and soft music was playing.
+          Behind the desk, a young man with round glasses was reading a thick book. His name badge said "Omar - Night Reception".
+          "Good evening," he said, and closed his book. "Can I help you?"
+    questions:
+      - q: Why was Linh in town?
+        options: [She was on holiday with friends, She had a job interview on Monday, She worked at the hotel]
+        answer: 1
+      - q: What did Linh find in her bag?
+        options: [Her key card, A map of the town, A ticket from the café]
+        answer: 2
+      - q: What was Omar doing when Linh arrived?
+        options: [Reading a book, Sleeping, Cleaning the lobby]
+        answer: 0
+  - title: A Long Night
+    pages:
+      - pic: "🧑‍💼💳🙂"
+        text: |
+          "I'm so sorry," said Linh. "I've lost my key card. I'm in room 512."
+          "Don't worry. It happens every night," Omar smiled. "Can I see your passport, please?"
+          He checked her name on the computer and made a new card. "Here you are. The old card doesn't work now, so nobody can use it."
+      - pic: "☕📖🌃"
+        text: |
+          Linh wasn't sleepy any more. "Is it a boring job, working all night?" she asked.
+          "Not really," said Omar. "I make tea, I help guests and I study. I'm studying English literature at the university. At night I can read a whole book!"
+          He made two cups of tea. They talked about books and their favourite places on the street until one o'clock.
+      - pic: "🛏️😴💳"
+        text: |
+          Finally, Linh went upstairs. She opened the door with her new card. It worked! She sat down on the bed... and felt something hard under her.
+          It was her old key card. It was on the bed all the time! She laughed and fell asleep.
+      - pic: "🏢🤝😲"
+        text: |
+          On Monday morning, Linh went to her interview at the English Street Language School. She walked into the room and stopped.
+          One of the teachers in the interview was a young man with round glasses.
+          "Good morning," said Omar, smiling. "Did you find your key card?"
+    questions:
+      - q: Why can't anybody use Linh's old key card now?
+        options: [Omar broke it, It doesn't work after Omar made a new one, Linh put it in the river]
+        answer: 1
+      - q: Where was the old key card?
+        options: [In the restaurant, In the lift, On her bed]
+        answer: 2
+      - q: What was the surprise on Monday?
+        options: [Omar was one of the people at her interview, The interview was cancelled, Linh got a free night at the hotel]
+        answer: 0

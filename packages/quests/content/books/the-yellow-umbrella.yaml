@@ -1,0 +1,60 @@
+id: the-yellow-umbrella
+title: The Yellow Umbrella
+level: A1
+price: 3
+cover: { emoji: "☂️", color: "#f2c94c" }
+summary: It is a rainy day. Mai leaves her yellow umbrella on the bus. Can she get it back?
+tags: [weather, bus, town]
+chapters:
+  - title: Rain, Rain, Rain
+    pages:
+      - pic: "🌧️🏠"
+        text: |
+          It is Monday morning. It is raining a lot. Mai looks out of the window. "Oh no, rain again!"
+          Mum gives her a yellow umbrella. "Take this. It was Grandpa's umbrella. Please don't lose it!"
+      - pic: "☂️🚌"
+        text: |
+          Mai walks to the bus stop with the yellow umbrella. The bus comes. It is number 5.
+          Mai gets on and sits down. She puts the umbrella under her seat. The bus is warm and quiet.
+      - pic: "📱😴"
+        text: |
+          Mai listens to music on her phone. She is a little sleepy. Suddenly the driver says, "Library!"
+          Mai jumps up and gets off the bus quickly. The bus goes away. Then she looks at her hands.
+          "My umbrella!"
+    questions:
+      - q: What day is it?
+        options: [Sunday, Friday, Monday]
+        answer: 2
+      - q: Where does Mai put the umbrella?
+        options: [Under her seat, In her bag, Next to the driver]
+        answer: 0
+      - q: Where does Mai get off the bus?
+        options: [At the school, At the library, At the hospital]
+        answer: 1
+  - title: Where Is the Umbrella?
+    pages:
+      - pic: "😟💧"
+        text: |
+          Mai is very wet and very sad. "Grandpa's umbrella! Mum will be angry," she thinks.
+          A man at the library sees her. "Are you OK?" he asks. Mai tells him. "Call the bus station," he says.
+          "They have a lost and found."
+      - pic: "📞🚏"
+        text: |
+          Mai calls the bus station. "Hello. I lost a yellow umbrella on bus number 5," she says.
+          The woman says, "Wait a minute, please... Yes! The driver has a yellow umbrella.
+          The bus comes back to the library at four o'clock."
+      - pic: "🚌☂️😊"
+        text: |
+          At four o'clock, Mai waits at the bus stop. Bus number 5 comes. The driver smiles and holds up
+          the yellow umbrella. "Is this yours?" "Yes! Thank you so much!" says Mai.
+          Now the rain stops and the sun comes out. Mai laughs. "Now I don't need it!"
+    questions:
+      - q: Who tells Mai to call the bus station?
+        options: [Her mum, A man at the library, The bus driver]
+        answer: 1
+      - q: What time does the bus come back?
+        options: [At four o'clock, At two o'clock, At six o'clock]
+        answer: 0
+      - q: What is the weather like at the end?
+        options: [It is snowing, It is very windy, The sun comes out]
+        answer: 2

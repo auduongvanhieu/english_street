@@ -1,0 +1,58 @@
+id: the-big-match
+title: The Big Match
+level: A1
+price: 4
+cover: { emoji: "⚽", color: "#27ae60" }
+summary: The Blue Team plays football in the sports park on Saturday. But their goalkeeper is sick. Who can help?
+tags: [sports, football, friends]
+chapters:
+  - title: No Goalkeeper
+    pages:
+      - pic: "⚽🏟️"
+        text: |
+          On Saturday there is a big football match in the sports park. The Blue Team plays the Red Team.
+          Kai is in the Blue Team. He is ten years old and he runs very fast.
+      - pic: "📱🤒"
+        text: |
+          On Saturday morning, Kai's phone rings. It is Sam, the goalkeeper. "Sorry, Kai. I'm sick.
+          I have a cold and a headache. I can't play today." Kai is worried. "Oh no! We need a goalkeeper!"
+      - pic: "👧🧤"
+        text: |
+          Kai's sister Rosa is twelve. She doesn't play football. She plays basketball.
+          "Rosa, can you be our goalkeeper? Please!" asks Kai. Rosa thinks. "OK. I can catch a basketball.
+          Maybe I can catch a football too!"
+    questions:
+      - q: Who does the Blue Team play?
+        options: [The Green Team, The Red Team, The Yellow Team]
+        answer: 1
+      - q: Why can't Sam play?
+        options: [He is on holiday, He has no shoes, He is sick]
+        answer: 2
+      - q: What sport does Rosa usually play?
+        options: [Basketball, Tennis, Football]
+        answer: 0
+  - title: Rosa in the Goal
+    pages:
+      - pic: "🏃‍♂️⚽"
+        text: |
+          The match starts. The Red Team is very good. Their number 9 kicks the ball hard.
+          Rosa jumps and catches it! "Great save!" shouts the coach. The people in the park clap.
+      - pic: "⚽🥅"
+        text: |
+          Now it is 0–0. There are two minutes left. Rosa throws the ball far, far away to Kai.
+          Kai runs very fast. He kicks the ball... GOAL! It is 1–0 to the Blue Team!
+      - pic: "🏆🎉"
+        text: |
+          The match finishes. The Blue Team wins! Everyone hugs Rosa. "You are the best goalkeeper!" says Kai.
+          After the match, they go to Sam's house with a big orange juice. "We won!" says Kai.
+          Sam smiles. "Next week, Rosa plays and I watch!"
+    questions:
+      - q: Who catches the ball from number 9?
+        options: [Kai, Rosa, The coach]
+        answer: 1
+      - q: Who scores the goal?
+        options: [Kai, Rosa, Sam]
+        answer: 0
+      - q: What do they take to Sam's house?
+        options: [A cake, A ball, Orange juice]
+        answer: 2

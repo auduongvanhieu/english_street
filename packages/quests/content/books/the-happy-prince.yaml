@@ -1,0 +1,133 @@
+id: the-happy-prince
+title: The Happy Prince
+author: "Oscar Wilde (retold)"
+level: B1
+price: 9
+cover: { emoji: "🤴", color: "#d4a017" }
+summary: A golden statue who can see all the sadness in his city asks a little swallow to help him give everything away.
+tags: [classic, fairy-tale, kindness]
+chapters:
+  - title: The Statue and the Swallow
+    pages:
+      - pic: "🗽✨"
+        text: |
+          High above the city, on a tall column, stood the statue of the Happy Prince. He was covered all
+          over with thin leaves of fine gold. For eyes he had two bright blue sapphires, and a large red
+          ruby shone on his sword. Everybody admired him. "He is as beautiful as a weathercock," said one
+          of the town councillors, who wanted people to think he had artistic taste. "Why can't you be like
+          the Happy Prince?" a mother asked her crying little boy. "He never cries for anything."
+      - pic: "🐦🍂"
+        text: |
+          One night a little swallow flew over the city. His friends had left for Egypt six weeks before,
+          but he had stayed behind because he was in love with a beautiful reed by the river. In the end
+          he grew tired of her, because she never said anything and she was always flirting with the wind.
+          "I am going to the Pyramids," he told her, and he flew away. All day he flew, and at night he
+          arrived at the city. "Where shall I sleep?" he said. Then he saw the statue on the tall column.
+      - pic: "💧🐦"
+        text: |
+          "I will sleep there," he cried. "It is a fine place with plenty of fresh air." So he landed just
+          between the feet of the Happy Prince. But as he was putting his head under his wing, a large drop
+          of water fell on him. "How strange!" he said. "There is not a single cloud in the sky." Then
+          another drop fell, and another. The swallow looked up. The eyes of the Happy Prince were filled
+          with tears, and tears were running down his golden cheeks.
+      - pic: "🤴😢"
+        text: |
+          "Who are you?" asked the swallow. "I am the Happy Prince." "Then why are you crying?" "When I was
+          alive and had a human heart," said the statue, "I lived in a palace where sadness was not allowed
+          to enter. I never knew what tears were. Everybody called me the Happy Prince. Now that I am dead,
+          they have put me up here, so high that I can see all the ugliness and misery of my city. And
+          though my heart is made of lead, I cannot help crying."
+    questions:
+      - q: Why had the swallow not gone to Egypt with his friends?
+        options: [He was ill, He was in love with a reed, He did not know the way]
+        answer: 1
+      - q: What surprised the swallow when he tried to sleep?
+        options: [Drops of water fell on him from a clear sky, The statue started to move, A cat tried to catch him]
+        answer: 0
+      - q: Why did the Prince never cry when he was alive?
+        options: [He was very brave, He had no heart, He lived in a palace where he never saw sadness]
+        answer: 2
+  - title: Little Swallow, Will You Stay?
+    pages:
+      - pic: "🧵🔴"
+        text: |
+          "Far away, in a little street," said the Prince, "there is a poor house. Through the window I can
+          see a woman sewing flowers onto a dress for the Queen's maid of honour. In the corner her little
+          boy is lying ill with a fever. He is asking for oranges, but his mother has nothing to give him
+          except river water. Swallow, swallow, little swallow, will you take her the ruby from my sword?
+          My feet are fixed to this column and I cannot move." The swallow did not want to stay, but the
+          Prince looked so sad that he agreed.
+      - pic: "🪶😊"
+        text: |
+          The swallow picked out the great ruby and flew over the roofs with it in his beak. He put it on
+          the table beside the woman's sewing. Then he flew gently around the bed, cooling the boy's hot
+          face with his wings. "How cool I feel," said the boy. "I must be getting better." Then he fell
+          into a peaceful sleep. When the swallow flew back to the Prince, he said, "It is curious, but I
+          feel quite warm now, although it is so cold." "That is because you have done a good action,"
+          said the Prince.
+      - pic: "💎✍️"
+        text: |
+          The next night the swallow wanted to leave for Egypt, but the Prince asked him to stay one night
+          longer. "Far across the city I see a young writer in an attic. He is trying to finish a play, but
+          he is too cold to write any more. There is no fire, and hunger has made him weak." "I will wait
+          with you one more night," said the swallow. "Shall I take him another ruby?" "I have no ruby now,"
+          said the Prince. "My eyes are all I have left. Pull out one of them and take it to him."
+      - pic: "👧💙"
+        text: |
+          "Dear Prince," said the swallow, "I cannot do that," and he began to cry. But the Prince insisted,
+          so the swallow took the sapphire to the writer. The following night the Prince sent his other eye
+          to a little match girl who had dropped her matches in the gutter. Her father would beat her if she
+          came home without money. "Now you are blind," said the swallow, "so I will stay with you always."
+          "No, little swallow," said the Prince. "You must go away to Egypt." But the swallow slept at the
+          Prince's feet.
+    questions:
+      - q: Why did the swallow feel warm after helping the boy?
+        options: [Because he had flown a long way, Because he had done a good action, Because the sun was shining]
+        answer: 1
+      - q: What did the Prince give the young writer?
+        options: [One of his sapphire eyes, The ruby from his sword, A leaf of gold]
+        answer: 0
+      - q: Why did the swallow decide to stay with the Prince for ever?
+        options: [He was afraid of flying to Egypt, He wanted the Prince's gold, The Prince was now blind and needed him]
+        answer: 2
+  - title: The Two Most Precious Things
+    pages:
+      - pic: "🌆🍞"
+        text: |
+          "Fly over my city, little swallow," said the Prince, "and tell me what you see." So the swallow
+          flew over the great city. He saw rich people enjoying themselves in their beautiful houses, while
+          beggars sat at the gates. In dark streets he saw the white faces of hungry children. Under a
+          bridge two little boys were lying in each other's arms to keep warm. "I am covered with fine gold,"
+          said the Prince. "You must take it off, leaf by leaf, and give it to the poor."
+      - pic: "❄️🐦"
+        text: |
+          Leaf after leaf of the fine gold the swallow picked off, until the Happy Prince looked quite dull
+          and grey. The children's faces grew rosier, and they laughed and played games in the street. "We
+          have bread now!" they cried. Then the snow came, and after the snow came the frost. The poor little
+          swallow grew colder and colder, but he would not leave the Prince, because he loved him too much.
+          At last he knew that he was going to die. "Goodbye, dear Prince," he whispered. "Will you let me
+          kiss your hand?"
+      - pic: "💔🔥"
+        text: |
+          "I am glad that you are going to Egypt at last," said the Prince. "But you must kiss me on the
+          lips, for I love you." "It is not to Egypt that I am going," said the swallow. He kissed the Happy
+          Prince on the lips and fell down dead at his feet. At that moment a strange crack sounded inside
+          the statue. The lead heart had broken in two. The next morning the Mayor walked past. "How shabby
+          the Happy Prince looks!" he said. "He is no better than a beggar. We must melt him down."
+      - pic: "😇🌹"
+        text: |
+          So they melted the statue in a furnace. But the broken lead heart would not melt, so the workers
+          threw it on a rubbish heap, where the dead swallow was also lying. "Bring me the two most precious
+          things in the city," God said to one of His angels. The angel brought Him the lead heart and the
+          dead bird. "You have chosen rightly," said God. "In my garden of Paradise this little bird shall
+          sing for ever, and in my city of gold the Happy Prince shall praise me."
+    questions:
+      - q: What did the swallow do with the Prince's gold?
+        options: [He hid it in his nest, He took it to Egypt, He gave it to the poor people of the city]
+        answer: 2
+      - q: The Mayor said the statue looked "shabby". What does "shabby" mean here?
+        options: [Old and in poor condition, Rich and shining, Small and young]
+        answer: 0
+      - q: Why did the angel choose the lead heart and the dead bird?
+        options: [They were made of gold, They were the most precious things because of their love and kindness, They were the easiest things to carry]
+        answer: 1

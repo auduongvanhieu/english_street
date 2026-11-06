@@ -1,0 +1,70 @@
+id: the-tortoise-and-the-hare
+title: The Tortoise and the Hare
+author: "Aesop (retold)"
+level: A2
+price: 5
+cover: { emoji: "🐢", color: "#6fcf97" }
+summary: Harry the Hare is the fastest runner in the sports park. Tilly the Tortoise is the slowest. So why does she want a race?
+tags: [fable, sport, animals]
+chapters:
+  - title: The Fastest Runner
+    pages:
+      - pic: "🐇🏃💨"
+        text: |
+          Harry the Hare lived near the sports park on English Street. Every morning he ran around the running track. He was very fast, and he knew it.
+          "I'm the fastest animal in town!" he told everyone. "Nobody can beat me. Nobody!"
+          The other animals were tired of hearing it. They rolled their eyes and walked away.
+      - pic: "🐢🌱"
+        text: |
+          One morning, Tilly the Tortoise was walking slowly across the grass. Harry ran past her three times.
+          "Good morning, Tilly!" he laughed. "Are you going to the shop? You'll get there next week!"
+          Tilly stopped and looked at him. "I'm slower than you, Harry," she said. "But I never give up."
+      - pic: "🐢🤝🐇"
+        text: |
+          "Never give up? Ha!" said Harry. "OK, let's have a race. Four times around the track. Saturday morning."
+          "Fine," said Tilly calmly. "Saturday morning."
+          Harry laughed so much that he fell over. The news went all around the street. Everyone wanted to see the race.
+      - pic: "🦉📣"
+        text: |
+          Old Owl, the coach of the sports park, agreed to start the race. "I'm going to blow my whistle at nine o'clock," he said.
+          On Friday night, Tilly went to bed early. Harry stayed up late and played video games. "Why do I need sleep?" he thought. "It's only a tortoise!"
+    questions:
+      - q: Why were the other animals tired of Harry?
+        options: [He was always late, He always said he was the fastest, He ran on their grass]
+        answer: 1
+      - q: Who suggested having a race?
+        options: [Tilly, Old Owl, Harry]
+        answer: 2
+      - q: What did Harry do on Friday night?
+        options: [He stayed up late playing games, He trained on the track, He went to bed early]
+        answer: 0
+  - title: Slow and Steady
+    pages:
+      - pic: "🦉📯🏁"
+        text: |
+          On Saturday, the stands were full. Old Owl blew his whistle. "Go!"
+          Harry shot off like a rocket. After one minute, he was already halfway around the track. Tilly was still near the start line, walking step by step.
+          "Come on, Tilly!" shouted a little rabbit. Tilly smiled and kept going.
+      - pic: "🐇😴🌳"
+        text: |
+          After two laps, Harry looked back. He couldn't even see Tilly. "This is too easy," he yawned. "I'm going to have a little rest."
+          He lay down under a big tree next to the track. The sun was warm. The grass was soft. Soon Harry was fast asleep and snoring loudly.
+      - pic: "🐢👣👣"
+        text: |
+          Tilly didn't stop. She walked past the tree. She heard Harry snoring, but she didn't wake him up. One lap, two laps, three laps.
+          The crowd started to get excited. "Tilly! Tilly! Tilly!" they shouted. The noise got louder and louder.
+      - pic: "🐢🏆🎉"
+        text: |
+          The noise woke Harry up. He jumped up and ran faster than ever. But it was too late. Tilly crossed the finish line one second before him!
+          Harry was red in the face. "How did you do that?"
+          Tilly smiled. "Slow and steady wins the race, Harry. And next time, maybe go to bed early!"
+    questions:
+      - q: Why did Harry lie down under the tree?
+        options: [He hurt his leg, He thought he could win easily, He wanted to wait for Tilly]
+        answer: 1
+      - q: What woke Harry up?
+        options: [The noise of the crowd, Old Owl's whistle, Tilly's voice]
+        answer: 0
+      - q: What is the lesson of the story?
+        options: [Fast animals always win, Never run in the sun, Working steadily can beat being fast]
+        answer: 2

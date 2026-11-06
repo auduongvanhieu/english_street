@@ -50,6 +50,12 @@ export const BOOKSHELVES: (Aabb & { along: 'x' | 'z' })[] = [
   { minX: 12, maxX: 17.5, minZ: -17.9, maxZ: -17.1, along: 'x' },
   { minX: 18.5, maxX: 22.5, minZ: -17.9, maxZ: -17.1, along: 'x' },
 ];
+/** "New books" display rack (LPM library_kit, faces +z) and its A-frame sign; where you stand to browse. */
+export const BOOK_DISPLAY = { x: 17, z: -14.2 };
+export const BOOK_SPOTS = [
+  { x: 17, z: -13.1 },
+  { x: 15, z: -20.3 },
+];
 /** Reading tables (centre, 2.6 × 1.2) with chairs on both long sides. */
 export const READING_TABLES = [
   { x: 14, z: -9 },
@@ -73,6 +79,7 @@ export const LOCAL_BLOCKERS: Aabb[] = [
   BOX_OFFICE,
   SNACK_BAR,
   LIB_DESK,
+  { minX: BOOK_DISPLAY.x - 0.95, maxX: BOOK_DISPLAY.x + 0.95, minZ: BOOK_DISPLAY.z - 0.38, maxZ: BOOK_DISPLAY.z + 0.38 },
   ...BOOKSHELVES.map(({ minX, maxX, minZ, maxZ }) => ({ minX, maxX, minZ, maxZ })),
   ...READING_TABLES.map((r) => ({
     minX: r.x - 1.3,

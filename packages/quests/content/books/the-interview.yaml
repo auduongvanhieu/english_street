@@ -1,0 +1,63 @@
+id: the-interview
+title: The Interview
+level: A2
+price: 6
+cover: { emoji: "💼", color: "#1f6f8b" }
+summary: Ben has a job interview at the recruitment office. He is late, his shirt has coffee on it, and he calls the boss by the wrong name. Can it get better?
+tags: [work, jobs, funny]
+chapters:
+  - title: A Terrible Morning
+    pages:
+      - pic: "⏰😫🛏️"
+        text: |
+          Ben's alarm didn't ring. When he opened his eyes, it was half past eight. His interview at the recruitment office on English Street was at nine o'clock!
+          He jumped out of bed, put on his best shirt and ran out of the door. He didn't have time for breakfast.
+      - pic: "☕💥👔"
+        text: |
+          On the way, he bought a coffee from the café. "I need this," he thought. But outside, a man on a bike rang his bell. Ben jumped, and the coffee went all over his white shirt.
+          "Oh no, not today!" he said. Now his shirt was brown and he smelled like a café.
+      - pic: "🏢🚪😰"
+        text: |
+          He arrived at the office at five past nine. A tall woman in a grey suit was waiting. "Are you Ben Taylor? I'm Ms Park. Come in."
+          Ben was so nervous that he shook her hand and said, "Thank you, Ms Pork."
+          There was a long silence. Ms Park looked at his shirt. Ben wanted to disappear.
+    questions:
+      - q: Why was Ben late?
+        options: [His bus was late, His alarm didn't ring, He went to the wrong office]
+        answer: 1
+      - q: What happened to Ben's shirt?
+        options: [He spilled coffee on it, It got wet in the rain, A dog jumped on it]
+        answer: 0
+      - q: What was Ben's mistake when he met Ms Park?
+        options: [He forgot his own name, He sat in her chair, He said her name wrong]
+        answer: 2
+  - title: The Second Chance
+    pages:
+      - pic: "📋🤔🙋"
+        text: |
+          Ms Park sat down and opened a folder. "So, Mr Taylor. The job is in a busy café. Why do you want it?"
+          Ben looked at his shirt and took a deep breath. He decided to be honest.
+          "Well, this morning was a disaster. I was late, I spilled my coffee and I called you Ms Pork. I'm really sorry."
+      - pic: "😂👩‍💼☕"
+        text: |
+          For a moment, Ms Park didn't say anything. Then she started to laugh. She laughed so much that she had to take off her glasses.
+          "Ms Pork! Nobody has called me that since primary school!" she said. "OK, Ben. Tell me. What can you do if a customer spills coffee?"
+      - pic: "🧽👍💬"
+        text: |
+          Ben smiled. "That's easy. I can say, 'Don't worry, it happens to everyone.' I can clean the table quickly and make a new coffee for free. And I can tell them a funny story about my morning!"
+          Ms Park wrote something in her folder. "Good answer. You stay calm and you're honest. That's important in a café."
+      - pic: "📞🎉👕"
+        text: |
+          That afternoon, Ben's phone rang. It was Ms Park. "Congratulations, Ben. You've got the job! You can start on Monday."
+          "Thank you so much!" said Ben.
+          "Oh, and Ben?" she said. "The café gives you a uniform. It's brown. So the coffee won't show!"
+    questions:
+      - q: What did Ben decide to do in the interview?
+        options: [Tell a lie about the coffee, Tell the truth about his morning, Leave the room]
+        answer: 1
+      - q: Why did Ms Park like Ben's answer about the customer?
+        options: [It was very short, He knew a lot about coffee machines, He was calm and honest]
+        answer: 2
+      - q: Why is the brown uniform funny?
+        options: [Coffee stains won't show on it, It is too big for Ben, Ms Park wears one too]
+        answer: 0

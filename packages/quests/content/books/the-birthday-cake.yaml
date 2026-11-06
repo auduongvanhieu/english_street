@@ -1,0 +1,59 @@
+id: the-birthday-cake
+title: The Birthday Cake
+level: A1
+price: 4
+cover: { emoji: "🎂", color: "#e85d9c" }
+summary: Tomorrow is Grandma's birthday. Ben and his sister go shopping for a cake and a party. What can go wrong?
+tags: [shopping, family, food]
+chapters:
+  - title: A Shopping List
+    pages:
+      - pic: "📝👵"
+        text: |
+          Tomorrow is Grandma's birthday. She is seventy years old! Ben and his sister Anna want a party.
+          "Let's write a list," says Anna. They write: a cake, seven candles, balloons, juice.
+      - pic: "🛒🎈"
+        text: |
+          They go to the supermarket on English Street. Anna takes a big trolley. Ben finds the balloons.
+          "Red, yellow or blue?" he asks. "All of them!" says Anna. They also get orange juice and seven candles.
+      - pic: "🍰🏪"
+        text: |
+          Now they need a cake. They go to the bakery. There are many cakes in the window.
+          "Grandma likes chocolate," says Ben. The baker smiles. "This chocolate cake is very good.
+          It costs ten dollars." "We'll take it!" says Anna.
+    questions:
+      - q: How old is Grandma tomorrow?
+        options: [Sixty, Seventy, Eighty]
+        answer: 1
+      - q: Where do they buy the balloons?
+        options: [At the supermarket, At the bakery, At the café]
+        answer: 0
+      - q: What cake does Grandma like?
+        options: [Strawberry cake, Lemon cake, Chocolate cake]
+        answer: 2
+  - title: The Party
+    pages:
+      - pic: "🐶🎂"
+        text: |
+          At home, Ben puts the cake on the table. Then he goes to get the balloons.
+          Their dog, Biscuit, sees the cake. He jumps up! "No, Biscuit, no!" shouts Anna.
+          But it is too late. There is a big hole in the cake.
+      - pic: "😱🍫"
+        text: |
+          "Oh no! What can we do?" says Ben. Anna thinks. Then she has an idea. She puts
+          strawberries in the hole. Now the cake has a red heart in the middle! "It looks beautiful," says Ben.
+      - pic: "👵🕯️🎉"
+        text: |
+          Grandma comes in. "Surprise! Happy birthday!" Ben and Anna sing. Grandma looks at the cake.
+          "A heart! I love it!" she says. She blows out the seven candles. Biscuit wags his tail.
+          He wants some cake too!
+    questions:
+      - q: Who jumps up at the cake?
+        options: [The dog, Grandma, Ben]
+        answer: 0
+      - q: What does Anna put in the hole?
+        options: [Chocolate, Strawberries, Candles]
+        answer: 1
+      - q: What does Grandma say about the cake?
+        options: ["It's too small", "I don't like it", "I love it"]
+        answer: 2

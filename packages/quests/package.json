@@ -8,7 +8,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "validate": "tsx src/validate.ts",
+    "validate": "tsx src/validate.ts && tsx src/validate-books.ts",
     "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
