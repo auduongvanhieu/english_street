@@ -9,11 +9,15 @@ export type SkyWeather = 'system' | 'clear' | 'cloudy' | 'rain' | 'storm' | 'fog
 const SKY_TIMES: SkyTime[] = ['system', 'morning', 'noon', 'sunset', 'night'];
 const SKY_WEATHERS: SkyWeather[] = ['system', 'clear', 'cloudy', 'rain', 'storm', 'fog'];
 
-/** Low quality = no shadows, dpr 1, fewer remote characters. Default: low on touch devices. */
+/**
+ * Low quality = no shadows, dpr 1, fewer remote characters. Default: high everywhere, phones too (low looked too
+ * plain). The key was renamed (es:quality -> es:quality2) so everyone starts on high once; Low stays a choice.
+ */
+const QUALITY_KEY = 'es:quality2';
 function initialQuality(): Quality {
-  const saved = localStorage.getItem('es:quality');
+  const saved = localStorage.getItem(QUALITY_KEY);
   if (saved === 'high' || saved === 'low') return saved;
-  return matchMedia('(pointer: coarse)').matches ? 'low' : 'high';
+  return 'high';
 }
 const read = <T>(key: string, fallback: T, ok: (v: unknown) => boolean): T => {
   try {
@@ -55,7 +59,7 @@ export const useSettings = create<Settings>((set) => ({
   skyTime: read<SkyTime>('es:skyTime', 'system', (v) => SKY_TIMES.includes(v as SkyTime)),
   skyWeather: read<SkyWeather>('es:skyWeather', 'system', (v) => SKY_WEATHERS.includes(v as SkyWeather)),
   setQuality: (quality) => {
-    localStorage.setItem('es:quality', quality);
+    localStorage.setItem(QUALITY_KEY, quality);
     track('settings_change', { key: 'quality', value: quality });
     set({ quality });
   },
