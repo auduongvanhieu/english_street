@@ -40,6 +40,7 @@ export const MSG = {
   HOTEL: 'hotel',
   /** both ways: sports park - kick the ball, pick a team (SportSend); goals and results (SportEvent) */
   SPORT: 'sport',
+  BOAT: 'boat',
 } as const;
 
 /** Close codes the server uses when it removes a player (client shows why). */

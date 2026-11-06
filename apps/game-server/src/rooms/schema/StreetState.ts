@@ -58,6 +58,16 @@ export class Match extends Schema {
   @type('number') endsAt = 0;
 }
 
+/** A hired river boat (rowing boat or duck pedalo); driver / passenger = sessionId or ''. */
+export class Boat extends Schema {
+  @type('string') kind = 'row';
+  @type('number') x = 0;
+  @type('number') z = 0;
+  @type('number') rot = 0;
+  @type('string') driver = '';
+  @type('string') passenger = '';
+}
+
 export class StreetState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
   /** Critters put down somewhere: id → "x,z,t" (t = server ms). They stay there until someone picks them up. */
@@ -65,4 +75,5 @@ export class StreetState extends Schema {
   @type({ map: Group }) groups = new MapSchema<Group>();
   @type(Ball) ball = new Ball();
   @type(Match) match = new Match();
+  @type({ map: Boat }) boats = new MapSchema<Boat>();
 }

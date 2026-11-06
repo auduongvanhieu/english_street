@@ -75,3 +75,10 @@ Football: one ball mesh (320 tris) + a shadow disc, one ring per player on a tea
 30 Hz only while someone is within 30 m of the pitch (the room's simulation interval went 1 Hz → 30 Hz; bubbles and the
 heat map still run once a second). Ball patches ride the normal 20 Hz state patch (3 floats). Minigames add 3 cones,
 3 start rings and one basketball: +8 draw calls near the park, nothing elsewhere (lazy chunks `Football`, `Minigames`).
+
+## River boats (2026-11-06)
+
+`River` is a lazy chunk mounted with the horizon: 4 piers, kiosk, 4 buoys, 4 hire boats (+2 oars each for rowing
+boats), the ferry, 2 timetable boards and fishing floats: ≈ +20 draw calls when the river is in view (all LPM,
+vertex-coloured, shared toon material). Boats sync through the room state (5 numbers / boat, only while someone
+rows); the ferry is computed from the shared clock, no network traffic.

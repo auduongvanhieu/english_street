@@ -26,6 +26,7 @@ import {
   inRect,
   isHotelRoom,
   type HotelEvent,
+  type BoatSend,
   type SportEvent,
   type SportSend,
   type HotelSend,
@@ -51,6 +52,7 @@ import {
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { Group, Player, StreetState } from './schema/StreetState';
 import { Football } from './football';
+import { Boats } from './boats';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
@@ -105,6 +107,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   private groupInvites = new Map<string, { group: string; from: string; at: number }>();
   private lastGroupChatAt = new Map<string, number>();
   private football: Football | null = null;
+  private boatsSim: Boats | null = null;
   /** Hotel: who knocked on whose door (visitor sessionId -> room), so only invited visitors get let in. */
   private knocks = new Map<string, { room: number; at: number }>();
   /** Friend presence queries / pings per session (rate limits). */
@@ -169,7 +172,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const box = inRect(INTERIOR_BOUNDS, mx, mz) ? INTERIOR_BOUNDS : WORLD_BOUNDS;
       p.x = clamp(mx, box.minX, box.maxX);
       p.z = clamp(mz, box.minZ, box.maxZ);
-      p.y = clamp(Number(msg.y) || 0, 0, MAX_JUMP_Y);
+      p.y = clamp(Number(msg.y) || 0, -0.6, MAX_JUMP_Y); // below 0: sitting low in a boat
       p.rot = Number(msg.rot) || 0;
       p.anim = typeof msg.anim === 'string' ? msg.anim.slice(0, 16) : 'idle';
       p.voice = msg.voice === true;
@@ -324,6 +327,14 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       else if (msg.op === 'team') p.team = msg.team === 'red' || msg.team === 'blue' ? msg.team : '';
     });
 
+    // River boats: board / leave / steer (the ferry runs on the shared clock, no messages).
+    this.boatsSim = new Boats(this.state.boats, (sid) => this.state.players.get(sid));
+    this.onMessage<BoatSend>(MSG.BOAT, (client, msg) => {
+      if (!msg || typeof msg !== 'object' || typeof msg.op !== 'string') return;
+      const ev = this.boatsSim!.handle(client.sessionId, msg);
+      if (ev) client.send(MSG.BOAT, ev);
+    });
+
     // Hotel doors: knock from the corridor, the guests inside the room (by position) answer.
     this.onMessage<HotelSend>(MSG.HOTEL, (client, msg) => {
       const p = this.state.players.get(client.sessionId);
@@ -420,6 +431,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (now - lastSecond < 1000) return;
       lastSecond = now;
       this.expireBubbles();
+      this.boatsSim?.tick(now);
       if (now - lastHeat >= HEAT_EVERY_MS) {
         lastHeat = now;
         this.state.players.forEach((p: Player) => sampleHeat(p.x, p.z));
@@ -583,6 +595,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.lastPingAt.delete(client.sessionId);
     this.knocks.delete(client.sessionId);
     this.football?.forget(client.sessionId);
+    this.boatsSim?.leave(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
     // a pet in their arms stays where they were standing
     if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);

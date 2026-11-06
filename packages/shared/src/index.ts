@@ -17,3 +17,4 @@ export * from './weather';
 export * from './interiors';
 export * from './shop';
 export * from './sports';
+export * from './boats';

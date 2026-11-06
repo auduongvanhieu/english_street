@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type BoatEvent, type BoatSend, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -42,7 +42,24 @@ interface StreetStateLike {
   groups: Map<string, GroupLike>;
   ball?: { x: number; y: number; z: number };
   match?: { red: number; blue: number; endsAt: number };
+  boats?: Map<string, BoatLike>;
 }
+interface BoatLike {
+  kind: string;
+  x: number;
+  z: number;
+  rot: number;
+  driver: string;
+  passenger: string;
+}
+
+/** Hired river boats as last sent by the server (read every frame by the boat meshes). */
+export const boatStates = new Map<string, BoatLike & { at: number }>();
+const boatHandlers = new Set<(id: string, b: BoatLike | null) => void>();
+/** Occupancy changes (someone got in / out) and removals. */
+export const onBoatState = (fn: (id: string, b: BoatLike | null) => void) => (boatHandlers.add(fn), () => boatHandlers.delete(fn));
+const boatEventHandlers = new Set<(m: BoatEvent) => void>();
+export const onBoatEvent = (fn: (m: BoatEvent) => void) => (boatEventHandlers.add(fn), () => boatEventHandlers.delete(fn));
 
 /** The sports park football as last sent by the server (world coordinates); read every frame by the ball mesh. */
 export const ballState = { x: 0, y: -10, z: 0, at: 0, px: 0, py: -10, pz: 0, pat: 0 };
@@ -203,6 +220,30 @@ function bindRoom(r: Room<StreetStateLike>) {
     syncMatch();
     $(match).onChange(syncMatch);
   });
+  boatStates.clear();
+  $(r.state).listen('boats', (boats) => {
+    if (!boats) return;
+    $(boats).onAdd((b, id) => {
+      let seats = '';
+      const sync = () => {
+        const prev = boatStates.get(id);
+        // my own boat while I steer it: the local prediction leads, the server echo is ignored
+        if (!(prev && prev.driver && prev.driver === room?.sessionId && b.driver === prev.driver)) boatStates.set(id, { kind: b.kind, x: b.x, z: b.z, rot: b.rot, driver: b.driver, passenger: b.passenger, at: performance.now() });
+        else Object.assign(prev, { passenger: b.passenger });
+        const s = `${b.driver}|${b.passenger}`;
+        if (s !== seats) {
+          seats = s;
+          boatHandlers.forEach((h) => h(id, b));
+        }
+      };
+      sync();
+      $(b).onChange(sync);
+    });
+    $(boats).onRemove((_b, id) => {
+      boatStates.delete(id);
+      boatHandlers.forEach((h) => h(id, null));
+    });
+  });
   spots.clear();
   $(r.state).spots.onAdd((v, id) => setSpot(id, v));
   $(r.state).spots.onChange((v, id) => setSpot(id, v));
@@ -221,6 +262,7 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<FriendEvent>(MSG.FRIEND, (m) => friendHandlers.forEach((h) => h(m)));
   r.onMessage<HotelEvent>(MSG.HOTEL, (m) => hotelHandlers.forEach((h) => h(m)));
   r.onMessage<SportEvent>(MSG.SPORT, (m) => sportHandlers.forEach((h) => h(m)));
+  r.onMessage<BoatEvent>(MSG.BOAT, (m) => boatEventHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
     if (!m || typeof m.text !== 'string') return;
     useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });
@@ -278,6 +320,9 @@ export function sendShout(text: string) {
 
 export function sendGroup(msg: GroupSend) {
   room?.send(MSG.GROUP, msg);
+}
+export function sendBoat(msg: BoatSend) {
+  room?.send(MSG.BOAT, msg);
 }
 export function sendSport(msg: SportSend) {
   room?.send(MSG.SPORT, msg);

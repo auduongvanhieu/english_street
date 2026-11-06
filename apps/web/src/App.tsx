@@ -29,8 +29,10 @@ import { initDm, useDm } from './store/dm';
 import { initFriends, setZoneJumper } from './store/friends';
 import { initGroup } from './store/group';
 import { SocialToasts } from './ui/Social';
-import { initHotel } from './store/hotel';
+import { initHotel, useHotel } from './store/hotel';
 import { initSports, useSports } from './store/sports';
+import { initBoats, useBoats } from './store/boats';
+import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { SportsHud } from './ui/sports/SportsHud';
 import { MinigameHud } from './ui/sports/MinigameHud';
 import { useMini } from './store/minigames';
@@ -77,7 +79,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats };
 }
 
 export default function App() {
@@ -127,6 +129,7 @@ export default function App() {
     const offGroup = initGroup();
     const offHotel = initHotel();
     const offSports = initSports();
+    const offBoats = initBoats();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -136,6 +139,7 @@ export default function App() {
       offGroup();
       offHotel();
       offSports();
+      offBoats();
       offWatch();
       offNative();
     };
@@ -168,7 +172,9 @@ export default function App() {
       const typing = document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA';
       const area = useArea.getState();
       if (e.key === 'Escape') {
-        if (area.card) area.openCard(null);
+        if (useBoats.getState().panel) useBoats.getState().open(null);
+        else if (useHotel.getState().panel) useHotel.setState({ panel: null });
+        else if (area.card) area.openCard(null);
         else if (area.panel) area.setPanel(false);
         else if (s.uiPanel) s.setUiPanel(null);
         else if (s.panelNpc) s.closePanel();
@@ -399,6 +405,9 @@ export default function App() {
       <HotelToasts />
       <SportsHud />
       <MinigameHud />
+      <BoatPanel />
+      <BoatToasts />
+      <FishingHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

@@ -51,6 +51,8 @@ export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
 export type MinigameResult = { xp: number; coins: number; capped: boolean; record: boolean; best: number | null; left: number };
 export const reportMinigame = (game: MinigameId, r: { result?: 'win' | 'draw' | 'lose'; score?: number }) => post<MinigameResult>('/me/minigame', { playerId: getPlayerId(), game, ...r });
 export const fetchMinigameBoard = (game: MinigameId) => get<{ board: { name: string; score: number }[] }>(`/minigames/board?game=${game}`);
+export const fetchBoat = () => get<{ until: number; price: number; minutes: number; free: boolean }>(`/me/boat?playerId=${encodeURIComponent(getPlayerId())}`);
+export const hireBoat = () => post<{ until: number; coins: number; free: boolean }>('/me/boat/hire', { playerId: getPlayerId() });
 export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);
 export const hotelCheckin = (nights: number) => post<{ stay: HotelStay; coins: number; free?: boolean }>('/me/hotel/checkin', { playerId: getPlayerId(), nights });
 export const hotelMinibar = (item: string) => post<{ stay: HotelStay }>('/me/hotel/minibar', { playerId: getPlayerId(), item });

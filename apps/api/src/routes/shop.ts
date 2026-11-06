@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
+import { BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
 import type { AttemptRepo } from '../npc/attempts';
 import { playerIdFrom } from '../auth';
 import { limiter } from '../npc/ratelimit';
@@ -13,6 +13,9 @@ import { limiter } from '../npc/ratelimit';
 interface ShopState {
   hotel?: HotelStay & { bill?: { wrong: number } };
   hotelFreeUsed?: boolean;
+  /** river boat hire: valid until (ms); first hire free */
+  boatUntil?: number;
+  boatFreeUsed?: boolean;
 }
 
 export function shopRoutes(repo: AttemptRepo) {
@@ -25,6 +28,34 @@ export function shopRoutes(repo: AttemptRepo) {
       return { u, gs };
     };
     const save = (id: string, gs: Record<string, unknown>) => repo.updateUser(id, { gameState: gs });
+
+    // River boat hire at the north pier: a hire lasts BOAT_HIRE.minutes; the first one is free.
+    app.get('/me/boat', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      const { gs } = await load(id);
+      return { until: gs.boatUntil && gs.boatUntil > Date.now() ? gs.boatUntil : 0, price: BOAT_HIRE.coins, minutes: BOAT_HIRE.minutes, free: !gs.boatFreeUsed };
+    });
+
+    app.post('/me/boat/hire', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`boat:${id}`, 20))) return reply.code(429).send({ error: 'rate_limited' });
+      const { u, gs } = await load(id);
+      const now = Date.now();
+      if (gs.boatUntil && gs.boatUntil > now) return { until: gs.boatUntil, coins: u.coins, free: false };
+      const free = !gs.boatFreeUsed;
+      const cost = free ? 0 : BOAT_HIRE.coins;
+      if (u.coins < cost) return reply.code(402).send({ error: 'not_enough_coins' });
+      const until = now + BOAT_HIRE.minutes * 60_000;
+      await save(id, { ...gs, boatUntil: until, boatFreeUsed: true });
+      if (cost) {
+        await repo.updateUser(id, { coins: u.coins - cost });
+        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'boat', coins: cost } });
+      }
+      await repo.logEvent({ name: 'boat_hire', playerId: id, props: { free } });
+      return { until, coins: u.coins - cost, free };
+    });
 
     app.get('/me/hotel', async (req, reply) => {
       const id = who(req);

@@ -539,10 +539,11 @@ function Boat({ seed, baseX, speed, variant }: { seed: number; baseX: number; sp
     const g = ref.current;
     if (!g) return;
     const t = serverNow() / 1000 + seed * 100;
-    const span = 180;
-    const x = ((((baseX + t * speed) % span) + span) % span) - span / 2;
+    // they sail beyond the footbridges (x ±50 … ±220): between the bridges is the boating area (scene/River.tsx)
+    const span = 170;
+    const x = (baseX < 0 ? -1 : 1) * (50 + ((((baseX + t * speed) % span) + span) % span)); // wraps under a bridge
     g.position.set(x, WATER_Y + 0.2 + Math.sin(t * 1.3) * 0.05, (RIVER_FAR_Z + RIVER_NEAR_Z) / 2 + Math.sin(t * 0.2 + seed) * 4);
-    g.rotation.set(Math.sin(t * 1.1) * 0.03, speed > 0 ? Math.PI : 0, Math.sin(t * 0.9) * 0.04);
+    g.rotation.set(Math.sin(t * 1.1) * 0.03, (baseX < 0 ? -speed : speed) > 0 ? Math.PI : 0, Math.sin(t * 0.9) * 0.04);
   });
   return (
     <group ref={ref}>

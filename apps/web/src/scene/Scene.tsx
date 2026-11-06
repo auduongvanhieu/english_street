@@ -1,4 +1,4 @@
-import { memo, Suspense } from 'react';
+import { lazy, memo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Horizon } from './Horizon';
@@ -10,6 +10,8 @@ import { City } from './City';
 import { LocalPlayer } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
+
+const River = lazy(() => import('./River'));
 import { Critters } from './Critters';
 import { Cyclists } from './Cyclists';
 import { Buses } from './Buses';
@@ -54,6 +56,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         {/* Decoration loads after the street itself so the first frame is never held back by flowers. */}
         <Suspense fallback={null}>
           <Horizon />
+          <River />
           <NightLights low={low} />
           <Flora />
           <Critters />

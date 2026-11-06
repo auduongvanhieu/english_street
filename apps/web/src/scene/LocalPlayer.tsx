@@ -61,6 +61,7 @@ import { NameTag } from './NameTag';
 import { seatTaken, useRestaurant } from '../store/restaurant';
 import { TABLES } from '../world/buildings';
 import { useSeat } from '../store/seat';
+import { boatStep, boatTeleported } from '../store/boats';
 import { useFollow } from '../store/follow';
 import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
@@ -126,6 +127,7 @@ export function LocalPlayer({ name }: { name: string }) {
       // moved away (map, bus, test hook): no longer on the chair
       const gs = useSeat.getState().seat;
       if (gs && Math.hypot(teleport.x - gs.x, teleport.z - gs.z) > 0.3) useSeat.setState({ seat: null });
+      boatTeleported(teleport.x, teleport.z);
       g.position.set(teleport.x, 0, teleport.z);
       g.rotation.y = teleport.rot;
       vy.current = 0;
@@ -240,6 +242,37 @@ export function LocalPlayer({ name }: { name: string }) {
       return;
     }
     if (!g.visible) g.visible = true;
+
+    // --- in a rowing boat / pedalo / on the ferry: the boat carries the player (WASD / joystick steer it) ---
+    const boat = boatStep(dt, ix, iz);
+    if (boat) {
+      if (useSeat.getState().seat) useSeat.setState({ seat: null });
+      g.position.set(boat.x, boat.y, boat.z);
+      g.rotation.y = boat.rot;
+      vy.current = 0;
+      airborne.current = false;
+      anim.current = boat.anim;
+      if (anim.current !== animState) setAnimState(anim.current);
+      localPos.copy(g.position);
+      localHeading.y = g.rotation.y;
+      moveTarget.active = false;
+      placeCamera(camera, g.position, dt, false);
+      // usables still work from the boat ("Get out" at a pier)
+      interactAcc.current += dt;
+      if (interactAcc.current >= 0.1) {
+        interactAcc.current = 0;
+        const use = pickUsable(g.position.x, g.position.z);
+        const near = useNearUsable.getState().near;
+        if (use?.id !== near?.id || use?.label !== near?.label) useNearUsable.setState({ near: use });
+      }
+      sendAcc.current += dt;
+      if (sendAcc.current >= 1 / INPUT_RATE_HZ) {
+        sendAcc.current = 0;
+        const vc = useVoiceChat.getState();
+        sendInput(g.position.x, boat.y, g.position.z, g.rotation.y, anim.current, vc.enabled, vc.shouting);
+      }
+      return;
+    }
 
     // --- sitting on a restaurant chair: stay put until the player moves ---
     const seat = useRestaurant.getState().seat;

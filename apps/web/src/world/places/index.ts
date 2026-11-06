@@ -8,3 +8,4 @@ import './hospital';
 import './hotel';
 import './hotelFloors';
 import './sports';
+import './river';
