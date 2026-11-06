@@ -76,6 +76,7 @@ function front(p: Part, inside: boolean) {
   // windows with white frames, sills and shutters
   for (const x of [-11, -5.5, 5.5, 11]) {
     p.add(box(1.8, 1.3, 0.05), '#a8d8f0', { p: [x, 1.65, H.z1 + 0.17] });
+    p.panes.push({ p: [x, 1.65, H.z1 + 0.2], w: 1.75, h: 1.25 });
     p.add(box(1.95, 0.08, 0.1), '#ffffff', { p: [x, 2.33, H.z1 + 0.18] });
     p.add(box(0.06, 1.3, 0.08), '#ffffff', { p: [x, 1.65, H.z1 + 0.19] });
     p.add(box(2.1, 0.1, 0.3), '#ffffff', { p: [x, 0.96, H.z1 + 0.25] });

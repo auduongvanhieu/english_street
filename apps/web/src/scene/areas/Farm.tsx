@@ -28,6 +28,15 @@ function FarmStatic() {
         p.add(box(bw + 0.1, 0.2, 0.2), '#ffffff', { p: [bx, 4.2, BARN.maxZ + 0.02] });
         p.add(box(4, 3.2, 0.08), '#8c2a20', { p: [bx, 1.6, BARN.maxZ + 0.03] });
         for (const d of [-1, 1]) p.add(box(0.15, 4.4, 0.1), '#ffffff', { p: [bx + d * 1.4, 1.6, BARN.maxZ + 0.06], r: [0, 0, d * 0.6] });
+        // hayloft window above the door and two side windows, lit at night
+        p.add(box(1.6, 1.1, 0.08), '#5a3b30', { p: [bx, 3.55, BARN.maxZ + 0.04] });
+        p.panes.push({ p: [bx, 3.55, BARN.maxZ + 0.1], w: 1.3, h: 0.85 });
+        for (const d of [-1, 1]) {
+          p.add(box(1.5, 1.1, 0.08), '#ffffff', { p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.04] });
+          p.add(box(1.3, 0.9, 0.06), '#4a6070', { p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.07] });
+          p.panes.push({ p: [bx + d * (bw / 2 - 2.2), 2.0, BARN.maxZ + 0.11], w: 1.25, h: 0.85 });
+        }
+        p.lights.push({ p: [bx + 2.4, 3.0, BARN.maxZ + 0.3], c: '#ffd27a', s: 1.8, tw: 0.05 });
         // hay bales next to the barn
         for (const [x, z] of [[144, -18.2], [145.3, -18.4], [144.6, -17.6]] as const) p.add(cyl(0.55, 0.55, 0.9, 10), '#e0b84f', { p: [x, 0.55, z], r: [0, 0, Math.PI / 2] });
         // windmill tower

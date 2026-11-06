@@ -74,6 +74,11 @@ function ZooStatic() {
         p.add(box(HUT.maxX - HUT.minX, 2.4, HUT.maxZ - HUT.minZ), '#e9d3a8', { p: [hx, 1.2, hz] });
         p.add(box(HUT.maxX - HUT.minX + 0.6, 0.25, HUT.maxZ - HUT.minZ + 0.6), '#b5552f', { p: [hx, 2.5, hz] });
         p.add(box(1, 1.7, 0.06), '#7a5536', { p: [hx, 0.85, HUT.maxZ + 0.02] });
+        for (const d of [-1, 1]) {
+          p.add(box(0.9, 0.7, 0.06), '#4a6070', { p: [hx + d * 1.3, 1.4, HUT.maxZ + 0.03] });
+          p.panes.push({ p: [hx + d * 1.3, 1.4, HUT.maxZ + 0.07], w: 0.85, h: 0.65 });
+        }
+        p.lights.push({ p: [hx + 0.75, 2.0, HUT.maxZ + 0.25], c: '#ffd27a', s: 1.5, tw: 0.05 });
         // benches + bins along the middle walkway
         for (const x of [62, 94]) {
           p.add(box(1.8, 0.1, 0.5), '#a0703c', { p: [x, 0.45, -17.8] });

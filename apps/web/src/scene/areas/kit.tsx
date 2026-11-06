@@ -7,31 +7,37 @@ import { chibiMaterial } from '../chibi/buildChibi';
 import { localPos } from '../LocalPlayer';
 import { useSettings } from '../../store/settings';
 import { areaFrame, type AreaDef } from '../../world/areas';
-import { FAIRY, glowGeometry, glowPointsMat } from '../nightGlow';
+import { FAIRY, glowGeometry, glowPointsMat, windowMat } from '../nightGlow';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export { Part, box, cyl, sphere };
 
 /** A static prop built from primitives into ONE vertex-coloured toon mesh (one draw call). */
 export function Merged({ build, deps = [], castShadow = true, onClick }: { build: (p: Part) => void; deps?: unknown[]; castShadow?: boolean; onClick?: (e: { stopPropagation: () => void }) => void }) {
-  const [geo, lights] = useMemo(() => {
+  const [geo, lights, panes] = useMemo(() => {
     const p = new Part();
     build(p);
-    return [p.build(), p.lights.length ? glowGeometry(p.lights) : null] as const;
+    const panes = p.panes.length
+      ? mergeGeometries(p.panes.map((w) => new THREE.PlaneGeometry(w.w, w.h).rotateY(w.ry ?? 0).translate(...w.p)), false)
+      : null;
+    return [p.build(), p.lights.length ? glowGeometry(p.lights) : null, panes] as const;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
   useEffect(
     () => () => {
       geo.dispose();
       lights?.dispose();
+      panes?.dispose();
     },
-    [geo, lights],
+    [geo, lights, panes],
   );
   const mesh = <mesh geometry={geo} material={chibiMaterial()} castShadow={castShadow} receiveShadow onClick={onClick} />;
-  if (!lights) return mesh;
+  if (!lights && !panes) return mesh;
   return (
     <>
       {mesh}
-      <points geometry={lights} material={glowPointsMat} renderOrder={3} />
+      {lights ? <points geometry={lights} material={glowPointsMat} renderOrder={3} /> : null}
+      {panes ? <mesh geometry={panes} material={windowMat} renderOrder={2} /> : null}
     </>
   );
 }

@@ -28,6 +28,8 @@ export const MSG = {
   GARDEN: 'garden',
   /** client -> server: bus ride tag "d|a:<stop>:<slot>" ('' = not riding); shows up in Player.bus */
   BUS: 'bus',
+  /** private message at any distance: client -> server DmSend, server -> client DmReceived */
+  DM: 'dm',
   /** server -> client: { text, level: 'info' | 'warning' } notice from the moderators (announcement, mute…) */
   NOTICE: 'notice',
 } as const;
@@ -110,6 +112,18 @@ export type TalkMessage = { to: string; from?: string } & (
   | { type: 'typing' }
   | { type: 'end'; reason?: 'left' | 'distance' | 'busy' }
 );
+
+/** Private message to one player in the room (any distance). */
+export interface DmSend {
+  to: string;
+  text: string;
+}
+export interface DmReceived {
+  from: string;
+  name: string;
+  text: string;
+}
+export const DM_MAX = 300;
 
 /** Relayed verbatim; `to` is the target sessionId, the server adds `from`. */
 export interface RtcSignal {

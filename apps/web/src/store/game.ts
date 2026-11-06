@@ -41,7 +41,7 @@ export interface NpcInfo {
 }
 
 export type ConnStatus = 'idle' | 'connecting' | 'connected' | 'error';
-export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | 'settings' | 'bus' | 'map' | null;
+export type UiPanel = 'notebook' | 'daily' | 'avatar' | 'placement' | 'profile' | 'settings' | 'bus' | 'map' | 'players' | null;
 
 interface GameState {
   playerName: string;

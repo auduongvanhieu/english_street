@@ -25,6 +25,8 @@ import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
+import { initDm, useDm } from './store/dm';
+import { DmToast, PlayersButton, PlayersPanel } from './ui/PlayersPanel';
 import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
 import { setAmbientVolume } from './audio/ambient';
@@ -109,10 +111,12 @@ export default function App() {
       .catch(() => setNpcError(true));
     const off = initPairMessaging();
     const offTalk = initTalkMessaging();
+    const offDm = initDm();
     const offWatch = initVoiceWatch();
     return () => {
       off();
       offTalk();
+      offDm();
       offWatch();
       offNative();
     };
@@ -169,6 +173,9 @@ export default function App() {
         area.setPanel(true, 'menu');
       } else if (!typing && (e.key === 'm' || e.key === 'M') && !s.panelNpc) {
         s.setUiPanel(s.uiPanel === 'map' ? null : 'map');
+      } else if (!typing && (e.key === 'p' || e.key === 'P') && !s.panelNpc) {
+        if (s.uiPanel !== 'players') useDm.getState().open(null);
+        s.setUiPanel(s.uiPanel === 'players' ? null : 'players');
       } else if (!typing && (e.key === 'g' || e.key === 'G') && !s.panelNpc && area.current) {
         area.setPanel(!area.panel);
       } else if (!typing && /^[1-5]$/.test(e.key)) {
@@ -296,6 +303,7 @@ export default function App() {
           {/* top-right: utility buttons */}
           <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <WeatherChip compact />
+            <PlayersButton compact />
             <Collapsible id="top" icon="☰" title={t('More buttons')}>
               <VoiceChatButton compact />
               <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>🗺️</HudButton>
@@ -330,6 +338,7 @@ export default function App() {
             <button type="button" onClick={() => useGame.getState().setUiPanel('map')} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title={t('Map (M)')}>
               🗺️ {t('Map')}
             </button>
+            <PlayersButton compact={false} />
             <SettingsButton />
             <FeedbackButton />
             <button type="button" onClick={() => setConfirmExit(true)} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-red-600/80" title={t('Exit to zone list')}>
@@ -352,6 +361,7 @@ export default function App() {
       <ZoneChip compact={touch} onChange={() => { setPicker(true); leaveRoom(); }} />
       <InviteToast />
       <TalkToast />
+      <DmToast />
       {!hudHidden && <TalkBar />}
       <FollowChip />
       {!hudHidden && <PlayerPopup />}
@@ -367,7 +377,7 @@ export default function App() {
       <UiPanels />
       <AreaPanel />
       <ItemCard />
-      {uiPanel === 'bus' ? <BusPanel /> : uiPanel === 'map' ? <MapPanel /> : null}
+      {uiPanel === 'bus' ? <BusPanel /> : uiPanel === 'map' ? <MapPanel /> : uiPanel === 'players' ? <PlayersPanel /> : null}
     </div>
   );
 }

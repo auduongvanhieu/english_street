@@ -183,7 +183,7 @@ export function updateSky(now: number, w: WeatherDto | null, dt: number) {
   // main light: the sun by day, the moon (kept high so the street stays readable) at night
   const sunI = day * (1.75 - 1.15 * o);
   const moonUp = smooth(-0.05, 0.25, Math.sin(moon.elevation));
-  const moonI = (1 - day) * (0.55 + 0.3 * sky.moonLit * moonUp) * (1 - 0.5 * o);
+  const moonI = (1 - day) * (0.85 + 0.3 * sky.moonLit * moonUp) * (1 - 0.5 * o);
   if (sunI >= moonI) {
     sky.lightDir.copy(sky.sunDir);
     if (sky.lightDir.y < 0.12) sky.lightDir.setY(0.12);
@@ -198,8 +198,8 @@ export function updateSky(now: number, w: WeatherDto | null, dt: number) {
   sky.lightDir.normalize();
   sky.hemiSky.copy(h).lerp(z, 0.4).lerp(tmp.set(1, 1, 1), 0.25 * day);
   if (day < 0.5) sky.hemiSky.lerp(tmp.set(0.35, 0.45, 0.8), (0.5 - day) * 1.2); // moonlit blue, not black
-  sky.hemiGround.set('#3a4a40').lerp(tmp.set('#6b8f4e'), day);
-  sky.hemiIntensity = 0.85 - 0.2 * day + 0.45 * o * day + sky.flash * 2.5;
+  sky.hemiGround.set('#4b5c58').lerp(tmp.set('#6b8f4e'), day);
+  sky.hemiIntensity = 1.2 - 0.55 * day + 0.45 * o * day + sky.flash * 2.5;
   sky.cloudColor.set(1, 1, 1).lerp(tmp.set(0.55, 0.58, 0.62), o * (sky.storm ? 1 : 0.7));
   sky.cloudColor.multiply(tmp.set(0.16, 0.18, 0.26).lerp(new THREE.Color(1, 1, 1), day));
   if (dusk > 0) sky.cloudColor.lerp(tmp.set(1, 0.68, 0.5), dusk * 0.45);

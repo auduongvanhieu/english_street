@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AREA_INFO, type AreaId } from '@es/shared';
 import { useGame } from '../../store/game';
+import { useDm } from '../../store/dm';
 import { useRestaurant } from '../../store/restaurant';
 import { AREAS, BRIDGE_X, BUS_STOPS, GATES_X, SOUTH_BACK_Z, SOUTH_END_X, SOUTH_FRONT_Z, SOUTH_ROAD_Z, STREET_END_X, YARD_MIN_Z, FRONT_Z, frontZ, backZ, type StopId } from '../../world/areas';
 import { useProfile } from '../../store/profile';
@@ -99,12 +100,19 @@ const MAP_H = (Z1 - Z0) * SCALE;
 const sx = (x: number) => (x - X0) * SCALE;
 const sz = (z: number) => (z - Z0) * SCALE;
 
+/** Open the private-message thread with a player in the 👥 panel. */
+function openThread(id: string) {
+  useDm.getState().open(id);
+  useGame.getState().setUiPanel('players');
+}
+
 /** 🗺️ Street map: areas, the main street, you and other players; tap a place to take the bus there. */
 export function MapPanel() {
   const t = useT();
   const close = useGame((s) => s.setUiPanel);
   const players = useGame((s) => s.players);
   const me = useGame((s) => s.sessionId);
+  const mapFocus = useDm((s) => s.mapFocus);
   const [, tick] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => tick((n) => n + 1), 500);
@@ -153,14 +161,24 @@ export function MapPanel() {
             })}
             {Object.values(players)
               .filter((p) => p.id !== me)
-              .map((p) => (
-                <circle key={p.id} cx={sx(p.x)} cy={sz(p.z)} r={2} fill="#2f80ed" />
-              ))}
+              .map((p) => {
+                const focus = p.id === mapFocus;
+                return (
+                  <g key={p.id} onClick={() => openThread(p.id)} style={{ cursor: 'pointer' }}>
+                    <circle cx={sx(p.x)} cy={sz(p.z)} r={7} fill="transparent" />
+                    {focus ? <circle cx={sx(p.x)} cy={sz(p.z)} r={6} fill="none" stroke="#f59e0b" strokeWidth={1.6} /> : null}
+                    <circle cx={sx(p.x)} cy={sz(p.z)} r={focus ? 3.4 : 2.2} fill={focus ? '#f59e0b' : '#2f80ed'} stroke="#fff" strokeWidth={0.8} />
+                    <text x={sx(p.x)} y={sz(p.z) - (focus ? 8 : 4)} fontSize={focus ? 7 : 4.5} textAnchor="middle" fill={focus ? '#7c2d12' : '#1e3a5f'} fontWeight={focus ? 700 : 500}>
+                      {p.name}
+                    </text>
+                  </g>
+                );
+              })}
             <circle cx={sx(localPos.x)} cy={sz(localPos.z)} r={3.6} fill="#e5533d" stroke="#fff" strokeWidth={1.2} />
           </svg>
         </div>
         <p className="mt-2 text-center text-xs text-gray-500">
-          🔴 {t('You')} · 🔵 {t('Other players')} · {t('Tap a place to take the bus there.')}
+          🔴 {t('You')} · 🔵 {t('Other players')} · {t('Tap a place to take the bus there.')} {t('Tap a player to message them.')}
         </p>
         <div className="mt-3">
           <Suggested />

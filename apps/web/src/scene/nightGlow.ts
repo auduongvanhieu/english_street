@@ -98,6 +98,7 @@ export function updateNightGlow(k: number, time: number, scale: number) {
   poolMat.opacity = k * 0.4;
   // the river shimmers: reflections breathe a little
   reflectMat.opacity = k * (0.5 + 0.1 * Math.sin(time * 1.7));
+  updateWindows(k);
 }
 
 export interface Glow {
@@ -133,3 +134,57 @@ export function glowGeometry(items: Glow[]) {
 
 /** Festoon / fairy-light colours: mostly warm white with a few coloured bulbs. */
 export const FAIRY = ['#fff0c0', '#fff0c0', '#ffe0a0', '#ff9cc4', '#9cd6ff', '#b8ff9e', '#ffd46b'];
+
+/* ---------------------------------------------------------------- lit windows on the Kenney city buildings */
+
+/**
+ * The Kenney buildings share one 16×16-swatch colour atlas; their window glass is the dark swatch in column 1,
+ * rows 12–15. A tiny emissive map with the same layout lights only those texels, and is repainted when the lamps
+ * change, so every clone of the building materials (shops, street tiles, backdrop houses) lights up together.
+ */
+const WIN_COL = 1;
+const WIN_ROWS = [12, 13, 14, 15];
+let winCanvas: HTMLCanvasElement | null = null;
+let winTex: THREE.CanvasTexture | null = null;
+let winLevel = -1;
+function windowEmissive() {
+  if (winTex) return winTex;
+  winCanvas = document.createElement('canvas');
+  winCanvas.width = winCanvas.height = 16;
+  winTex = new THREE.CanvasTexture(winCanvas);
+  winTex.flipY = false; // glTF UV layout
+  winTex.colorSpace = THREE.SRGBColorSpace;
+  winTex.magFilter = winTex.minFilter = THREE.NearestFilter;
+  winTex.generateMipmaps = false;
+  paintWindows(0);
+  return winTex;
+}
+function paintWindows(k: number) {
+  const ctx = winCanvas!.getContext('2d')!;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, 16, 16);
+  WIN_ROWS.forEach((row, i) => {
+    const f = k * (0.85 + 0.15 * ((i * 7) % 3) / 2);
+    ctx.fillStyle = `rgb(${Math.round(255 * f)},${Math.round(196 * f)},${Math.round(110 * f)})`;
+    ctx.fillRect(WIN_COL, row, 1, 1);
+  });
+  winTex!.needsUpdate = true;
+}
+/** Give a building GLB's atlas material the night-window emissive map (once; clones share the texture). */
+export function nightWindows(scene: THREE.Object3D) {
+  scene.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (!m || !(o as THREE.Mesh).isMesh || !('emissive' in m) || m.emissiveMap) return;
+    m.emissiveMap = windowEmissive();
+    m.emissive.set('#ffffff');
+    m.emissiveIntensity = 1.4;
+    m.needsUpdate = true;
+  });
+}
+function updateWindows(k: number) {
+  if (!winTex) return;
+  const q = Math.round(k * 24) / 24; // repaint only on visible steps
+  if (q === winLevel) return;
+  winLevel = q;
+  paintWindows(q);
+}

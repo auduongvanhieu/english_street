@@ -4,6 +4,7 @@ import { useGLTF } from '@react-three/drei';
 import { MODEL_URL, TILE, type TileModel } from '../world/layout';
 import { Part, chibiMaterial, cyl } from './chibi/buildChibi';
 import { useSettings } from '../store/settings';
+import { nightWindows } from './nightGlow';
 
 /**
  * Our own trees for the two Kenney "grass with trees" tiles (the stock cone pines looked stiff): a grass tile
@@ -21,7 +22,10 @@ export function useTileScene(model: TileModel): THREE.Object3D {
   const base = useGLTF(MODEL_URL(tree ? 'grass' : model)).scene;
   const low = useSettings((s) => s.quality) === 'low';
   return useMemo(() => {
-    if (!tree) return base;
+    if (!tree) {
+      if (model.startsWith('building-')) nightWindows(base);
+      return base;
+    }
     const key = `${model}:${low}`;
     let g = cache.get(key);
     if (!g) {
@@ -89,16 +93,36 @@ function willow(p: Part, x: number, z: number, s: number, r: () => number) {
     p.add(blob(0.5 * s), i % 2 ? '#86b54f' : '#76a644', { p: [top[0] + Math.cos(a) * 0.6 * s, cy - 0.12 * s, top[2] + Math.sin(a) * 0.6 * s], s: [1, 0.8, 1] });
   }
   p.add(blob(0.45 * s), '#9cc85e', { p: [top[0] - 0.1 * s, cy + 0.42 * s, top[2] + 0.05 * s], s: [1, 0.75, 1] });
-  // hanging strands in two rings (outer ones longer), starting inside the crown
+  // hanging strands in two rings (outer ones longer), starting inside the crown: each strand is a soft tube that
+  // bows gently outwards, swells and narrows like a chain of leaves and tapers to a rounded tip (smooth normals)
   const shades = ['#7fb04a', '#8fbe55', '#6fa142', '#9dc95f'];
-  for (const [ring, count, base] of [[0.55, 14, 1.0], [0.95, 26, 1.45]] as const) {
+  const rings = (lowDetail ? [[0.55, 10, 1.0], [0.95, 18, 1.45]] : [[0.55, 13, 1.0], [0.95, 24, 1.45]]) as [number, number, number][];
+  const segs = lowDetail ? 5 : 8;
+  const sides = lowDetail ? 3 : 4;
+  for (const [ring, count, base] of rings) {
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2 + r() * 0.25 + ring;
       const rad = (ring + r() * 0.15) * s;
       const len = (base + r() * 0.5) * s;
-      const g = cyl(0.07 * s, 0.015 * s, len, 4, true);
-      g.translate(0, -len / 2, 0);
-      g.rotateZ(0.08 + ring * 0.08);
+      const bow = (0.08 + r() * 0.08) * s;
+      const beads = 3 + Math.floor(r() * 2);
+      const out = (t: number) => bow * Math.sin(Math.PI * t * 0.75) + 0.12 * s * t * ring;
+      const path = new THREE.CatmullRomCurve3([0, 0.25, 0.5, 0.75, 1].map((t) => new THREE.Vector3(out(t), -len * t, 0)));
+      const g = new THREE.TubeGeometry(path, segs, 1, sides, false);
+      // shape the tube: per ring, scale the cross-section around the path point
+      const pos = g.getAttribute('position');
+      const c = new THREE.Vector3();
+      const v = new THREE.Vector3();
+      for (let k = 0; k < pos.count; k++) {
+        const ringIdx = Math.floor(k / (sides + 1));
+        const t = ringIdx / segs;
+        path.getPointAt(t, c);
+        const taper = (0.06 - 0.03 * t) * s * (t > 0.86 ? Math.max(0.12, (1 - t) / 0.14) : 1);
+        const w = taper * (0.72 + 0.28 * Math.abs(Math.sin(t * Math.PI * beads)));
+        v.fromBufferAttribute(pos, k).sub(c).multiplyScalar(w).add(c);
+        pos.setXYZ(k, v.x, v.y, v.z);
+      }
+      g.computeVertexNormals();
       g.rotateY(-a);
       g.translate(top[0] + Math.cos(a) * rad, cy - 0.05 * s, top[2] + Math.sin(a) * rad);
       p.add(g, shades[(i + count) % shades.length]!);

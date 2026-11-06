@@ -19,6 +19,9 @@ import {
   GARDEN_RE,
   BUS_RE,
   PROP_RE,
+  DM_MAX,
+  type DmReceived,
+  type DmSend,
   type ZoneMeta,
   type InputMessage,
   type JoinOptions,
@@ -30,6 +33,9 @@ import {
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { Player, StreetState } from './schema/StreetState';
+
+/** Minimum gap between two private messages from one player. */
+const DM_COOLDOWN_MS = 600;
 import { accountStatus, isMuted, live, mutes, sampleHeat } from '../admin';
 
 /** Every open room (for the admin site: online list, kicks, notices). */
@@ -76,6 +82,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Pending talk requests: target sessionId -> requester sessionId. */
   private talkRequests = new Map<string, { from: string; call: boolean }>();
   private lastShoutAt = new Map<string, number>();
+  private lastDmAt = new Map<string, number>();
   private lastAvatarAt = new Map<string, number>();
   /** Zone identity (also published as room metadata for the zone list). */
   private zone: ZoneMeta = { name: MAIN_ZONE_NAME, kind: 'main', locked: false };
@@ -206,6 +213,20 @@ export class StreetRoom extends Room<{ state: StreetState }> {
 
     // One-to-one talk: the server is the referee (distance, busy state, who is allowed to message whom).
     this.onMessage<TalkMessage>(MSG.TALK, (client, msg) => this.onTalk(client, msg));
+
+    // Private message at any distance (players find each other with it): rate limited, profanity masked.
+    this.onMessage<DmSend>(MSG.DM, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg.to !== 'string' || typeof msg.text !== 'string' || msg.to === client.sessionId || this.muted(client)) return;
+      const target = this.clients.find((c) => c.sessionId === msg.to);
+      if (!target) return;
+      const now = Date.now();
+      if (now - (this.lastDmAt.get(client.sessionId) ?? 0) < DM_COOLDOWN_MS) return;
+      const clean = maskProfanity(msg.text.trim().slice(0, DM_MAX));
+      if (!clean) return;
+      this.lastDmAt.set(client.sessionId, now);
+      target.send(MSG.DM, { from: client.sessionId, name: p.name, text: clean } satisfies DmReceived);
+    });
 
     this.onMessage<string>(MSG.CHAT, (client, text) => {
       const p = this.state.players.get(client.sessionId);
@@ -396,6 +417,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);
     this.lastShoutAt.delete(client.sessionId);
+    this.lastDmAt.delete(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
     // a pet in their arms stays where they were standing
     if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);

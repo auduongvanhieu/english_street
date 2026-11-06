@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo } from 'react';
 import { useTileScene } from './treeTiles';
 import { Text, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { nightWindows } from './nightGlow';
 import {
   MODEL_HEIGHT,
   MODEL_URL,
@@ -113,6 +114,7 @@ function Shop({ shop }: { shop: ShopDef }) {
   const { scene } = useGLTF(MODEL_URL(shop.model));
   // Clone with tinted materials so each shop looks distinct while sharing geometry.
   const tinted = useMemo(() => {
+    nightWindows(scene);
     const c = scene.clone(true);
     c.traverse((o) => {
       const m = o as THREE.Mesh;

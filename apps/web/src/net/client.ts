@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -41,6 +41,8 @@ let lastGarden = '';
 const rtcHandlers = new Set<(m: RtcSignal & { from: string }) => void>();
 const pairHandlers = new Set<(m: PairMessage & { from: string }) => void>();
 const talkHandlers = new Set<(m: TalkMessage & { from: string }) => void>();
+const dmHandlers = new Set<(m: DmReceived) => void>();
+export const onDm = (fn: (m: DmReceived) => void) => (dmHandlers.add(fn), () => dmHandlers.delete(fn));
 export const onTalk = (fn: (m: TalkMessage & { from: string }) => void) => (talkHandlers.add(fn), () => talkHandlers.delete(fn));
 export const onRtc = (fn: (m: RtcSignal & { from: string }) => void) => (rtcHandlers.add(fn), () => rtcHandlers.delete(fn));
 export const onPair = (fn: (m: PairMessage & { from: string }) => void) => (pairHandlers.add(fn), () => pairHandlers.delete(fn));
@@ -156,6 +158,7 @@ function bindRoom(r: Room<StreetStateLike>) {
     if (typeof m?.now === 'number') clockOffset = Date.now() - m.now;
   });
   r.onMessage<TalkMessage & { from: string }>(MSG.TALK, (m) => talkHandlers.forEach((h) => h(m)));
+  r.onMessage<DmReceived>(MSG.DM, (m) => dmHandlers.forEach((h) => h(m)));
   r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
@@ -213,6 +216,9 @@ export function sendShout(text: string) {
   room?.send(MSG.SHOUT, text);
 }
 
+export function sendDm(msg: DmSend) {
+  room?.send(MSG.DM, msg);
+}
 export function sendTalk(msg: TalkMessage) {
   room?.send(MSG.TALK, msg);
 }
