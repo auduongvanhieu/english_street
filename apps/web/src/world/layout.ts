@@ -15,6 +15,8 @@ export type TileModel =
   | 'grass'
   | 'grass-trees'
   | 'grass-trees-tall'
+  /** our own tile (scene/treeTiles.ts, no GLB): weeping willows along the river banks */
+  | 'grass-willow'
   | 'building-small-a'
   | 'building-small-b'
   | 'building-small-c'
@@ -30,6 +32,7 @@ export const MODEL_HEIGHT: Record<TileModel, number> = {
   grass: 0.06,
   'grass-trees': 0.64,
   'grass-trees-tall': 0.76,
+  'grass-willow': 0.78,
   'building-small-a': 0.95,
   'building-small-b': 1.63,
   'building-small-c': 1.75,
@@ -122,7 +125,7 @@ export function buildTiles(): TilePlacement[] {
     // south: small park
     if (tx === 0) tiles.push({ model: 'pavement-fountain', tx, tz: 2 });
     else tiles.push({ model: tx % 2 === 0 ? 'grass-trees' : 'grass', tx, tz: 2 });
-    tiles.push({ model: tx % 3 === 1 ? 'grass-trees-tall' : 'grass', tx, tz: 3 });
+    tiles.push({ model: tx % 3 === 1 ? 'grass-willow' : 'grass', tx, tz: 3 });
   }
   return tiles;
 }

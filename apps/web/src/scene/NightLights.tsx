@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useTileScene } from './treeTiles';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -77,7 +78,7 @@ function treeTiles(low: boolean) {
   const out: { model: TileModel; m: THREE.Matrix4 }[] = [];
   const q = new THREE.Quaternion();
   const up = new THREE.Vector3(0, 1, 0);
-  const isTree = (m: TileModel) => m === 'grass-trees' || m === 'grass-trees-tall';
+  const isTree = (m: TileModel) => m === 'grass-trees' || m === 'grass-trees-tall' || m === 'grass-willow';
   for (const t of buildTiles())
     if (isTree(t.model)) out.push({ model: t.model, m: new THREE.Matrix4().compose(new THREE.Vector3(t.tx * TILE, TILE_Y, t.z ?? t.tz * TILE), q.setFromAxisAngle(up, t.rot ?? 0), new THREE.Vector3(TILE, TILE, TILE)) });
   for (const p of backdropPlacements(low)) {
@@ -88,8 +89,9 @@ function treeTiles(low: boolean) {
 }
 
 export function NightLights({ low }: { low: boolean }) {
-  const small = useGLTF(MODEL_URL('grass-trees')).scene;
-  const tall = useGLTF(MODEL_URL('grass-trees-tall')).scene;
+  const small = useTileScene('grass-trees');
+  const tall = useTileScene('grass-trees-tall');
+  const willow = useTileScene('grass-willow');
   const posts = useMemo(lanternPosts, []);
 
   const glows = useMemo(() => {
@@ -117,7 +119,7 @@ export function NightLights({ low }: { low: boolean }) {
     }
     // fairy lights in the trees
     const per = low ? 8 : 16;
-    const crowns = { 'grass-trees': crownPoints(small, per), 'grass-trees-tall': crownPoints(tall, per) } as Record<string, THREE.Vector3[]>;
+    const crowns = { 'grass-trees': crownPoints(small, per), 'grass-trees-tall': crownPoints(tall, per), 'grass-willow': crownPoints(willow, per) } as Record<string, THREE.Vector3[]>;
     const v = new THREE.Vector3();
     treeTiles(low).forEach(({ model, m }, ti) =>
       crowns[model]!.forEach((c, i) => g.push({ p: v.copy(c).applyMatrix4(m).toArray() as [number, number, number], c: FAIRY[(ti * 7 + i * 3) % FAIRY.length]!, s: 0.55, tw: 0.6 })),
@@ -125,7 +127,7 @@ export function NightLights({ low }: { low: boolean }) {
     // shop doors: a wall lantern each side
     for (const s of SHOPS) for (const dx of [-1.25, 1.25]) g.push({ p: [s.tx * TILE + dx, 2.0, SHOP_ROW_TZ * TILE + TILE / 2 + 0.25], c: '#ffd27a', s: 1.8, tw: 0.05 });
     return glowGeometry(g);
-  }, [posts, small, tall, low]);
+  }, [posts, small, tall, willow, low]);
 
   const postRef = useRef<THREE.InstancedMesh>(null);
   const bulbRef = useRef<THREE.InstancedMesh>(null);

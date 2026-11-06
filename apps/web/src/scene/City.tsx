@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo } from 'react';
+import { useTileScene } from './treeTiles';
 import { Text, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import {
@@ -67,7 +68,7 @@ function collectMeshes(scene: THREE.Object3D) {
 const CASTS_SHADOW = (model: TileModel) => MODEL_HEIGHT[model] > 0.1;
 
 function InstancedTiles({ model, placements }: { model: TileModel; placements: TilePlacement[] }) {
-  const { scene } = useGLTF(MODEL_URL(model));
+  const scene = useTileScene(model);
   const castShadow = CASTS_SHADOW(model);
   const meshes = useMemo(() => collectMeshes(scene), [scene]);
   const placementMatrices = useMemo(() => {

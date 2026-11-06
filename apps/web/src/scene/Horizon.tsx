@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useTileScene } from './treeTiles';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -259,7 +260,7 @@ export function backdropPlacements(low: boolean): Placement[] {
       for (const t of streetCross(tx)) push({ model: t.model, x: tx * TILE, z: t.z ?? 0, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
       push({ model: Math.abs(tx) % 5 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
       push({ model: 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
-      push({ model: Math.abs(tx) % 7 === 3 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: 0, scaleY: 1 });
+      push({ model: Math.abs(tx) % 7 === 3 ? 'grass-willow' : 'grass', x: tx * TILE, z: 4 * TILE, rot: 0, scaleY: 1 });
       continue;
     }
     if (Math.abs(tx) > 10) {
@@ -269,7 +270,7 @@ export function backdropPlacements(low: boolean): Placement[] {
       for (const t of streetCross(tx)) push({ model: t.model, x: tx * TILE, z: t.z ?? 0, rot: t.rot ?? 0, scaleY: 1, sz: t.sz });
       const open = nearBridge(tx * TILE);
       push({ model: !open && Math.abs(tx) % 2 === 0 ? 'grass-trees' : 'grass', x: tx * TILE, z: 2 * TILE, rot: 0, scaleY: 1 });
-      push({ model: !open && Math.abs(tx) % 3 === 1 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
+      push({ model: !open && Math.abs(tx) % 3 === 1 ? 'grass-willow' : 'grass', x: tx * TILE, z: 3 * TILE, rot: 0, scaleY: 1 });
     }
     if (low && Math.abs(tx) > 32) continue;
     // row A (tz -6) and row B (tz -9): houses with gardens/trees in between; row B a little taller on average
@@ -285,7 +286,7 @@ export function backdropPlacements(low: boolean): Placement[] {
     for (const tz of [-4, -5, -7, -8, -10]) push({ model: r() < 0.45 ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: tz * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
     // river bank row (tz 4): grass with a few trees (none at the bridge feet)
     const treeHere = r() < 0.3 && !nearBridge(tx * TILE);
-    push({ model: treeHere ? 'grass-trees-tall' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
+    push({ model: treeHere ? 'grass-willow' : 'grass', x: tx * TILE, z: 4 * TILE, rot: Math.floor(r() * 4) * (Math.PI / 2), scaleY: 1 });
   }
   // the south-bank road with its pavements, a lawn strip down to the river, and a little park between the bridges
   const southMax = Math.floor(SOUTH_END_X / TILE);
@@ -302,7 +303,8 @@ export function backdropPlacements(low: boolean): Placement[] {
     const x = (r() - 0.5) * (ROAD_END_X * 2 - 40);
     const z = RIVER_FAR_Z + 6 + r() * 70;
     if (inSouth(x, z)) continue;
-    out.push({ model: 'grass-trees-tall', x, z, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.6 });
+    // willows right on the far bank, tall trees further back
+    out.push({ model: z < RIVER_FAR_Z + 12 ? 'grass-willow' : 'grass-trees-tall', x, z, rot: r() * Math.PI * 2, scaleY: 0.9 + r() * 0.6 });
   }
   return out;
 }
@@ -324,7 +326,7 @@ function Backdrop({ low }: { low: boolean }) {
 
 /** One InstancedMesh per mesh inside the GLB (Kenney tiles have exactly one), with optional per-instance tint. */
 function InstancedModel({ model, placements }: { model: TileModel; placements: Placement[] }) {
-  const { scene } = useGLTF(MODEL_URL(model));
+  const scene = useTileScene(model);
   const meshes = useMemo(() => {
     scene.updateMatrixWorld(true);
     const rootInv = scene.matrixWorld.clone().invert();
