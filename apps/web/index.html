@@ -10,6 +10,16 @@
         var noop = function () {};
         window.zaloJSV2 = typeof Proxy === 'function' ? new Proxy({}, { get: function () { return noop; } }) : { zalo_h5_event_handler: noop };
       })();
+      // One-time reset of this device's game settings (not the account): language back to Vietnamese, High
+      // graphics, the new-player guide shown again. Bump RESET to do it again after a future change.
+      (function () {
+        var RESET = '2026-11-06';
+        try {
+          if (localStorage.getItem('es:settingsReset') === RESET) return;
+          ['es:lang', 'es:uiLang', 'es:tutorial', 'es:quality', 'es:quality2'].forEach(function (k) { localStorage.removeItem(k); });
+          localStorage.setItem('es:settingsReset', RESET);
+        } catch (e) {}
+      })();
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content" />

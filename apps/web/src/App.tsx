@@ -298,8 +298,6 @@ export default function App() {
     void deviceInfo()
       .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device: { ...device, gfx: { quality: useSettings.getState().quality } } }))
       .catch(() => undefined);
-    // Returning players (they already made a character) don't get the new-player guide.
-    if (localStorage.getItem(AVATAR_INTRO_KEY) && tutorialPending()) localStorage.setItem(TUTORIAL_KEY, 'skipped');
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
