@@ -9,6 +9,9 @@ import { useGame } from '../store/game';
 import { localBusTag } from '../store/bus';
 import { serverNow } from '../net/client';
 import { busPose, decodeBus, tagLive, type BusTag, type StopId } from '../world/bus';
+import { preloadLpm, useLpmParts } from './LpmModel';
+
+preloadLpm('bus_interior');
 
 /**
  * The shared buses: one per (stop, slot) that somebody is boarding or arriving with. Every client derives the
@@ -94,7 +97,10 @@ function Bus({ stop, slot }: { stop: StopId; slot: number }) {
   const doorL = useRef<THREE.Mesh>(null);
   const doorR = useRef<THREE.Mesh>(null);
   const wheels = useRef<THREE.Group>(null);
+  const interior = useRef<THREE.Mesh>(null);
   const geo = useMemo(geometries, []);
+  // seats, floor, poles, ceiling, driver: Blender LPM asset assets-src/lpm/recipes/bus_interior.py
+  const inside = useLpmParts('bus_interior').SM_BusInterior!;
   const lastX = useRef<number | null>(null);
   useFrame(() => {
     const p = busPose(stop, slot, serverNow());
@@ -110,11 +116,17 @@ function Bus({ stop, slot }: { stop: StopId; slot: number }) {
       for (const w of wheels.current.children) w.rotation.z -= dx / 0.48;
     }
     lastX.current = p.x;
+    // the interior is only drawn for the player riding this bus (the windows are opaque from outside)
+    if (interior.current) {
+      const mine = decodeBus(localBusTag());
+      interior.current.visible = !!mine && mine.stop === stop && mine.slot === slot;
+    }
   });
   const mat = chibiMaterial();
   return (
     <group ref={g}>
       <mesh geometry={geo.bodyGeo} material={mat} castShadow receiveShadow />
+      <mesh ref={interior} geometry={inside} material={mat} visible={false} />
       <mesh ref={doorL} geometry={geo.doorGeo} material={mat} position={[-2.72, 1.45, 1.25]} scale={[0.5, 1, 1]} />
       <mesh ref={doorR} geometry={geo.doorGeo} material={mat} position={[-2.08, 1.45, 1.25]} scale={[0.5, 1, 1]} />
       <Text position={[-4.56, 2.64, 0.12]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.17} color="#ffb020" anchorX="center" anchorY="middle">

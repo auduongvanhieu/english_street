@@ -10,7 +10,7 @@ import { chibiMaterial } from './chibi/buildChibi';
  * Each GLB carries flat normals and one vertex colour per face, so it is drawn with the same toon material as every
  * code-built prop. Meshes named "*_glass" / "*_water" get the shared glass / water material instead.
  */
-export type LpmSlug = 'bus_shelter' | 'fountain' | 'street_lamp' | 'lantern_post' | 'bird' | 'boat' | 'willow' | 'grass_tuft' | 'farm_kit' | 'zoo_kit';
+export type LpmSlug = 'bus_shelter' | 'fountain' | 'street_lamp' | 'lantern_post' | 'bird' | 'boat' | 'willow' | 'grass_tuft' | 'farm_kit' | 'zoo_kit' | 'bus_interior';
 export const LPM_URL = (slug: LpmSlug) => `/models/lpm/${slug}.glb`;
 
 export const lpmGlassMat = new THREE.MeshStandardMaterial({ color: '#cfe6ff', transparent: true, opacity: 0.32, roughness: 0.15, metalness: 0, depthWrite: false });

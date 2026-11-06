@@ -126,7 +126,7 @@ Whole-scene budgets (docs/PERF.md):
 | Birds (3 kinds: pigeon, gull, sparrow) | LPM `bird` (separate body + wing, wing pivot at the shoulder) | 36 in the sky | ✅ rebuilt (was a sphere + box wings) |
 | River sailboats (red / blue) | LPM `boat` | 2 | ✅ rebuilt (was a box with the bow sticking out the side) |
 | Weeping willow (riverside tree tiles) | LPM `willow`, merged into the tree tile via `Part.addColored` | ~55 | ✅ rebuilt (was ~3,000 tris of tubes, now 1,124) |
-| Bus | code (`Buses.tsx`, rounded boxes) | ≤ 9 | kept: already detailed, door animation |
+| Bus | code (`Buses.tsx`, rounded boxes) + LPM `bus_interior` (seats, poles, rails, ceiling, driver; drawn only for the rider) | ≤ 9 | body kept (door animation); interior added 2026-11-06 |
 | Shops / backdrop houses / roads | Kenney city kit | many | kept: consistent Kenney style, lit windows already added |
 | Grass tufts (2 variants) | LPM `grass_tuft` (instanced, ~110 / 70 tris) | thousands | ✅ rebuilt (Quaternius clumps ~290 tris read as dark twigs) |
 | Other trees, flowers | code (`treeTiles.ts`, `kit.tree`) + Quaternius | many | kept |
