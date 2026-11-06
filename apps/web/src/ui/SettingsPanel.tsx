@@ -1,3 +1,4 @@
+import { useTutorial } from '../store/tutorial';
 import { useGame } from '../store/game';
 import { useProfile } from '../store/profile';
 import { subtitlesOn, useSettings, type Tri, type SkyTime, type SkyWeather } from '../store/settings';
@@ -166,6 +167,21 @@ export function SettingsPanel() {
           </Row>
           <Row label={t('Bird sounds')} hint={s.ambientVolume === 0 ? t('off') : `${Math.round(s.ambientVolume * 100)}%`}>
             <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label={t('Bird sounds')} />
+          </Row>
+        </section>
+        <section className="py-2">
+          <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Help')}</h3>
+          <Row label={t('How to play')} hint={t('The short guide for new players')}>
+            <button
+              type="button"
+              onClick={() => {
+                close(null);
+                useTutorial.getState().start();
+              }}
+              className="min-h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white"
+            >
+              👋 {t('Show the guide')}
+            </button>
           </Row>
         </section>
       </div>

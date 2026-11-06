@@ -34,6 +34,8 @@ import { initSports, useSports } from './store/sports';
 import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
+import { Tutorial } from './ui/Tutorial';
+import { TUTORIAL_KEY, tutorialPending, useTutorial } from './store/tutorial';
 import { useBooks } from './store/books';
 import { SportsHud } from './ui/sports/SportsHud';
 import { MinigameHud } from './ui/sports/MinigameHud';
@@ -81,7 +83,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial };
 }
 
 export default function App() {
@@ -103,6 +105,7 @@ export default function App() {
     return id ? { id, code: q.get('code') ?? undefined } : undefined;
   });
   const touch = isTouchDevice();
+  const tutorialOn = useTutorial((s) => !!s.step);
   const stage = useRef<HTMLDivElement>(null);
   const busy = useGame((s) => s.panelNpc !== null || s.uiPanel !== null);
   const uiPanel = useGame((s) => s.uiPanel);
@@ -293,6 +296,8 @@ export default function App() {
     void deviceInfo()
       .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device }))
       .catch(() => undefined);
+    // Returning players (they already made a character) don't get the new-player guide.
+    if (localStorage.getItem(AVATAR_INTRO_KEY) && tutorialPending()) localStorage.setItem(TUTORIAL_KEY, 'skipped');
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;
     if (p && !p.placementDone && !localStorage.getItem('es:placement-skipped')) {
@@ -332,7 +337,9 @@ export default function App() {
         </SceneBoundary>
       </Suspense>
 
-      <HintToast touch={touch} />
+      <TutorialStarter />
+      <Tutorial touch={touch} />
+      {tutorialOn ? null : <HintToast touch={touch} />}
       {!touch && <WeatherChip compact={false} />}
       <Notices />
       <BusOverlay />
@@ -463,4 +470,17 @@ function ConfirmExit({ onStay, onExit }: { onStay: () => void; onExit: () => voi
       </div>
     </div>
   );
+}
+
+/** Starts the new-player guide once the first panels (placement test, character) are closed. */
+function TutorialStarter() {
+  const ready = useGame((s) => s.conn === 'connected' && !s.uiPanel && !s.panelNpc);
+  useEffect(() => {
+    if (!ready || !tutorialPending() || useTutorial.getState().step) return;
+    const id = window.setTimeout(() => {
+      if (tutorialPending() && !useTutorial.getState().step) useTutorial.getState().start();
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [ready]);
+  return null;
 }
