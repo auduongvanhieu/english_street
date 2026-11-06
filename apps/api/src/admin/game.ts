@@ -30,3 +30,6 @@ export const gameOnline = () => game<{ players: OnlinePlayer[]; rooms: { id: str
 export const gameKick = (uid: string, reason: string, banned = false) => game<{ kicked: number }>('POST', '/internal/kick', { uid, reason, banned: banned ? '1' : '0' });
 export const gameMute = (uid: string, until: number) => game('POST', '/internal/mute', { uid, until: String(until) });
 export const gameNotice = (text: string, level: 'info' | 'warning') => game<{ rooms: number }>('POST', '/internal/notice', { text, level });
+
+/** Push in-game settings to a player's open game(s); `applied` = how many sessions got them. */
+export const gameSettings = (uid: string, settings: object) => game<{ applied: number }>('POST', '/internal/settings', { uid, s: JSON.stringify(settings) });

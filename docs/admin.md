@@ -65,6 +65,11 @@ Mở NPC hoặc nhiệm vụ, chọn tab **Thử nói chuyện**.
   - **Xoá tài khoản**: phải gõ đúng tên để xác nhận.
 - **Khách**: có thể khoá theo id khách, nhưng khách đổi trình duyệt là có id mới. Muốn chặn spam theo mạng thì dùng giới hạn khách theo IP trong Cài đặt.
 
+### Cài đặt trong game của từng người chơi
+Trang chi tiết người chơi có thẻ **Cài đặt trong game**: đồ hoạ, ngôn ngữ, phụ đề, IPA, tắt giọng đọc, tốc độ đọc, tiếng chim, kiểu mic, giờ và thời tiết. Thẻ hiện giá trị mà game của người đó báo về lần gần nhất.
+- Bấm **Lưu và áp dụng**: nếu người chơi đang online, server game đẩy cài đặt xuống máy họ và đổi ngay, có thông báo nhỏ trong game. Nếu đang offline, cài đặt được giữ lại và áp dụng ở lần vào game tiếp theo.
+- Mục **Thiết bị** có dòng 🎨 Đồ hoạ: chất lượng, FPS đo được, tỉ lệ điểm ảnh, số draw call.
+
 ## Thống kê
 - **Nơi được ghé nhiều nhất**: lượt vào và thời gian ở lại từng khu, NPC được nói chuyện nhiều nhất, xe buýt.
 - **Bản đồ nhiệt**: vị trí người chơi được ghi 30 giây một lần.

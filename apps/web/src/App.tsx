@@ -35,6 +35,8 @@ import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
 import { Tutorial } from './ui/Tutorial';
+import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
+import type { PlayerSettings } from '@es/shared';
 import { KitchenHud } from './ui/KitchenHud';
 import { useKitchen } from './store/kitchen';
 import { TUTORIAL_KEY, tutorialPending, useTutorial } from './store/tutorial';
@@ -137,6 +139,7 @@ export default function App() {
     const offHotel = initHotel();
     const offSports = initSports();
     const offBoats = initBoats();
+    const offSettings = watchPlayerSettings();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -147,6 +150,7 @@ export default function App() {
       offHotel();
       offSports();
       offBoats();
+      offSettings();
       offWatch();
       offNative();
     };
@@ -296,7 +300,9 @@ export default function App() {
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
     // the name a guest typed + the device (admin site: player list, device stats)
     void deviceInfo()
-      .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device: { ...device, gfx: { quality: useSettings.getState().quality } } }))
+      .then((device) => post<{ ok: boolean; settings?: PlayerSettings }>(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device: { ...device, gfx: { quality: useSettings.getState().quality }, settings: currentPlayerSettings() } }))
+      // settings an admin changed while I was away
+      .then((r) => r?.settings && applyPlayerSettings(r.settings))
       .catch(() => undefined);
     // First visit: offer the placement test right away.
     const p = useProfile.getState().profile;

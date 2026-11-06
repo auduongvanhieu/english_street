@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type BoatEvent, type BoatSend, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type PlayerSettings, type BoatEvent, type BoatSend, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -261,6 +261,12 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<GroupEvent>(MSG.GROUP, (m) => groupHandlers.forEach((h) => h(m)));
   r.onMessage<FriendEvent>(MSG.FRIEND, (m) => friendHandlers.forEach((h) => h(m)));
   r.onMessage<HotelEvent>(MSG.HOTEL, (m) => hotelHandlers.forEach((h) => h(m)));
+  // an admin changed my in-game settings: apply them now
+  r.onMessage<PlayerSettings>(MSG.SETTINGS, (m) => {
+    if (!m || typeof m !== 'object') return;
+    void import('../store/playerSettings').then((ps) => ps.applyPlayerSettings(m));
+    useWorld.getState().pushLive({ text: t('A moderator updated your game settings.'), level: 'info' });
+  });
   r.onMessage<SportEvent>(MSG.SPORT, (m) => sportHandlers.forEach((h) => h(m)));
   r.onMessage<BoatEvent>(MSG.BOAT, (m) => boatEventHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {

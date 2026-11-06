@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CROPS, type FarmState } from '@es/shared';
+import { CROPS, LANGS, type FarmState, type PlayerSettings } from '@es/shared';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
@@ -126,6 +126,8 @@ export function UserDetail({ id }: { id: string }) {
                 </Card>
                 <FarmCard d={d} onSaved={s.reload} id={id} />
               </div>
+
+              <GameSettingsCard id={id} known={u.device?.settings} online={d.online.length > 0} onSaved={s.reload} />
 
               <Card title={L('Xử lý', 'Moderation')}>
                 <div className="flex flex-wrap gap-2">
@@ -485,5 +487,70 @@ function AttemptModal({ uid, aid, onClose }: { uid: string; aid: string; onClose
         )}
       </Loaded>
     </Modal>
+  );
+}
+
+/** The player's in-game settings: what their game last reported; saving pushes the change to their open game. */
+function GameSettingsCard({ id, known, online, onSaved }: { id: string; known?: PlayerSettings; online: boolean; onSaved: () => void }) {
+  const L = useL();
+  const init: Required<PlayerSettings> = {
+    quality: known?.quality ?? 'high',
+    lang: known?.lang ?? 'vi',
+    subtitles: known?.subtitles ?? 'off',
+    ipa: known?.ipa ?? false,
+    ttsRate: known?.ttsRate ?? 0.95,
+    muted: known?.muted ?? false,
+    ambientVolume: known?.ambientVolume ?? 0,
+    micMode: known?.micMode ?? 'tap',
+    skyTime: known?.skyTime ?? 'system',
+    skyWeather: known?.skyWeather ?? 'system',
+  };
+  const [f, setF] = useState(init);
+  const set = <K extends keyof PlayerSettings>(k: K, v: Required<PlayerSettings>[K]) => setF((o) => ({ ...o, [k]: v }));
+  const onOff = [
+    { value: 'on', label: L('Bật', 'On') },
+    { value: 'off', label: L('Tắt', 'Off') },
+  ] as const;
+  const row = (label: string, el: React.ReactNode) => (
+    <label className="grid grid-cols-[9rem_1fr] items-center gap-2 text-sm">
+      <span className="text-gray-600">{label}</span>
+      {el}
+    </label>
+  );
+  return (
+    <Card
+      title={L('Cài đặt trong game', 'In-game settings')}
+      actions={
+        <span className="text-xs text-gray-500">
+          {known ? L('Giá trị game báo về lần gần nhất', 'As last reported by their game') : L('Chưa có báo cáo từ game (đang hiện mặc định)', 'No report yet (showing defaults)')} ·{' '}
+          {online ? <Badge tone="green">{L('online: áp dụng ngay', 'online: applies now')}</Badge> : <Badge>{L('offline: áp dụng khi vào lại', 'offline: applies on next join')}</Badge>}
+        </span>
+      }
+    >
+      <div className="grid gap-2 md:grid-cols-2">
+        {row(L('Đồ hoạ', 'Graphics'), <Select value={f.quality} onChange={(v) => set('quality', v)} options={[{ value: 'high', label: L('Cao ✨', 'High ✨') }, { value: 'low', label: L('Thấp ⚡', 'Low ⚡') }]} />)}
+        {row(L('Ngôn ngữ của tôi', 'My language'), <Select value={f.lang} onChange={(v) => set('lang', v)} options={LANGS.map((l) => ({ value: l.code, label: `${l.native} (${l.code})` }))} />)}
+        {row(L('Phụ đề', 'Subtitles'), <Select value={f.subtitles} onChange={(v) => set('subtitles', v)} options={onOff} />)}
+        {row('IPA', <Select value={f.ipa ? 'on' : 'off'} onChange={(v) => set('ipa', v === 'on')} options={onOff} />)}
+        {row(L('Tắt giọng đọc', 'Voice muted'), <Select value={f.muted ? 'on' : 'off'} onChange={(v) => set('muted', v === 'on')} options={onOff} />)}
+        {row(L('Tốc độ đọc', 'Speech rate'), <Select value={String(f.ttsRate)} onChange={(v) => set('ttsRate', Number(v))} options={['0.7', '0.8', '0.95', '1', '1.2'].map((v) => ({ value: v, label: `${v}x` }))} />)}
+        {row(L('Tiếng chim', 'Bird sounds'), <Select value={String(f.ambientVolume)} onChange={(v) => set('ambientVolume', Number(v))} options={['0', '0.2', '0.4', '0.7', '1'].map((v) => ({ value: v, label: `${Math.round(Number(v) * 100)}%` }))} />)}
+        {row('Mic', <Select value={f.micMode} onChange={(v) => set('micMode', v)} options={[{ value: 'tap', label: L('Chạm để nói', 'Tap to talk') }, { value: 'hold', label: L('Giữ để nói', 'Hold to talk') }]} />)}
+        {row(L('Giờ trong game', 'Time of day'), <Select value={f.skyTime} onChange={(v) => set('skyTime', v)} options={['system', 'morning', 'noon', 'sunset', 'night'] as const} />)}
+        {row(L('Thời tiết', 'Weather'), <Select value={f.skyWeather} onChange={(v) => set('skyWeather', v)} options={['system', 'clear', 'cloudy', 'rain', 'storm', 'fog'] as const} />)}
+      </div>
+      <div className="mt-3">
+        <AsyncBtn
+          kind="primary"
+          onRun={async () => {
+            const r = await api<{ applied: number; pending: boolean }>('POST', `/admin/users/${id}/settings`, f);
+            toast(r.applied ? L(`Đã áp dụng ngay (${r.applied} phiên đang mở)`, `Applied now (${r.applied} open session)`) : L('Đã lưu — áp dụng khi người chơi vào lại', 'Saved — applies when they next join'));
+            onSaved();
+          }}
+        >
+          {L('Lưu và áp dụng', 'Save and apply')}
+        </AsyncBtn>
+      </div>
+    </Card>
   );
 }

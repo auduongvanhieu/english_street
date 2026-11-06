@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   CLOTH_COLORS,
-  DeviceInfoSchema, GfxInfoSchema,
+  DeviceInfoSchema, GfxInfoSchema, PlayerSettingsSchema,
   maskProfanity,
   avatarLook,
   checkLook,
@@ -216,6 +216,16 @@ export function accountRoutes(repo: AttemptRepo) {
         const { kind, os, osVersion, model, form, browser, network, radio } = d.data;
         await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio }).filter(([, v]) => v !== undefined)) });
       }
+      // settings an admin changed while the player was away: applied by the game now, then forgotten
+      const u = await repo.getUser(id);
+      const gs = (u?.gameState ?? {}) as Record<string, unknown> & { adminSettings?: unknown };
+      if (gs.adminSettings) {
+        const pending = PlayerSettingsSchema.safeParse(gs.adminSettings);
+        const rest = { ...gs };
+        delete rest.adminSettings;
+        await repo.updateUser(id, { gameState: rest });
+        if (pending.success) return { ok: true, settings: pending.data };
+      }
       return { ok: true };
     });
 
@@ -225,9 +235,11 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await limiter.allow(`gfx:${id}`, 20, 60))) return reply.code(429).send({ error: 'rate_limited' });
       const g = GfxInfoSchema.safeParse(req.body);
+      const st = PlayerSettingsSchema.safeParse((req.body as { settings?: unknown } | null)?.settings ?? {});
       if (!g.success || repo.name !== 'postgres') return { ok: true };
       const row = await prisma.user.findUnique({ where: { id }, select: { device: true } }).catch(() => null);
-      const device = { ...((row?.device as object | null) ?? {}), gfx: { ...g.data, at: Date.now() } };
+      const prev = (row?.device ?? {}) as { gfx?: object };
+      const device = { ...prev, gfx: { ...(prev.gfx ?? {}), ...Object.fromEntries(Object.entries(g.data).filter(([, v]) => v !== undefined)), at: Date.now() }, ...(st.success && Object.keys(st.data).length ? { settings: st.data } : {}) };
       await prisma.user.update({ where: { id }, data: { device } }).catch(() => undefined);
       return { ok: true };
     });

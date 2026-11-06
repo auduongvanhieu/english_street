@@ -1,13 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { CEFR_LEVELS, CROPS, FarmStateSchema, emptyFarm, maskProfanity } from '@es/shared';
+import { CEFR_LEVELS, CROPS, FarmStateSchema, PlayerSettingsSchema, emptyFarm, maskProfanity } from '@es/shared';
 import { prisma } from '../plugins/prisma';
 import { hashPassword } from '../auth';
 import { forgetStatus } from '../moderation';
 import type { Prisma } from '../generated/prisma/client';
 import { audit, bad } from './core';
-import { gameKick, gameMute, gameOnline } from './game';
+import { gameKick, gameMute, gameOnline, gameSettings } from './game';
 import { areaStats } from '../routes/play';
 
 const PUBLIC_USER = {
@@ -166,6 +166,26 @@ export function adminUserRoutes(app: FastifyInstance) {
     const r = await gameKick(req.params.id, reason);
     await audit(req, 'user.kick', req.params.id, null, { reason });
     return { kicked: r?.kicked ?? 0, gameServer: !!r };
+  });
+
+  /**
+   * Change a player's in-game settings: pushed to their open game right away (game server), kept as the known
+   * settings, and — if they are not online — handed to the game on their next join (/me/hello).
+   */
+  app.post<{ Params: { id: string } }>('/admin/users/:id/settings', async (req, reply) => {
+    const body = PlayerSettingsSchema.safeParse(req.body);
+    if (!body.success || !Object.keys(body.data).length) return bad(reply, 'bad_request');
+    const u = await prisma.user.findUnique({ where: { id: req.params.id }, select: { device: true, gameState: true } });
+    if (!u) return reply.code(404).send({ error: 'not_found' });
+    const r = await gameSettings(req.params.id, body.data);
+    const applied = r?.applied ?? 0;
+    const device = (u.device ?? {}) as Record<string, unknown>;
+    const gs = (u.gameState ?? {}) as Record<string, unknown>;
+    const data: Prisma.UserUpdateInput = { device: { ...device, settings: { ...((device.settings as object) ?? {}), ...body.data } } as Prisma.InputJsonValue };
+    if (!applied) data.gameState = { ...gs, adminSettings: { ...((gs.adminSettings as object) ?? {}), ...body.data } } as Prisma.InputJsonValue;
+    await prisma.user.update({ where: { id: req.params.id }, data });
+    await audit(req, 'user.settings', req.params.id, null, body.data);
+    return { applied, pending: !applied };
   });
 
   /** Sign out everywhere (every token minted before stops working). */

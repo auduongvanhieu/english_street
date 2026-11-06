@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PlayerSettingsSchema } from './playerSettings';
 
 const s = (n: number) => z.string().trim().max(n).optional().catch(undefined);
 /**
@@ -39,6 +40,8 @@ export const DeviceInfoSchema = z.object({
     })
     .optional()
     .catch(undefined),
+  /** the player's current in-game settings (reported by the game; the admin site can change them) */
+  settings: PlayerSettingsSchema.optional().catch(undefined),
 });
 export const GfxInfoSchema = DeviceInfoSchema.shape.gfx.unwrap().unwrap();
 export type DeviceInfo = z.infer<typeof DeviceInfoSchema>;

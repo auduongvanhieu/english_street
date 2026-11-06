@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 // `@colyseus/ws-transport` directly can resolve a second copy of @colyseus/core under pnpm, and then
 // the matchmaker and the transport no longer share the room registry (every join fails with 4002).
 import { Server, WebSocketTransport, matchMaker } from 'colyseus';
-import { STREET_ROOM, type ZoneInfo } from '@es/shared';
+import { PlayerSettingsSchema, STREET_ROOM, type ZoneInfo } from '@es/shared';
 import { ROOMS, StreetRoom } from './rooms/StreetRoom';
 import { forget, mutes, startAdminLink, stopAdminLink } from './admin';
 import { isInternalKey } from '@es/shared/token';
@@ -61,6 +61,20 @@ const gameServer = new Server({
         else mutes.delete(uid);
       }
       res.json({ ok: true });
+    });
+    app.post('/internal/settings', (req, res) => {
+      if (!internal(req)) return void res.status(403).json({ error: 'forbidden' });
+      const q = req.query as Record<string, string | undefined>;
+      const uid = String(q.uid ?? '');
+      let settings: unknown = null;
+      try {
+        settings = JSON.parse(String(q.s ?? 'null'));
+      } catch {
+        /* ignore */
+      }
+      const ok = PlayerSettingsSchema.safeParse(settings);
+      const n = uid && ok.success ? [...ROOMS].reduce((s, r) => s + r.pushSettings(uid, ok.data), 0) : 0;
+      res.json({ applied: n });
     });
     app.post('/internal/notice', (req, res) => {
       if (!internal(req)) return void res.status(403).json({ error: 'forbidden' });

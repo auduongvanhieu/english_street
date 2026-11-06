@@ -19,3 +19,4 @@ export * from './shop';
 export * from './sports';
 export * from './boats';
 export * from './books';
+export * from './playerSettings';

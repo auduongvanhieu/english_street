@@ -27,6 +27,7 @@ import {
   isHotelRoom,
   type HotelEvent,
   type BoatSend,
+  type PlayerSettings,
   type SportEvent,
   type SportSend,
   type HotelSend,
@@ -470,6 +471,16 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (this.who.get(c.sessionId)?.uid !== uid) continue;
       c.send(MSG.NOTICE, { text: reason, level: 'warning', code: banned ? 'banned' : 'kicked' });
       c.leave(banned ? CLOSE_BANNED : CLOSE_KICKED, reason);
+      n += 1;
+    }
+    return n;
+  }
+  /** Admin changed this player's in-game settings: send them to every open game of theirs. */
+  pushSettings(uid: string, settings: PlayerSettings) {
+    let n = 0;
+    for (const c of this.clients) {
+      if (this.who.get(c.sessionId)?.uid !== uid) continue;
+      c.send(MSG.SETTINGS, settings);
       n += 1;
     }
     return n;
