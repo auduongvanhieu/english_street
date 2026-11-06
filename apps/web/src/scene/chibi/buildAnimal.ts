@@ -122,9 +122,21 @@ const muzzle = (h: Part, r: number, c: string, nose: string, z = 0.72, y = -0.32
 };
 const stripe = (p: Part, color: string, at: V3, r: number, rot: V3, arc = Math.PI * 0.6, t = 0.018) =>
   p.add(new THREE.TorusGeometry(r, t, 5, 16, arc), color, { p: at, r: rot });
+/**
+ * Tail from the tail joint with a tuft at the end. `ang` = droop below horizontal-backwards (radians, negative = down).
+ * The stalk starts ROOT m inside the body (the joint sits just behind the body surface) and the tuft sits on the
+ * stalk's end, so nothing floats.
+ */
 const tailTuft = (t: Part, fur: string, tip: string, len = 0.22, ang = -0.5) => {
-  t.add(capsule(0.025, len), fur, { p: [0, Math.cos(ang) * len * 0.5 * 0, -len * 0.5], r: [Math.PI / 2 + ang, 0, 0] });
-  t.add(sphere(0.045), tip, { p: [0, -Math.sin(ang) * len, -len * 0.95] });
+  const ROOT = 0.06;
+  const d: V3 = [0, Math.sin(ang), -Math.cos(ang)]; // unit direction, down/back
+  const full = len + ROOT;
+  const mid = len / 2 - ROOT / 2; // centre along d, measured from the joint
+  // capsule axis is +y: turn it about x onto d
+  const rot = Math.atan2(d[2], d[1]);
+  t.add(sphere(0.034, 0, Math.PI, 0, Math.PI * 2, 8, 6), fur); // root knob over the joint
+  t.add(capsule(0.025, full), fur, { p: [0, d[1] * mid, d[2] * mid], r: [rot, 0, 0] });
+  t.add(sphere(0.045, 0, Math.PI, 0, Math.PI * 2, 10, 8), tip, { p: [0, d[1] * len, d[2] * len], s: [0.85, 1.25, 0.85], r: [rot, 0, 0] });
 };
 
 const builders: Record<AnimalKind, () => AnimalParts> = {
