@@ -1,4 +1,5 @@
 import { Client, getStateCallbacks, type Room } from '@colyseus/sdk';
+import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
@@ -29,6 +30,7 @@ interface PlayerLike {
 }
 interface StreetStateLike {
   players: Map<string, PlayerLike>;
+  spots: Map<string, string>;
 }
 
 let room: Room<StreetStateLike> | null = null;
@@ -143,6 +145,10 @@ function bindRoom(r: Room<StreetStateLike>) {
     $(p).onChange(() => sync(p, id));
   });
   $(r.state).players.onRemove((_p, id) => g.removePlayer(id));
+  spots.clear();
+  $(r.state).spots.onAdd((v, id) => setSpot(id, v));
+  $(r.state).spots.onChange((v, id) => setSpot(id, v));
+  $(r.state).spots.onRemove((_v, id) => setSpot(id, undefined));
 
   r.onMessage<ChatDelivery>(MSG.CHAT, (m) => g.pushChat(m));
   r.onMessage<ZoneInfo>(MSG.ZONE, (z) => g.setZone({ ...z, clients: 0, maxClients: 0 }));
@@ -173,7 +179,7 @@ export function sendInput(x: number, y: number, z: number, rot: number, anim: st
   room?.send(MSG.INPUT, { x, y, z, rot, anim, voice, shouting });
 }
 
-/** Pick up a cat/dog by id, or put it down with ''. */
+/** Pick up a cat/dog by id, or put it down with '' (in front of me) / '@x,z' (a spot within reach). */
 export function sendHold(id: string) {
   room?.send(MSG.HOLD, id);
 }

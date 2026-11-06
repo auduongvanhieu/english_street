@@ -13,7 +13,7 @@ import { AREAS, areaById } from '../../world/areas';
 import { Sheet, SheetHeader } from '../Sheet';
 import { Line } from './common';
 import { Quiz } from './Quiz';
-import { FarmTab, MenuTab, ShoppingTab } from './AreaTabs';
+import { FarmTab, MealButtons, MenuTab, ShoppingTab } from './AreaTabs';
 import { ACTIVITIES } from './activities';
 
 /** Tabs per area: the area's own activity first, then words, phrases and a quiz. */
@@ -250,26 +250,13 @@ export function SitButton({ compact }: { compact?: boolean }) {
   const sit = useRestaurant((s) => s.sit);
   const stand = useRestaurant((s) => s.stand);
   const setPanel = useArea((s) => s.setPanel);
-  if (seat)
-    return (
-      <div data-ui className="flex gap-2">
-        <button type="button" onClick={() => setPanel(true, 'menu')} className="min-h-12 rounded-full bg-rose-600 px-4 text-sm font-semibold text-white shadow-lg">
-          📋 {t('Menu')}
-        </button>
-        <button type="button" onClick={stand} className="min-h-12 rounded-full bg-white px-4 text-sm font-semibold shadow-lg">
-          🧍 {t('Stand up')}
-        </button>
-      </div>
-    );
+  if (seat) return <MealButtons onMenu={() => setPanel(true, 'menu')} onStand={stand} />;
   if (!near) return <AnySeatButton compact={compact} />;
   return (
     <button
       type="button"
       data-ui
-      onClick={() => {
-        sit(near);
-        setPanel(true, 'menu');
-      }}
+      onClick={() => sit(near)}
       className="min-h-12 rounded-full bg-amber-400 px-5 text-base font-semibold text-black shadow-lg ring-2 ring-white/70"
     >
       🪑 {t('Sit down')}

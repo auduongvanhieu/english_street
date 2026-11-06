@@ -128,7 +128,7 @@ export function Zoo() {
         <Ground x0={PETTING.x0} x1={PETTING.x1} z0={PETTING.z0} z1={PETTING.z1} color="#c9dc8a" y={0.02} />
         <Sign x={PETTING.gateX + 4} z={PETTING.z0 + 0.35} text="PETTING CORNER" sub="Be gentle!" color="#c2185b" y={1.2} />
         {animals.map((a) => (
-          <Animal key={a.key} id={a.key} kind={a.e.kind} name={a.name} word={a.e.item} area="zoo" item={a.e.item} path={a.path} offset={a.offset} speed={a.e.kind === 'crocodile' ? 0.35 : 0.7} pause={a.e.kind === 'crocodile' ? 20 : 7} />
+          <Animal key={a.key} id={a.key} kind={a.e.kind} name={a.name} word={a.e.item} area="zoo" item={a.e.item} path={a.path} offset={a.offset} speed={a.e.kind === 'crocodile' ? 0.35 : 0.7} pause={a.e.kind === 'crocodile' ? 20 : 7} pen={a.e.kind === 'lion' || a.e.kind === 'tiger' ? a.e : undefined} />
         ))}
       </group>
     </NearArea>

@@ -169,6 +169,18 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
       p.headY = Math.sin(t * 0.4) * 0.25 * Math.max(0, Math.sin(t * 0.17));
       break;
     }
+    case 'eat': {
+      // seated at the table: fork from the plate to the mouth, head dipping to meet it, a happy wiggle
+      const k = (Math.sin(t * 4) + 1) / 2;
+      p.legLX = p.legRX = -1.45;
+      p.armLX = -0.95;
+      p.armLZ = 0.12;
+      p.armRX = -0.9 - k * 1.25;
+      p.armRZ = -0.12 + k * 0.45;
+      p.headX = 0.12 + (1 - k) * 0.12;
+      p.headZ = Math.sin(t * 2) * 0.05;
+      break;
+    }
     case 'swim': {
       // front crawl: arms windmill, legs flutter, head up looking ahead
       st.phase += dt * 5;

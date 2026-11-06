@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { serverNow } from '../../../net/client';
+import { CARTOON_H, CARTOON_W, drawCartoon } from './cartoon';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { insideBuilding } from '../../../world/buildings';
@@ -430,29 +433,8 @@ export default function Cinema() {
         <Merged build={boxOffice} onClick={tickets} />
         <Merged build={libraryFurniture} onClick={books} />
         <Merged build={libraryShelves} onClick={books} castShadow={false} />
-        {/* the glowing screen (unlit material), click = buy tickets */}
-        <mesh position={[sx, (SCREEN.y0 + SCREEN.y1) / 2, SCREEN.z + 0.03]} onClick={tickets}>
-          <planeGeometry args={[SCREEN.x1 - SCREEN.x0, SCREEN.y1 - SCREEN.y0]} />
-          <meshBasicMaterial color="#dfeaff" toneMapped={false} />
-        </mesh>
-        <Text
-          position={[sx, (SCREEN.y0 + SCREEN.y1) / 2 + 0.2, SCREEN.z + 0.06]}
-          fontSize={0.7}
-          color="#1f2a6b"
-          anchorX="center"
-          anchorY="middle"
-        >
-          SPACE CATS
-        </Text>
-        <Text
-          position={[sx, (SCREEN.y0 + SCREEN.y1) / 2 - 0.5, SCREEN.z + 0.06]}
-          fontSize={0.25}
-          color="#3a4a8a"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Please turn off your phone. Enjoy the film!
-        </Text>
+        {/* the screen plays a short cartoon while you are in the building; click = buy tickets */}
+        <CartoonScreen playing={inside} onClick={tickets} />
         {POSTERS.map((f, i) =>
           inScreen && !f.rot ? null : (
             <PosterTitle
@@ -556,5 +538,35 @@ export default function Cinema() {
         </Text>
       </BuildingShell>
     </AreaGroup>
+  );
+}
+
+/** The cinema screen: a canvas cartoon (cartoon.ts), redrawn ~15 times a second while someone can see it. */
+function CartoonScreen({ playing, onClick }: { playing: boolean; onClick: (e: { stopPropagation: () => void }) => void }) {
+  const { tex, ctx } = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = CARTOON_W;
+    canvas.height = CARTOON_H;
+    const ctx = canvas.getContext('2d')!;
+    drawCartoon(ctx, 1);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return { tex, ctx };
+  }, []);
+  useEffect(() => () => tex.dispose(), [tex]);
+  const acc = useRef(1);
+  useFrame((_, dt) => {
+    if (!playing) return;
+    acc.current += dt;
+    if (acc.current < 1 / 15) return;
+    acc.current = 0;
+    drawCartoon(ctx, serverNow() / 1000);
+    tex.needsUpdate = true;
+  });
+  return (
+    <mesh position={[(SCREEN.x0 + SCREEN.x1) / 2, (SCREEN.y0 + SCREEN.y1) / 2, SCREEN.z + 0.03]} onClick={onClick}>
+      <planeGeometry args={[SCREEN.x1 - SCREEN.x0, SCREEN.y1 - SCREEN.y0]} />
+      <meshBasicMaterial map={tex} toneMapped={false} />
+    </mesh>
   );
 }

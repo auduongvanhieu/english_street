@@ -14,6 +14,7 @@ import { Npcs } from './Npcs';
 import { Critters } from './Critters';
 import { Cyclists } from './Cyclists';
 import { Buses } from './Buses';
+import { Wildlife } from './Wildlife';
 import { Flora } from './Flora';
 import { PerfProbe } from './PerfProbe';
 import { Areas } from './areas/Areas';
@@ -65,6 +66,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <Critters />
           <Cyclists />
           <Buses />
+          <Wildlife low={low} />
         </Suspense>
         <Suspense fallback={null}>
           <Areas />

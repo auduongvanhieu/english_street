@@ -185,3 +185,35 @@ export function critterSound(kind: 'meow' | 'woof' | 'bell' | 'quack' | 'squeak'
     o.stop(t + 0.2);
   }
 }
+
+/** A big cat's growl-roar (the lion / tiger pouncing): low buzzy tone with a rumble, rising then falling. */
+export function roarSound(volume = 0.5) {
+  if (!ensure() || volume <= 0) return;
+  void ctx!.resume();
+  const t = ctx!.currentTime;
+  const o = ctx!.createOscillator();
+  const g = ctx!.createGain();
+  const lp = ctx!.createBiquadFilter();
+  const lfo = ctx!.createOscillator();
+  const depth = ctx!.createGain();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(70, t);
+  o.frequency.linearRampToValueAtTime(140, t + 0.35);
+  o.frequency.exponentialRampToValueAtTime(60, t + 1.1);
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(500, t);
+  lp.frequency.linearRampToValueAtTime(1100, t + 0.35);
+  lp.frequency.linearRampToValueAtTime(350, t + 1.1);
+  lfo.frequency.value = 28; // the rumble
+  depth.gain.value = 0.18 * volume;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.35 * volume, t + 0.12);
+  g.gain.setValueAtTime(0.35 * volume, t + 0.6);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+  lfo.connect(depth).connect(g.gain);
+  o.connect(lp).connect(g).connect(ctx!.destination);
+  o.start(t);
+  lfo.start(t);
+  o.stop(t + 1.25);
+  lfo.stop(t + 1.25);
+}

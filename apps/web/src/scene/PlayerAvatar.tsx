@@ -11,7 +11,7 @@ const SWIM_Y = -0.62;
 
 /** A player's character: an original chibi built from their look (see chibi/buildChibi.ts), hugging a pet if any, with their dish on the table when eating out. */
 export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '', prop = '' }: { look: AvatarLook; anim: string; holding?: string; prop?: string }) {
-  const sit = anim === 'sit';
+  const sit = anim === 'sit' || anim === 'eat';
   const swim = anim === 'swim' || anim === 'tread';
   return (
     <>

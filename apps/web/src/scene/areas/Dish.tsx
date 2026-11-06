@@ -44,6 +44,8 @@ function build(p: Part, id: string) {
     case 'lemonade': glass('#f6e88a'); p.add(cyl(0.025, 0.025, 0.006, 10), '#f6d33c', { p: [0.04, 0.15, 0], r: [0, 0, Math.PI / 2] }); break;
     case 'hot-chocolate': p.add(cyl(0.08, 0.08, 0.01, 14), '#ffffff', { p: [0, 0.005, 0] }); p.add(cyl(0.045, 0.04, 0.07, 12), '#ffffff', { p: [0, 0.045, 0] }); p.add(cyl(0.04, 0.04, 0.005, 12), '#5a2e1e', { p: [0, 0.08, 0] }); p.add(sphere(0.03, 0, Math.PI, 0, Math.PI / 2, 8, 4), '#fdf6ec', { p: [0, 0.08, 0] }); break;
     case 'milkshake': glass('#f7a8c4', 0.2); p.add(sphere(0.04, 0, Math.PI, 0, Math.PI / 2, 8, 4), '#fdf6ec', { p: [0, 0.2, 0] }); p.add(cyl(0.006, 0.006, 0.12, 6), '#e23b4e', { p: [0.015, 0.24, 0], r: [0, 0, 0.2] }); break;
+    case 'empty': plate(); for (let i = 0; i < 4; i++) p.add(sphere(0.012, 0, Math.PI, 0, Math.PI * 2, 5, 3), '#c98a52', { p: [Math.cos(i * 2.1) * 0.06, 0.035, Math.sin(i * 2.1) * 0.05] }); p.add(box(0.012, 0.006, 0.17), '#c9ccd1', { p: [0.03, 0.035, 0], r: [0, 0.6, 0] }); p.add(box(0.012, 0.006, 0.17), '#c9ccd1', { p: [0.06, 0.035, 0.01], r: [0, 0.75, 0] }); break;
+    case 'bill': p.add(box(0.12, 0.012, 0.18), '#2b1d12', { p: [0, 0.006, 0] }); p.add(box(0.09, 0.004, 0.13), '#fffdf5', { p: [0, 0.014, 0] }); break;
     default: plate(); p.add(capsule(0.04, 0.05), '#c98a52', { p: [0, 0.05, 0], r: [0, 0, Math.PI / 2] });
   }
 }
@@ -56,4 +58,15 @@ export function Dish({ item }: { item: string }) {
     return p.build();
   }, [item]);
   return <mesh geometry={geo} material={chibiMaterial()} position={[0, 0.79, 0.62]} scale={1.6} />;
+}
+
+/** A dish (or the bill) on a round tray, carried by the restaurant server in front of her chest. */
+export function TrayWith({ item }: { item: string }) {
+  const geo = useMemo(() => {
+    const p = new Part();
+    p.add(cyl(0.22, 0.22, 0.02, 20), '#c9ccd1', { p: [0, -0.012, 0] });
+    build(p, item);
+    return p.build();
+  }, [item]);
+  return <mesh geometry={geo} material={chibiMaterial()} position={[0, 0.82, 0.42]} scale={1.3} />;
 }

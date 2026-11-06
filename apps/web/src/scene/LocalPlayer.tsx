@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { busStep } from '../store/bus';
+import { busStep, joinRide, matchArrival, useBus } from '../store/bus';
+import { decodeBus } from '../world/bus';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -18,6 +19,7 @@ import { CRITTERS, poseAt } from '../world/critters';
 import { CYCLISTS } from '../world/cyclists';
 import { serverNow } from '../net/client';
 import { livePos } from '../world/avoid';
+import { spotState } from '../world/spots';
 
 const CRITTER_SIZE = { cat: { r: 0.28, h: 0.45 }, shiba: { r: 0.4, h: 0.62 }, husky: { r: 0.45, h: 0.72 }, duck: { r: 0.3, h: 0.4 }, duckling: { r: 0.15, h: 0.2 }, rabbit: { r: 0.25, h: 0.45 }, kid: { r: 0.32, h: 0.75 }, lamb: { r: 0.32, h: 0.75 }, guineapig: { r: 0.2, h: 0.3 } } as const;
 const NEAR = 4; // only obstacles this close are tested each frame
@@ -38,6 +40,7 @@ function nearbyCircles(px: number, pz: number, posts: Circle[], out: Circle[]) {
   // Critters and cyclists: where they are drawn (after steering around people), falling back to the schedule.
   for (const c of CRITTERS) {
     if (heldCritters.has(c.id)) continue; // in someone's arms
+    if (spotState(c.id, now) === 'eaten') continue;
     const q = livePos.get(c.id) ?? poseAt(c, now);
     if (near(q.x, q.z)) out.push({ x: q.x, z: q.z, ...CRITTER_SIZE[c.kind] });
   }
@@ -157,9 +160,21 @@ export function LocalPlayer({ name }: { name: string }) {
     let clickLeft = Infinity; // distance left to the clicked spot (never step past it)
     // --- following another player: keep walking after them (keys / joystick / a panel stop it) ---
     const fol = useFollow.getState().target;
+    const riding = !!useBus.getState().ride;
     if (fol) {
       const tp = useGame.getState().players[fol.id];
-      if (!tp || keyMag > 0.05 || locked) {
+      // they are getting on a bus: catch the same one; on the bus: get off with them
+      const tag = tp ? decodeBus(tp.bus) : null;
+      if (tag && !riding && keyMag <= 0.05 && !locked) {
+        const j = joinRide(tag, g.position);
+        if (j) {
+          moveTarget.active = false;
+          if (j.teleport) teleportTo(j.teleport.x, j.teleport.z);
+        }
+      } else if (tag && riding) matchArrival(tag);
+      if (riding || useBus.getState().ride) {
+        // the bus script moves us
+      } else if (!tp || keyMag > 0.05 || locked) {
         useFollow.getState().stop();
         moveTarget.active = false;
       } else {
@@ -247,7 +262,7 @@ export function LocalPlayer({ name }: { name: string }) {
 
     // --- movement with collision ---
     if (seated) {
-      anim.current = 'sit';
+      anim.current = useRestaurant.getState().seat && useRestaurant.getState().step === 'eating' ? 'eat' : 'sit';
     } else if (mag > 0.05) {
       dir.normalize();
       const speed = WALK_SPEED * (run ? 2 : 1) * mag * (swimming ? 0.6 : 1);

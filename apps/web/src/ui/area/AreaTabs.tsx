@@ -11,6 +11,7 @@ import { useShopping } from '../../store/shopping';
 import { useArea } from '../../store/area';
 import { tk, useLang, useT } from '../../i18n';
 import { say } from './common';
+import { menuItem, type MealStep } from '../../store/restaurant';
 
 const ERR: Record<string, string> = {
   not_ready: tk("It isn't ready yet. Wait a little!"),
@@ -189,27 +190,88 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
   );
 }
 
+/** At a restaurant table: Menu / Eat / Ask for the bill / Pay, and Stand up (store/restaurant.ts runs the meal). */
+export function MealButtons({ onMenu, onStand }: { onMenu?: () => void; onStand?: () => void }) {
+  const t = useT();
+  const step = useRestaurant((s) => s.step);
+  const eaten = useRestaurant((s) => s.eaten);
+  const order = useRestaurant((s) => s.order);
+  const { eat, askBill, pay } = useRestaurant.getState();
+  const item = order ? menuItem(order.item) : undefined;
+  const pill = 'min-h-12 rounded-full px-4 text-sm font-semibold shadow-lg';
+  return (
+    <div data-ui className="flex flex-wrap items-center justify-center gap-2">
+      {step === 'served' ? (
+        <button type="button" onClick={eat} className={`${pill} animate-pulse bg-amber-400 text-black ring-2 ring-white`}>
+          🍴 {t('Eat')}
+        </button>
+      ) : step === 'eating' ? (
+        <div className={`${pill} flex items-center gap-2 bg-white`}>
+          🍴 {t('Eating…')}
+          <span className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
+            <span className="block h-full bg-amber-400" style={{ width: `${Math.round(eaten * 100)}%` }} />
+          </span>
+        </div>
+      ) : step === 'finished' ? (
+        <button type="button" onClick={askBill} className={`${pill} animate-pulse bg-emerald-600 text-white ring-2 ring-white`}>
+          🧾 {t('Ask for the bill')}
+        </button>
+      ) : step === 'paying' ? (
+        <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-1.5 shadow-lg">
+          <span className="text-sm" dir="ltr">
+            🧾 {item?.en ?? ''} <b>${item?.price ?? ''}</b>
+          </span>
+          <button type="button" onClick={pay} className="min-h-10 rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white">
+            💵 {t('Pay')}
+          </button>
+        </div>
+      ) : onMenu ? (
+        <button type="button" onClick={onMenu} className={`${pill} bg-rose-600 text-white`}>
+          📋 {t('Menu')}
+        </button>
+      ) : null}
+      {onStand ? (
+        <button type="button" onClick={onStand} className={`${pill} bg-white`}>
+          🧍 {t('Stand up')}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 /** 📋 Menu with prices; when you sit at a table you can order and the dish arrives on your table. */
 export function MenuTab({ content }: { content: AreaContentDto }) {
   const t = useT();
   const noTr = useLang((s) => s.lang === 'en');
   const seat = useRestaurant((s) => s.seat);
   const order = useRestaurant((s) => s.order);
+  const step = useRestaurant((s) => s.step);
   const orderDish = useRestaurant((s) => s.orderDish);
   const gone = useWorld((s) => s.cfg?.soldOut.restaurant ?? NONE);
   const openCard = useArea((s) => s.openCard);
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (!order) return;
-    const iv = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(iv);
-  }, [order]);
+  const canOrder = !!seat && (step === 'greet' || step === 'menu');
+  const STATUS: Record<MealStep, string> = {
+    greet: tk('The waiter is coming to your table…'),
+    menu: tk('You are at a table. Tap “Order” next to a dish.'),
+    kitchen: tk('The waiter is bringing your food…'),
+    serve: tk('The waiter is bringing your food…'),
+    served: tk('Your food is here! Tap “Eat”.'),
+    eating: tk('Enjoy your meal!'),
+    finished: tk('All done? Ask for the bill.'),
+    bill: tk('The waiter is bringing the bill…'),
+    paying: tk('Here is your bill. Tap “Pay”.'),
+  };
   const cats = content.categories.filter((c) => c.id !== 'table');
   return (
     <div className="py-2">
       <div className={`mb-3 rounded-lg px-3 py-2 text-sm ${seat ? 'bg-green-50 text-green-900' : 'bg-amber-50 text-amber-900'}`}>
-        {seat ? (order ? (order.readyAt > Date.now() ? t('The waiter is bringing your food…') : t('Enjoy your meal!')) : t('You are at a table. Tap “Order” next to a dish.')) : t('Sit at a table inside the restaurant to order.')}
+        {seat ? t(STATUS[step]) : t('Sit at a table inside the restaurant to order.')}
       </div>
+      {seat && ['served', 'eating', 'finished', 'paying'].includes(step) ? (
+        <div className="mb-3">
+          <MealButtons />
+        </div>
+      ) : null}
       {order ? (
         <div className="mb-3 text-center text-sm" dir="ltr">
           “I'd like the {content.items.find((i) => i.id === order.item)?.en}, please.”{' '}
@@ -245,7 +307,7 @@ export function MenuTab({ content }: { content: AreaContentDto }) {
                 </span>
                 {gone.includes(i.id) ? (
                   <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700">{t('Sold out')}</span>
-                ) : seat ? (
+                ) : canOrder ? (
                   <button
                     type="button"
                     onClick={() => {

@@ -32,4 +32,6 @@ export class Player extends Schema {
 
 export class StreetState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
+  /** Critters put down somewhere: id → "x,z,t" (t = server ms). They stay there until someone picks them up. */
+  @type({ map: 'string' }) spots = new MapSchema<string>();
 }

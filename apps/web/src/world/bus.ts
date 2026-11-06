@@ -61,12 +61,14 @@ export interface BusTag {
   phase: 'd' | 'a';
   stop: StopId;
   slot: number;
+  /** boarding: where this bus takes them (followers hop on the same bus) */
+  to?: StopId;
 }
-const RE = new RegExp(`^([da]):(main|${AREA_IDS.join('|')}):(\\d{1,12})$`);
-export const encodeBus = (b: BusTag) => `${b.phase}:${b.stop}:${b.slot}`;
+const RE = new RegExp(`^([da]):(main|${AREA_IDS.join('|')}):(\\d{1,12})(?::(main|${AREA_IDS.join('|')}))?$`);
+export const encodeBus = (b: BusTag) => `${b.phase}:${b.stop}:${b.slot}${b.to ? `:${b.to}` : ''}`;
 export function decodeBus(s: string | undefined): BusTag | null {
   const m = s ? RE.exec(s) : null;
-  return m ? { phase: m[1] as 'd' | 'a', stop: m[2] as StopId, slot: Number(m[3]) } : null;
+  return m ? { phase: m[1] as 'd' | 'a', stop: m[2] as StopId, slot: Number(m[3]), ...(m[4] ? { to: m[4] as StopId } : {}) } : null;
 }
 
 /** Is a rider with this tag inside the bus right now (hidden from view)? */

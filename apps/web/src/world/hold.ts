@@ -5,6 +5,10 @@ import { critterSound } from '../audio/ambient';
 import { useSettings } from '../store/settings';
 import { CRITTERS } from './critters';
 import { track } from '../net/analytics';
+import { localHeading, localPos } from '../scene/LocalPlayer';
+import { CHOMP_MS, enclosureAt, predatorPen } from './spots';
+import { useWorld } from '../store/world';
+import { t } from '../i18n';
 
 /** Critters currently in someone's arms (refreshed every frame by Critters.tsx). */
 export const heldCritters = new Set<string>();
@@ -32,7 +36,20 @@ export function myHolding(): string {
 export function toggleHug() {
   const held = myHolding();
   if (held) {
-    sendHold('');
+    // in front of me; standing at a zoo fence, reach over it into the enclosure
+    const sx = Math.sin(localHeading.y);
+    const sz = Math.cos(localHeading.y);
+    let d = 0.75;
+    if (!enclosureAt(localPos.x, localPos.z) && enclosureAt(localPos.x + sx * 1.6, localPos.z + sz * 1.6)) d = 1.6;
+    const x = localPos.x + sx * d;
+    const z = localPos.z + sz * d;
+    sendHold(`@${x.toFixed(2)},${z.toFixed(2)}`);
+    const pen = predatorPen(x, z);
+    const c = CRITTERS.find((k) => k.id === held);
+    if (pen && c) {
+      track('critter_eaten', { id: held, by: pen.item });
+      window.setTimeout(() => useWorld.getState().pushLive({ text: t('Oh no! {animal} ate {name}!', { animal: `${pen.names[0]} the ${pen.item}`, name: c.name }), level: 'warning' }), CHOMP_MS);
+    }
     return;
   }
   const id = useGame.getState().nearCritter;

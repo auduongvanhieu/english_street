@@ -40,7 +40,8 @@ export const CLOSE_BANNED = 4106;
 export const PROP_RE = /^dish:[a-z-]{2,24}$/;
 /** Garden summary: 6 plots "crop:wateredAt" (wateredAt 0 = seeded, not watered yet), empty plots "", joined by "|". */
 /** Bus ride: boarding (d) or arriving (a) at a stop in a shared bus slot (see apps/web/src/world/bus.ts). */
-export const BUS_RE = new RegExp(`^[da]:(main|${AREA_IDS.join('|')}):\\d{1,12}$`);
+/** "d:<stop>:<slot>[:<to>]" boarding (with where the bus takes them, so followers can hop on), "a:<stop>:<slot>" arriving. */
+export const BUS_RE = new RegExp(`^[da]:(main|${AREA_IDS.join('|')}):\\d{1,12}(:(main|${AREA_IDS.join('|')}))?$`);
 export const GARDEN_RE = /^(?:[a-z]{2,12}:\d{1,13})?(?:\|(?:[a-z]{2,12}:\d{1,13})?){5}$/;
 export const HOLDABLE_RE = /^(cat|dog|rabbit|duck|duckling|kid|lamb|guineapig)-\d{1,2}$/;
 

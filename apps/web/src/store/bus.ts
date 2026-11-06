@@ -5,7 +5,7 @@ import { serverNow, sendBus } from '../net/client';
 import { track } from '../net/analytics';
 import { useGame } from './game';
 import { BUS_STOPS } from '../world/areas';
-import { DOOR_DX, doorZ, T_DOORS_OPEN, T_GONE, busPose, encodeBus, kerbPoint, nearestStop, nextSlot, slotT, stopX, type StopId } from '../world/bus';
+import { DOOR_DX, doorZ, T_DOORS_OPEN, T_GONE, busPose, encodeBus, type BusTag, kerbPoint, nearestStop, nextSlot, slotT, stopX, type StopId } from '../world/bus';
 
 /**
  * The local player's bus ride, played as a little script on top of LocalPlayer:
@@ -20,6 +20,8 @@ export interface Ride {
   stage: Stage;
   depSlot: number;
   arrSlot: number;
+  /** caught this bus following someone (steps off beside them, not on top of them) */
+  follower?: boolean;
 }
 interface BusStore {
   ride: Ride | null;
@@ -44,10 +46,36 @@ export function startRide(to: StopId, from: { x: number; z: number }): { telepor
   const far = Math.hypot(from.x - kerb.x, from.z - kerb.z) > 14;
   const ride: Ride = { from: fromStop, to, stage: 'board', depSlot: nextSlot(serverNow(), far ? 3200 : 2600), arrSlot: 0 };
   useBus.setState({ ride, fade: 0 });
-  sendBus(encodeBus({ phase: 'd', stop: fromStop, slot: ride.depSlot }));
+  sendBus(encodeBus({ phase: 'd', stop: fromStop, slot: ride.depSlot, to }));
   track('bus_ride', { to, from: fromStop });
   speak(`Hop on! This bus goes to ${STOP_NAME(to)}.`);
   return far ? { teleport: kerb } : {};
+}
+
+/**
+ * Following someone who is getting on a bus: catch the same bus (same stop and slot) to the same place.
+ * Returns false when it is too late or too far to make it.
+ */
+export function joinRide(tag: BusTag, from: { x: number; z: number }): { teleport?: { x: number; z: number } } | null {
+  if (useBus.getState().ride || tag.phase !== 'd' || !tag.to || tag.to === tag.stop) return null;
+  const t = slotT(tag.slot, serverNow());
+  const kerb = kerbPoint(tag.stop);
+  const d = Math.hypot(from.x - kerb.x, from.z - kerb.z);
+  if (t > 1.2 || d > 90) return null;
+  const ride: Ride = { from: tag.stop, to: tag.to, stage: 'board', depSlot: tag.slot, arrSlot: 0, follower: true };
+  useBus.setState({ ride, fade: 0 });
+  sendBus(encodeBus({ phase: 'd', stop: tag.stop, slot: tag.slot, to: tag.to }));
+  track('bus_ride', { to: tag.to, from: tag.stop, follow: true });
+  // can't walk to the door in time: hop straight to the kerb
+  return d > 14 || t > -1.5 ? { teleport: kerb } : {};
+}
+
+/** Following someone on the same bus: arrive with their bus (their arrival slot can differ by one from ours). */
+export function matchArrival(tag: BusTag) {
+  const r = useBus.getState().ride;
+  if (!r || r.stage !== 'travel' || tag.phase !== 'a' || tag.stop !== r.to || tag.slot === r.arrSlot) return;
+  useBus.setState({ ride: { ...r, arrSlot: tag.slot } });
+  sendBus(encodeBus({ phase: 'a', stop: r.to, slot: tag.slot }));
 }
 
 /** Give up a ride before boarding (the player walked away). */
@@ -139,7 +167,7 @@ export function busStep(g: THREE.Object3D, dt: number, wantsToMove: boolean): { 
     return { anim: 'idle', hidden: true, snap: false };
   }
   const kerb = kerbPoint(r.to);
-  const moving = walkTo(g, kerb.x + 0.6, kerb.z + 0.2, 2.6, dt);
+  const moving = walkTo(g, kerb.x + (r.follower ? 1.9 : 0.6), kerb.z + (r.follower ? 0.9 : 0.2), 2.6, dt);
   if (!moving || t > 2.4) {
     useBus.setState({ ride: null, fade: 0 });
     sendBus('');
@@ -152,6 +180,6 @@ export function busStep(g: THREE.Object3D, dt: number, wantsToMove: boolean): { 
 export function localBusTag(): string {
   const r = useBus.getState().ride;
   if (!r) return '';
-  return r.stage === 'board' ? encodeBus({ phase: 'd', stop: r.from, slot: r.depSlot }) : encodeBus({ phase: 'a', stop: r.to, slot: r.arrSlot });
+  return r.stage === 'board' ? encodeBus({ phase: 'd', stop: r.from, slot: r.depSlot, to: r.to }) : encodeBus({ phase: 'a', stop: r.to, slot: r.arrSlot });
 }
 export { BUS_STOPS };

@@ -10,6 +10,8 @@ import { NameTag } from './NameTag';
 import { livePos, pushAway, sidestep } from '../world/avoid';
 import { playerPoints } from './players';
 import { heldCritters, holderOf } from '../world/hold';
+import { spotState, spots } from '../world/spots';
+import { roarSound } from '../audio/ambient';
 import { buildCritter, coatFor, type CritterParts } from './chibi/buildCritter';
 import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
@@ -22,8 +24,6 @@ const BASE_Y: Partial<Record<CritterKind, number>> = { duck: DUCK_Y, duckling: D
 /** English word shown with the critter's name when you are close ("dog - Luna"). */
 const KIND_WORD: Record<CritterKind, string> = { cat: 'cat', shiba: 'dog', husky: 'dog', duck: 'duck', duckling: 'duckling', rabbit: 'rabbit', kid: 'baby goat', lamb: 'lamb', guineapig: 'guinea pig' };
 const LABEL_RADIUS = 4;
-/** After being put down a critter stays put this long before heading back to its route. */
-const STAY_MS = 20000;
 /** Water starts here (Horizon.tsx RIVER_NEAR_Z). */
 const RIVER_EDGE_Z = 18;
 /** Critters beyond this distance are not animated/drawn (they are tiny anyway); river and meadow animals are seen from further. */
@@ -53,8 +53,8 @@ function CritterView({ c }: { c: Critter }) {
   const select = useGame((s) => s.setSelectedCritter);
   const acc = useRef(0);
   const off = useRef(new THREE.Vector2());
-  /** Put down somewhere: stay there a while, then walk (not glide) back to the scheduled route. */
-  const drop = useRef<{ until: number } | null>(null);
+  /** Eaten by a big cat (hidden until it is back on its route). */
+  const gone = useRef(false);
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
@@ -78,61 +78,92 @@ function CritterView({ c }: { c: Critter }) {
       livePos.delete(c.id);
       return;
     }
+    const now = serverNow();
+    const sp = spots.get(c.id);
+    const ss = spotState(c.id, now);
     if (heldCritters.delete(c.id)) {
       g.visible = true;
       reactUntil.current = Date.now() + 1500; // a happy wag after being put down
-      // ducks hurry straight back to the river; the others sit a while where they were put down
-      drop.current = { until: Date.now() + (c.kind === 'duck' || c.kind === 'duckling' ? 1200 : STAY_MS) };
+    }
+    // eaten by the lion / tiger: gone until it turns up on its usual walk again
+    if (ss === 'eaten') {
+      if (g.visible) {
+        g.visible = false;
+        if (Math.hypot(g.position.x - localPos.x, g.position.z - localPos.z) < 30) roarSound(Math.max(0.3, useSettings.getState().ambientVolume));
+      }
+      livePos.delete(c.id);
+      gone.current = true;
+      if (close) setClose(false);
+      return;
+    }
+    if (gone.current) {
+      // back from the lion's den: appear on the route
+      gone.current = false;
+      g.visible = true;
+      const q = poseAt(c, now);
+      g.position.set(q.x, BASE_Y[c.kind] ?? 0, q.z);
     }
     // ducks float on the river but stand on the grass when carried ashore
     const water = (c.kind === 'duck' || c.kind === 'duckling') && g.position.z > RIVER_EDGE_Z;
     const baseY = c.kind === 'duck' || c.kind === 'duckling' ? (water ? DUCK_Y : 0.08) : 0;
     g.position.y += (baseY - g.position.y) * Math.min(1, dt * 6);
     const reacting = reactUntil.current > Date.now();
-    const pose = poseAt(c, serverNow());
+    const onSpot = sp && (ss === 'stay' || ss === 'scared') ? sp : null;
+    const pose = poseAt(c, now);
+    // where it should be: its spot (put down there) or the scheduled walk
+    const hx = onSpot ? onSpot.x : pose.x;
+    const hz = onSpot ? onSpot.z : pose.z;
+    const walkingRoute = !onSpot && pose.clip === 'walk';
     // Step around players standing on the route (each client computes the same detour from the same player positions).
     // Walking: side-step off the path around people; resting: just shuffle away from anyone standing on it.
-    const push = pose.clip === 'walk' ? sidestep(pose.x, pose.z, pose.rot, playerPoints(), AVOID[c.kind]) : pushAway(pose.x, pose.z, playerPoints(), AVOID[c.kind], 1.6, Math.cos(pose.rot), -Math.sin(pose.rot));
+    const push = walkingRoute ? sidestep(hx, hz, pose.rot, playerPoints(), AVOID[c.kind]) : pushAway(hx, hz, playerPoints(), AVOID[c.kind], 1.6, Math.cos(pose.rot), -Math.sin(pose.rot));
     const ko = 1 - Math.pow(0.002, dt);
     off.current.x += (push.x - off.current.x) * ko;
     off.current.y += (push.z - off.current.y) * ko;
-    if (drop.current && !reacting) {
-      const d = drop.current;
-      if (Date.now() < d.until) {
-        state = 'idle'; // stays where it was put down
-      } else {
-        // walk/hop/paddle back to where its schedule is now, at its own pace
-        const mx = pose.x + off.current.x - g.position.x;
-        const mz = pose.z + off.current.y - g.position.z;
-        const dist = Math.hypot(mx, mz);
-        if (dist < 0.3) drop.current = null;
-        else {
-          const pace = water || (c.kind !== 'duck' && c.kind !== 'duckling') ? c.speed * 1.15 : 1.9; // waddle-run on land
-          const step = Math.min(dist, pace * dt);
-          g.position.x += (mx / dist) * step;
-          g.position.z += (mz / dist) * step;
-          g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(mx, mz)) * (1 - Math.pow(0.002, dt));
-          state = 'walk';
-        }
-      }
+    const tx = hx + off.current.x;
+    const tz = hz + off.current.y;
+    const mx = tx - g.position.x;
+    const mz = tz - g.position.z;
+    const dist = Math.hypot(mx, mz);
+    if (dist > 6) {
+      // joined late / came back from far away: just be there
+      g.position.x = tx;
+      g.position.z = tz;
+    } else if (ss === 'scared') {
+      // put down in front of a lion: frozen with fright, trembling
+      g.position.x += mx * Math.min(1, dt * 4);
+      g.position.z += mz * Math.min(1, dt * 4);
+      g.rotation.z = Math.sin(Date.now() / 25) * 0.06;
+      state = 'react';
+    } else if (onSpot && dist > 0.35) {
+      // walk (not glide) the last bit to its spot
+      const pace = water || (c.kind !== 'duck' && c.kind !== 'duckling') ? c.speed * 1.15 : 1.9;
+      const step = Math.min(dist, pace * dt);
+      g.position.x += (mx / dist) * step;
+      g.position.z += (mz / dist) * step;
+      g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(mx, mz)) * (1 - Math.pow(0.002, dt));
+      state = 'walk';
     } else if (!reacting) {
-      // Ease toward the scheduled pose so joining mid-walk never snaps.
+      // Ease toward the target so joining mid-walk never snaps.
       const k = 1 - Math.pow(0.001, dt);
-      const tx = pose.x + off.current.x;
-      const tz = pose.z + off.current.y;
-      const mx = tx - g.position.x;
-      const mz = tz - g.position.z;
       g.position.x += mx * k;
       g.position.z += mz * k;
-      // face where it is actually going while detouring
-      const heading = pose.clip === 'walk' && Math.hypot(mx, mz) > 0.02 ? Math.atan2(mx, mz) : pose.rot;
-      g.rotation.y += shortestAngle(g.rotation.y, heading) * k;
-      state = pose.clip === 'walk' ? 'walk' : pose.pauseT > 0.25 ? 'nap' : 'idle';
+      if (onSpot) {
+        // sitting where it was put: looks around, naps now and then
+        const age = (now - onSpot.t) / 1000;
+        state = age > 25 && Math.sin(age * 0.05 + c.offset) > 0 ? 'nap' : 'idle';
+      } else {
+        // face where it is actually going while detouring
+        const heading = walkingRoute && Math.hypot(mx, mz) > 0.02 ? Math.atan2(mx, mz) : pose.rot;
+        g.rotation.y += shortestAngle(g.rotation.y, heading) * k;
+        state = walkingRoute ? 'walk' : pose.pauseT > 0.25 ? 'nap' : 'idle';
+      }
     } else {
       // Face the player while reacting.
       g.rotation.y += shortestAngle(g.rotation.y, Math.atan2(localPos.x - g.position.x, localPos.z - g.position.z)) * 0.1;
       state = 'react';
     }
+    if (ss !== 'scared' && g.rotation.z !== 0) g.rotation.z = 0;
     livePos.set(c.id, { x: g.position.x, z: g.position.z });
     if (near) animate(rig.current, parts, c.kind, state, motion.current, dt, c.speed, !water);
     acc.current += dt;
@@ -161,7 +192,7 @@ function CritterView({ c }: { c: Critter }) {
       }}
     >
       {near ? <CritterBody parts={parts} rig={rig} scale={SCALE[c.kind]} /> : null}
-      {near && (selected || close) ? <NameTag name={`${KIND_WORD[c.kind]} - ${c.name}`} y={HEIGHT[c.kind] + 0.5} /> : null}
+      {near && (selected || close) ? <NameTag word={KIND_WORD[c.kind]} name={c.name} y={HEIGHT[c.kind] + 0.5} /> : null}
     </group>
   );
 }

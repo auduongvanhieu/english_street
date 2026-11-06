@@ -56,6 +56,8 @@ export const NPC_CHIBI: Record<string, ChibiSpec> = {
   // Themed areas
   zookeeper: npc({ body: 'tee', skin: '#c98e62', hair: '#3a2618', hairStyle: 'curly', top: '#6b8f3a', bottom: '#8a6a44', shoes: '#4a3424', hat: 'sunhat', hatColor: '#d9c27a', extras: ['badge'] }),
   farmer: npc({ body: 'girl', skin: '#eec1a0', hair: '#a0682f', hairStyle: 'short', top: '#e5533d', bottom: '#3a6ea5', shoes: '#5a3d2a', hat: 'cap', hatColor: '#f2c94c' }),
+  // Mia, the server who walks to your table (world/waiter.ts)
+  server: npc({ body: 'girl', skin: '#f6d7c3', hair: '#3a2618', hairStyle: 'ponytail', top: '#fafafa', bottom: '#161616', extras: ['bowtie', 'apron'], apronColor: '#b5452f' }),
   waiter: npc({ body: 'suit', skin: '#8a5634', hair: '#1c1410', hairStyle: 'short', top: '#fafafa', bottom: '#161616', extras: ['bowtie', 'apron'], apronColor: '#b5452f' }),
   chef: npc({ body: 'tee', skin: '#f6d7c3', hair: '#2d2118', hairStyle: 'buns', top: '#fafafa', bottom: '#2b2b2b', hat: 'paperhat', hatColor: '#ffffff', extras: ['apron'], apronColor: '#ffffff' }),
   grocer: npc({ body: 'tee', skin: '#e0ac80', hair: '#1c1410', hairStyle: 'ponytail', top: '#2a9d8f', bottom: '#2f3a44', extras: ['badge', 'apron'], apronColor: '#2a9d8f' }),

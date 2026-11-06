@@ -1,13 +1,20 @@
 import { Billboard, Text } from '@react-three/drei';
 
+/** Animal labels: English word in blue, the pet's own name in orange. */
+const WORD_COLOR = '#1d4ed8';
+const NAME_COLOR = '#c2410c';
+
 export function NameTag({
   name,
+  word,
   sub,
   bubble,
   badge,
   y = 2.0,
 }: {
   name: string;
+  /** Animals: the English word, drawn in its own colour before the name ("dog · Luna"). */
+  word?: string;
   sub?: string;
   bubble?: string;
   /** Status dot next to the name: 'shout' (red) while shouting, 'talk' (green) in a private talk with me, 'busy' (grey) talking to someone else. */
@@ -25,9 +32,23 @@ export function NameTag({
           <meshBasicMaterial color={badge === 'shout' ? '#ef4444' : badge === 'talk' ? '#22c55e' : '#9ca3af'} />
         </mesh>
       ) : null}
-      <Text fontSize={0.3} color="#111" anchorX="center" outlineWidth={0.02} outlineColor="#fff">
-        {name}
-      </Text>
+      {word ? (
+        <>
+          <Text position={[-0.1, 0, 0]} fontSize={0.3} color={WORD_COLOR} anchorX="right" outlineWidth={0.02} outlineColor="#fff">
+            {word}
+          </Text>
+          <Text fontSize={0.3} color="#888" anchorX="center" outlineWidth={0.02} outlineColor="#fff">
+            ·
+          </Text>
+          <Text position={[0.1, 0, 0]} fontSize={0.3} color={NAME_COLOR} anchorX="left" outlineWidth={0.02} outlineColor="#fff">
+            {name}
+          </Text>
+        </>
+      ) : (
+        <Text fontSize={0.3} color="#111" anchorX="center" outlineWidth={0.02} outlineColor="#fff">
+          {name}
+        </Text>
+      )}
       {sub ? (
         <Text position={[0, -0.3, 0]} fontSize={0.2} color="#444" anchorX="center" outlineWidth={0.015} outlineColor="#fff">
           {sub}

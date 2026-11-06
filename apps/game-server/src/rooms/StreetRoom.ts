@@ -68,6 +68,9 @@ async function checkBan(uid: string, tokenVersion?: number) {
   return s?.mutedUntil ?? 0;
 }
 
+/** How far from the player a pet may be put down (reaching over a low fence). */
+const DROP_REACH = 2.5;
+
 export class StreetRoom extends Room<{ state: StreetState }> {
   maxClients = STREET_ROOM_MAX_CLIENTS;
   /** Pending talk requests: target sessionId -> requester sessionId. */
@@ -164,16 +167,23 @@ export class StreetRoom extends Room<{ state: StreetState }> {
 
     // Pick up / put down a cat or dog. Critters live on the clients' shared clock, so the server only makes sure
     // that one critter has at most one holder.
+    // Put down with '' (just in front of the player) or '@x,z' (a spot within reach, e.g. over a low fence).
     this.onMessage<string>(MSG.HOLD, (client, id) => {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof id !== 'string') return;
-      if (id === '') {
+      if (id === '' || id.startsWith('@')) {
+        if (p.holding) {
+          const [x, z] = id ? id.slice(1).split(',').map(Number) : [NaN, NaN];
+          const ok = Number.isFinite(x) && Number.isFinite(z) && Math.hypot(x! - p.x, z! - p.z) <= DROP_REACH;
+          this.putDown(p.holding, ok ? x! : p.x + Math.sin(p.rot) * 0.75, ok ? z! : p.z + Math.cos(p.rot) * 0.75);
+        }
         p.holding = '';
         return;
       }
       if (!HOLDABLE_RE.test(id)) return;
       for (const q of this.state.players.values()) if (q !== p && q.holding === id) return;
       p.holding = id;
+      this.state.spots.delete(id);
     });
 
     this.onMessage<string>(MSG.PROP, (client, prop) => {
@@ -387,8 +397,14 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.talkRequests.delete(client.sessionId);
     this.lastShoutAt.delete(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
+    // a pet in their arms stays where they were standing
+    if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);
     this.state.players.delete(client.sessionId);
     console.log(`[street] ${p?.name ?? client.sessionId} left`);
+  }
+
+  private putDown(id: string, x: number, z: number) {
+    this.state.spots.set(id, `${x.toFixed(2)},${z.toFixed(2)},${Date.now()}`);
   }
 
   /** Resolve a relay target: must exist, not be the sender, and be within RELAY_RADIUS. */

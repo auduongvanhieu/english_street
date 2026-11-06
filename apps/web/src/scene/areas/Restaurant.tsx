@@ -1,4 +1,13 @@
+import { useRef, useState } from 'react';
+import * as THREE from 'three';
+import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import { Chibi } from '../chibi/Chibi';
+import { NPC_CHIBI } from '../npcLook';
+import { NameTag } from '../NameTag';
+import { TrayWith } from './Dish';
+import { useVoice } from '../../store/voice';
+import { WAITER_SPEED, waiter } from '../../world/waiter';
 import { BAR, RESTAURANT, TABLES, TABLE_R } from '../../world/buildings';
 import { FRONT_Z, areaById } from '../../world/areas';
 import { BuildingShell } from './Building';
@@ -62,11 +71,66 @@ export function Restaurant() {
         <Merged build={(p) => [[-163, -26], [-113, -26], [-163, -12], [-113, -12]].forEach(([x, z]) => tree(p, x!, z!, 1))} />
         <BuildingShell b={RESTAURANT} name="The Grand Garden Restaurant">
           <Interior />
+          <Server />
           <Text position={[(BAR.minX + BAR.maxX) / 2, 2.55, -28.2]} fontSize={0.45} color="#b5452f" anchorX="center">
             KITCHEN
           </Text>
         </BuildingShell>
       </group>
     </NearArea>
+  );
+}
+
+/** Mia walking the aisles for the local player's table (world/waiter.ts, store/restaurant.ts). */
+function Server() {
+  const g = useRef<THREE.Group>(null);
+  const [anim, setAnim] = useState('idle');
+  const [carry, setCarry] = useState('');
+  const [bubble, setBubble] = useState('');
+  const speaking = useVoice((s) => s.speakingNpc === 'server');
+  useFrame((_, rawDt) => {
+    const grp = g.current;
+    if (!grp) return;
+    const dt = Math.min(rawDt, 0.1);
+    const w = waiter;
+    const next = w.path[0];
+    let a = 'idle';
+    let heading = w.rot;
+    if (next) {
+      const dx = next.x - w.x;
+      const dz = next.z - w.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.03) {
+        w.path.shift();
+        if (!w.path.length) {
+          const done = w.onArrive;
+          w.onArrive = null;
+          done?.();
+        }
+      } else {
+        const step = Math.min(d, WAITER_SPEED * dt);
+        w.x += (dx / d) * step;
+        w.z += (dz / d) * step;
+        heading = Math.atan2(dx, dz);
+        a = 'walk';
+      }
+    } else if (w.face) heading = Math.atan2(w.face.x - w.x, w.face.z - w.z);
+    let dr = heading - w.rot;
+    dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+    w.rot += dr * (1 - Math.exp(-dt * 10));
+    grp.position.set(w.x, 0, w.z);
+    grp.rotation.y = w.rot;
+    if (a !== anim) setAnim(a);
+    const c = w.path.length ? w.carry : '';
+    if (c !== carry) setCarry(c);
+    const b = Date.now() < w.bubbleUntil ? w.bubble : '';
+    if (b !== bubble) setBubble(b);
+  });
+  return (
+    <group ref={g} position={[waiter.x, 0, waiter.z]}>
+      <Chibi spec={NPC_CHIBI.server!} anim={anim === 'idle' && speaking ? 'talk' : anim} hug={!!carry} />
+      {carry ? <TrayWith item={carry.startsWith('dish:') ? carry.slice(5) : carry} /> : null}
+      <NameTag name="Mia" sub="Server" bubble={bubble} />
+    </group>
   );
 }

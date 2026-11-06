@@ -10,6 +10,8 @@ import { serverNow } from '../../net/client';
 import { localPos } from '../LocalPlayer';
 import { NameTag } from '../NameTag';
 import { useArea } from '../../store/area';
+import type { Enclosure } from '../../world/zooLayout';
+import { CHOMP_MS, preyIn } from '../../world/spots';
 
 interface Rig {
   body?: THREE.Group;
@@ -31,6 +33,7 @@ export function Animal({
   pause = 6,
   offset = 0,
   labelRadius = 7,
+  pen,
 }: {
   id: string;
   kind: AnimalKind;
@@ -43,13 +46,15 @@ export function Animal({
   pause?: number;
   offset?: number;
   labelRadius?: number;
+  /** Lion / tiger: its enclosure, to go for a pet someone drops in there (world/spots.ts). */
+  pen?: Enclosure;
 }) {
   const parts = animalParts(kind);
   const scale = ANIMAL_SCALE[kind];
   const sched = useMemo(() => ({ id, kind: 'cat', name, path, speed, pause, offset, sentence: '', word: { en: word, vi: '' }, sound: 'meow' }) as Critter, [id, name, path, speed, pause, offset, word]);
   const g = useRef<THREE.Group>(null);
   const rig = useRef<Rig>({ legs: [] });
-  const m = useRef({ t: Math.random() * 10, phase: 0, rot: 0, acc: 0 });
+  const m = useRef({ t: Math.random() * 10, phase: 0, rot: 0, acc: 0, x: NaN, z: NaN, huntId: '', hx: 0, hz: 0 });
   const [close, setClose] = useState(false);
   const openCard = useArea((s) => s.openCard);
 
@@ -58,17 +63,68 @@ export function Animal({
     if (!grp) return;
     const dt = Math.min(rawDt, 0.1);
     const st = m.current;
-    const p = poseAt(sched, serverNow());
-    grp.position.set(p.x, 0, p.z);
-    let d = p.rot - st.rot;
+    const now = serverNow();
+    const p = poseAt(sched, now);
+    if (Number.isNaN(st.x)) {
+      st.x = p.x;
+      st.z = p.z;
+    }
+    let walking = p.clip === 'walk';
+    let heading = p.rot;
+    let pace = speed;
+    let eat = 0;
+    let leap = 0;
+    const prey = pen ? preyIn(pen, now) : null;
+    const dx = (prey ? prey.x : p.x) - st.x;
+    const dz = (prey ? prey.z : p.z) - st.z;
+    const dist = Math.hypot(dx, dz);
+    if (prey && prey.age < CHOMP_MS) {
+      // a pet was dropped in: stalk… then charge at it and pounce (timed, so it lands the pounce on every device)
+      if (st.huntId !== prey.id) {
+        st.huntId = prey.id;
+        st.hx = st.x;
+        st.hz = st.z;
+      }
+      const k = Math.min(1, Math.max(0, (prey.age - 600) / (CHOMP_MS - 900)));
+      const ex = prey.x - st.hx;
+      const ez = prey.z - st.hz;
+      const reach = Math.max(0, 1 - 0.7 / (Math.hypot(ex, ez) || 1));
+      const nx = st.hx + ex * k * reach;
+      const nz = st.hz + ez * k * reach;
+      walking = Math.hypot(nx - st.x, nz - st.z) > 0.001;
+      st.x = nx;
+      st.z = nz;
+      heading = Math.atan2(dx, dz);
+      pace = 3;
+      leap = Math.max(0, 1 - Math.abs(prey.age - (CHOMP_MS - 250)) / 250);
+    } else if (prey) {
+      // munching where it caught it
+      heading = Math.atan2(dx, dz);
+      walking = false;
+      eat = 1;
+    } else if (dist > 0.4) {
+      st.huntId = '';
+      // trot back to its usual walk
+      const step = Math.min(dist, 2.2 * dt);
+      st.x += (dx / dist) * step;
+      st.z += (dz / dist) * step;
+      heading = Math.atan2(dx, dz);
+      walking = true;
+    } else {
+      st.x = p.x;
+      st.z = p.z;
+    }
+    grp.position.set(st.x, leap * 0.6, st.z);
+    let d = heading - st.rot;
     d = Math.atan2(Math.sin(d), Math.cos(d));
-    st.rot += d * (1 - Math.exp(-dt * 5));
+    st.rot += d * (1 - Math.exp(-dt * (prey ? 12 : 5)));
     grp.rotation.y = st.rot;
-    animate(rig.current, parts, p.clip === 'walk', st, dt, speed);
+    animate(rig.current, parts, walking, st, dt, pace);
+    if (eat && rig.current.head) rig.current.head.rotation.x = 0.45 + Math.abs(Math.sin(st.t * 9)) * 0.25;
     st.acc += dt;
     if (st.acc > 0.4) {
       st.acc = 0;
-      const c = Math.hypot(p.x - localPos.x, p.z - localPos.z) < labelRadius;
+      const c = Math.hypot(st.x - localPos.x, st.z - localPos.z) < labelRadius;
       if (c !== close) setClose(c);
     }
   });
@@ -83,7 +139,7 @@ export function Animal({
       }}
     >
       <AnimalBody parts={parts} scale={scale} rig={rig} />
-      {close ? <NameTag name={`${word} - ${name}`} y={height + 0.35} /> : null}
+      {close ? <NameTag word={word} name={name} y={height + 0.35} /> : null}
     </group>
   );
 }
