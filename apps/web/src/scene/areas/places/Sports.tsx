@@ -1,9 +1,14 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import { AREA, BLEACHERS, COURT, FRAME, HALL, PING_PONG, PITCH, SCOREBOARD, TRACK, gamesInHall } from '../../../world/places/sports';
+import { AREA, BENCHES, BLEACHERS, COURT, FRAME, HALL, PING_PONG, PITCH, SCOREBOARD, TRACK, gamesInHall } from '../../../world/places/sports';
 import { useArea } from '../../../store/area';
 import { BuildingShell } from '../Building';
+import { useSports } from '../../../store/sports';
+import { serverNow } from '../../../net/client';
+
+const Football = lazy(() => import('./Football'));
+const Minigames = lazy(() => import('./Minigames'));
 import { AreaGroup, Ground, Merged, Sign, box, cyl, sphere, tree, type Part } from '../kit';
 
 const WHITE = '#ffffff';
@@ -90,8 +95,6 @@ function Outdoor() {
             p.add(box(0.03, 1.5, 3.2), '#dfe6ea', { p: [x + s * 0.9, 0.8, pcz], r: [0, 0, s * 0.55] });
             for (const dz of [-1.6, 1.6]) p.add(box(1, 1.5, 0.03), '#dfe6ea', { p: [x + s * 0.45, 0.8, pcz + dz] });
           }
-          // a ball on the centre spot
-          p.add(sphere(0.2, 0, Math.PI, 0, Math.PI * 2, 10, 8), WHITE, { p: [pcx + 0.6, 0.2, pcz + 0.4] });
           // basketball hoops: pole, backboard, ring
           for (const [x, s] of [
             [COURT.x0 - 0.05, 1],
@@ -155,6 +158,8 @@ function Outdoor() {
         }}
       />
       <Sign x={-6.5} z={-7.6} text="Football" sub="Pitch" color="#2f7d4f" w={2.4} />
+      <Sign x={BENCHES.redLocalX} z={BENCHES.signZ} text="Red team" sub="Join here" color="#c0392b" w={2.2} y={1.2} />
+      <Sign x={BENCHES.blueLocalX} z={BENCHES.signZ} text="Blue team" sub="Join here" color="#1f5fb8" w={2.2} y={1.2} />
       <Sign x={-4.2} z={-12.2} text="Basketball" sub="Court" color="#c0602a" w={2.6} />
       <Text position={[TRACK.x0 + 2, 0.04, (TRACK.z0 + TRACK.z1) / 2]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} fontSize={0.6} color={WHITE} anchorX="center" anchorY="middle">
         START
@@ -169,6 +174,20 @@ function Outdoor() {
 /** Scoreboard behind the pitch; its message follows the weather. Tap it to play. */
 function Scoreboard({ rainy }: { rainy: boolean }) {
   const { x, z } = SCOREBOARD;
+  const red = useSports((s) => s.red);
+  const blue = useSports((s) => s.blue);
+  const endsAt = useSports((s) => s.endsAt);
+  const [clock, setClock] = useState('4:00');
+  useEffect(() => {
+    if (!endsAt) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((endsAt - serverNow()) / 1000));
+      setClock(`${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [endsAt]);
   return (
     <group onClick={openGames}>
       <Merged
@@ -181,11 +200,17 @@ function Scoreboard({ rainy }: { rainy: boolean }) {
       <Text position={[x, 5.0, z + 0.17]} fontSize={0.36} color="#f2c94c" anchorX="center" anchorY="middle">
         SUNNY SPORTS PARK
       </Text>
-      <Text position={[x, 4.3, z + 0.17]} fontSize={0.48} color="#ff5c5c" anchorX="center" anchorY="middle">
-        HOME 2 : 1 AWAY
+      <Text position={[x - 1.25, 4.3, z + 0.17]} fontSize={0.48} color="#ff6b5c" anchorX="center" anchorY="middle">
+        {`RED ${red}`}
       </Text>
-      <Text position={[x, 3.5, z + 0.17]} fontSize={0.26} color={rainy ? '#7fd0ff' : '#9ef59e'} anchorX="center" anchorY="middle" maxWidth={4.8} textAlign="center">
-        {rainy ? 'Rain today! Games in the hall' : 'Mini games with Coach Max!'}
+      <Text position={[x, 4.3, z + 0.17]} fontSize={0.48} color="#ffffff" anchorX="center" anchorY="middle">
+        :
+      </Text>
+      <Text position={[x + 1.25, 4.3, z + 0.17]} fontSize={0.48} color="#5ca8ff" anchorX="center" anchorY="middle">
+        {`${blue} BLUE`}
+      </Text>
+      <Text position={[x, 3.5, z + 0.17]} fontSize={0.26} color={endsAt ? '#f2c94c' : rainy ? '#7fd0ff' : '#9ef59e'} anchorX="center" anchorY="middle" maxWidth={4.8} textAlign="center">
+        {endsAt ? `TIME ${clock}` : rainy ? 'Rain today! Games in the hall' : 'Join a team and kick off!'}
       </Text>
     </group>
   );
@@ -246,6 +271,11 @@ function Hall({ rainy }: { rainy: boolean }) {
 export default function Sports() {
   const rainy = useRainy();
   return (
+    <>
+    <Suspense fallback={null}>
+      <Football />
+      <Minigames />
+    </Suspense>
     <AreaGroup area={AREA}>
       <Outdoor />
       <Scoreboard rainy={rainy} />
@@ -257,5 +287,6 @@ export default function Sports() {
         <Sign x={HALL.doorX + 3.2} z={HALL.z1 + 1.4} text={rainy ? 'Games in the hall today' : 'Games outside today'} sub={rainy ? "It's raining!" : "It's a sunny day!"} color={rainy ? '#2f6b8a' : '#2f7d4f'} />
       </group>
     </AreaGroup>
+    </>
   );
 }

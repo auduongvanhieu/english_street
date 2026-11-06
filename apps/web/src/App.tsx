@@ -30,6 +30,10 @@ import { initFriends, setZoneJumper } from './store/friends';
 import { initGroup } from './store/group';
 import { SocialToasts } from './ui/Social';
 import { initHotel } from './store/hotel';
+import { initSports, useSports } from './store/sports';
+import { SportsHud } from './ui/sports/SportsHud';
+import { MinigameHud } from './ui/sports/MinigameHud';
+import { useMini } from './store/minigames';
 import { HotelPanels, HotelToasts } from './ui/hotel/HotelPanels';
 import { DmToast, PlayersButton, PlayersPanel } from './ui/PlayersPanel';
 import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
@@ -46,7 +50,7 @@ import { localPos, teleportTo } from './scene/LocalPlayer';
 import { CYCLISTS, cyclistAt } from './world/cyclists';
 import { CRITTERS, poseAt } from './world/critters';
 import { livePos } from './world/avoid';
-import { freezeClock, serverNow } from './net/client';
+import { ballState, freezeClock, serverNow } from './net/client';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { UseButton, UsePrompt } from './ui/UseButton';
 import { useNearest } from './world/usables';
@@ -73,7 +77,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini };
 }
 
 export default function App() {
@@ -122,6 +126,7 @@ export default function App() {
     const offFriends = initFriends();
     const offGroup = initGroup();
     const offHotel = initHotel();
+    const offSports = initSports();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -130,6 +135,7 @@ export default function App() {
       offFriends();
       offGroup();
       offHotel();
+      offSports();
       offWatch();
       offNative();
     };
@@ -391,6 +397,8 @@ export default function App() {
       <DmToast />
       <SocialToasts />
       <HotelToasts />
+      <SportsHud />
+      <MinigameHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type SportEvent, type SportSend, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -29,6 +29,7 @@ interface PlayerLike {
   prop?: string;
   garden?: string;
   bus?: string;
+  team?: string;
 }
 interface GroupLike {
   id: string;
@@ -39,7 +40,16 @@ interface StreetStateLike {
   players: Map<string, PlayerLike>;
   spots: Map<string, string>;
   groups: Map<string, GroupLike>;
+  ball?: { x: number; y: number; z: number };
+  match?: { red: number; blue: number; endsAt: number };
 }
+
+/** The sports park football as last sent by the server (world coordinates); read every frame by the ball mesh. */
+export const ballState = { x: 0, y: -10, z: 0, at: 0, px: 0, py: -10, pz: 0, pat: 0 };
+const sportHandlers = new Set<(m: SportEvent) => void>();
+export const onSport = (fn: (m: SportEvent) => void) => (sportHandlers.add(fn), () => sportHandlers.delete(fn));
+const matchHandlers = new Set<(m: { red: number; blue: number; endsAt: number }) => void>();
+export const onMatch = (fn: (m: { red: number; blue: number; endsAt: number }) => void) => (matchHandlers.add(fn), () => matchHandlers.delete(fn));
 
 let room: Room<StreetStateLike> | null = null;
 /** Last garden summary sent to the current room (re-sent after reconnecting). */
@@ -156,6 +166,7 @@ function bindRoom(r: Room<StreetStateLike>) {
       bus: p.bus ?? '',
       group: p.group ?? '',
       groupCall: !!p.groupCall,
+      team: p.team ?? '',
     });
 
   $(r.state).players.onAdd((p, id) => {
@@ -169,6 +180,29 @@ function bindRoom(r: Room<StreetStateLike>) {
     $(x).onChange(() => syncGroup(x, id));
   });
   $(r.state).groups.onRemove((_x, id) => g.setGroupMeta(null, id));
+  // the ball and the match score are child schemas: they arrive with the first state patch
+  $(r.state).listen('ball', (ball) => {
+    if (!ball) return;
+    const syncBall = () => {
+      const b = ballState;
+      b.px = b.x;
+      b.py = b.y;
+      b.pz = b.z;
+      b.pat = b.at;
+      b.x = ball.x;
+      b.y = ball.y;
+      b.z = ball.z;
+      b.at = performance.now();
+    };
+    syncBall();
+    $(ball).onChange(syncBall);
+  });
+  $(r.state).listen('match', (match) => {
+    if (!match) return;
+    const syncMatch = () => matchHandlers.forEach((h) => h({ red: match.red, blue: match.blue, endsAt: match.endsAt }));
+    syncMatch();
+    $(match).onChange(syncMatch);
+  });
   spots.clear();
   $(r.state).spots.onAdd((v, id) => setSpot(id, v));
   $(r.state).spots.onChange((v, id) => setSpot(id, v));
@@ -186,6 +220,7 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<GroupEvent>(MSG.GROUP, (m) => groupHandlers.forEach((h) => h(m)));
   r.onMessage<FriendEvent>(MSG.FRIEND, (m) => friendHandlers.forEach((h) => h(m)));
   r.onMessage<HotelEvent>(MSG.HOTEL, (m) => hotelHandlers.forEach((h) => h(m)));
+  r.onMessage<SportEvent>(MSG.SPORT, (m) => sportHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
     if (!m || typeof m.text !== 'string') return;
     useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });
@@ -243,6 +278,9 @@ export function sendShout(text: string) {
 
 export function sendGroup(msg: GroupSend) {
   room?.send(MSG.GROUP, msg);
+}
+export function sendSport(msg: SportSend) {
+  room?.send(MSG.SPORT, msg);
 }
 export function sendHotel(msg: HotelSend) {
   room?.send(MSG.HOTEL, msg);

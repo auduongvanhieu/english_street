@@ -68,3 +68,10 @@ CDP CPU profile, headless, 3 s of walking (low quality): JS busy time ≈ 1.87 s
 (walking into a cat); React (`jsxDEV`/`createElement`/`diffProps`) dropped out of the top samples entirely.
 Rule: never call a Zustand store hook without a selector in a component that renders the scene or large UI.
 
+
+## Sports park minigames (2026-11-06)
+
+Football: one ball mesh (320 tris) + a shadow disc, one ring per player on a team; the server simulates the ball at
+30 Hz only while someone is within 30 m of the pitch (the room's simulation interval went 1 Hz → 30 Hz; bubbles and the
+heat map still run once a second). Ball patches ride the normal 20 Hz state patch (3 floats). Minigames add 3 cones,
+3 start rings and one basketball: +8 draw calls near the park, nothing elsewhere (lazy chunks `Football`, `Minigames`).

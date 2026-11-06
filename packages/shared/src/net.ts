@@ -38,6 +38,8 @@ export const MSG = {
   FRIEND: 'friend',
   /** both ways: hotel doors - knock on a room, the guest inside opens it (HotelSend / HotelEvent) */
   HOTEL: 'hotel',
+  /** both ways: sports park - kick the ball, pick a team (SportSend); goals and results (SportEvent) */
+  SPORT: 'sport',
 } as const;
 
 /** Close codes the server uses when it removes a player (client shows why). */

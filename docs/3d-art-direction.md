@@ -132,6 +132,7 @@ Whole-scene budgets (docs/PERF.md):
 | Other trees, flowers | code (`treeTiles.ts`, `kit.tree`) + Quaternius | many | kept |
 | Farm: barn, coop, windmill (+ turning sails), troughs, hay bales, market stall | LPM `farm_kit`, merged into the farm mesh (`Part.addColored`) | 1 area | ✅ rebuilt |
 | Zoo: zookeeper hut, benches, rocks (tinted per habitat), bear cave, hay feeder, hutch | LPM `zoo_kit`, merged into the zoo mesh | 1 area | ✅ rebuilt; fences, pools and bamboo still code |
+| Sports park: football (live, server physics), basketball (hoops throws), training cones (tinted red / blue / yellow for "Coach says") | LPM `sports_kit` (320 / 256 / 56 tris) | 1 + 1 + 3 | ✅ new 2026-11-06 (the old centre-spot ball was a code sphere) |
 | Restaurant, supermarket, places | code (`Part` / `Merged`) | 1 each | next: rebuild per area |
 | Chibi, animals, critters | code (`buildChibi`, `buildAnimal`, `buildCritter`) | many | kept in code: rounded chibi style + joint rig; the zebra was rebuilt in code on 2026-11-06 on a horse frame (neck, long head, mane, body/leg stripes) to stay consistent with the other animals |
 

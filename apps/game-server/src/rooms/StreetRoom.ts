@@ -26,6 +26,8 @@ import {
   inRect,
   isHotelRoom,
   type HotelEvent,
+  type SportEvent,
+  type SportSend,
   type HotelSend,
   GROUP_CHAT_MAX,
   GROUP_MAX,
@@ -48,6 +50,7 @@ import {
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { Group, Player, StreetState } from './schema/StreetState';
+import { Football } from './football';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
@@ -101,6 +104,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Pending group invitations: invited sessionId -> group id + who invited. */
   private groupInvites = new Map<string, { group: string; from: string; at: number }>();
   private lastGroupChatAt = new Map<string, number>();
+  private football: Football | null = null;
   /** Hotel: who knocked on whose door (visitor sessionId -> room), so only invited visitors get let in. */
   private knocks = new Map<string, { room: number; at: number }>();
   /** Friend presence queries / pings per session (rate limits). */
@@ -311,6 +315,15 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       }
     });
 
+    // Sports park football: kicks (validated by distance) and teams; the ball runs at 30 Hz near the pitch.
+    this.football = new Football(this.state.ball, this.state.match, () => this.state.players.entries(), (ev) => this.broadcast(MSG.SPORT, ev satisfies SportEvent));
+    this.onMessage<SportSend>(MSG.SPORT, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg !== 'object') return;
+      if (msg.op === 'kick' && typeof msg.dir === 'number' && Number.isFinite(msg.dir)) this.football!.kick(client.sessionId, p, msg.dir, Number(msg.power));
+      else if (msg.op === 'team') p.team = msg.team === 'red' || msg.team === 'blue' ? msg.team : '';
+    });
+
     // Hotel doors: knock from the corridor, the guests inside the room (by position) answer.
     this.onMessage<HotelSend>(MSG.HOTEL, (client, msg) => {
       const p = this.state.players.get(client.sessionId);
@@ -398,14 +411,20 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       target.send(MSG.PAIR, { ...msg, from: client.sessionId });
     });
 
+    // 30 Hz: the football (only while somebody is near the pitch); once a second: chat bubbles and the heat map
     let lastHeat = Date.now();
-    this.setSimulationInterval(() => {
+    let lastSecond = Date.now();
+    this.setSimulationInterval((dtMs) => {
+      if (this.football!.awake()) this.football!.step(Math.min(0.1, dtMs / 1000));
+      const now = Date.now();
+      if (now - lastSecond < 1000) return;
+      lastSecond = now;
       this.expireBubbles();
-      if (Date.now() - lastHeat >= HEAT_EVERY_MS) {
-        lastHeat = Date.now();
+      if (now - lastHeat >= HEAT_EVERY_MS) {
+        lastHeat = now;
         this.state.players.forEach((p: Player) => sampleHeat(p.x, p.z));
       }
-    }, 1000);
+    }, 1000 / 30);
   }
 
   onDispose() {
@@ -563,6 +582,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.lastPresenceAt.delete(client.sessionId);
     this.lastPingAt.delete(client.sessionId);
     this.knocks.delete(client.sessionId);
+    this.football?.forget(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
     // a pet in their arms stays where they were standing
     if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);

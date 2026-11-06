@@ -27,6 +27,8 @@ export interface RemotePlayer {
   /** group id ('' = none) and whether they are in its voice call */
   group: string;
   groupCall: boolean;
+  /** sports park football team ('' = none) */
+  team?: string;
 }
 
 /** A group in this zone (members = players whose `group` is its id). */

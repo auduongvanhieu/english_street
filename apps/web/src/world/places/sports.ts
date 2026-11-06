@@ -1,3 +1,4 @@
+import { goalOf } from '@es/shared';
 import { areaById, areaFrame } from '../areas';
 import { walls, type Building } from '../buildings';
 import { registerBlockers, type Aabb } from '../layout';
@@ -25,6 +26,20 @@ export const PING_PONG = [
   { x: 22.5, z: -4.5 },
 ];
 const goalZ = (PITCH.z0 + PITCH.z1) / 2;
+
+/**
+ * Football team benches on the near touchline, either side of the bleachers (local x −25 and −8, z −9). Red's bench
+ * is at the end red defends (red attacks goalOf('red') in world x). Must match @es/shared FOOTBALL.pitch:
+ * FRAME.rect(PITCH) is the server's pitch.
+ */
+function benches() {
+  const z = PITCH.z1 + 0.5;
+  const a = FRAME.toWorld(PITCH.x0 + 1, z);
+  const b = FRAME.toWorld(PITCH.x1 - 2, z);
+  const aFar = Math.abs(a[0] - goalOf('red')) > Math.abs(b[0] - goalOf('red'));
+  return { red: aFar ? a : b, blue: aFar ? b : a, redLocalX: aFar ? PITCH.x0 + 1 : PITCH.x1 - 2, blueLocalX: aFar ? PITCH.x1 - 2 : PITCH.x0 + 1, signZ: z + 0.5 };
+}
+export const BENCHES = benches();
 
 export const LOCAL_BLOCKERS: Aabb[] = [
   ...walls(HALL),

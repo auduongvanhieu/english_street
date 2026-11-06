@@ -1,4 +1,4 @@
-import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode } from '@es/shared';
+import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode, MinigameId } from '@es/shared';
 import { learnerLang, t, tk } from '../i18n';
 import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
@@ -48,6 +48,9 @@ const get = <T>(path: string) => request<T>('GET', path);
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
 
 export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
+export type MinigameResult = { xp: number; coins: number; capped: boolean; record: boolean; best: number | null; left: number };
+export const reportMinigame = (game: MinigameId, r: { result?: 'win' | 'draw' | 'lose'; score?: number }) => post<MinigameResult>('/me/minigame', { playerId: getPlayerId(), game, ...r });
+export const fetchMinigameBoard = (game: MinigameId) => get<{ board: { name: string; score: number }[] }>(`/minigames/board?game=${game}`);
 export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);
 export const hotelCheckin = (nights: number) => post<{ stay: HotelStay; coins: number; free?: boolean }>('/me/hotel/checkin', { playerId: getPlayerId(), nights });
 export const hotelMinibar = (item: string) => post<{ stay: HotelStay }>('/me/hotel/minibar', { playerId: getPlayerId(), item });

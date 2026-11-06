@@ -32,6 +32,8 @@ export class Player extends Schema {
   @type('string') group = '';
   /** In their group's voice call (members in the call hear each other at any distance). */
   @type('boolean') groupCall = false;
+  /** Sports park football team ('' = none). */
+  @type('string') team = '';
 }
 
 /** A small group of players in this zone: group chat + group voice call. Members = players with this group id. */
@@ -42,9 +44,25 @@ export class Group extends Schema {
   @type('string') owner = '';
 }
 
+/** The football on the sports park pitch (server physics, world coordinates). */
+export class Ball extends Schema {
+  @type('number') x = 0;
+  @type('number') y = 0;
+  @type('number') z = 0;
+}
+
+/** Score of the current football match; endsAt = 0 until the first kick. */
+export class Match extends Schema {
+  @type('number') red = 0;
+  @type('number') blue = 0;
+  @type('number') endsAt = 0;
+}
+
 export class StreetState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
   /** Critters put down somewhere: id → "x,z,t" (t = server ms). They stay there until someone picks them up. */
   @type({ map: 'string' }) spots = new MapSchema<string>();
   @type({ map: Group }) groups = new MapSchema<Group>();
+  @type(Ball) ball = new Ball();
+  @type(Match) match = new Match();
 }
