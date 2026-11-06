@@ -36,5 +36,6 @@ export const MINIGAMES = {
   race: { finish: 8, record: 15, perDay: 3 },
   coach: { perPoint: 2, max: 16, perDay: 3 },
   fishing: { perPoint: 2, max: 10, perDay: 6 },
+  cooking: { perPoint: 3, max: 18, perDay: 3 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

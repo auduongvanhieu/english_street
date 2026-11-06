@@ -5,13 +5,60 @@ import { Text } from '@react-three/drei';
 import { Chibi } from '../chibi/Chibi';
 import { NPC_CHIBI } from '../npcLook';
 import { NameTag } from '../NameTag';
-import { TrayWith } from './Dish';
+import { Dish, TrayWith } from './Dish';
+import { useLpmParts } from '../LpmModel';
+import { chibiMaterial } from '../chibi/buildChibi';
+import { COOK_Z, PASS, STATIONS, STATION_Z, type Station } from '../../world/kitchen';
+import { useKitchen } from '../../store/kitchen';
+import { useUsable } from '../../world/usables';
+import { t as tr } from '../../i18n';
 import { useVoice } from '../../store/voice';
 import { WAITER_SPEED, waiter } from '../../world/waiter';
 import { BAR, RESTAURANT, TABLES, TABLE_R } from '../../world/buildings';
 import { FRONT_Z, areaById } from '../../world/areas';
 import { BuildingShell } from './Building';
 import { Ground, Merged, NearArea, box, cyl, sphere, tree } from './kit';
+
+/** The open kitchen behind the bar: LPM kitchen_kit stations, a usable for each, the finished dish on the pass. */
+function Kitchen() {
+  const parts = useLpmParts('kitchen_kit');
+  const recipe = useKitchen((s) => s.recipe);
+  const done = useKitchen((s) => (s.recipe ? s.step >= s.recipe.steps.length : false));
+  const served = useKitchen((s) => s.served);
+  return (
+    <group>
+      {(Object.keys(STATIONS) as Station[]).map((k) => {
+        const st = STATIONS[k];
+        return k === 'pass' ? (
+          <mesh key={k} geometry={parts[st.kit]!} material={chibiMaterial()} position={[PASS.x, PASS.y, PASS.z]} />
+        ) : (
+          <mesh key={k} geometry={parts[st.kit]!} material={chibiMaterial()} position={[st.x, 0, k === 'spices' ? -28.38 : STATION_Z]} castShadow receiveShadow />
+        );
+      })}
+      {(Object.keys(STATIONS) as Station[]).map((k) => (
+        <StationUse key={k} st={k} cooking={!!recipe && !done} />
+      ))}
+      {served ? (
+        <group position={[PASS.x, PASS.y + 0.02, PASS.z]} scale={2}>
+          <Dish item={served} />
+        </group>
+      ) : null}
+    </group>
+  );
+}
+
+function StationUse({ st, cooking }: { st: Station; cooking: boolean }) {
+  const s = STATIONS[st];
+  // not cooking: the chopping board starts the game (pick a recipe)
+  useUsable(
+    cooking
+      ? { id: `kitchen-${st}`, x: s.x, z: COOK_Z, r: Math.max(0.9, s.w / 2 + 0.25), icon: '🍳', label: tr(s.label), priority: true, use: () => useKitchen.getState().use(st) }
+      : st === 'prep'
+        ? { id: 'kitchen-start', x: s.x, z: COOK_Z, r: 1.2, icon: '👩‍🍳', label: tr('Cook a dish'), priority: true, use: () => useKitchen.getState().openRecipes() }
+        : null,
+  );
+  return null;
+}
 
 /** Tables with chairs, a bar with an open kitchen, plants and hanging lamps. */
 function Interior() {
@@ -37,9 +84,7 @@ function Interior() {
         p.add(box(BAR.maxX - BAR.minX + 0.2, 0.06, BAR.maxZ - BAR.minZ + 0.2), '#2b2b2b', { p: [bx, 1.07, (BAR.minZ + BAR.maxZ) / 2] });
         for (let x = BAR.minX + 1; x < BAR.maxX; x += 1.6) for (let k = 0; k < 2; k++) p.add(cyl(0.05, 0.05, 0.25, 8), ['#2f7d4f', '#8a2b2b', '#c9a227'][Math.abs(Math.floor(x + k)) % 3]!, { p: [x + k * 0.3, 1.88, -28.0] });
         p.add(box(BAR.maxX - BAR.minX, 0.05, 0.4), '#8b5a2b', { p: [bx, 1.75, -28.05] });
-        // stove + pots in the kitchen
-        p.add(box(4, 0.9, 0.8), '#b0b8bf', { p: [-144, 0.45, -27.7] });
-        for (const x of [-145.2, -143.8]) p.add(cyl(0.28, 0.25, 0.3, 12), '#555b61', { p: [x, 1.05, -27.7] });
+        // (the kitchen stations are LPM pieces: Kitchen below)
         // plants in the corners and by the door
         for (const [x, z] of [[-158.6, -27], [-117.4, -27], [-158.6, -10.4], [-117.4, -10.4], [-140.6, -10.2], [-135.4, -10.2]] as const) {
           p.add(cyl(0.3, 0.22, 0.5, 10), '#b5452f', { p: [x, 0.25, z] });
@@ -71,6 +116,7 @@ export function Restaurant() {
         <Merged build={(p) => [[-163, -26], [-113, -26], [-163, -12], [-113, -12]].forEach(([x, z]) => tree(p, x!, z!, 1))} />
         <BuildingShell b={RESTAURANT} name="The Grand Garden Restaurant">
           <Interior />
+          <Kitchen />
           <Server />
           <Text position={[(BAR.minX + BAR.maxX) / 2, 2.55, -28.2]} fontSize={0.45} color="#b5452f" anchorX="center">
             KITCHEN

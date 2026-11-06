@@ -18,6 +18,8 @@ export interface Usable {
   use: () => void;
   /** greyed out, with a reason shown instead of the action */
   disabled?: string;
+  /** wins over a nearby NPC's Talk (e.g. kitchen stations while cooking next to the chef) */
+  priority?: boolean;
 }
 
 const all = new Map<string, Usable>();

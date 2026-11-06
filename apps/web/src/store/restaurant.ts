@@ -36,7 +36,8 @@ interface RestaurantStore {
   orderDish: (item: string) => void;
   eat: () => void;
   askBill: () => void;
-  pay: () => void;
+  /** pay the bill: tip in percent, and the total the guest worked out (null = no tip) */
+  pay: (tip?: number, total?: number) => void;
 }
 
 const EAT_MS = 9000;
@@ -164,14 +165,17 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
           }),
       });
     },
-    pay() {
+    pay(tip = 0, total) {
       const s = get().seat;
       if (!s || get().step !== 'paying') return;
-      iSay('Here you are. Thank you!');
-      track('restaurant_pay', { item: get().order?.item ?? '' });
-      later(1600, () => {
+      const price = menuItem(get().order?.item ?? '')?.price ?? 0;
+      const right = tipTotal(price, tip);
+      const ok = !tip || (total !== undefined && Math.abs(total - right) < 0.005);
+      iSay(tip ? `Here's ${money(total ?? right)}. That includes a ${tip} percent tip.` : 'Here you are. Thank you!');
+      track('restaurant_pay', { item: get().order?.item ?? '', tip, ok });
+      later(2200, () => {
         if (!still(s)) return;
-        serverSays('Thank you very much! Have a nice day!');
+        serverSays(!tip ? 'Thank you very much! Have a nice day!' : ok ? "That's very kind of you, thank you so much! Have a nice day!" : `Thank you! Actually, with the tip it's ${money(right)}. Have a nice day!`);
         sendProp('');
         set({ step: 'menu', order: null, eaten: 0 });
         later(1500, () => still(s) && waiterHome());
@@ -190,3 +194,8 @@ export function seatTaken(x: number, z: number): boolean {
   }
   return false;
 }
+
+/** Bill + tip, rounded to cents. */
+export const tipTotal = (price: number, tip: number) => Math.round(price * (100 + tip)) / 100;
+/** "$12.50" / "$12" */
+export const money = (v: number) => `$${Number.isInteger(v) ? v : v.toFixed(2)}`;

@@ -372,9 +372,11 @@ export function LocalPlayer({ name }: { name: string }) {
           best = n.id;
         }
       }
+      // nearest usable thing (doors, lift, phone, ball, boat…) when no NPC is in reach (priority usables win anyway)
+      const any = pickUsable(g.position.x, g.position.z);
+      if (any?.priority) best = null;
       if (best !== s.interactTarget) s.setInteractTarget(best);
-      // nearest usable thing (doors, lift, phone, ball, boat…) when no NPC is in reach
-      const use = best ? null : pickUsable(g.position.x, g.position.z);
+      const use = best ? null : any;
       if (use?.id !== useNearUsable.getState().near?.id || use?.label !== useNearUsable.getState().near?.label || use?.disabled !== useNearUsable.getState().near?.disabled) useNearUsable.setState({ near: use });
       // nearest cat/dog within hugging reach (none while already hugging one)
       let hug: string | null = null;

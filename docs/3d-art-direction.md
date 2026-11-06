@@ -135,6 +135,7 @@ Whole-scene budgets (docs/PERF.md):
 | Sports park: football (live, server physics), basketball (hoops throws), training cones (tinted red / blue / yellow for "Coach says") | LPM `sports_kit` (320 / 256 / 56 tris) | 1 + 1 + 3 | ✅ new 2026-11-06 (the old centre-spot ball was a code sphere) |
 | River: rowing boat (+ oars), duck pedalo, ferry, piers, boat-hire kiosk, buoys | LPM `river_kit` (~1,870 tris for the set) | 4 hire boats, 1 ferry, 4 piers | ✅ new 2026-11-06; the decorative sailboats now sail beyond the footbridges |
 | Library "New books" display rack + A-frame sign | LPM `library_kit` (180 tris; covers and titles drawn by the game from the book list) | 1 | ✅ new 2026-11-06 (the old shelves stay code-built) |
+| Restaurant kitchen: fridge, sink, cooker (pot, pan, hood), prep counter, spice rack, serving-hatch lamp | LPM `kitchen_kit` (~1,380 tris) | 1 kitchen | ✅ new 2026-11-06 (replaces the code-built stove) |
 | Restaurant, supermarket, places | code (`Part` / `Merged`) | 1 each | next: rebuild per area |
 | Chibi, animals, critters | code (`buildChibi`, `buildAnimal`, `buildCritter`) | many | kept in code: rounded chibi style + joint rig; the zebra was rebuilt in code on 2026-11-06 on a horse frame (neck, long head, mane, body/leg stripes) to stay consistent with the other animals |
 

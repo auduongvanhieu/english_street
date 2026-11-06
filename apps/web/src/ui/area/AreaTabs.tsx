@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useWorld } from '../../store/world';
 /** Stable empty list for selectors. */
 const NONE: string[] = [];
@@ -11,7 +11,7 @@ import { useShopping } from '../../store/shopping';
 import { useArea } from '../../store/area';
 import { tk, useLang, useT } from '../../i18n';
 import { say } from './common';
-import { menuItem, type MealStep } from '../../store/restaurant';
+import { menuItem, money, tipTotal, type MealStep } from '../../store/restaurant';
 
 const ERR: Record<string, string> = {
   not_ready: tk("It isn't ready yet. Wait a little!"),
@@ -217,14 +217,7 @@ export function MealButtons({ onMenu, onStand }: { onMenu?: () => void; onStand?
           🧾 {t('Ask for the bill')}
         </button>
       ) : step === 'paying' ? (
-        <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-1.5 shadow-lg">
-          <span className="text-sm" dir="ltr">
-            🧾 {item?.en ?? ''} <b>${item?.price ?? ''}</b>
-          </span>
-          <button type="button" onClick={pay} className="min-h-10 rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white">
-            💵 {t('Pay')}
-          </button>
-        </div>
+        <PayWithTip item={item?.en ?? ''} price={item?.price ?? 0} pay={pay} />
       ) : onMenu ? (
         <button type="button" onClick={onMenu} className={`${pill} bg-rose-600 text-white`}>
           📋 {t('Menu')}
@@ -417,5 +410,49 @@ export function ShoppingMini() {
         </div>
       ))}
     </button>
+  );
+}
+
+/** The bill: pay as it is, or add a tip and work out the total (number practice). */
+function PayWithTip({ item, price, pay }: { item: string; price: number; pay: (tip?: number, total?: number) => void }) {
+  const t = useT();
+  const [tip, setTip] = useState(0);
+  const options = useMemo(() => {
+    if (!tip) return [];
+    const right = tipTotal(price, tip);
+    // close but wrong: 5 % less, 5 % more, one dollar off
+    const wrong = [tipTotal(price, tip - 5), tipTotal(price, tip + 5), Math.round((right + 1) * 100) / 100].filter((v) => Math.abs(v - right) > 0.005).sort(() => Math.random() - 0.5);
+    return [...new Set([right, wrong[0]!, wrong[1]!])].sort(() => Math.random() - 0.5);
+  }, [tip, price]);
+  return (
+    <div className="max-w-[92vw] rounded-2xl bg-white px-3 py-2 shadow-lg" dir="ltr">
+      <div className="flex items-center gap-2 text-sm">
+        🧾 {item} <b>{money(price)}</b>
+        <span className="ml-auto text-xs text-gray-500">Tip:</span>
+        {[0, 10, 15, 20].map((p) => (
+          <button key={p} type="button" onClick={() => setTip(p)} className={`min-h-8 rounded-full px-2 text-xs ${tip === p ? 'bg-emerald-600 text-white' : 'bg-gray-100'}`}>
+            {p ? `${p}%` : t('No tip')}
+          </button>
+        ))}
+      </div>
+      {tip ? (
+        <div className="mt-1.5">
+          <p className="text-xs text-gray-600">
+            {t('What is the total with a {p}% tip?', { p: tip })}
+          </p>
+          <div className="mt-1 flex gap-1.5">
+            {options.map((v) => (
+              <button key={v} type="button" onClick={() => pay(tip, v)} className="min-h-10 flex-1 rounded-full bg-emerald-600 text-sm font-semibold text-white">
+                💵 {money(v)}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => pay(0)} className="mt-1.5 min-h-10 w-full rounded-full bg-emerald-600 text-sm font-semibold text-white">
+          💵 {t('Pay')} {money(price)}
+        </button>
+      )}
+    </div>
   );
 }
