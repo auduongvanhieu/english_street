@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { guessLang, isLang, isRtl, type LangCode } from '@es/shared';
+import { isLang, isRtl, type LangCode } from '@es/shared';
 
 /**
  * Interface text translation, gettext style: the English string is the key (`t('Send')`,
@@ -20,7 +20,8 @@ const LS_UI = 'es:uiLang';
 function initialLang(): { lang: LangCode; chosen: boolean } {
   const saved = localStorage.getItem(LS_LANG);
   if (isLang(saved)) return { lang: saved, chosen: true };
-  return { lang: guessLang(typeof navigator === 'undefined' ? [] : navigator.languages ?? [navigator.language]), chosen: false };
+  // new players start in Vietnamese (most of them are Vietnamese); they can change it in My language
+  return { lang: 'vi', chosen: false };
 }
 
 interface LangState {
