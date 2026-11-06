@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { decodeGarden, plotStage, type Crop } from '@es/shared';
 import { useGame } from '../../store/game';
 import { BARN, COOP, ORCHARD, PENS, PLOTS, PLOT_SIZE, STALL, WINDMILL } from '../../world/farmLayout';
@@ -10,15 +11,7 @@ import { useFarm } from '../../store/farm';
 import { useArea } from '../../store/area';
 import { Animal } from './Animal';
 import { Ground, Merged, NearArea, Sign, box, cyl, fenceRect, sphere, tree } from './kit';
-
-const CROP_COLOR: Record<Crop, [string, string]> = {
-  carrot: ['#5fae4e', '#f08a2c'],
-  corn: ['#7cbf4a', '#f2d14a'],
-  tomato: ['#4f9a44', '#e5533d'],
-  potato: ['#6aa84f', '#c9a06a'],
-  pumpkin: ['#5f9e3e', '#f08a2c'],
-  strawberry: ['#4f9a44', '#e23b4e'],
-};
+import { buildPlot } from './crops';
 
 function FarmStatic() {
   return (
@@ -54,11 +47,22 @@ function FarmStatic() {
           p.add(box(PLOT_SIZE, 0.12, PLOT_SIZE), '#6b4a30', { p: [pl.x, 0.06, pl.z] });
           for (const [dx, dz, w, d] of [[0, -PLOT_SIZE / 2, PLOT_SIZE + 0.15, 0.1], [0, PLOT_SIZE / 2, PLOT_SIZE + 0.15, 0.1], [-PLOT_SIZE / 2, 0, 0.1, PLOT_SIZE], [PLOT_SIZE / 2, 0, 0.1, PLOT_SIZE]] as const)
             p.add(box(w, 0.2, d), '#a0703c', { p: [pl.x + dx, 0.1, pl.z + dz] });
+          // three raised rows of darker, tilled soil
+          for (const dz of [-0.7, 0, 0.7]) p.add(cyl(0.2, 0.2, PLOT_SIZE - 0.25, 8, false, 0, Math.PI), '#4f3422', { p: [pl.x, 0.07, pl.z + dz], r: [0, 0, Math.PI / 2], s: [0.4, 1, 1] });
         }
         // apple orchard
         for (const o of ORCHARD) {
           tree(p, o.x, o.z, 1, '#5fae4e');
-          for (let i = 0; i < 5; i++) p.add(sphere(0.12, 0, Math.PI, 0, Math.PI * 2, 6, 4), '#e5533d', { p: [o.x + Math.cos(i * 1.3) * 0.6, 1.5 + (i % 2) * 0.4, o.z + Math.sin(i * 1.3) * 0.6] });
+          // apples hanging on the outside of the crown, each with a tiny stalk
+          for (let i = 0; i < 9; i++) {
+            const a = i * 2.39996 + o.x;
+            const y = -0.45 + (i % 3) * 0.32;
+            const ring = Math.sqrt(1 - y * y) * 0.78;
+            const ax = o.x + Math.cos(a) * ring;
+            const az = o.z + Math.sin(a) * ring;
+            p.add(sphere(0.11, 0, Math.PI, 0, Math.PI * 2, 8, 6), i % 4 === 3 ? '#f2b33d' : '#d93a2b', { p: [ax, 1.8 + y * 0.78, az], s: [1, 0.9, 1] });
+            p.add(cyl(0.012, 0.012, 0.07, 4), '#5a3b22', { p: [ax, 1.8 + y * 0.78 + 0.11, az] });
+          }
         }
         // market stall
         p.add(box(3.2, 0.9, 1), '#a0703c', { p: [STALL.x, 0.45, STALL.z] });
@@ -136,18 +140,8 @@ function Garden() {
               <boxGeometry args={[PLOT_SIZE, 0.6, PLOT_SIZE]} />
             </mesh>
             {plot?.crop ? <Plants crop={plot.crop} stage={st.stage} progress={st.progress} /> : null}
-            {st.stage === 'seed' ? (
-              <mesh position={[0, 0.9, 0]}>
-                <sphereGeometry args={[0.16, 10, 8]} />
-                <meshBasicMaterial color="#4aa3ff" />
-              </mesh>
-            ) : null}
-            {st.stage === 'ready' ? (
-              <mesh position={[0, 1.4, 0]}>
-                <octahedronGeometry args={[0.22]} />
-                <meshBasicMaterial color="#ffd23f" />
-              </mesh>
-            ) : null}
+            {st.stage === 'seed' ? <Marker kind="water" y={plot?.crop === 'corn' ? 1.0 : 0.9} /> : null}
+            {st.stage === 'ready' ? <Marker kind="ready" y={plot?.crop === 'corn' ? 2.3 : plot?.crop === 'tomato' ? 1.5 : 1.15} /> : null}
           </group>
         );
       })}
@@ -155,27 +149,43 @@ function Garden() {
   );
 }
 
+/** The plants of one plot as one merged mesh, rebuilt only when the stage or a growth step changes. */
 function Plants({ crop, stage, progress }: { crop: Crop; stage: string; progress: number }) {
-  const [leaf, fruit] = CROP_COLOR[crop];
-  const k = stage === 'seed' ? 0.15 : stage === 'ready' ? 1 : 0.3 + progress * 0.6;
+  const step = stage === 'growing' ? Math.min(5, Math.floor(progress * 6)) / 5 : 0;
+  return <Merged build={(p) => buildPlot(p, crop, stage, step)} deps={[crop, stage, step]} />;
+}
+
+/** Floating hint over a plot: a blue water drop (needs watering) or a golden star (ready to harvest). */
+function Marker({ kind, y }: { kind: 'water' | 'ready'; y: number }) {
+  const ref = useRef<THREE.Group>(null);
+  const geo = useMemo(() => {
+    if (kind === 'water') {
+      const g = new THREE.SphereGeometry(0.14, 14, 10);
+      const tip = new THREE.ConeGeometry(0.1, 0.2, 14, 1, true).translate(0, 0.17, 0);
+      return mergeGeometries([g.toNonIndexed(), tip.toNonIndexed()], false)!;
+    }
+    const sh = new THREE.Shape();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+      const r = i % 2 ? 0.1 : 0.24;
+      if (i) sh.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      else sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    return new THREE.ExtrudeGeometry(sh, { depth: 0.06, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 1 }).translate(0, 0, -0.03);
+  }, [kind]);
+  useEffect(() => () => geo.dispose(), [geo]);
+  useFrame(({ clock }) => {
+    const g = ref.current;
+    if (!g) return;
+    const t = clock.elapsedTime;
+    g.position.y = y + Math.sin(t * 2.2) * 0.08;
+    g.rotation.y = t * (kind === 'ready' ? 1.6 : 0.8);
+  });
   return (
-    <group>
-      {[-0.6, 0, 0.6].flatMap((dx) =>
-        [-0.6, 0, 0.6].map((dz) => (
-          <group key={`${dx}${dz}`} position={[dx, 0.12, dz]} scale={k}>
-            <mesh position={[0, crop === 'corn' ? 0.7 : 0.25, 0]}>
-              <coneGeometry args={[crop === 'corn' ? 0.12 : 0.22, crop === 'corn' ? 1.4 : 0.5, 6]} />
-              <meshToonMaterial color={leaf} />
-            </mesh>
-            {stage === 'ready' ? (
-              <mesh position={[0.12, crop === 'corn' ? 0.8 : crop === 'carrot' || crop === 'potato' ? 0.05 : 0.35, 0.05]}>
-                <sphereGeometry args={[crop === 'pumpkin' ? 0.3 : 0.13, 10, 8]} />
-                <meshToonMaterial color={fruit} />
-              </mesh>
-            ) : null}
-          </group>
-        )),
-      )}
+    <group ref={ref} position={[0, y, 0]}>
+      <mesh geometry={geo}>
+        <meshStandardMaterial color={kind === 'water' ? '#3d9bff' : '#ffd23f'} emissive={kind === 'water' ? '#1b5fd1' : '#d99a00'} emissiveIntensity={0.55} roughness={0.25} metalness={0.1} transparent={kind === 'water'} opacity={0.9} />
+      </mesh>
     </group>
   );
 }
