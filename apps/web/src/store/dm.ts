@@ -28,6 +28,9 @@ interface DmStore {
   toast: { from: string; name: string; text: string; at: number } | null;
   /** Player highlighted on the 🗺️ map ("Show on map"). */
   mapFocus: string | null;
+  /** Tab of the players panel: everyone here, friends, my group. */
+  tab: 'here' | 'friends' | 'group';
+  setTab: (tab: 'here' | 'friends' | 'group') => void;
   showOnMap: (id: string) => void;
   open: (id: string | null) => void;
   send: (to: string, text: string) => void;
@@ -40,6 +43,8 @@ export const useDm = create<DmStore>((set, get) => ({
   openId: null,
   toast: null,
   mapFocus: null,
+  tab: 'here',
+  setTab: (tab) => set({ tab, openId: null }),
   showOnMap(id) {
     set({ mapFocus: id });
     useGame.getState().setUiPanel('map');

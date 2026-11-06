@@ -32,6 +32,10 @@ export const MSG = {
   DM: 'dm',
   /** server -> client: { text, level: 'info' | 'warning' } notice from the moderators (announcement, mute…) */
   NOTICE: 'notice',
+  /** both ways: groups in this zone - create / invite / accept / decline / leave / chat / call (GroupSend, GroupEvent) */
+  GROUP: 'group',
+  /** both ways: friends - client -> server FriendSend (presence query, "I sent you a request" ping); server -> client FriendEvent */
+  FRIEND: 'friend',
 } as const;
 
 /** Close codes the server uses when it removes a player (client shows why). */
@@ -146,3 +150,70 @@ export type PairMessage = { to: string; from?: string } & (
 export const EMOTES = ['wave', 'dance', 'thumbsup', 'yes', 'no'] as const;
 export type Emote = (typeof EMOTES)[number];
 export const EMOTE_DURATION_MS = 2600;
+
+/* ------------------------------------------------------------------------------------------- groups */
+
+/** Players in one group (voice is a full WebRTC mesh, so keep it small). */
+export const GROUP_MAX = 8;
+export const GROUP_NAME_MAX = 24;
+export const GROUP_CHAT_MAX = 300;
+
+export type GroupSend =
+  /** start a group (optionally inviting someone right away) */
+  | { op: 'create'; name?: string; invite?: string }
+  | { op: 'invite'; to: string }
+  | { op: 'accept'; group: string }
+  | { op: 'decline'; group: string }
+  | { op: 'leave' }
+  | { op: 'chat'; text: string }
+  | { op: 'call'; on: boolean };
+
+export type GroupEvent =
+  /** someone invited you */
+  | { op: 'invite'; group: string; name: string; from: string; fromName: string }
+  /** your invitation was declined */
+  | { op: 'declined'; by: string; byName: string }
+  | { op: 'full' }
+  /** a member's chat line (also echoed to the sender) */
+  | { op: 'chat'; from: string; name: string; text: string; at: number }
+  /** a member joined / left (system line in the group chat) */
+  | { op: 'joined'; who: string; name: string }
+  | { op: 'left'; who: string; name: string };
+
+/* ------------------------------------------------------------------------------------------- friends */
+
+/** Friend list size per player. */
+export const FRIENDS_MAX = 100;
+
+export type FriendSend =
+  /** which of these player ids are online, and where (any zone) */
+  | { op: 'presence'; pids: string[] }
+  /** tell this player (by player id, any zone) that their friend list changed (request sent / accepted) */
+  | { op: 'ping'; pid: string; kind: 'request' | 'accepted' };
+
+export interface FriendOnline {
+  pid: string;
+  name: string;
+  /** room id + zone name; locked zones need a code to join */
+  zoneId: string;
+  zone: string;
+  locked: boolean;
+  /** session id in that room (same zone as you: message / invite them directly) */
+  sessionId: string;
+}
+
+export type FriendEvent = { op: 'presence'; online: FriendOnline[] } | { op: 'ping'; kind: 'request' | 'accepted'; fromPid: string; name: string };
+
+/** REST: GET /friends */
+export interface FriendEntry {
+  pid: string;
+  name: string;
+  since: string;
+}
+export interface FriendList {
+  friends: FriendEntry[];
+  /** requests waiting for my answer */
+  incoming: FriendEntry[];
+  /** my requests they have not answered yet */
+  outgoing: FriendEntry[];
+}

@@ -26,6 +26,9 @@ import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
 import { initDm, useDm } from './store/dm';
+import { initFriends, setZoneJumper } from './store/friends';
+import { initGroup } from './store/group';
+import { SocialToasts } from './ui/Social';
 import { DmToast, PlayersButton, PlayersPanel } from './ui/PlayersPanel';
 import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
@@ -112,11 +115,15 @@ export default function App() {
     const off = initPairMessaging();
     const offTalk = initTalkMessaging();
     const offDm = initDm();
+    const offFriends = initFriends();
+    const offGroup = initGroup();
     const offWatch = initVoiceWatch();
     return () => {
       off();
       offTalk();
       offDm();
+      offFriends();
+      offGroup();
       offWatch();
       offNative();
     };
@@ -228,6 +235,16 @@ export default function App() {
       delete w.__esBack;
     };
   }, [confirmExit, chatOpen]);
+
+  // friends list: "Go to their zone" leaves this room and joins theirs
+  useEffect(() => {
+    setZoneJumper((id) => {
+      if (!playerName) return;
+      leaveRoom();
+      void join(playerName, { mode: 'join', id });
+    });
+    return () => setZoneJumper(null);
+  });
 
   async function join(name: string, zone: ZoneSelection = { mode: 'main' }) {
     setPlayerName(name);
@@ -362,6 +379,7 @@ export default function App() {
       <InviteToast />
       <TalkToast />
       <DmToast />
+      <SocialToasts />
       {!hudHidden && <TalkBar />}
       <FollowChip />
       {!hudHidden && <PlayerPopup />}

@@ -13,6 +13,7 @@ import { getRoom, onRtc, sendRtc } from './client';
  * - listen-only mode: the mesh can run without a microphone, so a player who never enabled voice still
  *   hears a private-talk partner or someone shouting nearby (started automatically by `watch`).
  * - shouting: while a player holds the shout button, everyone within SHOUT_RADIUS connects at full volume.
+ * Group calls (store/group.ts): members of the same group who are in its call stay connected at full volume.
  */
 const ICE_SERVERS: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 const CONNECT_RADIUS = PROXIMITY_RADIUS + 1;
@@ -128,9 +129,16 @@ function startMesh() {
 }
 
 /** Should I be connected to this player right now, and at what volume? */
-function wanted(p: { id: string; voice: boolean; shouting: boolean; x: number; z: number }, me: { x: number; z: number }, selfShouting: boolean, partner: string | null): { connect: boolean; keep: boolean; volume: number } {
+function wanted(
+  p: { id: string; voice: boolean; shouting: boolean; x: number; z: number; group: string; groupCall: boolean },
+  me: { x: number; z: number; group: string; groupCall: boolean },
+  selfShouting: boolean,
+  partner: string | null,
+): { connect: boolean; keep: boolean; volume: number } {
   const d = Math.hypot(p.x - me.x, p.z - me.z);
   if (p.id === partner) return { connect: true, keep: true, volume: 1 };
+  // group call: everyone in my group's call, at any distance, full volume
+  if (me.group && me.groupCall && p.group === me.group && p.groupCall) return { connect: true, keep: true, volume: 1 };
   if (p.voice && (p.shouting || selfShouting) && d <= SHOUT_RADIUS) return { connect: true, keep: true, volume: 1 };
   if (p.voice && d <= CONNECT_RADIUS) return { connect: true, keep: true, volume: fade(d) };
   return { connect: false, keep: p.voice && d <= DROP_RADIUS, volume: fade(d) };

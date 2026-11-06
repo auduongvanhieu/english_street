@@ -24,6 +24,16 @@ export interface RemotePlayer {
   garden: string;
   /** bus ride tag (BUS_RE), '' = not on a bus */
   bus: string;
+  /** group id ('' = none) and whether they are in its voice call */
+  group: string;
+  groupCall: boolean;
+}
+
+/** A group in this zone (members = players whose `group` is its id). */
+export interface GroupMeta {
+  id: string;
+  name: string;
+  owner: string;
 }
 
 export interface NpcInfo {
@@ -60,6 +70,8 @@ interface GameState {
   setSessionId: (id: string | null) => void;
   players: Record<string, RemotePlayer>;
   upsertPlayer: (p: RemotePlayer) => void;
+  groups: Record<string, GroupMeta>;
+  setGroupMeta: (g: GroupMeta | null, id: string) => void;
   removePlayer: (id: string) => void;
   chatLog: { from: string; pid: string; name: string; text: string; shout?: boolean; at: number }[];
   pushChat: (m: { from: string; pid: string; name: string; text: string; shout?: boolean }) => void;
@@ -104,9 +116,15 @@ export const useGame = create<GameState>((set) => ({
   setSessionId: (sessionId) => set({ sessionId }),
   zone: null,
   setZone: (zone) => set({ zone }),
-  resetRoom: () => set({ players: {}, chatLog: [], selectedPlayer: null, selectedCritter: null, interactTarget: null, zone: null }),
+  resetRoom: () => set({ players: {}, groups: {}, chatLog: [], selectedPlayer: null, selectedCritter: null, interactTarget: null, zone: null }),
   players: {},
   upsertPlayer: (p) => set((s) => ({ players: { ...s.players, [p.id]: p } })),
+  groups: {},
+  setGroupMeta: (g, id) =>
+    set((s) => {
+      const { [id]: _old, ...rest } = s.groups;
+      return { groups: g ? { ...rest, [id]: g } : rest };
+    }),
   removePlayer: (id) =>
     set((s) => {
       const { [id]: _removed, ...rest } = s.players;

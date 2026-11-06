@@ -28,10 +28,23 @@ export class Player extends Schema {
   @type('string') garden = '';
   /** Bus ride tag (BUS_RE): everyone renders the shared bus and hides the rider while inside. */
   @type('string') bus = '';
+  /** Group id this player is in ('' = none; see StreetState.groups). */
+  @type('string') group = '';
+  /** In their group's voice call (members in the call hear each other at any distance). */
+  @type('boolean') groupCall = false;
+}
+
+/** A small group of players in this zone: group chat + group voice call. Members = players with this group id. */
+export class Group extends Schema {
+  @type('string') id = '';
+  @type('string') name = '';
+  /** sessionId of the member who manages it (first member; passed on when they leave). */
+  @type('string') owner = '';
 }
 
 export class StreetState extends Schema {
   @type({ map: Player }) players = new MapSchema<Player>();
   /** Critters put down somewhere: id → "x,z,t" (t = server ms). They stay there until someone picks them up. */
   @type({ map: 'string' }) spots = new MapSchema<string>();
+  @type({ map: Group }) groups = new MapSchema<Group>();
 }

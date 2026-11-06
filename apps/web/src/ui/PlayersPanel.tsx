@@ -10,6 +10,9 @@ import { useVoiceChat } from '../net/voicechat';
 import { localPos } from '../scene/LocalPlayer';
 import { CORRIDOR_MAX_Z, SOUTH_MIN_Z, areaAt } from '../world/areas';
 import { t as tr, useT } from '../i18n';
+import { useFriendRequests, useFriends } from '../store/friends';
+import { useGroup } from '../store/group';
+import { FriendsTab, GroupTab, PanelTabs, SocialActions } from './Social';
 
 /** Where a player is, in words: the area, the bus, the river, the south bank or the main street. */
 export function placeOf(x: number, z: number, bus = ''): { icon: string; name: string } {
@@ -44,7 +47,7 @@ function useTick(ms: number) {
 export function PlayersButton({ compact }: { compact: boolean }) {
   const t = useT();
   const count = useGame((s) => Object.keys(s.players).length);
-  const unread = useDmUnread();
+  const unread = useDmUnread() + useFriendRequests() + useGroup((s) => s.unread + (s.invite ? 1 : 0));
   const open = () => {
     useDm.getState().open(null);
     useGame.getState().setUiPanel('players');
@@ -69,20 +72,30 @@ export function PlayersButton({ compact }: { compact: boolean }) {
 export function PlayersPanel() {
   const t = useT();
   const openId = useDm((s) => s.openId);
+  const tab = useDm((s) => s.tab);
   const close = () => useGame.getState().setUiPanel(null);
   return (
     <Sheet onClose={close} label={t('Players')}>
-      {openId ? <Thread id={openId} onClose={close} /> : <List onClose={close} />}
+      {openId ? (
+        <Thread id={openId} onClose={close} />
+      ) : (
+        <>
+          <List onClose={close} tab={tab} />
+          {tab === 'friends' ? <FriendsTab /> : tab === 'group' ? <GroupTab /> : null}
+        </>
+      )}
     </Sheet>
   );
 }
 
-function List({ onClose }: { onClose: () => void }) {
+function List({ onClose, tab }: { onClose: () => void; tab: 'here' | 'friends' | 'group' }) {
   const t = useT();
   useTick(1000);
   const me = useGame((s) => s.sessionId);
   const players = useGame((s) => s.players);
   const threads = useDm((s) => s.threads);
+  const friendPids = new Set(useFriends((s) => s.list.friends).map((f) => f.pid));
+  const myGroup = useGame((s) => (s.sessionId ? s.players[s.sessionId]?.group : '')) ?? '';
   const others = Object.values(players)
     .filter((p) => p.id !== me)
     .sort((a, b) => (threads[b.id]?.unread ?? 0) - (threads[a.id]?.unread ?? 0) || dist(a) - dist(b));
@@ -100,6 +113,8 @@ function List({ onClose }: { onClose: () => void }) {
           ✕
         </button>
       </SheetHeader>
+      <PanelTabs />
+      {tab !== 'here' ? null : (
       <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
         {others.length === 0 ? <p className="py-6 text-center text-sm text-gray-500">{t('Nobody else is here yet. Invite a friend!')}</p> : null}
         {others.map((p) => {
@@ -110,7 +125,11 @@ function List({ onClose }: { onClose: () => void }) {
             <button key={p.id} type="button" onClick={() => useDm.getState().open(p.id)} className="flex min-h-14 w-full items-center gap-3 rounded-xl border px-3 py-2 text-left hover:bg-gray-50">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">{p.name.slice(0, 1).toUpperCase()}</span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{p.name}</span>
+                <span className="block truncate font-medium">
+                  {p.name}
+                  {friendPids.has(p.pid) ? ' ⭐' : ''}
+                  {myGroup && p.group === myGroup ? ' 🫂' : ''}
+                </span>
                 <span className="block truncate text-xs text-gray-500">
                   {where.icon} <span dir="ltr">{where.name}</span> · {t('{distance} m', { distance: Math.round(dist(p)) })}
                   {p.talkWith ? ` · ${t('in a conversation')}` : ''}
@@ -127,6 +146,7 @@ function List({ onClose }: { onClose: () => void }) {
           );
         })}
       </div>
+      )}
     </>
   );
 }
@@ -213,6 +233,7 @@ function Thread({ id, onClose }: { id: string; onClose: () => void }) {
           ) : null}
         </div>
       ) : null}
+      {p ? <SocialActions player={p} /> : null}
       <div ref={list} className="min-h-[8rem] flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
         {lines.length === 0 ? <p className="py-4 text-center text-xs text-gray-500">{t('Send {name} a private message. Only they can read it, wherever they are.', { name })}</p> : null}
         {lines.map((l, i) => (

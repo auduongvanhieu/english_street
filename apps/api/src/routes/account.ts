@@ -30,6 +30,7 @@ import { hashPassword, playerIdFrom, signToken, verifyPassword } from '../auth';
 import { DAILY_BONUS_XP, type AttemptRepo, type UserRecord } from '../npc/attempts';
 import { budget } from '../npc/budget';
 import { allowAuth, limiter } from '../npc/ratelimit';
+import { friendRepo } from '../friends';
 import { areaStats } from './play';
 import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
@@ -131,7 +132,10 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
       if (await repo.getUserByEmail(body.data.email)) return reply.code(409).send({ error: 'email_taken' });
       const u = await repo.createUser({ id: randomUUID(), email: body.data.email, name: body.data.name, passwordHash: await hashPassword(body.data.password) });
-      if (body.data.guestId) await repo.transferGuest(body.data.guestId, u.id);
+      if (body.data.guestId) {
+        await repo.transferGuest(body.data.guestId, u.id);
+        await friendRepo().transfer(body.data.guestId, u.id).catch(() => undefined);
+      }
       const fresh = (await repo.getUser(u.id)) ?? u;
       await repo.logEvent({ name: 'register', playerId: u.id, props: { fromGuest: !!body.data.guestId } });
       return reply.code(201).send({ token: signToken(u.id), profile: await profile(fresh) });

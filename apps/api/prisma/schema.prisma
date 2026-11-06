@@ -254,3 +254,27 @@ model DailyStat {
   @@id([day, metric, key])
   @@index([metric, day])
 }
+
+/// Friends: one row per pair of players (account or guest ids, aId < bId so a pair has one row).
+/// No foreign keys: guests may not have a User row yet.
+model Friendship {
+  id        String       @id @default(cuid())
+  aId       String
+  bId       String
+  /// Display names at the time of the request / acceptance (guests choose a name per visit).
+  aName     String       @default("")
+  bName     String       @default("")
+  /// Who sent the request.
+  requester String
+  status    FriendStatus @default(pending)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([aId, bId])
+  @@index([bId])
+}
+
+enum FriendStatus {
+  pending
+  accepted
+}

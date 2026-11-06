@@ -10,6 +10,7 @@ Thiết kế đầy đủ: [docs/GDD.md](docs/GDD.md).
 **Điều khiển:** WASD / mũi tên di chuyển · Shift chạy · E nói chuyện với NPC · Enter mở chat · Esc đóng.
 Trong hội thoại: nhấn giữ 🎤 để nói (Chrome/Edge/Safari), thả ra rồi sửa transcript nếu cần và Send; 🔊 phát lại câu NPC; nút loa ở header để tắt tiếng.
 Với người chơi khác: phím 1-5 emote; nút "🎙️ Voice" bật voice chat gần (WebRTC P2P, nghe được trong ~8 m); ⚑ cạnh tin nhắn để report.
+Bạn bè & nhóm (nút 👥 hoặc phím P): mở một người chơi → **Kết bạn** (lưu lâu dài, thấy bạn đang online ở khu nào và **Đến khu của họ**); **Mời vào nhóm** → nhóm tối đa 8 người trong cùng khu với **chat nhóm** và **gọi nhóm** (nghe nhau ở mọi khoảng cách).
 Quest cặp đôi: gặp Lucas ở Le Petit Bistro, chọn "Dinner for Two", mời một người chơi đang đứng gần; một người làm khách, một người làm phục vụ, Lucas chấm từng câu.
 
 ![Quest cặp đôi](docs/screenshots/phase4-pair-quest.png)

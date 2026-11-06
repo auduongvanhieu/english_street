@@ -20,6 +20,15 @@ import {
   BUS_RE,
   PROP_RE,
   DM_MAX,
+  FRIENDS_MAX,
+  GROUP_CHAT_MAX,
+  GROUP_MAX,
+  GROUP_NAME_MAX,
+  type FriendEvent,
+  type FriendOnline,
+  type FriendSend,
+  type GroupEvent,
+  type GroupSend,
   type DmReceived,
   type DmSend,
   type ZoneMeta,
@@ -32,7 +41,7 @@ import {
   CLOSE_KICKED,
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
-import { Player, StreetState } from './schema/StreetState';
+import { Group, Player, StreetState } from './schema/StreetState';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
@@ -83,6 +92,12 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   private talkRequests = new Map<string, { from: string; call: boolean }>();
   private lastShoutAt = new Map<string, number>();
   private lastDmAt = new Map<string, number>();
+  /** Pending group invitations: invited sessionId -> group id + who invited. */
+  private groupInvites = new Map<string, { group: string; from: string; at: number }>();
+  private lastGroupChatAt = new Map<string, number>();
+  /** Friend presence queries / pings per session (rate limits). */
+  private lastPresenceAt = new Map<string, number>();
+  private lastPingAt = new Map<string, number>();
   private lastAvatarAt = new Map<string, number>();
   /** Zone identity (also published as room metadata for the zone list). */
   private zone: ZoneMeta = { name: MAIN_ZONE_NAME, kind: 'main', locked: false };
@@ -226,6 +241,90 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (!clean) return;
       this.lastDmAt.set(client.sessionId, now);
       target.send(MSG.DM, { from: client.sessionId, name: p.name, text: clean } satisfies DmReceived);
+    });
+
+    // Groups: small parties in this zone with their own chat and voice call (members = players with p.group).
+    this.onMessage<GroupSend>(MSG.GROUP, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg !== 'object') return;
+      switch (msg.op) {
+        case 'create': {
+          if (p.group) this.leaveGroup(client.sessionId);
+          const raw = typeof msg.name === 'string' ? maskProfanity(msg.name.trim().slice(0, GROUP_NAME_MAX)) : '';
+          const g = new Group();
+          g.id = `g${Math.random().toString(36).slice(2, 9)}`;
+          g.name = raw || `${p.name}'s group`.slice(0, GROUP_NAME_MAX + 8);
+          g.owner = client.sessionId;
+          this.state.groups.set(g.id, g);
+          p.group = g.id;
+          if (typeof msg.invite === 'string') this.inviteToGroup(client, msg.invite);
+          return;
+        }
+        case 'invite':
+          this.inviteToGroup(client, msg.to);
+          return;
+        case 'accept':
+        case 'decline': {
+          const inv = this.groupInvites.get(client.sessionId);
+          if (!inv || inv.group !== msg.group) return;
+          this.groupInvites.delete(client.sessionId);
+          const g = this.state.groups.get(inv.group);
+          const inviter = this.clients.find((c) => c.sessionId === inv.from);
+          if (msg.op === 'decline' || !g) {
+            inviter?.send(MSG.GROUP, { op: 'declined', by: client.sessionId, byName: p.name } satisfies GroupEvent);
+            return;
+          }
+          if (this.groupSize(g.id) >= GROUP_MAX) return client.send(MSG.GROUP, { op: 'full' } satisfies GroupEvent);
+          if (p.group) this.leaveGroup(client.sessionId);
+          p.group = g.id;
+          this.toGroup(g.id, { op: 'joined', who: client.sessionId, name: p.name });
+          return;
+        }
+        case 'leave':
+          this.leaveGroup(client.sessionId);
+          return;
+        case 'chat': {
+          if (!p.group || typeof msg.text !== 'string' || this.muted(client)) return;
+          const now = Date.now();
+          if (now - (this.lastGroupChatAt.get(client.sessionId) ?? 0) < DM_COOLDOWN_MS) return;
+          const clean = maskProfanity(msg.text.trim().slice(0, GROUP_CHAT_MAX));
+          if (!clean) return;
+          this.lastGroupChatAt.set(client.sessionId, now);
+          this.toGroup(p.group, { op: 'chat', from: client.sessionId, name: p.name, text: clean, at: now });
+          return;
+        }
+        case 'call':
+          p.groupCall = !!msg.on && !!p.group;
+          return;
+      }
+    });
+
+    // Friends (the list itself lives in the API): who is online in any zone, and live "check your requests" pings.
+    this.onMessage<FriendSend>(MSG.FRIEND, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg !== 'object') return;
+      const now = Date.now();
+      if (msg.op === 'presence') {
+        if (!Array.isArray(msg.pids) || now - (this.lastPresenceAt.get(client.sessionId) ?? 0) < 2000) return;
+        this.lastPresenceAt.set(client.sessionId, now);
+        const want = new Set(msg.pids.filter((x): x is string => typeof x === 'string' && x.length >= 8).slice(0, FRIENDS_MAX));
+        const online: FriendOnline[] = [];
+        for (const r of ROOMS) {
+          const z = r.zoneMeta();
+          r.state.players.forEach((q: Player, sid: string) => {
+            if (q.pid && want.has(q.pid)) online.push({ pid: q.pid, name: q.name, zoneId: r.roomId, zone: z.name, locked: z.locked, sessionId: sid });
+          });
+        }
+        client.send(MSG.FRIEND, { op: 'presence', online } satisfies FriendEvent);
+      } else if (msg.op === 'ping') {
+        if (typeof msg.pid !== 'string' || (msg.kind !== 'request' && msg.kind !== 'accepted') || !p.pid) return;
+        if (now - (this.lastPingAt.get(client.sessionId) ?? 0) < 1000) return;
+        this.lastPingAt.set(client.sessionId, now);
+        for (const r of ROOMS)
+          r.state.players.forEach((q: Player, sid: string) => {
+            if (q.pid === msg.pid) r.clients.find((c) => c.sessionId === sid)?.send(MSG.FRIEND, { op: 'ping', kind: msg.kind, fromPid: p.pid, name: p.name } satisfies FriendEvent);
+          });
+      }
     });
 
     this.onMessage<string>(MSG.CHAT, (client, text) => {
@@ -418,6 +517,11 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.talkRequests.delete(client.sessionId);
     this.lastShoutAt.delete(client.sessionId);
     this.lastDmAt.delete(client.sessionId);
+    this.leaveGroup(client.sessionId);
+    this.groupInvites.delete(client.sessionId);
+    this.lastGroupChatAt.delete(client.sessionId);
+    this.lastPresenceAt.delete(client.sessionId);
+    this.lastPingAt.delete(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
     // a pet in their arms stays where they were standing
     if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);
@@ -430,12 +534,61 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
 
   /** Resolve a relay target: must exist, not be the sender, and be within RELAY_RADIUS. */
+  /** Zone identity for friend presence. */
+  zoneMeta(): ZoneMeta {
+    return this.zone;
+  }
+
+  private inviteToGroup(client: Client, to: unknown) {
+    const p = this.state.players.get(client.sessionId);
+    if (!p?.group || typeof to !== 'string' || to === client.sessionId) return;
+    const q = this.state.players.get(to);
+    const target = this.clients.find((c) => c.sessionId === to);
+    if (!q || !target || q.group === p.group) return;
+    if (this.groupSize(p.group) >= GROUP_MAX) return client.send(MSG.GROUP, { op: 'full' } satisfies GroupEvent);
+    const g = this.state.groups.get(p.group)!;
+    this.groupInvites.set(to, { group: g.id, from: client.sessionId, at: Date.now() });
+    target.send(MSG.GROUP, { op: 'invite', group: g.id, name: g.name, from: client.sessionId, fromName: p.name } satisfies GroupEvent);
+  }
+
+  private groupSize(id: string) {
+    let n = 0;
+    this.state.players.forEach((q: Player) => void (q.group === id && n++));
+    return n;
+  }
+
+  /** Send a group event to every member. */
+  private toGroup(id: string, ev: GroupEvent) {
+    for (const c of this.clients) if (this.state.players.get(c.sessionId)?.group === id) c.send(MSG.GROUP, ev);
+  }
+
+  /** Take a player out of their group: tell the others, hand the group on, drop it when empty. */
+  private leaveGroup(sessionId: string) {
+    const p = this.state.players.get(sessionId);
+    if (!p?.group) return;
+    const id = p.group;
+    p.group = '';
+    p.groupCall = false;
+    const g = this.state.groups.get(id);
+    if (!g) return;
+    const left: string[] = [];
+    this.state.players.forEach((q: Player, sid: string) => void (q.group === id && left.push(sid)));
+    if (!left.length) {
+      this.state.groups.delete(id);
+      for (const [to, inv] of this.groupInvites) if (inv.group === id) this.groupInvites.delete(to);
+      return;
+    }
+    if (g.owner === sessionId) g.owner = left[0]!;
+    this.toGroup(id, { op: 'left', who: sessionId, name: p.name });
+  }
+
   private relayTarget(from: Client, to: unknown): Client | null {
     if (typeof to !== 'string' || to === from.sessionId) return null;
     const a = this.state.players.get(from.sessionId);
     const b = this.state.players.get(to);
-    // talk/call partners stay connected however far apart they walk
-    if (!a || !b || (a.talkWith !== to && dist2(a, b) > RELAY_RADIUS * RELAY_RADIUS)) return null;
+    // talk/call partners and members of the same group call stay connected however far apart they walk
+    const groupCall = !!a?.group && a.group === b?.group && a.groupCall && b.groupCall;
+    if (!a || !b || (a.talkWith !== to && !groupCall && dist2(a, b) > RELAY_RADIUS * RELAY_RADIUS)) return null;
     return this.clients.find((c) => c.sessionId === to) ?? null;
   }
 

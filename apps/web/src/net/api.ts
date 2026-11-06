@@ -1,4 +1,4 @@
-import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, LangCode } from '@es/shared';
+import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, LangCode } from '@es/shared';
 import { learnerLang, t, tk } from '../i18n';
 import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
@@ -23,6 +23,8 @@ export const ERROR_TEXT: Record<string, string> = {
   bad_color: tk('That colour is not available.'),
   beta_pass_required: tk('English Street is in closed beta. Please enter an invite code.'),
   invalid_invite_code: tk('That invite code is not valid.'),
+  too_many_friends: tk('Your friend list is full.'),
+  no_request: tk('That friend request is no longer there.'),
 };
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
@@ -44,6 +46,10 @@ const get = <T>(path: string) => request<T>('GET', path);
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
 
 export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
+export const fetchFriends = () => get<FriendList>(`/friends?playerId=${encodeURIComponent(getPlayerId())}`);
+export const friendRequest = (to: string, toName: string, myName: string) => post<{ status: 'pending' | 'friends' }>('/friends/request', { playerId: getPlayerId(), to, toName, myName });
+export const friendRespond = (from: string, accept: boolean, myName: string) => post<{ status: 'friends' | 'declined' }>('/friends/respond', { playerId: getPlayerId(), from, accept, myName });
+export const friendRemove = (pid: string) => post<{ ok: boolean }>('/friends/remove', { playerId: getPlayerId(), pid });
 export const startQuest = (questId: string, playerName: string) => post<SessionState>(`/quests/${questId}/start`, { playerId: getPlayerId(), playerName });
 export const startFreeTalk = (npcId: string, playerName: string) => post<SessionState>(`/npc/${npcId}/talk`, { playerId: getPlayerId(), playerName });
 export const sendTurn = (sessionId: string, text: string, source: 'text' | 'voice' = 'text', subtitles = false) => post<SessionChatResponse>(`/sessions/${sessionId}/chat`, { playerId: getPlayerId(), text, source, subtitles, lang: learnerLang() });

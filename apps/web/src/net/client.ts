@@ -3,13 +3,15 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
 
 /** Shape of the server's Player schema as seen by the client (kept schema-agnostic). */
 interface PlayerLike {
+  group?: string;
+  groupCall?: boolean;
   id: string;
   pid: string;
   name: string;
@@ -28,9 +30,15 @@ interface PlayerLike {
   garden?: string;
   bus?: string;
 }
+interface GroupLike {
+  id: string;
+  name: string;
+  owner: string;
+}
 interface StreetStateLike {
   players: Map<string, PlayerLike>;
   spots: Map<string, string>;
+  groups: Map<string, GroupLike>;
 }
 
 let room: Room<StreetStateLike> | null = null;
@@ -42,6 +50,10 @@ const rtcHandlers = new Set<(m: RtcSignal & { from: string }) => void>();
 const pairHandlers = new Set<(m: PairMessage & { from: string }) => void>();
 const talkHandlers = new Set<(m: TalkMessage & { from: string }) => void>();
 const dmHandlers = new Set<(m: DmReceived) => void>();
+const groupHandlers = new Set<(m: GroupEvent) => void>();
+const friendHandlers = new Set<(m: FriendEvent) => void>();
+export const onGroup = (fn: (m: GroupEvent) => void) => (groupHandlers.add(fn), () => groupHandlers.delete(fn));
+export const onFriend = (fn: (m: FriendEvent) => void) => (friendHandlers.add(fn), () => friendHandlers.delete(fn));
 export const onDm = (fn: (m: DmReceived) => void) => (dmHandlers.add(fn), () => dmHandlers.delete(fn));
 export const onTalk = (fn: (m: TalkMessage & { from: string }) => void) => (talkHandlers.add(fn), () => talkHandlers.delete(fn));
 export const onRtc = (fn: (m: RtcSignal & { from: string }) => void) => (rtcHandlers.add(fn), () => rtcHandlers.delete(fn));
@@ -140,6 +152,8 @@ function bindRoom(r: Room<StreetStateLike>) {
       prop: p.prop ?? '',
       garden: p.garden ?? '',
       bus: p.bus ?? '',
+      group: p.group ?? '',
+      groupCall: !!p.groupCall,
     });
 
   $(r.state).players.onAdd((p, id) => {
@@ -147,6 +161,12 @@ function bindRoom(r: Room<StreetStateLike>) {
     $(p).onChange(() => sync(p, id));
   });
   $(r.state).players.onRemove((_p, id) => g.removePlayer(id));
+  const syncGroup = (x: GroupLike, id: string) => g.setGroupMeta({ id: x.id, name: x.name, owner: x.owner }, id);
+  $(r.state).groups.onAdd((x, id) => {
+    syncGroup(x, id);
+    $(x).onChange(() => syncGroup(x, id));
+  });
+  $(r.state).groups.onRemove((_x, id) => g.setGroupMeta(null, id));
   spots.clear();
   $(r.state).spots.onAdd((v, id) => setSpot(id, v));
   $(r.state).spots.onChange((v, id) => setSpot(id, v));
@@ -161,6 +181,8 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<DmReceived>(MSG.DM, (m) => dmHandlers.forEach((h) => h(m)));
   r.onMessage<RtcSignal & { from: string }>(MSG.RTC, (m) => rtcHandlers.forEach((h) => h(m)));
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
+  r.onMessage<GroupEvent>(MSG.GROUP, (m) => groupHandlers.forEach((h) => h(m)));
+  r.onMessage<FriendEvent>(MSG.FRIEND, (m) => friendHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
     if (!m || typeof m.text !== 'string') return;
     useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });
@@ -216,6 +238,12 @@ export function sendShout(text: string) {
   room?.send(MSG.SHOUT, text);
 }
 
+export function sendGroup(msg: GroupSend) {
+  room?.send(MSG.GROUP, msg);
+}
+export function sendFriend(msg: FriendSend) {
+  room?.send(MSG.FRIEND, msg);
+}
 export function sendDm(msg: DmSend) {
   room?.send(MSG.DM, msg);
 }
