@@ -150,6 +150,7 @@ Whole-scene budgets (docs/PERF.md):
    - `pnpm typecheck`, `pnpm test`, `pnpm --filter @es/web build`;
    - compare `window.__esPerf` (draw calls/triangles) before and after in a representative scene, and record it in docs/PERF.md.
 8. Update the inventory table in section 8.
+9. **Animals and critters (code-built):** open the dev audit page `http://localhost:5173/dev/animals.html?view=side|quarter|rear|front` (every animal assembled like in game on a see-through ground). Nothing may float (spots, tails, heads, ears) and nothing may sink below y = 0. Put surface marks on the body with `decal()` in `buildAnimal.ts`, not as loose spheres.
 
 ## 10. Environment (this VPS)
 

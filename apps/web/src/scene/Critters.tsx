@@ -244,6 +244,18 @@ function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.Re
 }
 
 /** Procedural gait: diagonal leg pairs, body bob, wagging tail; naps lie down with the head low; react = head tilt + happy wag (+ a hop for dogs). */
+/** How high the lowest point of the body is above the ground (how far a nap may lower it). */
+const belly = new WeakMap<THREE.BufferGeometry, number>();
+function bellyHeight(parts: CritterParts): number {
+  let h = belly.get(parts.body);
+  if (h === undefined) {
+    parts.body.computeBoundingBox();
+    h = Math.max(0, parts.body.boundingBox!.min.y);
+    belly.set(parts.body, h);
+  }
+  return h;
+}
+
 function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'walk' | 'idle' | 'nap' | 'react', m: { t: number; phase: number; nap: number; react: number; hop: number }, dt: number, speed: number, land = false) {
   if (!r.body || !r.head || !r.tail) return;
   if (kind === 'duck' || kind === 'duckling') return animateDuck(r, parts, state, m, dt, land);
@@ -261,15 +273,17 @@ function animate(r: RigRefs, parts: CritterParts, kind: CritterKind, state: 'wal
   m.hop = state === 'react' && dog ? Math.abs(Math.sin(m.t * 6)) * 0.04 : m.hop * (1 - k);
   const lie = m.nap;
   const hip = parts.rig.legs[0]![1];
+  // napping lowers the body, but only until the belly touches the ground (low critters like guinea pigs barely drop)
+  const drop = Math.min(hip * 0.8, bellyHeight(parts));
   // body: bob while walking, lowered to the ground for naps, tiny breathing
-  r.body.position.y = (walking ? Math.abs(Math.cos(m.phase)) * 0.015 : 0) - lie * hip * 0.8 + m.hop + Math.sin(m.t * 2.4) * 0.004;
+  r.body.position.y = (walking ? Math.abs(Math.cos(m.phase)) * 0.015 : 0) - lie * drop + m.hop + Math.sin(m.t * 2.4) * 0.004;
   r.body.rotation.x = walking ? Math.sin(m.phase * 2) * 0.03 : 0;
   // legs: walking swings diagonal pairs; lying folds them forward/back under the body
   const legRot = [swing, -swing, -swing, swing];
   r.legs.forEach((g, i) => {
     const fold = i < 2 ? -1.35 : 1.35;
     g.rotation.x = legRot[i]! * (1 - lie) + fold * lie;
-    g.position.y = parts.rig.legs[i]![1] - lie * hip * 0.8 + m.hop;
+    g.position.y = parts.rig.legs[i]![1] - lie * drop + m.hop;
   });
   // head: looks around when idle, bobs while walking, rests low when napping, tilts when you tap it
   r.head.rotation.x = (walking ? Math.sin(m.phase * 2) * 0.06 : 0) + lie * 0.35 - m.react * 0.15;
@@ -323,11 +337,12 @@ function animateRabbit(r: RigRefs, parts: CritterParts, state: string, m: { t: n
   const air = walking ? Math.max(0, Math.sin(m.phase)) : state === 'react' ? Math.max(0, Math.sin(m.t * 7)) * 0.5 : 0;
   m.hop = air * 0.11;
   const lie = m.nap;
-  r.body!.position.y = m.hop - lie * 0.04 + Math.sin(m.t * 3) * 0.003;
+  const drop = Math.min(0.04, bellyHeight(parts));
+  r.body!.position.y = m.hop - lie * drop + Math.sin(m.t * 3) * 0.003;
   r.body!.rotation.x = walking ? -Math.cos(m.phase) * 0.18 : 0;
   r.legs.forEach((g, i) => {
     const front = i < 2;
-    g.position.y = parts.rig.legs[i]![1] + m.hop - lie * 0.04;
+    g.position.y = parts.rig.legs[i]![1] + m.hop - lie * drop;
     g.rotation.x = walking ? (front ? -air * 0.9 : air * 1.0) : lie * (front ? -1.2 : 1.2);
   });
   // ears/nose twitch: quick head jitters while sitting

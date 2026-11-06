@@ -139,6 +139,20 @@ const tailTuft = (t: Part, fur: string, tip: string, len = 0.22, ang = -0.5) => 
   t.add(sphere(0.045, 0, Math.PI, 0, Math.PI * 2, 10, 8), tip, { p: [0, d[1] * len, d[2] * len], s: [0.85, 1.25, 0.85], r: [rot, 0, 0] });
 };
 
+/**
+ * A flat patch (spot, stripe end, mark) lying ON an ellipsoid surface: the point where direction `dir` from the
+ * centre leaves the ellipsoid (semi-axes `semi`), the patch flattened along the surface normal there and sunk a
+ * little into the surface, so it can never float off the body.
+ */
+function decal(p: Part, color: string, center: V3, semi: V3, dir: V3, size: number, stretch: [number, number] = [1, 1]) {
+  const d = new THREE.Vector3(...dir).normalize();
+  const t = 1 / Math.sqrt((d.x / semi[0]) ** 2 + (d.y / semi[1]) ** 2 + (d.z / semi[2]) ** 2);
+  const n = new THREE.Vector3(d.x / semi[0] ** 2, d.y / semi[1] ** 2, d.z / semi[2] ** 2).normalize();
+  const at = d.multiplyScalar(t).add(new THREE.Vector3(...center)).addScaledVector(n, -size * 0.12);
+  const e = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n));
+  p.add(sphere(size, 0, Math.PI, 0, Math.PI * 2, 10, 6), color, { p: [at.x, at.y, at.z], r: [e.x, e.y, e.z], s: [stretch[0], stretch[1], 0.28] });
+}
+
 const builders: Record<AnimalKind, () => AnimalParts> = {
   lion() {
     const b = quad({ bodyR: 0.19, bodyS: [0.85, 0.82, 1.3], headR: 0.17, headAt: [0, 0.38, 0.22], hipY: 0.17, legR: 0.055, legX: 0.09, legZ: 0.14, tailAt: [0, 0.3, -0.25], fur: '#e8b05c', light: '#f6dcae' });
@@ -193,10 +207,24 @@ const builders: Record<AnimalKind, () => AnimalParts> = {
     // long neck from the shoulders to the head
     b.body.add(capsule(0.06, 0.5), '#f2c35c', { p: [0, bodyY + 0.28, 0.24], r: [0.45, 0, 0] });
     b.body.add(box(0.025, 0.55, 0.05), '#a0612e', { p: [0, bodyY + 0.3, 0.2], r: [0.45, 0, 0] });
-    // spots
-    const spots: V3[] = [[0.12, 0.05, 0.05], [-0.12, 0.03, -0.06], [0.1, -0.04, -0.12], [-0.1, 0.08, 0.1], [0, 0.14, -0.02], [0.13, 0.02, 0.15], [-0.13, -0.02, 0.17]];
-    for (const [x, yy, zz] of spots) b.body.add(sphere(0.045, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#b36a2e', { p: [x, bodyY + yy, zz], s: [Math.abs(x) > 0.1 ? 0.3 : 1, 1, 1] });
-    for (const [x, yy] of [[0.055, 0.2], [-0.055, 0.32], [0.05, 0.46], [-0.05, 0.6]] as const) b.body.add(sphere(0.03, 0, Math.PI, 0, Math.PI * 2, 8, 6), '#b36a2e', { p: [x, bodyY + yy, 0.24 + yy * 0.48], s: [0.4, 1, 1] });
+    // spots: flat patches on the body surface (sides, back, rump, chest) ...
+    const semi: V3 = [0.18 * 0.82, 0.18 * 0.8, 0.18 * 1.2];
+    const bodySpots: [V3, number][] = [
+      [[1, 0.3, 0.3], 0.05], [[1, -0.1, -0.5], 0.045], [[1, 0.5, -0.9], 0.04], [[-1, 0.25, 0.1], 0.05], [[-1, -0.15, -0.6], 0.045], [[-1, 0.55, 0.7], 0.04],
+      [[0.25, 1, -0.2], 0.045], [[-0.3, 1, 0.4], 0.04], [[0.1, 0.4, -1], 0.04], [[0.6, 0.2, 1], 0.035], [[-0.6, 0.1, 1], 0.035],
+    ];
+    for (const [dir, size] of bodySpots) decal(b.body, '#b36a2e', [0, bodyY, 0], semi, dir, size, [1, 0.85]);
+    // ... and along the neck, on alternate sides of its axis (the neck capsule is tilted 0.45 rad forward)
+    const tilt = 0.45;
+    const axis = new THREE.Vector3(0, Math.cos(tilt), Math.sin(tilt));
+    const front = new THREE.Vector3(0, -Math.sin(tilt), Math.cos(tilt));
+    const neckC = new THREE.Vector3(0, bodyY + 0.28, 0.24);
+    [-0.16, -0.06, 0.04, 0.14, 0.24].forEach((t, i) => {
+      const side = i % 2 ? -1 : 1;
+      const out = new THREE.Vector3(side * 0.85, 0, 0).addScaledVector(front, i % 3 === 0 ? 0.5 : -0.3).normalize();
+      const c = neckC.clone().addScaledVector(axis, t);
+      decal(b.body, '#b36a2e', [c.x, c.y, c.z], [0.06, 0.06, 0.06], [out.x, out.y, out.z], 0.03, [1, 1.3]);
+    });
     const r = 0.13;
     for (const sx of [-1, 1]) {
       b.head.add(cyl(0.012, 0.014, r * 0.6, 6), '#c98a4a', { p: [sx * r * 0.3, r * 1.0, -r * 0.1] });
@@ -271,7 +299,7 @@ const builders: Record<AnimalKind, () => AnimalParts> = {
     return finish(b);
   },
   kangaroo() {
-    const b = quad({ bodyR: 0.17, bodyS: [0.85, 1.25, 0.95], headR: 0.14, headAt: [0, 0.62, 0.12], hipY: 0.16, legR: 0.05, legX: 0.09, legZ: 0.04, tailAt: [0, 0.18, -0.12], fur: '#c98a52', light: '#f2d8b4' });
+    const b = quad({ bodyR: 0.17, bodyS: [0.85, 1.25, 0.95], headR: 0.14, headAt: [0, 0.5, 0.09], hipY: 0.16, legR: 0.05, legX: 0.09, legZ: 0.04, tailAt: [0, 0.18, -0.12], fur: '#c98a52', light: '#f2d8b4' }); // head sits on the shoulders (was 10 cm above them)
     const r = 0.14;
     b.body.add(sphere(0.07, 0, Math.PI, 0, Math.PI * 2, 10, 8), '#e6c49a', { p: [0, b.bodyY - 0.02, 0.14], s: [1, 0.8, 0.5] }); // pouch
     b.body.add(sphere(0.045), '#c98a52', { p: [0, b.bodyY + 0.03, 0.17] }); // joey peeking out
@@ -284,7 +312,7 @@ const builders: Record<AnimalKind, () => AnimalParts> = {
     return finish(b, 'hop', { legs: [[0.09, 0.16, 0.04], [-0.09, 0.16, 0.04]], frontCount: 0 });
   },
   penguin() {
-    const b = quad({ bodyR: 0.17, bodyS: [0.9, 1.35, 0.85], headR: 0.14, headAt: [0, 0.48, 0.0], hipY: 0.04, legR: 0.03, legX: 0.06, legZ: 0.02, tailAt: [0, 0.08, -0.12], fur: '#2a2c36', light: '#ffffff', eye: { dx: 0.36, dy: 0.12, size: 0.2 } });
+    const b = quad({ bodyR: 0.17, bodyS: [0.9, 1.35, 0.85], headR: 0.14, headAt: [0, 0.59, 0.0], hipY: 0.15, legR: 0.03, legX: 0.06, legZ: 0.02, tailAt: [0, 0.19, -0.12], fur: '#2a2c36', light: '#ffffff', eye: { dx: 0.36, dy: 0.12, size: 0.2 } });
     const r = 0.14;
     b.body.add(sphere(0.15, 0, Math.PI, 0, Math.PI * 2, 14, 10), '#ffffff', { p: [0, b.bodyY - 0.01, 0.05], s: [0.85, 1.25, 0.8] });
     for (const sx of [-1, 1]) {
