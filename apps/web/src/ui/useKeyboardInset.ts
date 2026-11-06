@@ -15,7 +15,11 @@ export function useKeyboardInset() {
       root.style.setProperty('--kb', `${covered}px`);
       // what is really visible (iOS keeps 100dvh while the keyboard covers half of it)
       root.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+      // bottom edge of what is visible, in fixed-position coordinates: the chat bar sits right on the keyboard
+      root.style.setProperty('--vvbottom', `${Math.round(vv.offsetTop + vv.height)}px`);
       root.classList.toggle('kb-open', covered > 120);
+      // iOS scrolls the whole page up to show the focused field, which drags the game and the HUD with it
+      if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0) window.scrollTo(0, 0);
     };
     update();
     vv.addEventListener('resize', update);
@@ -25,6 +29,7 @@ export function useKeyboardInset() {
       vv.removeEventListener('scroll', update);
       root.style.removeProperty('--kb');
       root.style.removeProperty('--vvh');
+      root.style.removeProperty('--vvbottom');
       root.classList.remove('kb-open');
     };
   }, []);

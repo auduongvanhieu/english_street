@@ -4,3 +4,6 @@ html, body, #root { height: 100%; }
 #root { height: 100dvh; }
 body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
 canvas { display: block; touch-action: none; }
+
+/* phone keyboard open (chat, forms): the corner HUD steps aside so the chat bar and the game stay clear */
+html.kb-open .hud-top { display: none; }

@@ -280,8 +280,9 @@ export function ChatBox({ compact, open, onClose }: { compact: boolean; open: bo
   return (
     <div
       data-ui
-      className={compact ? 'absolute inset-x-0 z-20 bg-black/60 p-2 backdrop-blur-sm' : 'absolute right-3 w-80'}
-      style={{ bottom: compact ? 'var(--kb, 0px)' : 'calc(0.75rem + var(--kb, 0px))' }}
+      className={compact ? 'fixed inset-x-0 z-40 bg-black/70 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-md [html.kb-open_&]:pb-2' : 'absolute right-3 w-80'}
+      // phones: pinned to the bottom of the visible area (on top of the keyboard), whatever iOS did to the page
+      style={compact ? { top: 'var(--vvbottom, 100dvh)', transform: 'translateY(-100%)' } : { bottom: 'calc(0.75rem + var(--kb, 0px))' }}
     >
       <div ref={log} className={`mb-2 overflow-y-auto rounded-lg bg-black/40 p-2 text-sm text-white ${compact ? 'max-h-[30dvh]' : 'max-h-36'}`}>
         {chatLog.length === 0 ? (

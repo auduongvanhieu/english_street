@@ -36,7 +36,7 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         type="button"
         data-ui
         onClick={() => open('profile')}
-        className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-11 items-center gap-2 rounded-full bg-black/50 px-3 text-xs text-white backdrop-blur-sm"
+        className="hud-top absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-11 items-center gap-2 rounded-full bg-black/50 px-3 text-xs text-white backdrop-blur-sm"
         aria-label={t('Profile')}
       >
         <span className="max-w-24 truncate font-semibold">{p.name}</span>

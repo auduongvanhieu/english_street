@@ -355,7 +355,7 @@ export default function App() {
       {touch ? (
         <>
           {/* top-right: utility buttons */}
-          <div data-ui className="absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
+          <div data-ui className="hud-top absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <WeatherChip compact />
             <PlayersButton compact />
             <Collapsible id="top" icon="menu" title={t('More buttons')} row>
