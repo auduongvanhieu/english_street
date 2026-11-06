@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CROPS, LANGS, type FarmState, type PlayerSettings } from '@es/shared';
+import { CROPS, LANGS, deviceModelName, type FarmState, type PlayerSettings } from '@es/shared';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
@@ -208,7 +208,8 @@ function DeviceDetails({ d }: { d: UserRow['device'] }) {
             : L('không rõ', 'unknown');
   return (
     <span className="block text-xs leading-5">
-      <b>{d.model || (d.form === 'desktop' ? L('Máy tính', 'Computer') : d.form) || '—'}</b> · {d.os} {d.osVersion}
+      <b>{deviceModelName(d) || (d.form === 'desktop' ? L('Máy tính', 'Computer') : d.form) || '—'}</b>
+      {d.os === 'iOS' && !d.model && deviceModelName(d).startsWith('iPhone ') ? <span className="text-gray-500"> ({L('đoán theo màn hình', 'guessed from the screen')})</span> : null} · {d.os} {d.osVersion}
       <br />
       {d.kind === 'app' ? `App ${d.appVersion ?? ''}` : d.browser} · {net}
       {d.speed ? ` (${d.speed}${d.downlinkMbps ? `, ~${d.downlinkMbps} Mbps` : ''})` : d.downlinkMbps ? ` (~${d.downlinkMbps} Mbps)` : ''}
