@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
   CLOTH_COLORS,
-  DeviceInfoSchema,
+  DeviceInfoSchema, GfxInfoSchema,
   maskProfanity,
   avatarLook,
   checkLook,
@@ -204,7 +204,7 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!(await limiter.allow(`hello:${id}`, 10, 60))) return reply.code(429).send({ error: 'rate_limited' });
       const body = z.object({ name: z.string().max(40).optional(), device: z.unknown().optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
-      const clean = maskProfanity((body.data.name ?? '').replace(/[^\p{L}\p{N}\- ]/gu, '').trim().slice(0, 20));
+      const clean = maskProfanity((body.data.name ?? '').normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').trim().slice(0, 20));
       const prev = await repo.getUser(id);
       // guests are known by the name they type; accounts keep their own name
       await repo.ensureUser(id, !prev?.email && clean.length >= 2 ? clean : (prev?.name ?? 'Guest'));
@@ -216,6 +216,19 @@ export function accountRoutes(repo: AttemptRepo) {
         const { kind, os, osVersion, model, form, browser, network, radio } = d.data;
         await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio }).filter(([, v]) => v !== undefined)) });
       }
+      return { ok: true };
+    });
+
+    // Graphics settings and measured FPS (sent after joining and whenever the player switches quality).
+    app.post('/me/gfx', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`gfx:${id}`, 20, 60))) return reply.code(429).send({ error: 'rate_limited' });
+      const g = GfxInfoSchema.safeParse(req.body);
+      if (!g.success || repo.name !== 'postgres') return { ok: true };
+      const row = await prisma.user.findUnique({ where: { id }, select: { device: true } }).catch(() => null);
+      const device = { ...((row?.device as object | null) ?? {}), gfx: { ...g.data, at: Date.now() } };
+      await prisma.user.update({ where: { id }, data: { device } }).catch(() => undefined);
       return { ok: true };
     });
 

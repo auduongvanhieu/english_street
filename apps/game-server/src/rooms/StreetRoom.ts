@@ -691,7 +691,8 @@ function dist2(a: Player, b: Player) {
 }
 function sanitizeName(n: unknown): string | undefined {
   if (typeof n !== 'string') return undefined;
-  const s = maskProfanity(n.replace(/[^\w\- ]/g, '').trim().slice(0, 20));
+  // letters of any language (Vietnamese "Nguyễn Thanh Sơn"), digits, dash, space; NFC so ễ is one character
+  const s = maskProfanity(n.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20));
   return s.length >= 2 ? s : undefined;
 }
 
