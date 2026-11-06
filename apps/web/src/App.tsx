@@ -29,6 +29,8 @@ import { initDm, useDm } from './store/dm';
 import { initFriends, setZoneJumper } from './store/friends';
 import { initGroup } from './store/group';
 import { SocialToasts } from './ui/Social';
+import { initHotel } from './store/hotel';
+import { HotelPanels, HotelToasts } from './ui/hotel/HotelPanels';
 import { DmToast, PlayersButton, PlayersPanel } from './ui/PlayersPanel';
 import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
@@ -46,6 +48,8 @@ import { CRITTERS, poseAt } from './world/critters';
 import { livePos } from './world/avoid';
 import { freezeClock, serverNow } from './net/client';
 import { InteractPrompt } from './ui/InteractPrompt';
+import { UseButton, UsePrompt } from './ui/UseButton';
+import { useNearest } from './world/usables';
 import { HugButton } from './ui/HugButton';
 import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
@@ -117,6 +121,7 @@ export default function App() {
     const offDm = initDm();
     const offFriends = initFriends();
     const offGroup = initGroup();
+    const offHotel = initHotel();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -124,6 +129,7 @@ export default function App() {
       offDm();
       offFriends();
       offGroup();
+      offHotel();
       offWatch();
       offNative();
     };
@@ -169,6 +175,8 @@ export default function App() {
         toggleHug();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && s.interactTarget && !s.panelNpc) {
         s.openPanel(s.interactTarget);
+      } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && !useSeat.getState().seat && useNearest()) {
+        // used the nearest usable thing (door, lift, phone, ball, boat…)
       } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useSeat.getState().seat) {
         useSeat.getState().stand();
       } else if (!typing && (e.key === 'e' || e.key === 'E') && !s.panelNpc && useSeat.getState().near && !useRestaurant.getState().near) {
@@ -334,6 +342,7 @@ export default function App() {
             <div data-ui className="absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] flex flex-col items-end gap-3">
               <SitButton compact />
               <TalkButton compact />
+              <UseButton />
               <HugButton touch />
               <Collapsible id="actions" icon="⋯" title={t('More actions')} reverse>
                 <EmoteBar compact />
@@ -364,6 +373,7 @@ export default function App() {
           </div>
           <ChatBox compact={false} open onClose={() => undefined} />
           <InteractPrompt touch={false} />
+          <UsePrompt />
           <div className="pointer-events-none absolute bottom-44 left-1/2 -translate-x-1/2">
             <HugButton touch={false} />
           </div>
@@ -380,6 +390,8 @@ export default function App() {
       <TalkToast />
       <DmToast />
       <SocialToasts />
+      <HotelToasts />
+      <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />
       {!hudHidden && <PlayerPopup />}

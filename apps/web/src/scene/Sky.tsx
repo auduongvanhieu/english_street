@@ -10,6 +10,7 @@ import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { cloudTexture } from './Horizon';
 import { glowTexture } from './nightGlow';
 import { localPos } from './LocalPlayer';
+import { INTERIOR_BOUNDS, inRect } from '@es/shared';
 import { preloadLpm, useLpmGeometry } from './LpmModel';
 import { ambientBirds } from '../audio/ambient';
 
@@ -243,7 +244,8 @@ export function Rain({ low }: { low: boolean }) {
   useFrame(() => {
     const l = lines.current;
     if (!l) return;
-    l.visible = sky.rain > 0.02;
+    // no rain indoors (hotel rooms and other interiors off the map)
+    l.visible = sky.rain > 0.02 && !inRect(INTERIOR_BOUNDS, localPos.x, localPos.z);
     if (!l.visible) return;
     geo.setDrawRange(0, Math.ceil(N * Math.min(1, sky.rain)) * 2);
     mat.uniforms.uCam!.value.copy(camera.position);

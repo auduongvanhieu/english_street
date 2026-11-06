@@ -1,0 +1,68 @@
+/**
+ * Interiors: walk-in spaces that live off the street map (hotel corridors and rooms, …), far north of the areas.
+ * Players get there by "moving through a door" (teleport); positions inside are synced like anywhere else, so
+ * everybody in the same room sees each other. The server clamps positions to WORLD_BOUNDS or INTERIOR_BOUNDS.
+ */
+export interface Rect {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 160, minZ: -420, maxZ: -100 };
+export const inRect = (r: Rect, x: number, z: number, m = 0) => x >= r.minX - m && x <= r.maxX + m && z >= r.minZ - m && z <= r.maxZ + m;
+
+/* ------------------------------------------------------------------------------------------- hotel */
+
+/** Guest floors (the lobby is the ground floor in the hotel area); 12 rooms each: 201-212, 301-312. */
+export const HOTEL_FLOORS = [2, 3] as const;
+export const HOTEL_ROOMS_PER_FLOOR = 12;
+/** Corridor centre line z of a floor; the corridor runs along x. */
+export const hotelCorridorZ = (floor: number) => -160 - (floor - 2) * 30;
+export const HOTEL_CORRIDOR_HALF_W = 1.5;
+export const HOTEL_CORRIDOR_X: [number, number] = [-27, 26];
+/** Where the lift doors are in each corridor (west end). */
+export const hotelLiftX = -25.5;
+const ROOM_W = 7;
+const ROOM_D = 6;
+/** Room n (1-12): odd numbers on the north side of the corridor, even on the south; 6 columns. */
+export function hotelRoomInfo(room: number) {
+  const floor = Math.floor(room / 100);
+  const n = room % 100;
+  const col = Math.ceil(n / 2) - 1;
+  const north = n % 2 === 1;
+  const zc = hotelCorridorZ(floor);
+  const cx = -20 + col * 8;
+  const near = zc + (north ? -1 : 1) * (HOTEL_CORRIDOR_HALF_W + 0.5);
+  const far = near + (north ? -1 : 1) * ROOM_D;
+  const rect: Rect = { minX: cx - ROOM_W / 2, maxX: cx + ROOM_W / 2, minZ: Math.min(near, far), maxZ: Math.max(near, far) };
+  return {
+    floor,
+    n,
+    north,
+    rect,
+    /** door: centre of the room's corridor-side wall; `inside` = where you stand after entering */
+    door: { x: cx, z: zc + (north ? -1 : 1) * HOTEL_CORRIDOR_HALF_W },
+    inside: { x: cx, z: near + (north ? -1 : 1) * 1.1, rot: north ? Math.PI : 0 },
+    /** standing in the corridor in front of the door */
+    outside: { x: cx, z: zc + (north ? -1 : 1) * 0.6, rot: north ? 0 : Math.PI },
+  };
+}
+export const isHotelRoom = (room: number) => HOTEL_FLOORS.includes(Math.floor(room / 100) as 2 | 3) && room % 100 >= 1 && room % 100 <= HOTEL_ROOMS_PER_FLOOR;
+export const ALL_HOTEL_ROOMS: number[] = HOTEL_FLOORS.flatMap((f) => Array.from({ length: HOTEL_ROOMS_PER_FLOOR }, (_, i) => f * 100 + i + 1));
+/** Which room a guest gets (stable per player id). */
+export function hotelRoomFor(playerId: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < playerId.length; i++) h = Math.imul(h ^ playerId.charCodeAt(i), 16777619) >>> 0;
+  return ALL_HOTEL_ROOMS[h % ALL_HOTEL_ROOMS.length]!;
+}
+/** The room a position is in (server: who hears a knock), or 0. */
+export function hotelRoomAt(x: number, z: number): number {
+  for (const r of ALL_HOTEL_ROOMS) if (inRect(hotelRoomInfo(r).rect, x, z)) return r;
+  return 0;
+}
+export const hotelCorridorRect = (floor: number): Rect => {
+  const zc = hotelCorridorZ(floor);
+  return { minX: HOTEL_CORRIDOR_X[0], maxX: HOTEL_CORRIDOR_X[1], minZ: zc - HOTEL_CORRIDOR_HALF_W, maxZ: zc + HOTEL_CORRIDOR_HALF_W };
+};
+export const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;

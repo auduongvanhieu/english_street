@@ -3,6 +3,7 @@ import { busStep, joinRide, matchArrival, useBus } from '../store/bus';
 import { decodeBus } from '../world/bus';
 import { useFrame, useThree } from '@react-three/fiber';
 import { getControls, installKeys } from '../input/keys';
+import { pickUsable, useNearUsable } from '../world/usables';
 
 installKeys();
 import * as THREE from 'three';
@@ -339,6 +340,9 @@ export function LocalPlayer({ name }: { name: string }) {
         }
       }
       if (best !== s.interactTarget) s.setInteractTarget(best);
+      // nearest usable thing (doors, lift, phone, ball, boat…) when no NPC is in reach
+      const use = best ? null : pickUsable(g.position.x, g.position.z);
+      if (use?.id !== useNearUsable.getState().near?.id || use?.label !== useNearUsable.getState().near?.label || use?.disabled !== useNearUsable.getState().near?.disabled) useNearUsable.setState({ near: use });
       // nearest cat/dog within hugging reach (none while already hugging one)
       let hug: string | null = null;
       if (!myHolding()) {

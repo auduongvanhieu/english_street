@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useUsable } from '../../../world/usables';
+import { useHotel } from '../../../store/hotel';
+import { useT } from '../../../i18n';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { insideBuilding } from '../../../world/buildings';
@@ -294,6 +297,21 @@ function Garden() {
 }
 
 /** Riverside Hotel: a three-storey hotel with a walk-in lobby, a pool garden and a roof terrace looking at the river. */
+/** Reception (check in / out) at the guest end of the desk, and the lift button: usables (world/usables.ts). */
+function HotelUsables() {
+  const t = useT();
+  const stay = useHotel((s) => s.stay);
+  const open = useHotel((s) => s.open);
+  const [rx, rz] = FRAME.toWorld(DESK.maxX - 0.4, DESK.maxZ + 0.7);
+  const [lx, lz] = FRAME.toWorld(LIFT_X, LOBBY.z0 + 0.9);
+  useUsable({ id: 'hotel-reception', x: rx, z: rz, r: 1.3, icon: '🛎️', label: stay ? t('Reception: check out') : t('Reception: check in'), use: () => open('reception') });
+  useUsable({ id: 'hotel-lift-lobby', x: lx, z: lz, r: 1.5, icon: '🛗', label: t('Take the lift'), use: () => open('lift') });
+  useEffect(() => {
+    void useHotel.getState().load();
+  }, []);
+  return null;
+}
+
 export default function Hotel() {
   const inside = useInLobby();
   return (
@@ -303,6 +321,7 @@ export default function Hotel() {
         <Lobby />
       </BuildingShell>
       {!inside ? <UpperFloors /> : null}
+      <HotelUsables />
     </AreaGroup>
   );
 }

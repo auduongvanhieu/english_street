@@ -14,3 +14,5 @@ export * from './farm';
 export * from './world';
 export * from './device';
 export * from './weather';
+export * from './interiors';
+export * from './shop';

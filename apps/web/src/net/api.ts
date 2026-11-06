@@ -1,4 +1,4 @@
-import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, LangCode } from '@es/shared';
+import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode } from '@es/shared';
 import { learnerLang, t, tk } from '../i18n';
 import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
@@ -25,6 +25,8 @@ export const ERROR_TEXT: Record<string, string> = {
   invalid_invite_code: tk('That invite code is not valid.'),
   too_many_friends: tk('Your friend list is full.'),
   no_request: tk('That friend request is no longer there.'),
+  no_stay: tk('You are not staying at the hotel.'),
+  minibar_empty: tk('The minibar is empty.'),
 };
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
@@ -46,6 +48,11 @@ const get = <T>(path: string) => request<T>('GET', path);
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
 
 export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
+export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);
+export const hotelCheckin = (nights: number) => post<{ stay: HotelStay; coins: number; free?: boolean }>('/me/hotel/checkin', { playerId: getPlayerId(), nights });
+export const hotelMinibar = (item: string) => post<{ stay: HotelStay }>('/me/hotel/minibar', { playerId: getPlayerId(), item });
+export const hotelBill = () => get<{ bill: HotelBill }>(`/me/hotel/bill?playerId=${encodeURIComponent(getPlayerId())}`);
+export const hotelCheckout = (disputed: number) => post<{ correct: boolean; wrong: number; paid: number; xp: number; coins: number }>('/me/hotel/checkout', { playerId: getPlayerId(), disputed });
 export const fetchFriends = () => get<FriendList>(`/friends?playerId=${encodeURIComponent(getPlayerId())}`);
 export const friendRequest = (to: string, toName: string, myName: string) => post<{ status: 'pending' | 'friends' }>('/friends/request', { playerId: getPlayerId(), to, toName, myName });
 export const friendRespond = (from: string, accept: boolean, myName: string) => post<{ status: 'friends' | 'declined' }>('/friends/respond', { playerId: getPlayerId(), from, accept, myName });

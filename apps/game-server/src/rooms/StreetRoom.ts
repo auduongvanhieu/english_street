@@ -21,6 +21,12 @@ import {
   PROP_RE,
   DM_MAX,
   FRIENDS_MAX,
+  INTERIOR_BOUNDS,
+  hotelRoomAt,
+  inRect,
+  isHotelRoom,
+  type HotelEvent,
+  type HotelSend,
   GROUP_CHAT_MAX,
   GROUP_MAX,
   GROUP_NAME_MAX,
@@ -95,6 +101,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   /** Pending group invitations: invited sessionId -> group id + who invited. */
   private groupInvites = new Map<string, { group: string; from: string; at: number }>();
   private lastGroupChatAt = new Map<string, number>();
+  /** Hotel: who knocked on whose door (visitor sessionId -> room), so only invited visitors get let in. */
+  private knocks = new Map<string, { room: number; at: number }>();
   /** Friend presence queries / pings per session (rate limits). */
   private lastPresenceAt = new Map<string, number>();
   private lastPingAt = new Map<string, number>();
@@ -151,8 +159,12 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof msg !== 'object') return;
       // Server is authoritative: clamp to world bounds. Speed checks can be added later.
-      p.x = clamp(Number(msg.x) || 0, WORLD_BOUNDS.minX, WORLD_BOUNDS.maxX);
-      p.z = clamp(Number(msg.z) || 0, WORLD_BOUNDS.minZ, WORLD_BOUNDS.maxZ);
+      const mx = Number(msg.x) || 0;
+      const mz = Number(msg.z) || 0;
+      // interiors (hotel rooms, …) live off the street map, in their own box
+      const box = inRect(INTERIOR_BOUNDS, mx, mz) ? INTERIOR_BOUNDS : WORLD_BOUNDS;
+      p.x = clamp(mx, box.minX, box.maxX);
+      p.z = clamp(mz, box.minZ, box.maxZ);
       p.y = clamp(Number(msg.y) || 0, 0, MAX_JUMP_Y);
       p.rot = Number(msg.rot) || 0;
       p.anim = typeof msg.anim === 'string' ? msg.anim.slice(0, 16) : 'idle';
@@ -296,6 +308,34 @@ export class StreetRoom extends Room<{ state: StreetState }> {
         case 'call':
           p.groupCall = !!msg.on && !!p.group;
           return;
+      }
+    });
+
+    // Hotel doors: knock from the corridor, the guests inside the room (by position) answer.
+    this.onMessage<HotelSend>(MSG.HOTEL, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg !== 'object') return;
+      const now = Date.now();
+      if (msg.op === 'knock') {
+        if (!isHotelRoom(msg.room)) return;
+        const last = this.knocks.get(client.sessionId);
+        if (last && now - last.at < 2000) return;
+        this.knocks.set(client.sessionId, { room: msg.room, at: now });
+        let anyone = false;
+        this.state.players.forEach((q: Player, sid: string) => {
+          if (sid === client.sessionId || hotelRoomAt(q.x, q.z) !== msg.room) return;
+          anyone = true;
+          this.clients.find((c) => c.sessionId === sid)?.send(MSG.HOTEL, { op: 'knock', from: client.sessionId, name: p.name, room: msg.room } satisfies HotelEvent);
+        });
+        if (!anyone) client.send(MSG.HOTEL, { op: 'empty', room: msg.room } satisfies HotelEvent);
+      } else if (msg.op === 'answer') {
+        if (typeof msg.to !== 'string') return;
+        const room = hotelRoomAt(p.x, p.z);
+        const k = this.knocks.get(msg.to);
+        // only someone who is in that room can answer, and only a recent knock on it
+        if (!room || !k || k.room !== room || now - k.at > 60_000) return;
+        if (msg.open) this.knocks.delete(msg.to);
+        this.clients.find((c) => c.sessionId === msg.to)?.send(MSG.HOTEL, { op: 'answer', room, open: !!msg.open, name: p.name } satisfies HotelEvent);
       }
     });
 
@@ -522,6 +562,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.lastGroupChatAt.delete(client.sessionId);
     this.lastPresenceAt.delete(client.sessionId);
     this.lastPingAt.delete(client.sessionId);
+    this.knocks.delete(client.sessionId);
     this.lastAvatarAt.delete(client.sessionId);
     // a pet in their arms stays where they were standing
     if (p?.holding) this.putDown(p.holding, p.x + Math.sin(p.rot) * 0.75, p.z + Math.cos(p.rot) * 0.75);

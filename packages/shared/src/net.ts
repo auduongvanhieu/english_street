@@ -36,6 +36,8 @@ export const MSG = {
   GROUP: 'group',
   /** both ways: friends - client -> server FriendSend (presence query, "I sent you a request" ping); server -> client FriendEvent */
   FRIEND: 'friend',
+  /** both ways: hotel doors - knock on a room, the guest inside opens it (HotelSend / HotelEvent) */
+  HOTEL: 'hotel',
 } as const;
 
 /** Close codes the server uses when it removes a player (client shows why). */
@@ -217,3 +219,19 @@ export interface FriendList {
   /** my requests they have not answered yet */
   outgoing: FriendEntry[];
 }
+
+/* ------------------------------------------------------------------------------------------- hotel doors */
+
+export type HotelSend =
+  /** knock on a room door (from the corridor) */
+  | { op: 'knock'; room: number }
+  /** the guest inside lets the visitor in (or not) */
+  | { op: 'answer'; to: string; open: boolean };
+
+export type HotelEvent =
+  /** someone is knocking on the room you are in */
+  | { op: 'knock'; from: string; name: string; room: number }
+  /** the door was opened for you / not */
+  | { op: 'answer'; room: number; open: boolean; name: string }
+  /** nobody is in that room */
+  | { op: 'empty'; room: number };

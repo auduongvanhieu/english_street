@@ -3,7 +3,7 @@ import { setSpot, spots } from '../world/spots';
 import { CLOSE_BANNED, CLOSE_KICKED } from '@es/shared';
 import { useWorld } from '../store/world';
 import { t } from '../i18n';
-import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
+import { MSG, STREET_ROOM, type AvatarLook, type ChatDelivery, type DmReceived, type DmSend, type FriendEvent, type FriendSend, type GroupEvent, type GroupSend, type HotelEvent, type HotelSend, type JoinOptions, type PairMessage, type RtcSignal, type TalkMessage, type ZoneInfo, type ZoneSelection } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 
 const WS_URL = import.meta.env.VITE_GAME_WS_URL ?? 'ws://localhost:2567';
@@ -52,6 +52,8 @@ const talkHandlers = new Set<(m: TalkMessage & { from: string }) => void>();
 const dmHandlers = new Set<(m: DmReceived) => void>();
 const groupHandlers = new Set<(m: GroupEvent) => void>();
 const friendHandlers = new Set<(m: FriendEvent) => void>();
+const hotelHandlers = new Set<(m: HotelEvent) => void>();
+export const onHotel = (fn: (m: HotelEvent) => void) => (hotelHandlers.add(fn), () => hotelHandlers.delete(fn));
 export const onGroup = (fn: (m: GroupEvent) => void) => (groupHandlers.add(fn), () => groupHandlers.delete(fn));
 export const onFriend = (fn: (m: FriendEvent) => void) => (friendHandlers.add(fn), () => friendHandlers.delete(fn));
 export const onDm = (fn: (m: DmReceived) => void) => (dmHandlers.add(fn), () => dmHandlers.delete(fn));
@@ -183,6 +185,7 @@ function bindRoom(r: Room<StreetStateLike>) {
   r.onMessage<PairMessage & { from: string }>(MSG.PAIR, (m) => pairHandlers.forEach((h) => h(m)));
   r.onMessage<GroupEvent>(MSG.GROUP, (m) => groupHandlers.forEach((h) => h(m)));
   r.onMessage<FriendEvent>(MSG.FRIEND, (m) => friendHandlers.forEach((h) => h(m)));
+  r.onMessage<HotelEvent>(MSG.HOTEL, (m) => hotelHandlers.forEach((h) => h(m)));
   r.onMessage<{ text: string; level: 'info' | 'warning'; code?: string }>(MSG.NOTICE, (m) => {
     if (!m || typeof m.text !== 'string') return;
     useWorld.getState().pushLive({ text: m.code === 'muted' ? t('A moderator has muted your chat for now.') : m.text, level: m.level === 'warning' ? 'warning' : 'info' });
@@ -240,6 +243,9 @@ export function sendShout(text: string) {
 
 export function sendGroup(msg: GroupSend) {
   room?.send(MSG.GROUP, msg);
+}
+export function sendHotel(msg: HotelSend) {
+  room?.send(MSG.HOTEL, msg);
 }
 export function sendFriend(msg: FriendSend) {
   room?.send(MSG.FRIEND, msg);

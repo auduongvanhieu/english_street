@@ -158,7 +158,12 @@ const inRect = (x: number, z: number, r: Aabb, m = 0) => x >= r.minX - m && x <=
 export const onBridge = (x: number, z: number) => Math.abs(Math.abs(x) - BRIDGE_X) <= BRIDGE_HALF && z >= CORRIDOR_MAX_Z - 0.5 && z <= SOUTH_MIN_Z + 0.5;
 
 /** Is (x, z) somewhere the player may stand? Street corridors, bridges and every area yard. */
+/** Extra walkable floors registered by interiors (hotel corridors and rooms, …) off the street map. */
+const extraFloors: Aabb[] = [];
+export const registerFloor = (r: Aabb) => void extraFloors.push(r);
+
 export function walkable(x: number, z: number): boolean {
+  for (const r of extraFloors) if (x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ) return true;
   if (x < -STREET_END_X + 0.5 || x > STREET_END_X - 0.5 || z < YARD_MIN_Z || z > SOUTH_BACK_Z) return false;
   if (z >= CORRIDOR_MIN_Z && z <= CORRIDOR_MAX_Z) return true;
   if (onBridge(x, z)) return true;

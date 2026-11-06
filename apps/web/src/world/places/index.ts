@@ -6,4 +6,5 @@ import './cinema';
 import './station';
 import './hospital';
 import './hotel';
+import './hotelFloors';
 import './sports';
