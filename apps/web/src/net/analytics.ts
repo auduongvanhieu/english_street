@@ -32,5 +32,9 @@ export function initAnalytics() {
   track('page_load', { touch, w: innerWidth, h: innerHeight, lang: navigator.language, ua: navigator.userAgent.slice(0, 120) });
   addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && flush(true));
   addEventListener('pagehide', () => flush(true));
-  addEventListener('error', (e) => track('client_error', { msg: String(e.message).slice(0, 160) }));
+  // only our own code's errors: scripts injected by in-app browsers / extensions (no file, or another origin) are noise
+  addEventListener('error', (e) => {
+    if (!e.filename || !e.filename.startsWith(location.origin)) return;
+    track('client_error', { msg: String(e.message).slice(0, 160), file: e.filename.slice(location.origin.length, location.origin.length + 80), line: e.lineno });
+  });
 }
