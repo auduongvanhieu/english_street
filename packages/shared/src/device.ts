@@ -28,7 +28,19 @@ export const DeviceInfoSchema = z.object({
   gpu: s(80),
   appVersion: s(20),
   lang: s(16),
+  /** Graphics in the game: chosen quality, render pixel ratio, measured frames per second and draw calls. */
+  gfx: z
+    .object({
+      quality: z.enum(['high', 'low']).catch('high'),
+      dpr: z.number().min(0.25).max(5).optional().catch(undefined),
+      fps: z.number().int().min(0).max(500).optional().catch(undefined),
+      calls: z.number().int().min(0).max(100_000).optional().catch(undefined),
+      at: z.number().optional().catch(undefined),
+    })
+    .optional()
+    .catch(undefined),
 });
+export const GfxInfoSchema = DeviceInfoSchema.shape.gfx.unwrap().unwrap();
 export type DeviceInfo = z.infer<typeof DeviceInfoSchema>;
 
 /** "iPhone · iOS 18.1 · Wi-Fi" style one-liner for lists. */

@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { track } from '../net/analytics';
+import { post } from '../net/api';
+import { getPlayerId } from '../net/player';
 import { useSettings } from '../store/settings';
 
 export interface PerfSample {
@@ -23,6 +25,8 @@ export function PerfProbe() {
   const frames = useRef(0);
   const elapsed = useRef(0);
   const reported = useRef(false);
+  const since = useRef(0);
+  const lastQuality = useRef('');
   useFrame((_, dt) => {
     frames.current += 1;
     elapsed.current += dt;
@@ -36,10 +40,17 @@ export function PerfProbe() {
     window.__esPerf = sample;
     frames.current = 0;
     elapsed.current = 0;
-    // One sample per session, after the scene has settled.
-    if (!reported.current && performance.now() > SAMPLE_AFTER_S * 1000) {
+    // switched quality: measure again (the admin site shows the player's graphics and FPS)
+    if (sample.quality !== lastQuality.current) {
+      lastQuality.current = sample.quality;
+      reported.current = false;
+      since.current = performance.now();
+    }
+    // One sample per session / quality, after the scene has settled.
+    if (!reported.current && performance.now() > SAMPLE_AFTER_S * 1000 && performance.now() - since.current > 10_000) {
       reported.current = true;
       track('perf', { ...sample });
+      void post(`/me/gfx?playerId=${encodeURIComponent(getPlayerId())}`, { quality: sample.quality, fps: sample.fps, calls: sample.calls, dpr: Math.round(gl.getPixelRatio() * 100) / 100 }).catch(() => undefined);
     }
   });
   return null;

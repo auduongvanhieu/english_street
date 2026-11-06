@@ -35,6 +35,8 @@ import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
 import { Tutorial } from './ui/Tutorial';
+import { KitchenHud } from './ui/KitchenHud';
+import { useKitchen } from './store/kitchen';
 import { TUTORIAL_KEY, tutorialPending, useTutorial } from './store/tutorial';
 import { useBooks } from './store/books';
 import { SportsHud } from './ui/sports/SportsHud';
@@ -83,7 +85,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen };
 }
 
 export default function App() {
@@ -294,7 +296,7 @@ export default function App() {
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
     // the name a guest typed + the device (admin site: player list, device stats)
     void deviceInfo()
-      .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device }))
+      .then((device) => post(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, device: { ...device, gfx: { quality: useSettings.getState().quality } } }))
       .catch(() => undefined);
     // Returning players (they already made a character) don't get the new-player guide.
     if (localStorage.getItem(AVATAR_INTRO_KEY) && tutorialPending()) localStorage.setItem(TUTORIAL_KEY, 'skipped');
@@ -419,6 +421,7 @@ export default function App() {
       <BoatToasts />
       <FishingHud />
       <Library />
+      <KitchenHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

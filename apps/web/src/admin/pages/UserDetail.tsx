@@ -214,6 +214,23 @@ function DeviceDetails({ d }: { d: UserRow['device'] }) {
       <span className="text-gray-500">
         {d.screen} {d.gpu ? `· ${d.gpu}` : ''}
       </span>
+      <br />
+      {d.gfx ? (
+        <span>
+          🎨 {L('Đồ hoạ', 'Graphics')}: <b>{d.gfx.quality === 'high' ? L('Cao ✨', 'High ✨') : L('Thấp ⚡', 'Low ⚡')}</b>
+          {d.gfx.fps !== undefined ? (
+            <>
+              {' · '}
+              <b className={d.gfx.fps >= 45 ? 'text-green-700' : d.gfx.fps >= 25 ? 'text-amber-700' : 'text-red-600'}>{d.gfx.fps} fps</b>
+            </>
+          ) : null}
+          {d.gfx.dpr ? ` · ${d.gfx.dpr}x` : ''}
+          {d.gfx.calls ? ` · ${d.gfx.calls} draw calls` : ''}
+          {d.gfx.at ? <span className="text-gray-500"> · {new Date(d.gfx.at).toLocaleString()}</span> : null}
+        </span>
+      ) : (
+        <span className="text-gray-500">🎨 {L('Đồ hoạ: chưa có', 'Graphics: not known yet')}</span>
+      )}
     </span>
   );
 }
