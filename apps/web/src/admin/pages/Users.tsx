@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { LANGS, deviceSummary, type DeviceInfo } from '@es/shared';
-import { get } from '../api';
+import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtNum, useL } from '../i18n';
-import { Badge, Btn, Card, Loaded, Page, Select, Table, Text, useLoad } from '../ui';
+import { Badge, Btn, Card, Loaded, Page, Select, Table, Text, confirmDialog, toast, useLoad } from '../ui';
 
 export interface UserRow {
   id: string;
@@ -50,6 +50,7 @@ export function UsersPage() {
   const [sort, setSort] = useState<'recent' | 'created' | 'xp' | 'coins' | 'name'>('recent');
   const [page, setPage] = useState(1);
   const params = new URLSearchParams({ kind, sort, page: String(page), size: '50', ...(query ? { q: query } : {}), ...(level ? { level } : {}), ...(lang ? { lang } : {}), ...(active ? { active } : {}) });
+  const meId = useSession((x) => x.me?.id);
   const s = useLoad(() => get<{ total: number; page: number; size: number; rows: UserRow[] }>(`/admin/users?${params}`), [params.toString()]);
   const reset = <T,>(f: (v: T) => void) => (v: T) => (f(v), setPage(1));
   return (
@@ -127,6 +128,36 @@ export function UsersPage() {
                   { key: 'coins', label: '🪙', render: (u) => fmtNum(u.coins), className: 'text-right tabular-nums' },
                   { key: 'streak', label: '🔥', render: (u) => u.streak, className: 'text-right', wide: true },
                   { key: 'last', label: L('Hoạt động', 'Active'), render: (u) => ago(u.lastActiveAt) },
+                  {
+                    key: 'del',
+                    label: '',
+                    render: (u) =>
+                      u.id === meId ? null : (
+                        <button
+                          type="button"
+                          title={L('Xoá người chơi này', 'Delete this player')}
+                          aria-label={L('Xoá người chơi này', 'Delete this player')}
+                          className="rounded-lg px-2 py-1 text-red-600 hover:bg-red-50"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const ok = await confirmDialog(
+                              L(`Xoá vĩnh viễn "${u.name}" và toàn bộ dữ liệu (nhiệm vụ, sổ tay, bạn bè, sự kiện)? Người đang chơi sẽ bị đá ra.`, `Delete "${u.name}" and all their data (quests, notebook, friends, events) for good? They are kicked if online.`),
+                              { danger: true, typeToConfirm: u.name },
+                            );
+                            if (!ok) return;
+                            try {
+                              await api('DELETE', `/admin/users/${encodeURIComponent(u.id)}`, { confirm: u.name });
+                              toast(L(`Đã xoá ${u.name}`, `Deleted ${u.name}`));
+                              s.reload();
+                            } catch (err) {
+                              toast((err as Error).message);
+                            }
+                          }}
+                        >
+                          🗑
+                        </button>
+                      ),
+                  },
                 ]}
               />
               <div className="mt-3 flex items-center justify-end gap-2 text-sm">

@@ -62,7 +62,7 @@ Mở NPC hoặc nhiệm vụ, chọn tab **Thử nói chuyện**.
   - **Đá ra khỏi game**.
   - **Đăng xuất mọi nơi**.
   - **Mật khẩu tạm**: chưa có dịch vụ email, nên admin nhận một mật khẩu tạm để gửi cho người chơi.
-  - **Xoá tài khoản**: phải gõ đúng tên để xác nhận.
+  - **Xoá tài khoản**: nút 🗑 ở cuối mỗi dòng trong danh sách Người chơi, hoặc trong trang chi tiết; phải gõ đúng tên để xác nhận. Xoá cả nhiệm vụ, sổ tay, bạn bè, sự kiện; người đang chơi bị đá ra.
 - **Khách**: có thể khoá theo id khách, nhưng khách đổi trình duyệt là có id mới. Muốn chặn spam theo mạng thì dùng giới hạn khách theo IP trong Cài đặt.
 
 ### Cài đặt trong game của từng người chơi
