@@ -67,7 +67,7 @@ import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
 import { PairPanel } from './ui/PairPanel';
 import { WeatherChip } from './ui/WeatherChip';
-import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, Collapsible, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
+import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, JumpButton, Collapsible, InviteToast, TalkButton, VoiceChatButton } from './ui/Hud';
 import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
 import { useT } from './i18n';
@@ -370,7 +370,7 @@ export default function App() {
                 <EmoteBar compact />
                 <ShoutButton compact />
               </Collapsible>
-              <HudButton big onClick={requestJump} title={t('Jump')}>⤒</HudButton>
+              <JumpButton onJump={requestJump} title={t('Jump')} />
               <HudButton onClick={() => setChatOpen(true)} title={t('Nearby chat')}>💬</HudButton>
             </div>
           )}

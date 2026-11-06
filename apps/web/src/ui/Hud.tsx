@@ -25,6 +25,33 @@ function rich(s: string, parts: Record<string, React.ReactNode>): React.ReactNod
 }
 
 /** Round translucent HUD button, ≥44px so it is comfortable to tap. */
+/**
+ * Jump (touch): fires on pointerdown, not click. Phones (iOS especially) send no click for a second finger while
+ * the first one is holding the joystick, so "run and jump" never worked with onClick.
+ */
+export function JumpButton({ onJump, title }: { onJump: () => void; title: string }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onJump();
+      }}
+      onClick={(e) => {
+        // keyboard / screen readers (a real tap was already handled on pointerdown)
+        if (e.detail === 0) onJump();
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+      className="flex h-14 w-14 shrink-0 touch-none select-none items-center justify-center rounded-full bg-black/45 text-2xl text-white shadow backdrop-blur-sm active:scale-95"
+    >
+      ⤒
+    </button>
+  );
+}
+
 export function HudButton({ onClick, title, active, children, className = '', big }: { onClick: () => void; title: string; active?: boolean; children: React.ReactNode; className?: string; big?: boolean }) {
   return (
     <button
