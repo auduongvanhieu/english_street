@@ -73,6 +73,7 @@ export function PlayersPanel() {
   const t = useT();
   const openId = useDm((s) => s.openId);
   const tab = useDm((s) => s.tab);
+  const groupTyping = useGroup((s) => s.typing);
   const close = () => useGame.getState().setUiPanel(null);
   return (
     <Sheet onClose={close} label={t('Players')}>
@@ -80,7 +81,8 @@ export function PlayersPanel() {
         <Thread id={openId} onClose={close} />
       ) : (
         <>
-          <List onClose={close} tab={tab} />
+          {/* typing in the group chat on a phone: the list header and tabs make room for the keyboard */}
+          {groupTyping && tab === 'group' ? null : <List onClose={close} tab={tab} />}
           {tab === 'friends' ? <FriendsTab /> : tab === 'group' ? <GroupTab /> : null}
         </>
       )}
@@ -234,7 +236,7 @@ function Thread({ id, onClose }: { id: string; onClose: () => void }) {
         </div>
       ) : null}
       {p ? <SocialActions player={p} /> : null}
-      <div ref={list} className="min-h-[8rem] flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
+      <div ref={list} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
         {lines.length === 0 ? <p className="py-4 text-center text-xs text-gray-500">{t('Send {name} a private message. Only they can read it, wherever they are.', { name })}</p> : null}
         {lines.map((l, i) => (
           <div key={i} className={`flex ${l.from === 'me' ? 'justify-end' : 'justify-start'}`}>

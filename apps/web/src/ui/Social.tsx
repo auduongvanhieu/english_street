@@ -406,6 +406,8 @@ function GroupView() {
   const vc = useVoiceChat();
   const [text, setText] = useState('');
   const [inviting, setInviting] = useState(false);
+  const typing = useGroup((s) => s.typing);
+  useEffect(() => () => useGroup.setState({ typing: false }), []);
   const list = useRef<HTMLDivElement>(null);
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
@@ -437,6 +439,8 @@ function GroupView() {
             {t('Leave group')}
           </button>
         </div>
+        {typing ? null : (
+        <>
         <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
           {group.members.map((m) => (
             <span
@@ -513,8 +517,10 @@ function GroupView() {
               ))}
           </div>
         ) : null}
+        </>
+        )}
       </div>
-      <div ref={list} className="min-h-[8rem] flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
+      <div ref={list} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
         {lines.length === 0 ? (
           <p className="py-4 text-center text-xs text-gray-500">
             {t('Group chat: everyone in the group reads it, wherever they are.')}
@@ -549,6 +555,7 @@ function GroupView() {
             <button
               key={q}
               type="button"
+              onPointerDown={(e) => typing && e.preventDefault()}
               onClick={() => useGroup.getState().send(q)}
               className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-800"
             >
@@ -564,9 +571,13 @@ function GroupView() {
             placeholder={t('Write in English…')}
             className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 text-sm"
             dir="auto"
+            onFocus={() => useGroup.setState({ typing: true })}
+            onBlur={() => useGroup.setState({ typing: false })}
           />
           <button
             type="submit"
+            // keep the focus in the input so the phone keyboard stays open between messages
+            onPointerDown={(e) => e.preventDefault()}
             disabled={!text.trim()}
             className="min-h-11 rounded-lg bg-violet-600 px-4 text-sm font-medium text-white disabled:opacity-50"
           >

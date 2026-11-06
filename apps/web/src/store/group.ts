@@ -23,6 +23,8 @@ interface GroupStore {
   invite: { group: string; name: string; from: string; fromName: string } | null;
   lines: GroupLine[];
   unread: number;
+  /** The group chat input has focus (phones: the panel hides its controls so the input stays above the keyboard). */
+  typing: boolean;
   /** Short status (declined, full…) for a few seconds. */
   notice: string | null;
   create: (name?: string, invite?: string) => void;
@@ -42,6 +44,7 @@ let noticeTimer: number | null = null;
 
 export const useGroup = create<GroupStore>((set, get) => ({
   invite: null,
+  typing: false,
   lines: [],
   unread: 0,
   notice: null,
