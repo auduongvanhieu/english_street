@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { applyMyFarm, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
+import { THIEF_BREATH_S, applyMyFarm, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
 import { get, post } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { onFarm, sendFarm } from '../net/client';
+import { t as tr } from '../i18n';
 import { track } from '../net/analytics';
-import { teleportTo } from '../scene/LocalPlayer';
+import { breath, teleportTo } from '../scene/LocalPlayer';
 import { areaById, frontZ } from '../world/areas';
 import { useProfile } from './profile';
 import { useGame } from './game';
@@ -14,7 +15,8 @@ import { useVoice } from './voice';
  * "My farm" in the game: going in (the game server gives the farm a slot in this zone), your farm's state from
  * the API, actions (run locally first, then confirmed by the API), and visiting a friend's farm (read-only).
  */
-export type FarmPanel = 'shop' | 'barn' | 'settings' | { plot: number } | null;
+export type FarmPanel = 'shop' | 'barn' | 'settings' | 'train' | { plot: number } | null;
+export type StealError = 'steal_guest' | 'steal_level' | 'friends_only' | 'steal_busy' | 'steal_limit' | 'steal_not_ready' | 'steal_taken' | 'steal_limit' | 'closed';
 interface MyFarmStore {
   /** the farm you are in (or going to): owner id, name, slot (-1 = waiting for the server) */
   at: { owner: string; name: string; slot: number } | null;
@@ -26,7 +28,13 @@ interface MyFarmStore {
   day: string;
   loaded: boolean;
   panel: FarmPanel;
-  last: { said: string; xp: number; coins: number; error?: MyFarmError | 'closed' | 'friends_only'; at: number } | null;
+  last: { said: string; xp: number; coins: number; error?: MyFarmError | StealError; note?: string; at: number } | null;
+  /** you are running from a farm dog */
+  chase: { dog: string; crop: string; at: number } | null;
+  /** the dog's place during a chase on this farm (from the game server) */
+  dogAt: { slot: number; x: number; z: number; run: boolean; at: number } | null;
+  /** take one piece from a friend's ripe plot */
+  steal: (plot: number) => Promise<void>;
   enter: (owner?: string, name?: string) => void;
   leave: () => void;
   load: () => Promise<void>;
@@ -48,6 +56,31 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   loaded: false,
   panel: null,
   last: null,
+  chase: null,
+  dogAt: null,
+  async steal(plot) {
+    const at = getS().at;
+    if (!at || getS().chase) return;
+    try {
+      const r = await post<{ got?: string; chase?: string; crop?: string; dog?: { name: string; speed: number } }>(`/farms/${encodeURIComponent(at.owner)}/steal${q()}`, { plot, playerId: getPlayerId() });
+      // the plot shows the missing piece now
+      const v = getS().view;
+      if (v) set({ view: { ...v, plots: v.plots.map((p, i) => (i === plot ? { ...p, stolen: 1 } : p)) } });
+      if (r.chase && r.dog) {
+        sendFarm({ op: 'chase', ticket: r.chase });
+        Object.assign(breath, { on: true, left: THIEF_BREATH_S, max: THIEF_BREATH_S });
+        set({ chase: { dog: r.dog.name, crop: r.crop ?? '', at: Date.now() } });
+        useVoice.getState().speakAs('me', `Oh no! ${r.dog.name} is coming! Run!`, 'en-US');
+        track('myfarm_steal', { dog: true });
+      } else {
+        set({ last: { said: `I took a ${r.got}. Nobody saw me!`, xp: 0, coins: 0, at: Date.now() } });
+        say(`I took a ${r.got}. Nobody saw me!`);
+        track('myfarm_steal', { dog: false });
+      }
+    } catch (e) {
+      set({ last: { said: '', xp: 0, coins: 0, error: (e as Error).message as StealError, at: Date.now() } });
+    }
+  },
   enter(owner = getPlayerId(), name) {
     const mineToo = owner === getPlayerId();
     set({ at: { owner, name: name ?? (mineToo ? useGame.getState().playerName || (useProfile.getState().profile?.name ?? 'My') : 'A friend'), slot: -1 }, view: null, panel: null });
@@ -98,13 +131,30 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   setPanel: (panel) => set({ panel }),
 }));
 
-/** The game server answered with the slot: walk in through the gate. */
+/** Messages from the game server: the farm's slot (walk in through the gate), the dog in a chase, the end. */
 export function initMyFarm() {
   return onFarm((m) => {
-    const at = useMyFarm.getState().at;
-    if (!at || m.owner !== at.owner) return;
-    useMyFarm.setState({ at: { ...at, slot: m.slot } });
-    const g = myFarm(m.slot).gate;
-    teleportTo(g.x, g.z, Math.PI);
+    const st = useMyFarm.getState();
+    if (m.op === 'slot') {
+      const at = st.at;
+      if (!at || m.owner !== at.owner) return;
+      useMyFarm.setState({ at: { ...at, slot: m.slot } });
+      const g = myFarm(m.slot).gate;
+      teleportTo(g.x, g.z, Math.PI);
+    } else if (m.op === 'dog') {
+      useMyFarm.setState({ dogAt: { slot: m.slot, x: m.x, z: m.z, run: m.run, at: Date.now() } });
+    } else if (m.op === 'chase_end') {
+      if (!st.chase) return;
+      breath.on = false;
+      const caught = m.result === 'caught';
+      useMyFarm.setState({
+        chase: null,
+        last: { said: caught ? `${st.chase.dog} caught me! I gave the ${st.chase.crop} back and paid a fine.` : `I got away with the ${st.chase.crop}!`, xp: 0, coins: 0, at: Date.now() },
+      });
+      say(caught ? `${st.chase.dog} caught me!` : 'I got away!');
+      window.setTimeout(() => void useProfile.getState().refresh(), 1500);
+    } else if (m.op === 'alarm') {
+      useMyFarm.setState({ last: { said: '', xp: 0, coins: 0, note: tr('{name} is stealing from your farm! Your dog is running after them.', { name: m.thief }), at: Date.now() } });
+    }
   });
 }

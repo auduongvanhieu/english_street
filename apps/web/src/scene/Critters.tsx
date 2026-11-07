@@ -205,14 +205,14 @@ function shortestAngle(from: number, to: number) {
 }
 
 // ------------------------------------------------------------------------------------------------ chibi body + motion
-interface RigRefs {
+export interface RigRefs {
   body?: THREE.Group;
   head?: THREE.Group;
   tail?: THREE.Group;
   legs: THREE.Group[];
 }
 
-function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.RefObject<RigRefs>; scale: number }) {
+export function CritterBody({ parts, rig, scale }: { parts: CritterParts; rig: React.RefObject<RigRefs>; scale: number }) {
   const outline = useSettings((s) => s.quality) === 'high';
   const mat = chibiMaterial();
   const ol = chibiOutline();

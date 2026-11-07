@@ -47,8 +47,14 @@ export const MSG = {
    * { op: 'slot', owner, slot } (slots are shared out per zone so two farms never overlap) */
   FARM: 'farm',
 } as const;
-export type FarmSend = { op: 'slot'; owner: string };
-export type FarmEvent = { op: 'slot'; owner: string; slot: number };
+export type FarmSend = { op: 'slot'; owner: string } | { op: 'chase'; ticket: string };
+export type FarmEvent =
+  | { op: 'slot'; owner: string; slot: number }
+  /** the guard dog during a chase (10 Hz, to everybody on that farm) */
+  | { op: 'dog'; slot: number; x: number; z: number; run: boolean }
+  | { op: 'chase_end'; slot: number; result: 'escaped' | 'caught'; thief: string }
+  /** to the farm's owner: somebody is stealing */
+  | { op: 'alarm'; thief: string };
 
 /** Close codes the server uses when it removes a player (client shows why). */
 export const CLOSE_KICKED = 4105;

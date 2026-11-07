@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import { ANIMAL_INFO, FIELD_PLOTS, MAX_FIELDS, MY_FARM, MY_FARMS_AREA, animalStage, inRect, myFarm, myFarmAt, myPlotStage, type MyAnimal, type MyPlot } from '@es/shared';
+import * as THREE from 'three';
+import { ANIMAL_INFO, FIELD_PLOTS, MAX_FIELDS, MY_FARM, MY_FARMS_AREA, animalStage, dogLevel, inRect, myFarm, myFarmAt, myPlotStage, type MyAnimal, type MyPlot } from '@es/shared';
+import { buildCritter, coatFor } from '../../chibi/buildCritter';
+import { CritterBody, type RigRefs } from '../../Critters';
 import { localPos } from '../../LocalPlayer';
 import { preloadLpm, useLpmParts } from '../../LpmModel';
 import { Merged, Sign, box, fenceRect } from '../kit';
@@ -118,6 +121,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
   const t = useT();
   const s = useMyFarm.getState();
   const farm = useMyFarm((x) => x.mine);
+  const view = useMyFarm((x) => x.view);
   const f = myFarm(slot);
   const W = (x: number, z: number) => ({ x: f.cx + x, z: f.cz + z });
   const now = Date.now() + s.skew;
@@ -132,6 +136,11 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     const st = myPlotStage(p, now).stage;
     const label = !owned ? t('Buy more fields') : st === 'empty' ? t('Plant seeds') : st === 'seed' ? t('Water the plants') : st === 'ready' ? t('Harvest') : t('Growing…');
     const icon = !owned ? '🪧' : st === 'empty' ? '🌱' : st === 'seed' ? '💧' : st === 'ready' ? '🧺' : '⏳';
+    // a friend's ripe plot: take one piece (secretly…)
+    const vp = view?.plots[i];
+    const ripe = !mine && view && i < view.fields * FIELD_PLOTS && vp && !vp.stolen && myPlotStage(vp, now).stage === 'ready';
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useUsable(ripe ? { id: `myfarm-steal-${i}`, ...W(x, z), r: 1.35, icon: '🤫', label: t('Take one secretly'), priority: true, use: () => void useMyFarm.getState().steal(i) } : null);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useUsable(
       mine
@@ -153,6 +162,27 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
         : null,
     );
   }
+  // the dog house: buy a dog, feed it (it guards the farm today), train it (it gets faster)
+  const dog = farm.dog;
+  const fed = !!dog && dog.fedDay === s.day;
+  useUsable(
+    mine
+      ? {
+          id: 'myfarm-dog',
+          ...W(DOG_HOUSE.x + 1.3, DOG_HOUSE.z),
+          r: 1.6,
+          icon: '🐕',
+          label: !dog ? t('Buy a guard dog') : !fed ? t('Feed {name} (he guards the farm today)', { name: dog.name }) : t('Train {name} (level {n})', { name: dog.name, n: dogLevel(dog.train) }),
+          priority: true,
+          use: () => {
+            const a = useMyFarm.getState();
+            if (!dog) return a.setPanel('shop');
+            if (!fed) return void a.act({ action: 'dogfeed' });
+            a.setPanel('train');
+          },
+        }
+      : null,
+  );
   for (const pen of PENS) {
     const idx = farm.animals.map((a, i) => ({ a, i })).filter((x) => x.a.kind === pen.kind);
     const ready = idx.filter((x) => animalStage(x.a, now).stage === 'ready');
@@ -179,6 +209,53 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     );
   }
   return null;
+}
+
+/** The guard dog: at its house (asleep when nobody fed it today), or running after a thief (game server). */
+function FarmDog({ slot, awake, name }: { slot: number; awake: boolean; name: string }) {
+  const parts = useMemo(() => buildCritter('husky', coatFor(`farmdog-${name}`)), [name]);
+  const rig = useRef<RigRefs>({ legs: [] });
+  const g = useRef<THREE.Group>(null);
+  const f = myFarm(slot);
+  const home = { x: f.cx + DOG_HOUSE.x + 1.1, z: f.cz + DOG_HOUSE.z };
+  const st = useRef({ x: home.x, z: home.z, t: 0 });
+  useFrame((_, dt) => {
+    const grp = g.current;
+    const r = rig.current;
+    if (!grp) return;
+    const s = st.current;
+    s.t += dt;
+    const d = useMyFarm.getState().dogAt;
+    const live = d && d.slot === slot && Date.now() - d.at < 1500;
+    const tx = live ? d.x : home.x;
+    const tz = live ? d.z : home.z;
+    const dx = tx - s.x;
+    const dz = tz - s.z;
+    const dist = Math.hypot(dx, dz);
+    const moving = dist > 0.05;
+    const k = Math.min(1, dt * (live ? 12 : 3));
+    s.x += dx * k;
+    s.z += dz * k;
+    grp.position.set(s.x, 0, s.z);
+    if (moving) grp.rotation.y = Math.atan2(dx, dz);
+    else if (!live) grp.rotation.y = 0;
+    const run = live && d.run;
+    r.legs.forEach((l, i) => (l.rotation.x = run ? Math.sin(s.t * 18 + (i % 2) * Math.PI) * 0.8 : 0));
+    if (r.tail) r.tail.rotation.y = Math.sin(s.t * (awake ? 10 : 2)) * (awake ? 0.6 : 0.1);
+    if (r.body) r.body.position.y = run ? Math.abs(Math.sin(s.t * 18)) * 0.06 : 0;
+    // asleep: lying down
+    grp.scale.set(1, awake || live ? 1 : 0.7, 1);
+  });
+  return (
+    <group ref={g}>
+      <CritterBody parts={parts} rig={rig} scale={1.35} />
+      {!awake ? (
+        <Text position={[0, 1.0, 0]} fontSize={0.35} anchorX="center" anchorY="middle" outlineWidth={0.02} outlineColor="#ffffff">
+          Zzz
+        </Text>
+      ) : null}
+    </group>
+  );
 }
 
 export default function MyFarm() {
@@ -239,6 +316,7 @@ export default function MyFarm() {
         ) : null}
       </group>
       <Animals slot={slot} animals={animals} now={now} />
+      {(own ? mine.dog : view.dog) ? <FarmDog slot={slot} awake={own ? mine.dog!.fedDay === useMyFarm.getState().day : view.dog!.awake} name={(own ? mine.dog!.name : view.dog!.name) ?? 'Rex'} /> : null}
       <Usables slot={slot} mine={own} />
     </group>
   );

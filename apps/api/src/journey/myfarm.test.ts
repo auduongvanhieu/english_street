@@ -38,3 +38,35 @@ test('my farm: seeds, coins, growing, animals, the daily sale cap', () => {
   // a new day: selling again
   assert.ok(applyMyFarm(capped.farm, { action: 'sell' }, 0, 0, '2026-11-08').coins > 0);
 });
+
+test('my farm: stealing takes one piece per ripe plot, a few a day; the dog', async () => {
+  const { stealFrom, dogAwake, stealFine, dogLevel, STEALS_FROM_FARM_PER_DAY } = await import('@es/shared');
+  const day = '2026-11-07';
+  let f = emptyMyFarm();
+  f = applyMyFarm(f, { action: 'plant', plot: 0, crop: 'carrot' }, 0, 0, day).farm;
+  assert.deepEqual(stealFrom(f, 0, 1, day), { error: 'not_ready' });
+  f = applyMyFarm(f, { action: 'water', plot: 0 }, 1, 0, day).farm;
+  const ripe = 1 + GROW_MS.carrot;
+  const s1 = stealFrom(f, 0, ripe, day);
+  assert.ok(!('error' in s1));
+  if ('error' in s1) return;
+  assert.equal(s1.crop, 'carrot');
+  // the same plot again: taken; the owner harvests the rest
+  assert.deepEqual(stealFrom(s1.farm, 0, ripe, day), { error: 'taken' });
+  const h = applyMyFarm(s1.farm, { action: 'harvest', plot: 0 }, ripe, 0, day);
+  assert.equal(h.farm.barn.carrot, 2);
+  // a daily limit per farm
+  const robbed = { ...f, robbed: [day, STEALS_FROM_FARM_PER_DAY] as [string, number] };
+  assert.deepEqual(stealFrom(robbed, 0, ripe, day), { error: 'limit' });
+  // the dog: bought, fed today = awake; trained = faster; the fine
+  let d = applyMyFarm(f, { action: 'buy', item: 'dog', qty: 1 }, 0, 100, day).farm;
+  assert.ok(!dogAwake(d, day));
+  d = applyMyFarm(d, { action: 'dogfeed' }, 0, 0, day).farm;
+  assert.ok(dogAwake(d, day));
+  assert.ok(!dogAwake(d, '2026-11-08'));
+  for (let i = 0; i < 3; i++) d = applyMyFarm(d, { action: 'train', ok: true }, 0, 0, day).farm;
+  assert.equal(applyMyFarm(d, { action: 'train', ok: true }, 0, 0, day).error, 'trained');
+  assert.equal(dogLevel(d.dog!.train), 1);
+  assert.equal(stealFine(2), 3);
+  assert.equal(stealFine(500), 100);
+});

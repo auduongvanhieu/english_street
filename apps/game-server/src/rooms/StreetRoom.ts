@@ -57,13 +57,14 @@ import {
   CLOSE_KICKED,
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
+import { FarmChases, type ChaseClient } from './farmChase';
 import { Group, Player, StreetState } from './schema/StreetState';
 import { Football } from './football';
 import { Boats } from './boats';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
-import { accountStatus, addPlay, isMuted, live, mutes, sampleHeat } from '../admin';
+import { accountStatus, addPlay, isMuted, live, mutes, reportChase, sampleHeat } from '../admin';
 
 /** Every open room (for the admin site: online list, kicks, notices). */
 export const ROOMS = new Set<StreetRoom>();
@@ -242,7 +243,20 @@ export class StreetRoom extends Room<{ state: StreetState }> {
 
     // "My farm": a slot in the farm grid per farm owner, for as long as somebody is there
     this.onMessage<FarmSend>(MSG.FARM, (client, msg) => {
-      if (!msg || msg.op !== 'slot' || typeof msg.owner !== 'string' || msg.owner.length > 64) return;
+      if (!msg) return;
+      if (msg.op === 'chase') {
+        // the API's ticket: this player stole on a farm with its dog awake
+        const p = this.state.players.get(client.sessionId);
+        const tk = verifyToken(AUTH_SECRET, msg.ticket);
+        if (!p || !tk || tk.sub !== 'chase' || tk.thief !== p.pid) return;
+        const owner = String(tk.owner);
+        const slot = [...this.farmSlots].find(([, r]) => r.owner === owner)?.[0];
+        if (slot === undefined) return;
+        this.chases.start({ id: String(tk.id), thief: p.pid, thiefSession: client.sessionId, owner, slot, speed: Math.min(8, Number(tk.speed) || 4) });
+        for (const c of this.clients) if (this.state.players.get(c.sessionId)?.pid === owner && c !== client) c.send(MSG.FARM, { op: 'alarm', thief: p.name } satisfies FarmEvent);
+        return;
+      }
+      if (msg.op !== 'slot' || typeof msg.owner !== 'string' || msg.owner.length > 64) return;
       client.send(MSG.FARM, { op: 'slot', owner: msg.owner, slot: this.farmSlot(msg.owner) } satisfies FarmEvent);
     });
 
@@ -441,6 +455,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     let lastPlay = Date.now();
     this.setSimulationInterval((dtMs) => {
       if (this.football!.awake()) this.football!.step(Math.min(0.1, dtMs / 1000));
+      if (this.chases.awake()) this.chases.step(Math.min(0.1, dtMs / 1000));
       const now = Date.now();
       if (now - lastSecond < 1000) return;
       if (now - lastPlay >= 60_000) {
@@ -740,6 +755,15 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     });
   }
 
+  /** Guard-dog chases on the farms (rooms/farmChase.ts). */
+  private chases = new FarmChases(
+    (session) => {
+      const p = this.state.players.get(session);
+      return p ? { x: p.x, z: p.z } : null;
+    },
+    () => this.clients as unknown as ChaseClient[],
+    reportChase,
+  );
   /** Farm owner per slot, and when the slot was last seen in use. */
   private farmSlots = new Map<number, { owner: string; seen: number }>();
   private farmSlot(owner: string): number {

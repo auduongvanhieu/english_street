@@ -75,6 +75,8 @@ const floorAt = (x: number, z: number) => (x > HILL.minX - 2 && x < HILL.maxX + 
 
 export type { Controls } from '../input/keys';
 
+/** Breath for running (a farm-dog chase): seconds of running left while `on`. */
+export const breath = { on: false, left: 0, max: 1 };
 /** Live local position (mutable, read by RemotePlayers for distance culling without React churn). */
 export const localPos = new THREE.Vector3(0, 0, 4);
 /** Local player's facing (rotation.y), for things placed in front of them. */
@@ -320,6 +322,11 @@ export function LocalPlayer({ name }: { name: string }) {
       anim.current = useRestaurant.getState().seat && useRestaurant.getState().step === 'eating' ? 'eat' : 'sit';
     } else if (mag > 0.05) {
       dir.normalize();
+      // running away from a farm dog: only while you have breath (store/myFarm.ts)
+      if (breath.on) {
+        if (run) breath.left = Math.max(0, breath.left - dt);
+        if (breath.left <= 0) run = false;
+      }
       const speed = WALK_SPEED * (run ? 2 : 1) * mag * (swimming ? 0.6 : 1);
       nearbyCircles(g.position.x, g.position.z, posts, circles.current);
       // Sub-steps of ≤ 0.15 m so a long frame on a slow phone cannot tunnel through a thin lamp post.

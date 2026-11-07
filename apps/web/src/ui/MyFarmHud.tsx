@@ -1,10 +1,22 @@
-import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, shopPrice, type MyFarmError, type VisitMode } from '@es/shared';
+import { useEffect, useMemo, useState } from 'react';
+import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, DOG_COMMANDS, DOG_PRICE, DOG_TRAIN_PER_DAY, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, dogLevel, shopPrice, type VisitMode } from '@es/shared';
+import { breath } from '../scene/LocalPlayer';
 import { useMyFarm } from '../store/myFarm';
 import { Icon } from './icons';
 import { useT } from '../i18n';
+import { useVoice } from '../store/voice';
 
 const CROP_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
-const ERRORS: Record<MyFarmError | 'closed' | 'friends_only', string> = {
+const ERRORS: Record<string, string> = {
+  no_dog: 'You have no dog yet. Buy one in the farm shop.',
+  dog_fed: 'Your dog has had its dinner today.',
+  trained: 'Enough training for today. Come back tomorrow!',
+  steal_guest: 'Only players with an account can do that.',
+  steal_level: 'You and your friend need to be level 3 or higher.',
+  steal_busy: 'You are already running!',
+  steal_limit: 'That is enough for today.',
+  steal_not_ready: 'It is not ripe yet.',
+  steal_taken: 'Somebody already took one from there.',
   busy: 'Something is growing there already.',
   empty: 'Nothing is planted there.',
   no_seed: 'You have no seeds of that kind. Buy some in the farm shop.',
@@ -55,7 +67,7 @@ export function MyFarmHud() {
     <>
       {toast?.error && !at ? (
         <div data-ui className="pointer-events-none absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-full bg-slate-900/85 px-4 py-2 text-sm text-white">
-          {t(ERRORS[toast.error])}
+          {t(ERRORS[toast.error] ?? toast.error)}
         </div>
       ) : null}
       {at && at.slot >= 0 ? (
@@ -74,10 +86,17 @@ export function MyFarmHud() {
           </div>
         </div>
       ) : null}
-      {at && toast ? (
+      <ChaseBanner />
+      {at && panel === 'train' ? <TrainPanel /> : null}
+      {toast?.note ? (
+        <div data-ui className="pointer-events-none absolute left-1/2 top-28 z-30 -translate-x-1/2 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg">
+          🐕 {toast.note}
+        </div>
+      ) : null}
+      {at && toast && !toast.note ? (
         <div data-ui className="pointer-events-none absolute bottom-40 left-1/2 z-20 -translate-x-1/2">
           <div className={`rounded-full px-4 py-2 text-sm shadow-lg ${toast.error ? 'bg-red-50 text-red-700' : 'bg-white/95 text-slate-800'}`} dir="auto">
-            {toast.error ? t(ERRORS[toast.error]) : (
+            {toast.error ? t(ERRORS[toast.error] ?? toast.error) : (
               <>
                 <span dir="ltr">“{toast.said}”</span> {toast.xp ? <b className="text-emerald-700">+{toast.xp} XP</b> : null} {toast.coins ? <b className={toast.coins > 0 ? 'text-amber-600' : 'text-gray-500'}>{toast.coins > 0 ? '+' : ''}{toast.coins} {coin}</b> : null}
               </>
@@ -125,6 +144,16 @@ export function MyFarmHud() {
                 );
               })}
             </div>
+            <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('A guard dog')}</h3>
+            <button type="button" disabled={!!mine.dog} onClick={() => void s.act({ action: 'buy', item: 'dog', qty: 1 })} className="mb-3 flex min-h-14 w-full items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-2 text-left text-xs disabled:opacity-50" dir="ltr">
+              <span className="text-2xl">🐕</span>
+              <span>
+                <b className="block">
+                  a dog · {DOG_PRICE} {coin}
+                </b>
+                <span className="text-gray-500">{mine.dog ? t('You have {name}.', { name: mine.dog.name }) : t('Feed it every day and it chases thieves away.')}</span>
+              </span>
+            </button>
             <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('Feed and fields')}</h3>
             <div className="grid grid-cols-2 gap-1.5" dir="ltr">
               {[1, 5].map((n) => (
@@ -240,5 +269,89 @@ export function MyFarmHud() {
         </div>
       ) : null}
     </>
+  );
+}
+
+/** Running from a farm dog: get to the gate! (breath bar) */
+function ChaseBanner() {
+  const t = useT();
+  const chase = useMyFarm((s) => s.chase);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!chase) return;
+    const id = window.setInterval(() => tick((n) => n + 1), 100);
+    return () => window.clearInterval(id);
+  }, [chase]);
+  if (!chase) return null;
+  const k = breath.max ? breath.left / breath.max : 0;
+  return (
+    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-40 w-[80vw] max-w-xs -translate-x-1/2">
+      <div className="rounded-2xl bg-red-600/95 p-3 text-center text-white shadow-2xl">
+        <p className="text-lg font-black">🐕 {t('{name} is coming! Run to the gate!', { name: chase.dog })}</p>
+        <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/30">
+          <div className="h-full rounded-full bg-white transition-[width]" style={{ width: `${Math.round(k * 100)}%` }} />
+        </div>
+        <p className="mt-1 text-xs opacity-90">{k > 0 ? t('Hold Shift (or push the stick all the way) to run') : t('Out of breath… keep walking!')}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Training the dog: hear a command, choose what the dog does. All right = the dog gets better. */
+function TrainPanel() {
+  const t = useT();
+  const s = useMyFarm.getState();
+  const dog = useMyFarm((x) => x.mine.dog);
+  const day = useMyFarm((x) => x.day);
+  const rounds = useMemo(() => [...DOG_COMMANDS].sort(() => Math.random() - 0.5).slice(0, 3), []);
+  const [i, setI] = useState(0);
+  const [miss, setMiss] = useState(false);
+  const [done, setDone] = useState<boolean | null>(null);
+  const cur = rounds[i];
+  const options = useMemo(() => (cur ? [cur, ...DOG_COMMANDS.filter((c) => c !== cur).sort(() => Math.random() - 0.5).slice(0, 2)].sort(() => Math.random() - 0.5) : []), [cur]);
+  useEffect(() => {
+    if (cur && done === null) useVoice.getState().speakAs('me', `${cur.cmd}`, 'en-US');
+  }, [cur, done]);
+  if (!dog) return null;
+  const left = DOG_TRAIN_PER_DAY - (dog.trainDay === day ? dog.trainCount : 0);
+  const pick = (c: (typeof DOG_COMMANDS)[number]) => {
+    if (c !== cur) return setMiss(true);
+    if (i + 1 < rounds.length) return setI(i + 1);
+    const ok = !miss;
+    setDone(ok);
+    void s.act({ action: 'train', ok });
+  };
+  return (
+    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-md -translate-x-1/2">
+      <div className="pointer-events-auto rounded-2xl bg-white/95 p-3 shadow-2xl">
+        <div className="mb-2 flex items-center justify-between">
+          <b className="text-gray-800">🐕 {t('Train {name} · level {n}', { name: dog.name, n: dogLevel(dog.train) })}</b>
+          <button type="button" onClick={() => s.setPanel(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+        {left <= 0 && done === null ? (
+          <p className="text-sm text-gray-600">{t('Enough training for today. Come back tomorrow!')}</p>
+        ) : done !== null ? (
+          <p className="text-center text-sm">{done ? `✅ ${t('Perfect! {name} is getting faster.', { name: dog.name })}` : t('Not quite. Practise again next time!')}</p>
+        ) : cur ? (
+          <>
+            <p className="mb-1 text-xs text-gray-500">
+              {i + 1}/{rounds.length} · {t('You say the command. What does the dog do?')}
+            </p>
+            <button type="button" onClick={() => useVoice.getState().speakAs('me', cur.cmd, 'en-US')} className="mb-2 w-full rounded-xl bg-sky-50 py-2 text-xl font-black text-sky-800" dir="ltr">
+              🔊 “{cur.cmd}”
+            </button>
+            <div className="flex flex-col gap-1.5" dir="ltr">
+              {options.map((o) => (
+                <button key={o.cmd} type="button" onClick={() => pick(o)} className="min-h-10 rounded-xl border border-gray-200 bg-white px-3 text-left text-sm">
+                  {o.does}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }

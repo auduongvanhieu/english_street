@@ -99,3 +99,9 @@ export async function flushPlay() {
   // API down: keep them for the next try (bounded)
   if (!ok && playQueue.length < 20_000) playQueue.push(...items);
 }
+
+// ---------------------------------------------------------------- "My farm" chases
+/** How a guard-dog chase ended (the API settles the stolen piece and the fine). */
+export function reportChase(id: string, thief: string, result: 'escaped' | 'caught') {
+  void api('/internal/farm-chase', { method: 'POST', body: JSON.stringify({ id, thief, result }) });
+}
