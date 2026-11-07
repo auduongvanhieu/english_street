@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from './icons';
 import { useTutorial } from '../store/tutorial';
 import { useGame } from '../store/game';
@@ -76,6 +77,91 @@ export function LanguagePicker({ id = 'lang-select', className = '' }: { id?: st
 }
 
 /** ⚙️ All player options in one sheet: language, subtitles, IPA, voice, graphics, sound. */
+/** Account: change the name (everyone), the password (accounts), see the e-mail. */
+function AccountSection() {
+  const t = useT();
+  const profile = useProfile((p) => p.profile);
+  const loggedIn = useProfile((p) => p.loggedIn);
+  const playerName = useGame((g) => g.playerName);
+  const [name, setName] = useState('');
+  const [editing, setEditing] = useState<null | 'name' | 'password'>(null);
+  const [cur, setCur] = useState('');
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const shown = (loggedIn ? profile?.name : playerName) || playerName;
+  const run = async (f: () => Promise<string>) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      setMsg({ ok: true, text: await f() });
+      setEditing(null);
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const input = 'mb-2 w-full rounded-lg border px-3 py-2 text-sm';
+  const btn = 'min-h-9 rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white disabled:opacity-50';
+  return (
+    <section className="py-2">
+      <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">👤 {t('Account')}</h3>
+      <Row label={shown || t('Guest')} hint={loggedIn && profile?.email ? profile.email : t('Guest')}>
+        <button type="button" onClick={() => (setEditing(editing === 'name' ? null : 'name'), setName(shown), setMsg(null))} className="min-h-9 rounded-lg border px-3 text-sm">
+          {t('Change name')}
+        </button>
+      </Row>
+      {editing === 'name' ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              const n = await useProfile.getState().rename(name);
+              return t('Your name is now {name}.', { name: n });
+            });
+          }}
+        >
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} autoFocus placeholder={t('Your name')} className={input} />
+          <button type="submit" disabled={busy || name.trim().length < 2} className={btn}>
+            {t('Save')}
+          </button>
+        </form>
+      ) : null}
+      {loggedIn && profile?.email ? (
+        <>
+          <Row label={t('Password')}>
+            <button type="button" onClick={() => (setEditing(editing === 'password' ? null : 'password'), setCur(''), setPw(''), setPw2(''), setMsg(null))} className="min-h-9 rounded-lg border px-3 text-sm">
+              {t('Change password')}
+            </button>
+          </Row>
+          {editing === 'password' ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (pw !== pw2) return setMsg({ ok: false, text: t('The two passwords are not the same.') });
+                void run(async () => {
+                  await useProfile.getState().changePassword(cur, pw);
+                  return t('Password changed. Other devices are signed out.');
+                });
+              }}
+            >
+              <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" placeholder={t('Current password')} className={input} />
+              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" placeholder={t('New password (6+ characters)')} className={input} />
+              <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" placeholder={t('New password again')} className={input} />
+              <button type="submit" disabled={busy || !cur || pw.length < 6} className={btn}>
+                {t('Save')}
+              </button>
+            </form>
+          ) : null}
+        </>
+      ) : null}
+      {msg ? <p className={`pb-2 text-sm ${msg.ok ? 'text-green-700' : 'text-red-600'}`}>{msg.text}</p> : null}
+    </section>
+  );
+}
+
 export function SettingsPanel() {
   const t = useT();
   const lang = useLang((st) => st.lang);
@@ -97,6 +183,7 @@ export function SettingsPanel() {
         </button>
       </SheetHeader>
       <div className="min-h-0 flex-1 divide-y overflow-y-auto px-4 sm:px-5">
+        <AccountSection />
         <section className="py-2">
           <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">🌐 {t('Language')}</h3>
           <Row label={t('My language')} hint={t('Meanings, subtitles and explanations are shown in this language')}>

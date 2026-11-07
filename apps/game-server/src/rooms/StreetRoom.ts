@@ -486,6 +486,19 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     return n;
   }
   /** Admin changed this player's in-game settings: send them to every open game of theirs. */
+  /** The player renamed themselves (or an admin did): new name tag at once. */
+  renameUser(uid: string, name: string) {
+    const clean = sanitizeName(name);
+    if (!clean) return 0;
+    let n = 0;
+    for (const c of this.clients) {
+      if (this.who.get(c.sessionId)?.uid !== uid) continue;
+      const p = this.state.players.get(c.sessionId);
+      if (p) p.name = clean;
+      n += 1;
+    }
+    return n;
+  }
   pushSettings(uid: string, settings: PlayerSettings) {
     let n = 0;
     for (const c of this.clients) {

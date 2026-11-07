@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CROPS, LANGS, deviceModelName, type FarmState, type PlayerSettings } from '@es/shared';
+import { CROPS, LANGS, countryFlag, deviceModelName, type FarmState, type PlayerSettings } from '@es/shared';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
@@ -218,6 +218,25 @@ function DeviceDetails({ d }: { d: UserRow['device'] }) {
         {d.screen} {d.gpu ? `· ${d.gpu}` : ''}
       </span>
       <br />
+      {d.country ? (
+        <>
+          {countryFlag(d.country)} {L('Quốc gia', 'Country')}: <b>{d.country}</b>
+          {d.tz ? <span className="text-gray-500"> · {d.tz}</span> : null}
+          <br />
+        </>
+      ) : null}
+      {d.deviceId ? (
+        <>
+          {L('Mã thiết bị', 'Device id')}: <code className="text-[11px]">{d.deviceId}</code>
+          <br />
+        </>
+      ) : null}
+      {d.ua ? (
+        <>
+          <span className="break-all text-[11px] text-gray-500">User agent: {d.ua}</span>
+          <br />
+        </>
+      ) : null}
       {d.gfx ? (
         <span>
           🎨 {L('Đồ hoạ', 'Graphics')}: <b>{d.gfx.quality === 'high' ? L('Cao ✨', 'High ✨') : L('Thấp ⚡', 'Low ⚡')}</b>

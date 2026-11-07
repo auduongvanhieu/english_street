@@ -238,6 +238,29 @@ export function adminUserRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  /** "Forgot password" requests not answered yet (newer than the player's last password change / reset / dismissal). */
+  app.get('/admin/users/password-requests', async () => {
+    const since = new Date(Date.now() - 14 * 24 * 3600 * 1000);
+    const ev = await prisma.event.findMany({ where: { name: { in: ['password_reset_request', 'password_reset', 'password_change', 'password_request_dismissed'] }, createdAt: { gte: since } }, orderBy: { createdAt: 'asc' }, select: { name: true, playerId: true, props: true, createdAt: true } });
+    const open = new Map<string, { at: Date; email: string; contact: string; mailed: boolean; count: number }>();
+    for (const e of ev) {
+      if (!e.playerId) continue;
+      if (e.name === 'password_reset_request') {
+        const p = (e.props ?? {}) as { email?: string; contact?: string; mailed?: boolean };
+        const prev = open.get(e.playerId);
+        open.set(e.playerId, { at: e.createdAt, email: p.email ?? '', contact: p.contact || prev?.contact || '', mailed: !!p.mailed, count: (prev?.count ?? 0) + 1 });
+      } else open.delete(e.playerId);
+    }
+    const users = await prisma.user.findMany({ where: { id: { in: [...open.keys()] } }, select: { id: true, name: true, email: true } });
+    return { rows: users.map((u) => ({ ...open.get(u.id)!, id: u.id, name: u.name, email: u.email })).sort((a, b) => +b.at - +a.at) };
+  });
+
+  app.post<{ Params: { id: string } }>('/admin/users/:id/password-request/dismiss', async (req) => {
+    await prisma.event.create({ data: { name: 'password_request_dismissed', playerId: req.params.id, props: {} } });
+    await audit(req, 'user.password_request_dismiss', req.params.id);
+    return { ok: true };
+  });
+
   /** There is no e-mail service: the admin gets a temporary password to pass on (shown once), and old sessions end. */
   app.post<{ Params: { id: string } }>('/admin/users/:id/reset-password', async (req, reply) => {
     const u = await prisma.user.findUnique({ where: { id: req.params.id } });
@@ -245,6 +268,7 @@ export function adminUserRoutes(app: FastifyInstance) {
     const temp = randomBytes(6).toString('base64url');
     await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await hashPassword(temp), tokenVersion: { increment: 1 } } });
     forgetStatus(u.id);
+    await prisma.event.create({ data: { name: 'password_reset', playerId: u.id, props: { via: 'admin' } } });
     await audit(req, 'user.reset_password', u.id);
     return { password: temp };
   });

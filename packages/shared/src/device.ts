@@ -29,6 +29,13 @@ export const DeviceInfoSchema = z.object({
   gpu: s(80),
   appVersion: s(20),
   lang: s(16),
+  /** Random id kept in this browser / app install (localStorage es:deviceId): tells devices apart. */
+  deviceId: s(64),
+  /** IANA time zone of the device (Asia/Ho_Chi_Minh). */
+  tz: s(40),
+  /** Filled by the server on POST /me/hello: browser user agent and the country of the IP (ISO code). */
+  ua: s(400),
+  country: s(4),
   /** Graphics in the game: chosen quality, render pixel ratio, measured frames per second and draw calls. */
   gfx: z
     .object({
@@ -103,3 +110,6 @@ export function deviceModelName(d: Partial<DeviceInfo> | null | undefined): stri
   const names = fit.length ? fit : list.map(([n]) => n);
   return names.length === 1 ? `iPhone ${names[0]}` : `iPhone ${names.join(' / ')}`;
 }
+
+/** "VN" -> "🇻🇳" (regional indicator letters); '' for unknown. */
+export const countryFlag = (code?: string) => (code && /^[A-Z]{2}$/.test(code) ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0))) : '');

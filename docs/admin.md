@@ -65,6 +65,14 @@ Mở NPC hoặc nhiệm vụ, chọn tab **Thử nói chuyện**.
   - **Xoá tài khoản**: nút 🗑 ở cuối mỗi dòng trong danh sách Người chơi, hoặc trong trang chi tiết; phải gõ đúng tên để xác nhận. Xoá cả nhiệm vụ, sổ tay, bạn bè, sự kiện; người đang chơi bị đá ra.
 - **Khách**: có thể khoá theo id khách, nhưng khách đổi trình duyệt là có id mới. Muốn chặn spam theo mạng thì dùng giới hạn khách theo IP trong Cài đặt.
 
+### Quên mật khẩu, thông tin thiết bị
+
+- Người chơi tự đổi tên (cả khách) và đổi mật khẩu trong ⚙️ Cài đặt → Tài khoản. Đổi mật khẩu sẽ đăng xuất các máy khác.
+- "Quên mật khẩu?" ở màn hình đăng nhập:
+  - có `RESEND_API_KEY` trong `.env` thì người chơi nhận email chứa link đặt mật khẩu mới (30 phút, dùng một lần);
+  - nếu không có, yêu cầu hiện trong thẻ 🔑 ở đầu trang Người chơi, kèm cách liên lạc người chơi để lại. Bấm "Cấp mật khẩu tạm", gửi mật khẩu đó cho họ, rồi bấm "Xong".
+- Mỗi lần vào game, người chơi lưu thêm: quốc gia (tra từ IP bằng bảng GeoLite2 offline), mã thiết bị (ngẫu nhiên, giữ trong trình duyệt/app), múi giờ và user agent. Cột "Nước" có trong danh sách; chi tiết nằm ở mục Thiết bị.
+
 ### Cài đặt trong game của từng người chơi
 Trang chi tiết người chơi có thẻ **Cài đặt trong game**: đồ hoạ, ngôn ngữ, phụ đề, IPA, tắt giọng đọc, tốc độ đọc, tiếng chim, kiểu mic, giờ và thời tiết. Thẻ hiện giá trị mà game của người đó báo về lần gần nhất.
 - Bấm **Lưu và áp dụng**: nếu người chơi đang online, server game đẩy cài đặt xuống máy họ và đổi ngay, có thông báo nhỏ trong game. Nếu đang offline, cài đặt được giữ lại và áp dụng ở lần vào game tiếp theo.

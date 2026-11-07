@@ -27,6 +27,9 @@ export const ERROR_TEXT: Record<string, string> = {
   no_request: tk('That friend request is no longer there.'),
   no_stay: tk('You are not staying at the hotel.'),
   minibar_empty: tk('The minibar is empty.'),
+  wrong_password: tk('Your current password is wrong.'),
+  link_expired: tk('This link has expired or was already used. Ask for a new one.'),
+  bad_name: tk('Name must be at least 2 characters.'),
 };
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
@@ -78,6 +81,10 @@ export const guestPass = (c: CaptchaAnswer) => post<{ pass: string }>('/auth/gue
 export const fetchCaptcha = () => get<{ id: string; svg: string }>('/auth/captcha');
 export const register = (email: string, password: string, name: string, guestId: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/register', { email, password, name, guestId, ...c });
 export const login = (email: string, password: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/login', { email, password, ...c });
+export const forgotPassword = (email: string, contact: string, c: CaptchaAnswer) => post<{ ok: boolean; mail: boolean }>('/auth/forgot', { email, contact, ...c });
+export const resetPassword = (token: string, password: string) => post<AuthResponse>('/auth/reset', { token, password });
+export const changePassword = (current: string, password: string) => post<{ token: string }>('/me/password', { current, password });
+export const changeName = (name: string) => post<{ name: string }>(`/me/name?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name });
 export const fetchMe = () => get<Profile & { quota: { turnsLeftToday: number } }>(`/me${q()}`);
 export const fetchPlacement = () => get<Omit<PlacementQuestion, 'answer'>[]>('/placement');
 export const submitPlacement = (answers: number[]) => post<{ correct: number; total: number; level: string }>(`/me/placement${q()}`, { answers });

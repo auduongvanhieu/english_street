@@ -36,7 +36,16 @@ import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
 import { prisma } from '../plugins/prisma';
 import { isBanned, userStatus } from '../moderation';
-import { HUMAN_PASS_TTL_S, signToken as signShared } from '@es/shared/token';
+import { HUMAN_PASS_TTL_S, signToken as signShared, verifyToken as verifyShared } from '@es/shared/token';
+import { forgetStatus } from '../moderation';
+import { sendMail, mailEnabled } from '../mailer';
+import { countryOf } from '../geo';
+import { gameRename } from '../admin/game';
+import { webOrigins } from '../env';
+
+const RESET_TTL_S = 30 * 60;
+/** Display names: letters of any language, digits, dash, space (same rule as the game server). */
+export const cleanName = (n: string) => maskProfanity(n.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20));
 
 export function accountRoutes(repo: AttemptRepo) {
   async function profile(u: UserRecord): Promise<Profile> {
@@ -155,6 +164,78 @@ export function accountRoutes(repo: AttemptRepo) {
       return { token: signToken(u.id, st?.tokenVersion ?? 0), profile: await profile((await repo.getUser(u.id)) ?? u) };
     });
 
+    // ---- password reset: an e-mailed link when mail is set up, else a request the admin site answers ----
+    app.post('/auth/forgot', async (req, reply) => {
+      if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ email: z.string().email().max(120), contact: z.string().max(120).default(''), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional(), turnstileToken: z.string().max(4096).optional() }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
+      if (!(await limiter.allow(`forgot:${body.data.email.toLowerCase()}`, 3, 3600))) return reply.code(429).send({ error: 'rate_limited' });
+      const u = await repo.getUserByEmail(body.data.email);
+      let mailed = false;
+      if (u?.passwordHash) {
+        const token = signShared(env.AUTH_SECRET, `pwreset:${u.id}`, RESET_TTL_S, { h: u.passwordHash.slice(-16) });
+        const link = `${webOrigins[0] ?? ''}/?reset=${encodeURIComponent(token)}`;
+        mailed = await sendMail(
+          u.email!,
+          'English Street: reset your password',
+          `Hi ${u.name},\n\nOpen this link within 30 minutes to choose a new password:\n${link}\n\nIf you did not ask for this, ignore this e-mail.`,
+        );
+        await repo.logEvent({ name: 'password_reset_request', playerId: u.id, props: { email: u.email, contact: maskProfanity(body.data.contact.trim()), mailed } });
+      }
+      // the same answer whether or not the address has an account
+      return { ok: true, mail: mailEnabled() };
+    });
+
+    app.post('/auth/reset', async (req, reply) => {
+      if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ token: z.string().max(600), password: z.string().min(6).max(100) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const c = verifyShared(env.AUTH_SECRET, body.data.token);
+      const id = c?.sub.startsWith('pwreset:') ? c.sub.slice(8) : '';
+      const u = id ? await prisma.user.findUnique({ where: { id } }) : null;
+      // single use: the link stops working once the password has changed
+      if (!u?.passwordHash || u.passwordHash.slice(-16) !== c?.h) return reply.code(400).send({ error: 'link_expired' });
+      const nu = await prisma.user.update({ where: { id }, data: { passwordHash: await hashPassword(body.data.password), tokenVersion: { increment: 1 } } });
+      forgetStatus(id);
+      await repo.logEvent({ name: 'password_reset', playerId: id, props: { via: 'link' } });
+      return { token: signToken(id, nu.tokenVersion), profile: await profile((await repo.getUser(id))!) };
+    });
+
+    // Signed-in players: change the password (the old one is needed; other devices are signed out).
+    app.post('/me/password', async (req, reply) => {
+      const id = req.authPlayerId;
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`pw:${id}`, 10, 3600))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ current: z.string().min(1).max(100), password: z.string().min(6).max(100) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const u = await prisma.user.findUnique({ where: { id } });
+      if (!u?.passwordHash) return reply.code(400).send({ error: 'no_account' });
+      if (!(await verifyPassword(body.data.current, u.passwordHash))) return reply.code(401).send({ error: 'wrong_password' });
+      const nu = await prisma.user.update({ where: { id }, data: { passwordHash: await hashPassword(body.data.password), tokenVersion: { increment: 1 } } });
+      forgetStatus(id);
+      await repo.logEvent({ name: 'password_change', playerId: id });
+      return { token: signToken(id, nu.tokenVersion) };
+    });
+
+    // Change the display name (accounts and guests); the name tag in the street changes at once.
+    app.post('/me/name', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      const body = z.object({ name: z.string().max(40) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const name = cleanName(body.data.name);
+      if (name.length < 2) return reply.code(400).send({ error: 'bad_name' });
+      const prev = await repo.getUser(id);
+      if (prev?.name === name) return { name };
+      if (!(await limiter.allow(`rename:${id}`, 5, 86400))) return reply.code(429).send({ error: 'rate_limited' });
+      await repo.ensureUser(id, name);
+      await repo.updateUser(id, { name });
+      await gameRename(id, name).catch(() => undefined);
+      await repo.logEvent({ name: 'rename', playerId: id, props: { from: prev?.name ?? '', to: name } });
+      return { name };
+    });
+
     // ---- profile (token, or ?playerId= for guests) ----
     const who = (req: { authPlayerId: string | null; query: unknown }) => playerIdFrom(req as never, (req.query as { playerId?: string })?.playerId);
 
@@ -212,9 +293,11 @@ export function accountRoutes(repo: AttemptRepo) {
       if (repo.name === 'postgres') await prisma.user.update({ where: { id }, data: { lastIp: (req.ip ?? '').slice(0, 64) } }).catch(() => undefined);
       const d = DeviceInfoSchema.safeParse(body.data.device ?? {});
       if (d.success && repo.name === 'postgres') {
-        await prisma.user.update({ where: { id }, data: { device: d.data as object } }).catch(() => undefined);
-        const { kind, os, osVersion, model, form, browser, network, radio } = d.data;
-        await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio }).filter(([, v]) => v !== undefined)) });
+        // the server knows these better than the page: the browser's user agent and the country of the IP
+        const dev = { ...d.data, ua: String(req.headers['user-agent'] ?? '').slice(0, 400) || undefined, country: countryOf(req.ip) || undefined };
+        await prisma.user.update({ where: { id }, data: { device: dev as object } }).catch(() => undefined);
+        const { kind, os, osVersion, model, form, browser, network, radio, deviceId } = d.data;
+        await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio, deviceId, country: dev.country }).filter(([, v]) => v !== undefined)) });
       }
       // came with a friend's invite link: remember it once, for a new player only (paid when they finish chapter 2)
       const inviter = body.data.invitedBy;

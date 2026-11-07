@@ -35,4 +35,5 @@ export const gameNotice = (text: string, level: 'info' | 'warning') => game<{ ro
 export const gameSettings = (uid: string, settings: object) => game<{ applied: number }>('POST', '/internal/settings', { uid, s: JSON.stringify(settings) });
 
 /** Tell a player's open game that journey steps were finished. */
+export const gameRename = (uid: string, name: string) => game<{ renamed: number }>('POST', '/internal/rename', { uid, name });
 export const gameJourney = (uid: string, ev: object) => game<{ sent: number }>('POST', '/internal/journey', { uid, ev: JSON.stringify(ev) });

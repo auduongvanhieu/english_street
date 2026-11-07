@@ -76,6 +76,13 @@ const gameServer = new Server({
       const n = uid && ok.success ? [...ROOMS].reduce((s, r) => s + r.pushSettings(uid, ok.data), 0) : 0;
       res.json({ applied: n });
     });
+    app.post('/internal/rename', (req, res) => {
+      if (!internal(req)) return void res.status(403).json({ error: 'forbidden' });
+      const q = req.query as Record<string, string | undefined>;
+      const uid = String(q.uid ?? '');
+      const n = uid ? [...ROOMS].reduce((s, r) => s + r.renameUser(uid, String(q.name ?? '')), 0) : 0;
+      res.json({ renamed: n });
+    });
     app.post('/internal/journey', (req, res) => {
       if (!internal(req)) return void res.status(403).json({ error: 'forbidden' });
       const q = req.query as Record<string, string | undefined>;

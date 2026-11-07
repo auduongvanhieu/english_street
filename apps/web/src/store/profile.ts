@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Profile } from '@es/shared';
-import { fetchMe, login as apiLogin, register as apiRegister, saveLang, type CaptchaAnswer } from '../net/api';
+import { useGame } from './game';
+import { changeName as apiChangeName, changePassword as apiChangePassword, fetchMe, login as apiLogin, register as apiRegister, resetPassword as apiResetPassword, saveLang, type CaptchaAnswer } from '../net/api';
 import { isLang } from '@es/shared';
 import { onLangChange, useLang } from '../i18n';
 import { track } from '../net/analytics';
@@ -12,6 +13,12 @@ interface ProfileStore {
   refresh: () => Promise<void>;
   login: (email: string, password: string, captcha: CaptchaAnswer) => Promise<void>;
   register: (email: string, password: string, name: string, captcha: CaptchaAnswer) => Promise<void>;
+  /** New password from an e-mailed / admin reset link: signs in. */
+  resetPassword: (token: string, password: string) => Promise<void>;
+  /** Change the password (other devices are signed out; this one gets a fresh token). */
+  changePassword: (current: string, password: string) => Promise<void>;
+  /** New display name (guests too): saved, and the name tag in the street changes. */
+  rename: (name: string) => Promise<string>;
   logout: () => void;
 }
 
@@ -27,7 +34,7 @@ onLangChange((lang) => {
   if (useProfile.getState().profile) void saveLang(lang).catch(() => undefined);
 });
 
-export const useProfile = create<ProfileStore>((set) => ({
+export const useProfile = create<ProfileStore>((set, get) => ({
   profile: null,
   loggedIn: !!getToken(),
   async refresh() {
@@ -59,6 +66,24 @@ export const useProfile = create<ProfileStore>((set) => ({
     const r = await apiRegister(email, password, name, getGuestId(), captcha);
     setSession(r.token, r.profile.id);
     set({ profile: r.profile, loggedIn: true });
+  },
+  async resetPassword(token, password) {
+    const r = await apiResetPassword(token, password);
+    setSession(r.token, r.profile.id);
+    set({ profile: r.profile, loggedIn: true });
+    syncLang(r.profile);
+  },
+  async changePassword(current, password) {
+    const r = await apiChangePassword(current, password);
+    const id = get().profile?.id;
+    if (id) setSession(r.token, id);
+  },
+  async rename(name) {
+    const r = await apiChangeName(name);
+    const p = get().profile;
+    if (p) set({ profile: { ...p, name: r.name } });
+    useGame.getState().setPlayerName(r.name);
+    return r.name;
   },
   logout() {
     setSession(null, null);

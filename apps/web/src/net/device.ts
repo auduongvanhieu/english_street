@@ -73,6 +73,16 @@ function gpuName(): string | undefined {
   }
 }
 
+/** A random id kept in this browser / app install, to tell a player's devices apart (admin site). */
+export function deviceId(): string {
+  let id = localStorage.getItem('es:deviceId');
+  if (!id) {
+    id = crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    localStorage.setItem('es:deviceId', id);
+  }
+  return id;
+}
+
 let cached: Promise<DeviceInfo> | null = null;
 export function deviceInfo(): Promise<DeviceInfo> {
   cached ??= (async () => {
@@ -105,6 +115,8 @@ export function deviceInfo(): Promise<DeviceInfo> {
       screen: `${screen.width}x${screen.height}@${Math.round(devicePixelRatio * 10) / 10}`,
       gpu: gpuName(),
       lang: navigator.language,
+      deviceId: deviceId(),
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
     };
     // the phone app knows better (exact model, OS version, Wi-Fi / mobile data, 4G / 5G on iPhone)
     if (isNativeApp()) {

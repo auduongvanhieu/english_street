@@ -70,7 +70,7 @@ registerAuth(app);
 
 // Closed beta: every write except sign-in needs a beta pass (x-beta-pass) or a signed-in account.
 if (env.BETA_CODES.length > 0) {
-  const open = new Set(['/auth/login', '/auth/guest', '/beta/verify', '/events', '/feedback']);
+  const open = new Set(['/auth/login', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/feedback']);
   app.addHook('onRequest', async (req, reply) => {
     const path = req.url.split('?')[0]!;
     if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;
@@ -82,7 +82,7 @@ if (env.BETA_CODES.length > 0) {
 // Anti-spam: writes need a signed-in account or a guest human pass (captcha), so bots can't burn the
 // NPC budget or fill the database. Sign-in / sign-up / the guest pass itself carry their own captcha.
 {
-  const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/beta/verify', '/events', '/me/push-token']);
+  const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/me/push-token']);
   app.addHook('onRequest', async (req, reply) => {
     const path = req.url.split('?')[0]!;
     if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;

@@ -4,6 +4,7 @@ import { useProfile } from '../store/profile';
 import {
   fetchCaptcha,
   fetchConfig,
+  forgotPassword,
   guestPass,
   verifyBetaCode,
   type CaptchaAnswer,
@@ -13,7 +14,10 @@ import { useT } from '../i18n';
 import { LanguagePicker } from './SettingsPanel';
 import { Turnstile } from './Turnstile';
 
-type Mode = 'guest' | 'login' | 'register';
+type Mode = 'guest' | 'login' | 'register' | 'forgot' | 'reset';
+
+/** ?reset=<token> from a password-reset e-mail. */
+const resetToken = () => new URLSearchParams(location.search).get('reset') ?? '';
 
 export function AuthScreen({
   initialName,
@@ -30,7 +34,10 @@ export function AuthScreen({
 }) {
   const t = useT();
   const { loggedIn, profile, login, register, logout } = useProfile();
-  const [mode, setMode] = useState<Mode>(loggedIn ? 'login' : 'guest');
+  const [mode, setMode] = useState<Mode>(resetToken() ? 'reset' : loggedIn ? 'login' : 'guest');
+  const [contact, setContact] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [sent, setSent] = useState<null | { mail: boolean }>(null);
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +52,7 @@ export function AuthScreen({
   const [hasPass, setHasPass] = useState(() => !!getHumanPass());
   // Signed in = a saved token whose profile loaded; until then (or if it fails) the normal forms + check apply.
   const signedIn = loggedIn && !!profile;
-  const needCaptcha = !signedIn && (mode !== 'guest' || !hasPass);
+  const needCaptcha = !signedIn && mode !== 'reset' && !sent && (mode !== 'guest' || !hasPass);
   useEffect(() => {
     if (loggedIn && !profile) void useProfile.getState().refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,6 +135,39 @@ export function AuthScreen({
       }
       setBusy(false);
     }
+    if (mode === 'reset') {
+      if (password.length < 6) return setError(t('Password (6+ characters)'));
+      if (password !== password2) return setError(t('The two passwords are not the same.'));
+      setBusy(true);
+      try {
+        await useProfile.getState().resetPassword(resetToken(), password);
+        history.replaceState(null, '', location.pathname);
+        setPassword('');
+        setPassword2('');
+        setMode('login');
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (mode === 'forgot') {
+      if (sent) return setMode('login');
+      if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError(t('Email'));
+      const c = humanAnswer();
+      if (!c) return;
+      setBusy(true);
+      try {
+        setSent(await forgotPassword(email.trim(), contact.trim(), c));
+      } catch (err) {
+        setError((err as Error).message);
+        resetCheck();
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (loggedIn && profile) return go(profile.name);
     if (mode === 'guest') {
       if (name.trim().length < 2) return setError(t('Name must be at least 2 characters.'));
@@ -176,6 +216,60 @@ export function AuthScreen({
     </button>
   );
 
+  const checkUi = needCaptcha ? (
+    <>
+                {useTs ? (
+                  <Turnstile
+                    siteKey={siteKey}
+                    resetKey={tsReset}
+                    onToken={setTsToken}
+                    onFail={() => setTsFailed(true)}
+                  />
+                ) : null}
+                {!useTs && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <div
+                      className="flex h-[60px] w-[170px] shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-slate-50"
+                      aria-label={t('Security code image')}
+                    >
+                      {cap ? (
+                        <img
+                          src={`data:image/svg+xml;utf8,${encodeURIComponent(cap.svg)}`}
+                          alt={t('Security code image')}
+                          width={170}
+                          height={60}
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400">…</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void newCaptcha()}
+                      title={t('New code')}
+                      aria-label={t('New code')}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-lg hover:bg-gray-50"
+                    >
+                      ↻
+                    </button>
+                  </div>
+                )}
+                {!useTs && (
+                  <input
+                    value={capAnswer}
+                    onChange={(e) => setCapAnswer(e.target.value.toUpperCase())}
+                    placeholder={t('Type the code above')}
+                    maxLength={8}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    className="mb-2 w-full rounded-lg border px-3 py-2 font-mono tracking-widest"
+                  />
+                )}
+              </>
+  ) : null;
+
   return (
     <div className="relative flex h-full items-center justify-center">
       <StreetBackdrop />
@@ -196,7 +290,43 @@ export function AuthScreen({
           <LanguagePicker id="auth-lang" className="min-w-0 flex-1" />
         </div>
 
-        {loggedIn && profile ? (
+        {mode === 'reset' || mode === 'forgot' ? (
+          <div className="mb-2">
+            <h2 className="mb-2 font-semibold">{mode === 'reset' ? t('Choose a new password') : t('Forgot your password?')}</h2>
+            {mode === 'reset' ? (
+              <>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('New password (6+ characters)')} autoComplete="new-password" className="mb-2 w-full rounded-lg border px-3 py-2" />
+                <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={t('New password again')} autoComplete="new-password" className="mb-2 w-full rounded-lg border px-3 py-2" />
+              </>
+            ) : sent ? (
+              <p className="mb-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+                {sent.mail
+                  ? t('If this email has an account, we sent a link to it. Open it within 30 minutes to choose a new password.')
+                  : t('Request sent. An admin will check it and send you a temporary password through the contact you gave.')}
+              </p>
+            ) : (
+              <>
+                <p className="mb-2 text-xs text-gray-600">{t('Enter the email of your account. Add a way to reach you (Zalo, Facebook, phone) in case we need to contact you.')}</p>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('Email')} autoComplete="email" className="mb-2 w-full rounded-lg border px-3 py-2" />
+                <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder={t('Zalo / Facebook / phone (optional)')} maxLength={120} className="mb-2 w-full rounded-lg border px-3 py-2" />
+                {checkUi}
+              </>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (mode === 'reset') history.replaceState(null, '', location.pathname);
+                setSent(null);
+                setError(null);
+                setMode('login');
+              }}
+              className="text-xs text-blue-700 underline"
+            >
+              ← {t('Back to sign in')}
+            </button>
+          </div>
+        ) : null}
+        {mode === 'reset' || mode === 'forgot' ? null : loggedIn && profile ? (
           <div className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">
             {t('Signed in as {name}')
               .split('{name}')
@@ -262,61 +392,14 @@ export function AuthScreen({
                     <EyeIcon open={!showPw} />
                   </button>
                 </div>
-              </>
-            )}
-            {needCaptcha && (
-              <>
-                {useTs ? (
-                  <Turnstile
-                    siteKey={siteKey}
-                    resetKey={tsReset}
-                    onToken={setTsToken}
-                    onFail={() => setTsFailed(true)}
-                  />
-                ) : null}
-                {!useTs && (
-                  <div className="mb-2 flex items-center gap-2">
-                    <div
-                      className="flex h-[60px] w-[170px] shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-slate-50"
-                      aria-label={t('Security code image')}
-                    >
-                      {cap ? (
-                        <img
-                          src={`data:image/svg+xml;utf8,${encodeURIComponent(cap.svg)}`}
-                          alt={t('Security code image')}
-                          width={170}
-                          height={60}
-                          draggable={false}
-                        />
-                      ) : (
-                        <span className="text-xs text-gray-400">…</span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void newCaptcha()}
-                      title={t('New code')}
-                      aria-label={t('New code')}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-lg hover:bg-gray-50"
-                    >
-                      ↻
-                    </button>
-                  </div>
-                )}
-                {!useTs && (
-                  <input
-                    value={capAnswer}
-                    onChange={(e) => setCapAnswer(e.target.value.toUpperCase())}
-                    placeholder={t('Type the code above')}
-                    maxLength={8}
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    className="mb-2 w-full rounded-lg border px-3 py-2 font-mono tracking-widest"
-                  />
+                {mode === 'login' && (
+                  <button type="button" onClick={() => (setError(null), setSent(null), setMode('forgot'))} className="mb-2 text-xs text-blue-700 underline">
+                    {t('Forgot password?')}
+                  </button>
                 )}
               </>
             )}
+            {checkUi}
             {mode === 'guest' && (
               <p className="mb-2 text-xs text-gray-500">
                 {t('Guest progress stays in this browser. Sign up later to keep it.')}
@@ -345,11 +428,17 @@ export function AuthScreen({
             ? t('Connecting…')
             : busy
               ? t('Please wait…')
+              : mode === 'reset'
+                ? t('Save the new password')
+                : mode === 'forgot'
+                  ? sent
+                    ? t('Back to sign in')
+                    : t('Send')
               : mode === 'register' && !loggedIn
                 ? t('Create account & play')
                 : t('Enter the street')}
         </button>
-        {onZones && (
+        {onZones && mode !== 'forgot' && mode !== 'reset' && (
           <button
             type="submit"
             onClick={() => setIntent('zones')}
