@@ -11,6 +11,7 @@ import { useSettings } from './settings';
 import { useVoice } from './voice';
 import { FRAME, JOURNEY_MIN, TRAIN_SLOT_MS, fmtTime, service, type TrainService } from '../world/places/station';
 import { RIDE, carSpot } from '../world/train';
+import { ARRIVE as BAY_ARRIVE } from '../world/sunnyBay';
 
 /**
  * Riding the train: buy a ticket at the machine (where to? single or return?), board while the doors are open, ride
@@ -23,7 +24,8 @@ export interface Ticket {
 }
 export interface Ride {
   slot: number;
-  dest: TrainService['dest'];
+  /** a timetable destination, or 'English Street Central' on the way back from Sunny Bay */
+  dest: string;
   /** real departure (timetable + delay), ms on the server clock */
   dep: number;
   /** announcements already made (keys of RIDE plus 'board', 'doors') */
@@ -31,6 +33,8 @@ export interface Ride {
   check: null | { ok: number; text: string };
   result: MinigameResult | null;
   done: boolean;
+  /** the train back from Sunny Bay to English Street Central (no inspector, no score) */
+  returning?: boolean;
 }
 export type MachineStep = 'dest' | 'type' | 'done';
 
@@ -49,6 +53,10 @@ interface TrainStore {
   board: (slot: number) => void;
   showTicket: () => void;
   leave: () => void;
+  /** at Sunny Bay: step off the train there */
+  getOff: () => void;
+  /** at Sunny Bay station: the next train home */
+  startReturn: () => void;
 }
 
 const pa = (text: string) => {
@@ -115,6 +123,30 @@ export const useTrain = create<TrainStore>((set, get) => ({
     set({ ride: { ...r, check: { ok, text } }, asking: false });
     track('station_ticket_check', { ok });
   },
+  getOff() {
+    const r = get().ride;
+    if (!r || r.returning || r.dest !== 'Sunny Bay') return;
+    const score = r.check?.ok ?? 0;
+    track('station_train_ride', { dest: r.dest, score, off: true });
+    void reportMinigame('train', { score })
+      .then(() => void useProfile.getState().refresh())
+      .catch(() => undefined);
+    useSeat.getState().stand();
+    set({ ride: null, asking: false, caption: null, ticket: null });
+    teleportTo(BAY_ARRIVE.x + (Math.random() - 0.5) * 4, BAY_ARRIVE.z, Math.PI);
+    track('beach_arrive');
+    window.setTimeout(() => useVoice.getState().speakAs('lifeguard', 'Welcome to Sunny Bay! Check the flag before you swim.', 'en-AU'), 1500);
+  },
+  startReturn() {
+    if (get().ride) return;
+    useSeat.getState().stand();
+    const sp = carSpot((Math.random() - 0.5) * 4);
+    teleportTo(sp.x, sp.z, Math.PI / 2);
+    const dep = serverNow() + 6000;
+    set({ ride: { slot: -1, dest: 'English Street Central', dep, said: ['board'], check: null, result: null, done: false, returning: true }, asking: false });
+    pa('This train is for English Street Central. Please find a seat.');
+    track('station_board', { dest: 'home', from: 'Sunny Bay' });
+  },
   leave() {
     const r = get().ride;
     set({ ride: null, asking: false, caption: null });
@@ -144,7 +176,20 @@ export function rideTick() {
       f();
     }
   };
-  const arrive = fmtTime(r.dep + JOURNEY_MIN[r.dest] * 60_000);
+  if (r.returning) {
+    once('doors', -3, () => pa('Please stand clear of the closing doors.'));
+    once('welcome', RIDE.welcome, () => pa('Welcome aboard. This train calls at English Street Central only.'));
+    once('approach', RIDE.approach, () => pa('We are now approaching English Street Central. Mind the gap when you leave the train.'));
+    once('home', RIDE.arrive, () => {
+      useTrain.setState({ ride: { ...useTrain.getState().ride!, done: true } });
+      useSeat.getState().stand();
+      const p = platformSpot();
+      teleportTo(p.x, p.z, 0);
+    });
+    if (t > RIDE.arrive + 6) useTrain.setState({ ride: null, caption: null });
+    return;
+  }
+  const arrive = fmtTime(r.dep + JOURNEY_MIN[r.dest as TrainService['dest']] * 60_000);
   once('doors', -3, () => pa('Please stand clear of the closing doors.'));
   once('welcome', RIDE.welcome, () => pa(`Welcome aboard this train to ${r.dest}. We will arrive in ${r.dest} at ${arrive}.`));
   once('inspect', RIDE.inspect, () => {
@@ -156,7 +201,7 @@ export function rideTick() {
     if (!useTrain.getState().ride?.check) useTrain.getState().showTicket();
   });
   once('approach', RIDE.approach, () => pa(`We are now approaching ${r.dest}. Please take all your belongings with you.`));
-  once('arrive', RIDE.arrive, () => pa(`This is ${r.dest}. This train returns to English Street Central in a few moments.`));
+  once('arrive', RIDE.arrive, () => pa(r.dest === 'Sunny Bay' ? 'This is Sunny Bay. Passengers for the beach, please get off here. This train returns to English Street Central in a few moments.' : `This is ${r.dest}. This train returns to English Street Central in a few moments.`));
   once('leaveDest', RIDE.leaveDest, () => pa('This train is for English Street Central. Please stand clear of the doors.'));
   once('homeSoon', RIDE.homeSoon, () => pa('We will shortly arrive at English Street Central. Mind the gap when you leave the train.'));
   once('home', RIDE.home, () => {

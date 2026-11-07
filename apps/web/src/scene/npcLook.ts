@@ -68,6 +68,7 @@ export const NPC_CHIBI: Record<string, ChibiSpec> = {
   usher: npc({ body: 'suit', skin: '#a86e45', hair: '#1c1410', hairStyle: 'short', top: '#7e57c2', bottom: '#1f1f2e', extras: ['bowtie', 'badge'] }),
   librarian: npc({ body: 'girl', skin: '#e0ac80', hair: '#b8b8b8', hairStyle: 'buns', top: '#8d6e63', bottom: '#4e342e', glasses: 'round' }),
   stationmaster: npc({ body: 'suit', skin: '#e0ac80', hair: '#3a2618', hairStyle: 'short', top: '#455a64', bottom: '#263238', hat: 'cap', hatColor: '#263238', extras: ['badge'] }),
+  lifeguard: npc({ body: 'tee', skin: '#c98e62', hair: '#e8c46a', hairStyle: 'short', top: '#e53935', bottom: '#f2c94c', hat: 'cap', hatColor: '#e53935', glasses: 'sun' }),
   pharmacist: npc({ body: 'suit', skin: '#8a5634', hair: '#1c1410', hairStyle: 'curly', top: '#f7f7f7', bottom: '#26a69a', glasses: 'round', extras: ['badge'] }),
   receptionist: npc({ body: 'suit', skin: '#eec1a0', hair: '#1c1410', hairStyle: 'ponytail', top: '#8d1c2c', bottom: '#1f1f1f', extras: ['badge'] }),
   coach: npc({ body: 'hoodie', skin: '#c98e62', hair: '#1c1410', hairStyle: 'spiky', top: '#43a047', bottom: '#1b5e20', shoes: '#f2f2f2', hat: 'cap', hatColor: '#f2c94c' }),

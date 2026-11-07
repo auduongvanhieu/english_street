@@ -215,11 +215,13 @@ export default function TrainRide() {
     rideTick();
   });
   if (!ride && !inside) return null;
+  const back = !!ride?.returning;
   const dest = ride?.dest ?? 'Riverside';
-  const theme = DEST_THEME[dest] ?? 'country';
+  // on the way back from Sunny Bay: the sea first, then the countryside, and home is the first stop
+  const theme = back ? 'sea' : (DEST_THEME[dest] ?? 'country');
   const away = () => {
     const d = dist.d;
-    return d > DIST_ARRIVE - 220 && d < DIST_ARRIVE + 200;
+    return back ? d < 200 : d > DIST_ARRIVE - 220 && d < DIST_ARRIVE + 200;
   };
   return (
     <group>
@@ -229,8 +231,8 @@ export default function TrainRide() {
           <Landscape theme="country" dist={dist} show={() => !away()} />
           <Landscape theme={theme} dist={dist} show={away} />
           <Platform name={dest} at={DIST_ARRIVE} dist={dist} />
-          <Platform name="English Street Central" at={DIST_HOME} dist={dist} />
-          <Inspector dep={ride.dep} />
+          {back ? null : <Platform name="English Street Central" at={DIST_HOME} dist={dist} />}
+          {back ? null : <Inspector dep={ride.dep} />}
         </>
       ) : null}
     </group>

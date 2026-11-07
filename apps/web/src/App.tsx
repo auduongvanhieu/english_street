@@ -49,6 +49,8 @@ import { ClinicHud } from './ui/ClinicHud';
 import { FittingHud } from './ui/FittingHud';
 import { AnimalJobsHud } from './ui/AnimalJobsHud';
 import { MyRoomHud } from './ui/MyRoomHud';
+import { BeachHud } from './ui/BeachHud';
+import { useBeach } from './store/beach';
 import { useMyRoom } from './store/myRoom';
 import { useAnimalJobs } from './store/animalJobs';
 import { useFitting } from './store/fitting';
@@ -105,7 +107,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach };
 }
 
 export default function App() {
@@ -466,6 +468,7 @@ export default function App() {
       <FittingHud />
       <AnimalJobsHud />
       <MyRoomHud />
+      <BeachHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

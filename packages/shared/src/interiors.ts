@@ -9,7 +9,9 @@ export interface Rect {
   minZ: number;
   maxZ: number;
 }
-export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 160, minZ: -420, maxZ: -100 };
+export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 160, minZ: -600, maxZ: -100 };
+/** Sunny Bay, the seaside reached by train (scene/areas/places/SunnyBay.tsx): far south of the interiors. */
+export const SUNNY_BAY: Rect = { minX: -55, maxX: 55, minZ: -560, maxZ: -450 };
 export const inRect = (r: Rect, x: number, z: number, m = 0) => x >= r.minX - m && x <= r.maxX + m && z >= r.minZ - m && z <= r.maxZ + m;
 
 /* ------------------------------------------------------------------------------------------- hotel */

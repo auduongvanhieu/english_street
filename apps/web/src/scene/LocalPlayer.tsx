@@ -67,6 +67,7 @@ import { useFollow } from '../store/follow';
 import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
 import { POOL_WORLD } from '../world/places/hotel';
+import { SEA_SWIM } from '../world/sunnyBay';
 
 export type { Controls } from '../input/keys';
 
@@ -298,7 +299,12 @@ export function LocalPlayer({ name }: { name: string }) {
     const seated = !!useRestaurant.getState().seat || !!useSeat.getState().seat;
     // --- in the hotel pool: swim (slower, body in the water) ---
     const P = POOL_WORLD;
-    const swimming = !seated && g.position.x > P.minX + 0.25 && g.position.x < P.maxX - 0.25 && g.position.z > P.minZ + 0.25 && g.position.z < P.maxZ - 0.25;
+    const S = SEA_SWIM;
+    const swimming =
+      !seated &&
+      ((g.position.x > P.minX + 0.25 && g.position.x < P.maxX - 0.25 && g.position.z > P.minZ + 0.25 && g.position.z < P.maxZ - 0.25) ||
+        // the sea at Sunny Bay
+        (g.position.x > S.minX && g.position.x < S.maxX && g.position.z > S.minZ && g.position.z < S.maxZ));
 
     // --- movement with collision ---
     if (seated) {

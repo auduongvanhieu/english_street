@@ -51,5 +51,7 @@ export const MINIGAMES = {
   zookeeper: { perPoint: 3, max: 12, perDay: 3 },
   /** farm jobs (milking, eggs): the right amount (0-1) */
   farmhand: { perPoint: 6, max: 6, perDay: 6 },
+  /** Sunny Bay: the beach hunt (5) and a sandcastle (0-4 steps right) */
+  beach: { perPoint: 3, max: 15, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

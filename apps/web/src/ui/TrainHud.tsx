@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { serverNow } from '../net/client';
 import { useTrain } from '../store/train';
 import { DESTINATIONS, boardRows } from '../world/places/station';
+import { RIDE } from '../world/train';
 import { useT } from '../i18n';
 
 const PRICE = { single: 4, return: 7 };
@@ -21,6 +22,14 @@ export function TrainHud() {
     return () => window.clearInterval(id);
   }, [machine]);
   const st = useTrain.getState();
+  // stopped at the destination platform (the Sunny Bay train lets you get off)
+  const tRide = ride ? (serverNow() - ride.dep) / 1000 : 0;
+  const atBay = tRide >= RIDE.arrive - 1 && tRide < RIDE.leaveDest;
+  useEffect(() => {
+    if (!ride || ride.dest !== 'Sunny Bay') return;
+    const id = window.setInterval(() => tick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [ride]);
   const card = 'pointer-events-auto rounded-2xl bg-white/95 p-3 shadow-2xl';
   const wrap = 'pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2';
   return (
@@ -107,6 +116,11 @@ export function TrainHud() {
               <p className="text-sm" dir="ltr">
                 {caption.who === 'pa' ? '📢' : '🧑‍✈️'} {caption.text}
               </p>
+            ) : null}
+            {ride.dest === 'Sunny Bay' && !ride.returning && atBay ? (
+              <button type="button" onClick={() => st.getOff()} className="mt-2 min-h-11 w-full rounded-xl bg-sky-500 text-sm font-bold text-white">
+                🏖️ {t('Get off at Sunny Bay')}
+              </button>
             ) : null}
             {asking && !ride.check ? (
               <div className="mt-2 flex gap-1.5" dir="ltr">

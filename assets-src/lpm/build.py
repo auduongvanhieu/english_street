@@ -45,6 +45,7 @@ GATES = {
     "train_interior": ("environment-module", 3000),
     "clinic_kit": ("environment-module", 1200),
     "home_kit": ("environment-module", 3000),
+    "beach_kit": ("environment-module", 3000),
 }
 FLOATING = {"bird", "boat", "farm_kit", "bus_interior", "river_kit", "kitchen_kit", "train_interior", "clinic_kit", "home_kit"}  # farm_kit: the windmill sails pivot on their axle
 
