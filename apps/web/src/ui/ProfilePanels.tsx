@@ -1,7 +1,7 @@
 import { useJourney } from '../store/journey';
 import { AREA_INFO } from '@es/shared';
 import { JourneyPanel } from './journey/JourneyPanel';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { useEffect, useState } from 'react';
 import { AREAS } from '../world/areas';
 import { BADGES, type PlacementQuestion, type VocabEntryDto } from '@es/shared';
@@ -72,25 +72,29 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mt-1 flex justify-between opacity-90">
-        <span>🪙 {p.coins}</span>
-        <span>🔥 {p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
-        <span>🏅 {p.badges.length}</span>
-        {p.quota && <span title={t('NPC conversation turns left today')}>💬 {p.quota.turnsLeftToday}</span>}
+        <span className="flex items-center gap-1"><Icon name="coin" size={14} className="text-yellow-300" />{p.coins}</span>
+        <span className="flex items-center gap-1"><Icon name="bolt" size={14} className="text-orange-300" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
+        <span className="flex items-center gap-1"><Icon name="star" size={14} className="text-amber-300" />{p.badges.length}</span>
+        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={14} />{p.quota.turnsLeftToday}</span>}
       </div>
       <div className="mt-2 flex gap-1">
-        <button type="button" onClick={() => open('daily')} className="flex-1 rounded bg-white/15 py-1 hover:bg-white/30">
-          📋 {t('Daily')}
-        </button>
-        <button type="button" onClick={() => open('notebook')} className="flex-1 rounded bg-white/15 py-1 hover:bg-white/30">
-          📓 {t('Notebook')}
-        </button>
-        <button type="button" onClick={() => open('avatar')} className="flex-1 rounded bg-white/15 py-1 hover:bg-white/30">
-          🎨 {t('Character')}
-        </button>
+        {(
+          [
+            ['daily', 'book', t('Daily')],
+            ['notebook', 'feedback', t('Notebook')],
+            ['avatar', 'smile', t('Character')],
+          ] as const
+        ).map(([to, icon, label]) => (
+          <button key={to} type="button" onClick={() => open(to)} className="flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-1 py-1.5 text-[11px] hover:bg-white/30">
+            <Icon name={icon} size={14} className="shrink-0" />
+            <span className="truncate">{label}</span>
+          </button>
+        ))}
       </div>
       {!p.placementDone && (
-        <button type="button" onClick={() => open('placement')} className="mt-1 w-full rounded bg-yellow-400/90 py-1 font-medium text-black hover:bg-yellow-300">
-          🎯 {t('Take the 2-minute level test')}
+        <button type="button" onClick={() => open('placement')} className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-full bg-yellow-400/90 py-1.5 font-medium text-black hover:bg-yellow-300">
+          <Icon name="target" size={15} />
+          {t('Take the 2-minute level test')}
         </button>
       )}
     </div>
@@ -120,35 +124,39 @@ function ProfilePanel() {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mb-4 flex justify-between text-sm text-gray-700">
-        <span>🪙 {p.coins}</span>
-        <span>🔥 {p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
-        <span>🏅 {p.badges.length}</span>
-        {p.quota && <span title={t('NPC conversation turns left today')}>💬 {t('{n} left', { n: p.quota.turnsLeftToday })}</span>}
+        <span className="flex items-center gap-1"><Icon name="coin" size={16} className="text-amber-500" />{p.coins}</span>
+        <span className="flex items-center gap-1"><Icon name="bolt" size={16} className="text-orange-500" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
+        <span className="flex items-center gap-1"><Icon name="star" size={16} className="text-amber-500" />{p.badges.length}</span>
+        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={16} />{t('{n} left', { n: p.quota.turnsLeftToday })}</span>}
       </div>
       <JourneyBadges />
       <div className="space-y-2">
         {!p.placementDone && (
           <button type="button" onClick={() => open('placement')} className="flex min-h-12 w-full items-center rounded-xl bg-yellow-400 px-4 text-left text-base font-medium text-black">
-            🎯 {t('Take the 2-minute level test')}
+            <Icon name="target" className="me-2" />
+            {t('Take the 2-minute level test')}
           </button>
         )}
-        <Item to="daily">📋 {t('My journey: quests, passport, today')}</Item>
-        <Item to="notebook">📓 {t('Notebook')}</Item>
-        <Item to="avatar">🎨 {t('Character & shop')}</Item>
+        <Item to="daily"><Icon name="book" className="me-3 text-slate-600" />{t('My journey: quests, passport, today')}</Item>
+        <Item to="notebook"><Icon name="feedback" className="me-3 text-slate-600" />{t('Notebook')}</Item>
+        <Item to="avatar"><Icon name="smile" className="me-3 text-slate-600" />{t('Character & shop')}</Item>
       </div>
     </Panel>
   );
 }
 
-export function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+export function Panel({ title, icon, children }: { title: string; icon?: IconName; children: React.ReactNode }) {
   const t = useT();
   const close = useGame((s) => s.setUiPanel);
   return (
     <Sheet onClose={() => close(null)} label={title}>
       <SheetHeader>
-        <h2 className="text-lg font-bold">{title}</h2>
-        <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
-          ✕
+        <h2 className="flex items-center gap-2 text-lg font-bold">
+          {icon ? <Icon name={icon} className="text-slate-700" /> : null}
+          {title}
+        </h2>
+        <button type="button" onClick={() => close(null)} className="flex min-h-9 min-w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
+          <Icon name="close" size={20} />
         </button>
       </SheetHeader>
       <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{children}</div>

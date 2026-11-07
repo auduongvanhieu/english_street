@@ -6,17 +6,21 @@ import { getPlayerId } from '../net/player';
 import { onJourney } from '../net/client';
 import { track } from '../net/analytics';
 import { haptic } from '../native/bridge';
-import { teleportTo } from '../scene/LocalPlayer';
-import { areaById, frontZ } from '../world/areas';
+import { localPos, teleportTo } from '../scene/LocalPlayer';
+import { AREAS, areaById, frontZ, yardRect } from '../world/areas';
+import { nearestStop } from '../world/bus';
+import { useBus } from './bus';
 import { KIOSK_SPOT } from '../world/places/river';
 import { COOK_Z, STATIONS } from '../world/kitchen';
 import { BOOK_SPOTS, FRAME as CINEMA } from '../world/places/cinema';
 import { useGame } from './game';
 import { useProfile } from './profile';
+import { stepText } from '../ui/journey/journeyText';
 
 /**
  * The Journey (quest system) in the game: progress from the API, completion pushes from the game server (toasts),
- * the current step for the HUD chip, and "Take me there" (teleport next to the target + a guiding arrow).
+ * the current step for the HUD chip, and "Take me there" (the bus to the nearest stop, then walking along yellow dots;
+ * the NPC's panel opens on arrival).
  */
 export interface JourneyToast {
   key: number;
@@ -30,6 +34,10 @@ interface JourneyStore {
   toasts: JourneyToast[];
   /** the step whose target the arrow points at */
   guiding: string | null;
+  /** "Take me there": walk the last part (after the bus) along the dots: to `via` (an area gate) first, then the
+   * target; talk to `npc` on arrival */
+  walk: { x: number; z: number; via: { x: number; z: number } | null; npc?: string; label: string } | null;
+  stopWalk: () => void;
   load: () => Promise<void>;
   track: (id: string, on: boolean) => Promise<void>;
   go: (step: JourneyStep) => void;
@@ -75,6 +83,7 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
   view: null,
   toasts: [],
   guiding: null,
+  walk: null,
   async load() {
     try {
       set({ view: await get<JourneyView>(`/me/journey${q()}`) });
@@ -95,10 +104,28 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
     const t = guideTarget(step.guide);
     if (!t) return;
     useGame.getState().setUiPanel(null);
-    teleportTo(t.x, t.z, t.rot);
     set({ guiding: step.id });
     track('journey_go', { id: step.id });
+    // somewhere off the street map (a hotel room, a trip…): jump there as before
+    if (t.z < -100 || localPos.z < -100) {
+      teleportTo(t.x, t.z, t.rot);
+      return;
+    }
+    // inside an area yard: through its gate
+    const area = AREAS.find((a) => {
+      const y = yardRect(a);
+      return t.x >= y.minX && t.x <= y.maxX && t.z >= y.minZ && t.z <= y.maxZ;
+    });
+    const gate = area ? { x: area.doorX, z: frontZ(area) + (area.side === 'north' ? 1.5 : -1.5) } : null;
+    const via = gate && Math.hypot(gate.x - t.x, gate.z - t.z) > 2 ? gate : null;
+    set({ walk: { x: t.x, z: t.z, via, npc: t.npc, label: stepText(step).title } });
+    // far away: take the bus to the stop nearest to the target first (the dots show after stepping off)
+    const stop = nearestStop(t.x, t.z);
+    if (Math.hypot(localPos.x - t.x, localPos.z - t.z) > 30 && nearestStop(localPos.x, localPos.z) !== stop && !useBus.getState().ride) {
+      void import('../ui/area/Travel').then((m) => m.rideTo(stop));
+    }
   },
+  stopWalk: () => set({ walk: null }),
   dismiss(key) {
     set((s) => ({ toasts: s.toasts.filter((x) => x.key !== key) }));
   },
@@ -121,7 +148,7 @@ export function initJourney() {
     useJourney.setState((s) => ({ toasts: [...s.toasts, ...toasts].slice(-4) }));
     for (const x of toasts) window.setTimeout(() => useJourney.getState().dismiss(x.key), 7000);
     // the guide arrow moves on with the journey
-    if (ev.done.some((d) => d.id === useJourney.getState().guiding)) useJourney.setState({ guiding: null });
+    if (ev.done.some((d) => d.id === useJourney.getState().guiding)) useJourney.setState({ guiding: null, walk: null });
     void useJourney.getState().load();
     void useProfile.getState().refresh();
   });

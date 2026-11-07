@@ -10,7 +10,7 @@ import { City } from './City';
 import { LocalPlayer, localPos } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
-import { TutorialArrow } from './TutorialArrow';
+import { GuideTrail, TutorialArrow } from './TutorialArrow';
 
 const River = lazy(() => import('./River'));
 import { Critters } from './Critters';
@@ -62,6 +62,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <City />
           <Npcs />
           <TutorialArrow />
+          <GuideTrail />
           <LocalPlayer name={playerName} />
           <RemotePlayers />
         </Suspense>

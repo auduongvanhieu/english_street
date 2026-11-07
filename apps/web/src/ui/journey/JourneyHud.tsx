@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react';
+import { useBus } from '../../store/bus';
+import { localPos } from '../../scene/LocalPlayer';
+import { Icon } from '../icons';
 import { useJourney, currentStep } from '../../store/journey';
 import { useGame } from '../../store/game';
 import { stepById, AREA_INFO } from '@es/shared';
@@ -20,7 +24,7 @@ export function NextStepChip({ touch }: { touch: boolean }) {
     <div
       data-ui
       className={`hud-top absolute z-10 flex items-center gap-1 bg-white/90 text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md ${
-        touch ? 'hud-left left-[calc(max(0.75rem,env(safe-area-inset-left))+3.4rem)] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)] max-w-[52vw] rounded-full py-0.5 pl-2.5 pr-0.5' : 'left-3 top-24 max-w-[min(20rem,62vw)] rounded-2xl py-1 pl-3 pr-1'
+        touch ? 'hud-left left-[calc(max(0.75rem,env(safe-area-inset-left))+3.4rem)] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)] max-w-[52vw] rounded-full py-0.5 pl-2.5 pr-0.5' : 'left-3 top-[6.6rem] max-w-[min(20rem,62vw)] rounded-2xl py-1 pl-3 pr-1'
       }`}
     >
       <button type="button" onClick={() => useGame.getState().setUiPanel('daily')} className="min-w-0 flex-1 text-left">
@@ -33,7 +37,7 @@ export function NextStepChip({ touch }: { touch: boolean }) {
       </button>
       {step.guide ? (
         <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-7 w-7 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
-          📍
+          <Icon name="pin" size={touch ? 15 : 18} />
         </button>
       ) : null}
     </div>
@@ -69,6 +73,34 @@ export function JourneyToasts() {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** "Take me there", walking part: where to, how far, and a way to stop (hidden while on the bus). */
+export function GuideChip() {
+  const t = useT();
+  const walk = useJourney((s) => s.walk);
+  const riding = useBus((s) => !!s.ride);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!walk) return;
+    const id = window.setInterval(() => tick((n) => n + 1), 500);
+    return () => window.clearInterval(id);
+  }, [walk]);
+  if (!walk || riding) return null;
+  const d = Math.round(Math.hypot(walk.x - localPos.x, walk.z - localPos.z));
+  return (
+    <div data-ui className="hud-top pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+6rem)] z-20 -translate-x-1/2">
+      <div className="pointer-events-auto flex max-w-[78vw] items-center gap-2 rounded-full bg-slate-900/80 py-1 pe-1 ps-3 text-xs text-white shadow-lg backdrop-blur-md">
+        <Icon name="walk" size={16} className="shrink-0 text-yellow-300" />
+        <span className="min-w-0 truncate">
+          {t('Follow the yellow dots')}: <b>{walk.label}</b> · {d} m
+        </span>
+        <button type="button" onClick={() => useJourney.getState().stopWalk()} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20" aria-label={t('Stop')}>
+          <Icon name="close" size={14} />
+        </button>
+      </div>
     </div>
   );
 }

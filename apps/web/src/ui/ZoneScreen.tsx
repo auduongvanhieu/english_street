@@ -183,7 +183,7 @@ export function ZoneChip({ compact, onChange }: { compact: boolean; onChange: ()
     }
   }
   return (
-    <div data-ui className={`absolute ${open ? 'z-20 ' : ''}${compact ? 'hud-top hud-left ' : ''}${compact ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)]' : 'left-3 top-14'} text-xs`}>
+    <div data-ui className={`absolute ${open ? 'z-20 ' : ''}${compact ? 'hud-top hud-left ' : ''}${compact ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)]' : 'left-3 top-[4.1rem]'} text-xs`}>
       {/* phones: just the pin and the head count (the zone name is in the menu) */}
       <button type="button" onClick={() => setOpen((o) => !o)} title={`${t('Zone')}: ${zone.name}`} className={`flex items-center rounded-full bg-black/50 text-white backdrop-blur-sm ${compact ? 'min-h-7 w-12 justify-center gap-1 text-[11px]' : 'min-h-8 gap-1.5 px-3'}`}>
         <Icon name="pin" size={compact ? 13 : 15} />

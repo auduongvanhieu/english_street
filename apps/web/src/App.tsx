@@ -35,7 +35,7 @@ import { initBoats, useBoats } from './store/boats';
 import { BoatPanel, BoatToasts, FishingHud } from './ui/boats/BoatPanel';
 import { Library } from './ui/books/Library';
 import { Tutorial } from './ui/Tutorial';
-import { JourneyToasts, NextStepChip } from './ui/journey/JourneyHud';
+import { GuideChip, JourneyToasts, NextStepChip } from './ui/journey/JourneyHud';
 import { initJourney, useJourney } from './store/journey';
 import { Icon } from './ui/icons';
 import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
@@ -378,6 +378,7 @@ export default function App() {
       <Tutorial touch={touch} />
       {tutorialOn ? null : <HintToast touch={touch} />}
       {tutorialOn ? null : <NextStepChip touch={touch} />}
+      <GuideChip />
       <JourneyToasts />
       {!touch && <WeatherChip compact={false} />}
       <Notices />
@@ -424,19 +425,20 @@ export default function App() {
         </>
       ) : (
         <>
-          <div data-ui className="absolute left-3 top-3 flex flex-wrap gap-2">
-            <EmoteBar />
-            <VoiceChatButton />
-            <ShoutButton />
-            <button type="button" onClick={() => useGame.getState().setUiPanel('map')} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-black/60" title={t('Map (M)')}>
-              🗺️ {t('Map')}
-            </button>
-            <PlayersButton compact={false} />
-            <SettingsButton />
-            <FeedbackButton />
-            <button type="button" onClick={() => setConfirmExit(true)} className="rounded-lg bg-black/40 px-2 py-1 text-xs text-white hover:bg-red-600/80" title={t('Exit to zone list')}>
-              🚪 {t('Exit')}
-            </button>
+          {/* desktop: the same round line-icon buttons as on phones */}
+          <div data-ui className="absolute left-3 top-3 flex flex-wrap items-center gap-2">
+            <EmoteBar compact />
+            <VoiceChatButton compact />
+            <ShoutButton compact />
+            <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map (M)')}>
+              <Icon name="map" />
+            </HudButton>
+            <PlayersButton compact />
+            <SettingsButton compact />
+            <FeedbackButton compact />
+            <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>
+              <Icon name="exit" />
+            </HudButton>
           </div>
           <ChatBox compact={false} open onClose={() => undefined} />
           <InteractPrompt touch={false} />

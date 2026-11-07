@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Icon, type IconName } from './icons';
+import { ICON_NAMES, Icon, type IconName } from './icons';
 import { EMOTES, type Emote } from '@es/shared';
 import { useGame } from '../store/game';
 import { useVoiceChat } from '../net/voicechat';
@@ -12,7 +12,7 @@ import { translateText } from '../net/api';
 import { track } from '../net/analytics';
 import { t, useLang, useT } from '../i18n';
 
-const EMOTE_ICON: Record<Emote, string> = { wave: '👋', dance: '💃', thumbsup: '👍', yes: '✅', no: '❌' };
+const EMOTE_ICON: Record<Emote, React.ReactNode> = { wave: <Icon name="smileHi" />, dance: <Icon name="dance" />, thumbsup: <Icon name="thumb" />, yes: <Icon name="check" />, no: <Icon name="no" /> };
 
 /** Emote name shown in tooltips (call during render of a component that uses `useT`). */
 function emoteLabel(e: Emote): string {
@@ -86,7 +86,7 @@ export function ActionCircle({ onClick, icon, badge, label, color }: { onClick: 
     </button>
   );
 }
-const ICONS = new Set<string>(['menu', 'close', 'more', 'users', 'map', 'settings', 'feedback', 'exit', 'mic', 'micOff', 'voice', 'chat', 'talk', 'jump', 'smile', 'megaphone', 'chair', 'stand', 'hand', 'heart', 'drop', 'sun', 'moon', 'cloud', 'rain', 'storm', 'fog', 'target', 'pin', 'graphics', 'bolt']);
+const ICONS = new Set<string>(ICON_NAMES);
 const isIcon = (v: string): v is IconName => ICONS.has(v);
 
 /** A group of HUD buttons behind a ☰ / ⋯ toggle (phones); open/closed is remembered. */
@@ -146,12 +146,13 @@ export function EmoteBar({ compact }: { compact?: boolean }) {
       </div>
     );
   }
+  // desktop: the same round buttons as on phones, always open (keys 1-5)
   return (
-    <div className="flex gap-1 rounded-lg bg-black/40 p-1">
+    <div className="flex items-center gap-2">
       {EMOTES.map((e, i) => (
-        <button key={e} type="button" onClick={() => play(e)} title={t('{emote} (key {n})', { emote: emoteLabel(e), n: i + 1 })} className="rounded px-2 py-1 text-lg hover:bg-white/20">
+        <HudButton key={e} onClick={() => play(e)} title={t('{emote} (key {n})', { emote: emoteLabel(e), n: i + 1 })}>
           {EMOTE_ICON[e]}
-        </button>
+        </HudButton>
       ))}
     </div>
   );

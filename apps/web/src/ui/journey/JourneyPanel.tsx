@@ -6,6 +6,9 @@ import { useJourney } from '../../store/journey';
 import { useVoice } from '../../store/voice';
 import { tk, useT } from '../../i18n';
 import { areaName, stepText } from './journeyText';
+import { Icon, type IconName } from '../icons';
+
+const Coin = () => <Icon name="coin" size={13} className="inline align-[-2px] text-amber-500" />;
 
 /**
  * The Journey book (📋): the main chapters, the area passport with its stamps, today's tasks and the old daily
@@ -21,18 +24,20 @@ function StepRow({ s, done, progress, current }: { s: JourneyStep; done: boolean
   return (
     <li className={`rounded-xl border p-3 ${done ? 'border-green-200 bg-green-50' : current ? 'border-amber-300 bg-amber-50 shadow-sm' : 'bg-white'}`}>
       <div className="flex items-start gap-2">
-        <span className="mt-0.5 text-lg">{done ? '✅' : current ? '⭐' : '⬜'}</span>
+        <span className={`mt-0.5 shrink-0 ${done ? 'text-green-600' : current ? 'text-amber-500' : 'text-gray-300'}`}>
+          <Icon name={done ? 'check' : current ? 'star' : 'circle'} size={22} />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="font-semibold">{tx.title}</div>
           {!done ? <p className="text-sm text-gray-600">{tx.how}</p> : null}
           {!done && tx.say ? (
             <button type="button" onClick={() => useVoice.getState().speakAs('guide', tx.say!, 'en-US')} className="mt-1 rounded-lg bg-white px-2 py-1 text-sm text-blue-800 ring-1 ring-blue-100" dir="ltr">
-              🔊 “{tx.say}”
+              <Icon name="speaker" size={15} className="me-1 inline align-[-3px]" />“{tx.say}”
             </button>
           ) : null}
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
             <span className="text-amber-700">
-              +{s.reward.xp} XP · +{s.reward.coins} 🪙
+              +{s.reward.xp} XP · +{s.reward.coins} <Coin />
             </span>
             {!done && need > 1 ? (
               <span className="text-gray-500">
@@ -40,13 +45,15 @@ function StepRow({ s, done, progress, current }: { s: JourneyStep; done: boolean
               </span>
             ) : null}
             {!done && s.guide ? (
-              <button type="button" onClick={() => useJourney.getState().go(s)} className="min-h-8 rounded-full bg-blue-600 px-3 font-semibold text-white">
-                📍 {t('Take me there')}
+              <button type="button" onClick={() => useJourney.getState().go(s)} className="flex min-h-8 items-center gap-1 rounded-full bg-blue-600 px-3 font-semibold text-white">
+                <Icon name="pin" size={15} />
+                {t('Take me there')}
               </button>
             ) : null}
             {!done && s.kind !== 'main' ? (
               <button type="button" onClick={() => void useJourney.getState().track(s.id, !tracked)} className={`min-h-8 rounded-full px-3 ${tracked ? 'bg-amber-500 text-white' : 'bg-gray-100'}`}>
-                {tracked ? `📌 ${t('On my screen')}` : `📌 ${t('Show on my screen')}`}
+                <Icon name="pin" size={14} className="me-1 inline align-[-2px]" />
+                {tracked ? t('On my screen') : t('Show on my screen')}
               </button>
             ) : null}
           </div>
@@ -62,18 +69,19 @@ export function JourneyPanel() {
   const [tab, setTab] = useState<Tab>('journey');
   useEffect(() => void useJourney.getState().load(), []);
   const st = view?.state;
-  const tabs: [Tab, string][] = [
-    ['journey', `⭐ ${t('Journey')}`],
-    ['day', `🌅 ${t('My day')}`],
-    ['passport', `🛂 ${t('Passport')}`],
-    ['today', `📅 ${t('Today')}`],
+  const tabs: [Tab, IconName, string][] = [
+    ['journey', 'star', t('Journey')],
+    ['day', 'sunrise', t('My day')],
+    ['passport', 'passport', t('Passport')],
+    ['today', 'calendar', t('Today')],
   ];
   return (
-    <Panel title={`📋 ${t('My journey')}`}>
-      <div className="mb-3 flex gap-1.5">
-        {tabs.map(([id, label]) => (
-          <button key={id} type="button" onClick={() => setTab(id)} className={`min-h-9 flex-1 rounded-full text-sm font-medium ${tab === id ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-            {label}
+    <Panel title={t('My journey')} icon="book">
+      <div className="mb-3 grid grid-cols-4 gap-1.5">
+        {tabs.map(([id, icon, label]) => (
+          <button key={id} type="button" onClick={() => setTab(id)} className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-xs font-medium leading-tight ${tab === id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-slate-700'}`}>
+            <Icon name={icon} size={18} />
+            <span className="max-w-full truncate">{label}</span>
           </button>
         ))}
       </div>
@@ -87,7 +95,7 @@ export function JourneyPanel() {
           <ol className="space-y-2">
             {MAIN_STEPS.map((s, i) => (i <= view.chapter + 1 || st.done.includes(s.id) ? <StepRow key={s.id} s={s} done={st.done.includes(s.id)} progress={st.prog[s.id]} current={i === view.chapter} /> : null))}
           </ol>
-          {view.chapter + 2 < MAIN_STEPS.length ? <p className="mt-2 text-center text-xs text-gray-400">🔒 {t('{n} more chapters to discover', { n: MAIN_STEPS.length - view.chapter - 2 })}</p> : null}
+          {view.chapter + 2 < MAIN_STEPS.length ? <p className="mt-2 text-center text-xs text-gray-400"><Icon name="lock" size={13} className="me-1 inline align-[-2px]" />{t('{n} more chapters to discover', { n: MAIN_STEPS.length - view.chapter - 2 })}</p> : null}
         </>
       ) : tab === 'day' ? (
         <>
@@ -102,7 +110,7 @@ export function JourneyPanel() {
               </li>
             ))}
           </ol>
-          {st.storyBonus ? <p className="mt-2 rounded-lg bg-green-50 p-2 text-center text-sm text-green-800">🌙 {t('What a day! Come back tomorrow for a new one.')}</p> : null}
+          {st.storyBonus ? <p className="mt-2 rounded-lg bg-green-50 p-2 text-center text-sm text-green-800"><Icon name="moon" size={15} className="me-1 inline align-[-3px]" />{t('What a day! Come back tomorrow for a new one.')}</p> : null}
         </>
       ) : tab === 'passport' ? (
         <>
@@ -120,7 +128,14 @@ export function JourneyPanel() {
                     <span className="flex-1 font-semibold" dir="ltr">
                       {an.name}
                     </span>
-                    <span className="text-sm text-gray-600">{stamped ? `🛂 ${t('Stamped!')}` : `${n}/3`}</span>
+                    <span className="text-sm text-gray-600">{stamped ? (
+                        <span className="flex items-center gap-1 text-green-700">
+                          <Icon name="passport" size={15} />
+                          {t('Stamped!')}
+                        </span>
+                      ) : (
+                        `${n}/3`
+                      )}</span>
                   </summary>
                   <ul className="space-y-2 px-3 pb-3">
                     {steps.map((s) => (
@@ -141,7 +156,7 @@ export function JourneyPanel() {
               return s ? <StepRow key={id} s={s} done={st.dailyDone.includes(id)} progress={st.dailyProg[id]} /> : null;
             })}
           </ul>
-          {st.dailyBonus ? <p className="mt-2 rounded-lg bg-green-50 p-2 text-center text-sm text-green-800">🎁 {t('All done today! Come back tomorrow for new tasks.')}</p> : null}
+          {st.dailyBonus ? <p className="mt-2 rounded-lg bg-green-50 p-2 text-center text-sm text-green-800"><Icon name="gift" size={15} className="me-1 inline align-[-3px]" />{t('All done today! Come back tomorrow for new tasks.')}</p> : null}
           {view.weekly ? <WeeklyCard w={view.weekly} /> : null}
           <InviteCard invited={st.invited ?? 0} />
           <div className="mt-5">
@@ -165,7 +180,7 @@ function WeeklyCard({ w }: { w: NonNullable<import('@es/shared').JourneyView['we
   const pct = Math.min(100, Math.round((w.count / w.target) * 100));
   return (
     <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-3">
-      <div className="text-xs font-semibold uppercase text-violet-700">🏆 {t('Weekly challenge · everybody together')}</div>
+      <div className="flex items-center gap-1 text-xs font-semibold uppercase text-violet-700"><Icon name="users" size={14} />{t('Weekly challenge · everybody together')}</div>
       <div className="font-semibold">{t(WEEKLY_TEXT[w.id] ?? w.id)}</div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white">
         <div className="h-full rounded-full bg-violet-500" style={{ width: `${pct}%` }} />
@@ -174,7 +189,7 @@ function WeeklyCard({ w }: { w: NonNullable<import('@es/shared').JourneyView['we
         <span>
           {w.count}/{w.target}
         </span>
-        <span>{w.done ? `✅ ${t('Done! Everybody who helped got the reward.')}` : t('You helped {n} times', { n: w.mine })}</span>
+        <span>{w.done ? `✓ ${t('Done! Everybody who helped got the reward.')}` : t('You helped {n} times', { n: w.mine })}</span>
       </div>
     </div>
   );
@@ -198,7 +213,7 @@ function InviteCard({ invited }: { invited: number }) {
   };
   return (
     <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3">
-      <div className="text-xs font-semibold uppercase text-sky-700">👋 {t('Invite a friend')}</div>
+      <div className="flex items-center gap-1 text-xs font-semibold uppercase text-sky-700"><Icon name="smileHi" size={14} />{t('Invite a friend')}</div>
       <p className="text-sm">{t('Send your link. When your friend finishes chapter {n} of the journey, you get +{xp} XP and +{coins} coins.', { ...INVITE_REWARD, n: INVITE_PAY_CHAPTER })}</p>
       <div className="mt-2 flex gap-2">
         <input readOnly value={link} className="min-w-0 flex-1 rounded-lg border bg-white px-2 text-xs" onFocus={(e) => e.currentTarget.select()} aria-label={t('Invite link')} />

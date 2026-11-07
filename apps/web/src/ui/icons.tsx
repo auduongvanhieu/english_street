@@ -5,7 +5,8 @@
 export type IconName =
   | 'menu' | 'close' | 'more' | 'users' | 'map' | 'settings' | 'feedback' | 'exit' | 'mic' | 'micOff' | 'voice'
   | 'chat' | 'talk' | 'jump' | 'smile' | 'megaphone' | 'chair' | 'stand' | 'hand' | 'heart' | 'drop'
-  | 'sun' | 'moon' | 'cloud' | 'rain' | 'storm' | 'fog' | 'target' | 'pin' | 'graphics' | 'bolt';
+  | 'sun' | 'moon' | 'cloud' | 'rain' | 'storm' | 'fog' | 'target' | 'pin' | 'graphics' | 'bolt'
+  | 'check' | 'star' | 'circle' | 'book' | 'sunrise' | 'passport' | 'calendar' | 'speaker' | 'coin' | 'lock' | 'gift' | 'bus' | 'walk' | 'smileHi' | 'thumb' | 'no' | 'dance';
 
 const P: Record<IconName, React.ReactNode> = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -155,7 +156,96 @@ const P: Record<IconName, React.ReactNode> = {
     </>
   ),
   bolt: <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />,
+  check: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5l2.8 2.8L16.5 9.5" />
+    </>
+  ),
+  star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
+  circle: <circle cx="12" cy="12" r="9" />,
+  book: (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+      <path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7.5h8M8 11h6" />
+    </>
+  ),
+  sunrise: (
+    <>
+      <path d="M7 17a5 5 0 0 1 10 0M3 17h18M5 21h14M12 3v4M9.5 5.5L12 3l2.5 2.5M4.6 10.6l1.4 1.4M19.4 10.6L18 12" />
+    </>
+  ),
+  passport: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <circle cx="12" cy="10.5" r="3" />
+      <path d="M9 17h6" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" />
+    </>
+  ),
+  speaker: (
+    <>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" />
+      <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+    </>
+  ),
+  coin: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5v9M14.5 9.5c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.5.7-2.5 1.8 0 2.6 5 1.4 5 3.9 0 1.1-1.1 1.9-2.5 1.9-1.2 0-2.1-.5-2.6-1.3" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  gift: (
+    <>
+      <rect x="4" y="9" width="16" height="4" rx="1" />
+      <path d="M5.5 13v8h13v-8M12 9v12M12 9c-1.5-3.5-5.5-4-5.5-1.5S10 9 12 9zM12 9c1.5-3.5 5.5-4 5.5-1.5S14 9 12 9z" />
+    </>
+  ),
+  bus: (
+    <>
+      <rect x="5" y="3.5" width="14" height="15" rx="2.5" />
+      <path d="M5 11h14M8.5 15h.01M15.5 15h.01M7.5 18.5V21M16.5 18.5V21M9 6.5h6" />
+    </>
+  ),
+  walk: (
+    <>
+      <circle cx="13" cy="4.5" r="1.8" />
+      <path d="M10 21l2-6 2.5 2.5V21M12 15l-1-5 3-1.5 2 3 2.5 1M11 10l-3 2v3" />
+    </>
+  ),
+  smileHi: (
+    <>
+      <path d="M7 11V5.5a1.3 1.3 0 0 1 2.6 0V10M9.6 9.5V4.3a1.3 1.3 0 0 1 2.6 0V10M12.2 10V5.5a1.3 1.3 0 0 1 2.6 0V12M14.8 11.5v-3a1.3 1.3 0 0 1 2.6 0V14c0 4-2.5 7-6.2 7-2.6 0-4.1-1.4-5.2-3.4L4 13.8a1.4 1.4 0 0 1 2.4-1.4L7 13.5" />
+    </>
+  ),
+  thumb: <path d="M7 10.5V20H4v-9.5zM7 10.5l3.5-6.5a2 2 0 0 1 3 2.2L12.8 9.5H18a2 2 0 0 1 2 2.3l-1.2 6.5a2 2 0 0 1-2 1.7H7" />,
+  no: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 8.5l7 7M15.5 8.5l-7 7" />
+    </>
+  ),
+  dance: (
+    <>
+      <circle cx="12" cy="4.5" r="1.8" />
+      <path d="M12 7.5l-1 6 3 3-1 4.5M11 13.5l-3 3.5-2 .5M8 9.5l3.5-2 4 1.5 2.5-2.5" />
+    </>
+  ),
 };
+
+/** Every icon name (for checks like "is this an icon or an emoji?"). */
+export const ICON_NAMES = Object.keys(P) as IconName[];
 
 export function Icon({ name, size = 22, className = '' }: { name: IconName; size?: number; className?: string }) {
   return (

@@ -5,7 +5,10 @@ import { AREA_INFO, type AreaId } from '@es/shared';
 import { useGame } from '../../store/game';
 import { useDm } from '../../store/dm';
 import { useRestaurant } from '../../store/restaurant';
-import { AREAS, BRIDGE_X, BUS_STOPS, GATES_X, SOUTH_BACK_Z, SOUTH_END_X, SOUTH_FRONT_Z, SOUTH_ROAD_Z, STREET_END_X, YARD_MIN_Z, FRONT_Z, frontZ, backZ, type StopId } from '../../world/areas';
+import { BUS_STOPS, type StopId } from '../../world/areas';
+import { Icon } from '../icons';
+import { placeOf } from '../PlayersPanel';
+import { LegendMark, MapView, onMap } from './MapView';
 import { useProfile } from '../../store/profile';
 import { suggestAreas } from './suggest';
 import { useArea } from '../../store/area';
@@ -93,15 +96,6 @@ export function BusPanel() {
   );
 }
 
-const X0 = -STREET_END_X - 4;
-const MAP_W = 640;
-const Z0 = -34;
-const Z1 = SOUTH_BACK_Z + 4;
-const SCALE = MAP_W / (2 * -X0);
-const MAP_H = (Z1 - Z0) * SCALE;
-const sx = (x: number) => (x - X0) * SCALE;
-const sz = (z: number) => (z - Z0) * SCALE;
-
 /** Open the private-message thread with a player in the 👥 panel. */
 function openThread(id: string) {
   useDm.getState().open(id);
@@ -136,82 +130,89 @@ export function MapPanel() {
     const iv = setInterval(() => tick((n) => n + 1), 500);
     return () => clearInterval(iv);
   }, []);
+  const myPos = { x: localPos.x, z: localPos.z };
+  // far from the street map (train trip, Sunny Bay, a room inside…): say where I am instead of a marker
+  const away = !onMap(myPos.x, myPos.z);
+  const where = away ? placeOf(myPos.x, myPos.z) : null;
   return (
-    <Sheet onClose={() => close(null)} label={t('Map')} wide>
+    <Sheet onClose={() => close(null)} label={t('Map')} wide="xl">
       <SheetHeader>
-        <h2 className="text-lg font-bold">🗺️ {t('Map')}</h2>
+        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
+          <Icon name="map" className="text-slate-700" /> {t('Map')}
+        </h2>
         <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
           ✕
         </button>
       </SheetHeader>
-      <div className="px-3 pb-4 sm:px-5">
-        <div className="overflow-x-auto rounded-xl">
-          <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="w-full min-w-[640px] rounded-xl bg-[#a8d27a] sm:min-w-0" direction="ltr">
-            {/* river, bridges, main road, south-bank road */}
-            <rect x={0} y={sz(18)} width={MAP_W} height={sz(38) - sz(18)} fill="#5ab0dc" />
-            {[-BRIDGE_X, BRIDGE_X].map((x) => (
-              <rect key={x} x={sx(x) - 2} y={sz(16)} width={4} height={sz(40) - sz(16)} fill="#9c7a52" />
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3 pt-2.5 sm:px-5 sm:pb-4">
+        <MapView
+          me={away ? null : myPos}
+          players={Object.values(players).filter((p) => p.id !== me)}
+          focusId={mapFocus}
+          journeyAreas={journeyAreas}
+          journeyStamps={journeyStamps}
+          labels={{ shops: t('Main Street shops'), river: t('River'), you: t('You') }}
+          onArea={(id) => rideTo(id)}
+          onPlayer={openThread}
+          overlay={
+            where ? (
+              <span className="max-w-full truncate rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-700 shadow-md ring-1 ring-black/5">
+                📍 {t('You are away from the street')}: {where.icon} <span dir="ltr">{where.name}</span>
+              </span>
+            ) : null
+          }
+        />
+        <div className="shrink-0 space-y-1">
+          <div className="flex flex-wrap justify-center gap-1">
+            {(
+              [
+                ['me', t('You')],
+                ['other', t('Other players')],
+                ['task', t('Journey task')],
+                ['stamp', t('Stamp')],
+              ] as const
+            ).map(([k, label]) => (
+              <span key={k} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 ring-1 ring-black/5">
+                <LegendMark kind={k} /> {label}
+              </span>
             ))}
-            <rect x={sx(-STREET_END_X)} y={sz(-3.2)} width={sx(STREET_END_X) - sx(-STREET_END_X)} height={sz(3.2) - sz(-3.2)} fill="#555b61" />
-            <rect x={sx(-SOUTH_END_X)} y={sz(SOUTH_ROAD_Z - 3.2)} width={sx(SOUTH_END_X) - sx(-SOUTH_END_X)} height={6.4 * SCALE} fill="#555b61" />
-            {GATES_X.flatMap((g) => [-g, g]).map((g) => (
-              <rect key={g} x={sx(g) - 0.8} y={sz(-6)} width={1.6} height={12 * SCALE} fill="#3f7f4f" />
-            ))}
-            <rect x={sx(-44)} y={sz(-12)} width={sx(44) - sx(-44)} height={sz(FRONT_Z + 2) - sz(-12)} fill="#f2c94c" opacity={0.8} rx={2} />
-            <text x={sx(0)} y={sz(-14)} fontSize={7} textAnchor="middle" fill="#333">
-              Main Street · shops
-            </text>
-            {AREAS.map((a) => {
-              const task = journeyAreas.has(a.id);
-              const stamped = journeyStamps.includes(a.id);
-              const z0 = Math.min(frontZ(a), backZ(a));
-              const z1 = Math.max(frontZ(a), backZ(a));
-              const cy = (sz(z0) + sz(z1)) / 2;
-              return (
-                <g key={a.id} onClick={() => rideTo(a.id)} style={{ cursor: 'pointer' }}>
-                  <rect x={sx(a.x0)} y={sz(z0)} width={sx(a.x1) - sx(a.x0)} height={sz(z1) - sz(z0)} fill={a.color} opacity={0.88} rx={3} />
-                  <text x={sx((a.x0 + a.x1) / 2)} y={cy - 2} fontSize={13} textAnchor="middle">
-                    {a.icon}
-                  </text>
-                  <text x={sx((a.x0 + a.x1) / 2)} y={cy + 10} fontSize={6.5} textAnchor="middle" fill="#fff" fontWeight={700}>
-                    {AREA_INFO[a.id].short}
-                  </text>
-                  {/* journey: a task waits here (yellow dot) / the passport stamp is done (tick) */}
-                  {task ? <circle cx={sx(a.x1) - 5} cy={sz(z0) + 5} r={3.6} fill="#facc15" stroke="#fff" strokeWidth={1} /> : null}
-                  {stamped ? (
-                    <text x={sx(a.x0) + 5} y={sz(z0) + 8} fontSize={7} textAnchor="middle">
-                      ✅
-                    </text>
-                  ) : null}
-                </g>
-              );
-            })}
-            {Object.values(players)
-              .filter((p) => p.id !== me)
-              .map((p) => {
-                const focus = p.id === mapFocus;
-                return (
-                  <g key={p.id} onClick={() => openThread(p.id)} style={{ cursor: 'pointer' }}>
-                    <circle cx={sx(p.x)} cy={sz(p.z)} r={7} fill="transparent" />
-                    {focus ? <circle cx={sx(p.x)} cy={sz(p.z)} r={6} fill="none" stroke="#f59e0b" strokeWidth={1.6} /> : null}
-                    <circle cx={sx(p.x)} cy={sz(p.z)} r={focus ? 3.4 : 2.2} fill={focus ? '#f59e0b' : '#2f80ed'} stroke="#fff" strokeWidth={0.8} />
-                    <text x={sx(p.x)} y={sz(p.z) - (focus ? 8 : 4)} fontSize={focus ? 7 : 4.5} textAnchor="middle" fill={focus ? '#7c2d12' : '#1e3a5f'} fontWeight={focus ? 700 : 500}>
-                      {p.name}
-                    </text>
-                  </g>
-                );
-              })}
-            <circle cx={sx(localPos.x)} cy={sz(localPos.z)} r={3.6} fill="#e5533d" stroke="#fff" strokeWidth={1.2} />
-          </svg>
+          </div>
+          <p className="text-center text-[11px] leading-snug text-slate-500">
+            {t('Tap a place to take the bus there.')} {t('Tap a player to message them.')}
+          </p>
         </div>
-        <p className="mt-2 text-center text-xs text-gray-500">
-          🔴 {t('You')} · 🔵 {t('Other players')} · {t('Tap a place to take the bus there.')} {t('Tap a player to message them.')}
-        </p>
-        <div className="mt-3">
+        <div className="shrink-0 space-y-1.5">
+          <ByTrain />
           <Suggested />
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/** Places reached by train: take the bus to Central Station, where the ticket office is. */
+const TRAIN_PLACES = [
+  ['🌊', 'Riverside'],
+  ['🍁', 'Maple Hill'],
+  ['🏰', 'Old Town'],
+  ['🏖️', 'Sunny Bay'],
+] as const;
+
+function ByTrain() {
+  const t = useT();
+  return (
+    <section className="rounded-2xl bg-sky-50/80 px-2.5 py-2 ring-1 ring-sky-200">
+      <h3 className="mb-1.5 truncate text-[11px] text-sky-800/90">
+        <b className="text-xs font-semibold text-sky-900">🚆 {t('By train')}</b> · {t('Take the bus to the station and buy a ticket.')}
+      </h3>
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
+        {TRAIN_PLACES.map(([icon, name]) => (
+          <button key={name} type="button" onClick={() => rideTo('station')} className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-black/5 hover:bg-sky-100">
+            {icon} <span dir="ltr">{name}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -223,11 +224,11 @@ function Suggested() {
   const list = suggestAreas(level ?? 'A1', learned).slice(0, 3);
   if (!list.length) return null;
   return (
-    <section className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-2.5">
-      <h3 className="mb-1.5 text-xs font-semibold text-emerald-900">✨ {t('Good next places for your level ({level})', { level: level ?? 'A1' })}</h3>
-      <div className="flex flex-wrap gap-1.5">
+    <section className="rounded-2xl bg-emerald-50/80 px-2.5 py-2 ring-1 ring-emerald-200">
+      <h3 className="mb-1.5 truncate text-xs font-semibold text-emerald-900">✨ {t('Good next places for your level ({level})', { level: level ?? 'A1' })}</h3>
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5">
         {list.map((id) => (
-          <button key={id} type="button" onClick={() => rideTo(id)} className="rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-medium">
+          <button key={id} type="button" onClick={() => rideTo(id)} className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-black/5 hover:bg-emerald-100">
             {AREA_INFO[id].icon} <span dir="ltr">{AREA_INFO[id].short}</span>
           </button>
         ))}
