@@ -48,7 +48,7 @@ test('daily tasks and the bonus', () => {
   const st = fresh(['d-hug', 'd-quiz', 'd-farm']);
   applyEvent(st, 'critter_hug', {});
   applyEvent(st, 'quiz_done', { area: 'farm' });
-  const r = applyEvent(st, 'farm_action', { action: 'harvest' });
+  const r = applyEvent(st, 'myfarm_harvest', {});
   assert.ok(r.dailyBonus);
   assert.equal(applyEvent(st, 'critter_hug', {}).dailyBonus, false);
 });

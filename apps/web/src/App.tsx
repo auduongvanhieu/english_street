@@ -108,7 +108,7 @@ import { ChatBox, EmoteBar, FeedbackButton, HintToast, HudButton, JumpButton, Co
 import { SettingsButton } from './ui/SettingsPanel';
 import { useKeyboardInset } from './ui/useKeyboardInset';
 import { useT } from './i18n';
-import { AreaChip, AreaPanel, BadgeToast, FeedingToast, GardenVisitChip, SitButton } from './ui/area/AreaPanel';
+import { AreaChip, AreaPanel, BadgeToast, FeedingToast, SitButton } from './ui/area/AreaPanel';
 import { ShoppingMini } from './ui/area/AreaTabs';
 import { ItemCard } from './ui/area/ItemCard';
 import { BusPanel, MapPanel } from './ui/area/Travel';
@@ -514,7 +514,6 @@ export default function App() {
       {!hudHidden && <ShoppingMini />}
       <FeedingToast />
       <BadgeToast />
-      <GardenVisitChip />
       <NpcPanel />
       <PairPanel />
       <UiPanels />

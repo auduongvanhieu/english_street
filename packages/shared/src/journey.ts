@@ -56,7 +56,7 @@ const quiz = (a: AreaId): JourneyGoal => ({ event: 'quiz_done', where: { area: a
 const talk = (npc: string): JourneyGoal => ({ event: 'quest_end', where: { npc, status: 'completed' } });
 export const AREA_STEPS: JourneyStep[] = [
   ...area('zoo', [['cards', cards('zoo')], ['quiz', quiz('zoo')], ['keeper', talk('zookeeper')]]),
-  ...area('farm', [['plant', { event: 'farm_action', where: { action: 'plant' } }], ['harvest', { event: 'farm_action', where: { action: 'harvest' } }], ['visit', { event: 'garden_visit' }]]),
+  ...area('farm', [['plant', { event: 'myfarm_plant' }], ['harvest', { event: 'myfarm_harvest' }], ['visit', { event: 'myfarm_visit' }]]),
   ...area('restaurant', [['order', { event: 'restaurant_order' }], ['cook', { event: 'minigame_done', where: { game: 'cooking' } }, { place: 'kitchen' }], ['tip', { event: 'restaurant_pay', where: { ok: true, tip: [10, 15, 20] } }]]),
   ...area('supermarket', [['cards', cards('supermarket')], ['list', { event: 'shopping_done' }], ['grocer', talk('grocer')]]),
   ...area('home', [['cards', cards('home')], ['shelf', { event: 'book_bought' }, { place: 'library' }], ['mum', talk('mum')]]),
@@ -82,7 +82,7 @@ export const DAILY_POOL: JourneyStep[] = [
   { id: 'd-sport', kind: 'daily', goal: { event: 'minigame_done', where: { game: PLAY } }, reward: R(15, 3), guide: { area: 'sports' } },
   { id: 'd-hug', kind: 'daily', goal: { event: 'critter_hug' }, reward: R(10, 2) },
   { id: 'd-quiz', kind: 'daily', goal: { event: 'quiz_done' }, reward: R(15, 3) },
-  { id: 'd-farm', kind: 'daily', goal: { event: 'farm_action', where: { action: 'harvest' } }, reward: R(10, 3), guide: { area: 'farm' } },
+  { id: 'd-farm', kind: 'daily', goal: { event: 'myfarm_harvest' }, reward: R(10, 3), guide: { area: 'farm' } },
   { id: 'd-till', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'checkout' } }, reward: R(15, 3), guide: { area: 'supermarket' } },
   { id: 'd-movie', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'movie' } }, reward: R(15, 3), guide: { area: 'cinema' } },
   { id: 'd-class', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'class' } }, reward: R(15, 3), guide: { area: 'school' } },

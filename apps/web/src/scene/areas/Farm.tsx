@@ -2,17 +2,14 @@ import { FarmJobs } from './AnimalJobs';
 import { useMyFarm } from '../../store/myFarm';
 import { useUsable } from '../../world/usables';
 import { useT } from '../../i18n';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { decodeGarden, plotStage, type Crop } from '@es/shared';
-import { useGame } from '../../store/game';
-import { BARN, COOP, ORCHARD, PENS, PLOTS, PLOT_SIZE, STALL, WINDMILL } from '../../world/farmLayout';
+import type { Crop } from '@es/shared';
+import { BARN, COOP, FLOWER_GARDEN, GARDEN_PROPS, ORCHARD, PENS, STALL, WINDMILL } from '../../world/farmLayout';
 import { FRONT_Z, YARD_MIN_Z, areaById } from '../../world/areas';
 import { enclosurePath } from '../../world/zooLayout';
-import { useFarm } from '../../store/farm';
-import { useArea } from '../../store/area';
 import { Animal } from './Animal';
 import { Ground, Merged, NearArea, Sign, box, cyl, fenceRect, sphere, tree } from './kit';
 import { Text } from '@react-three/drei';
@@ -47,14 +44,6 @@ function FarmStatic() {
         // water troughs
         p.addColored(kit.SM_Trough!, { p: [120, 0, -18.2] });
         p.addColored(kit.SM_Trough!, { p: [117, 0, -9.4], s: [0.67, 1, 0.83] });
-        // garden plots (soil beds with a wooden border)
-        for (const pl of PLOTS) {
-          p.add(box(PLOT_SIZE, 0.12, PLOT_SIZE), '#6b4a30', { p: [pl.x, 0.06, pl.z] });
-          for (const [dx, dz, w, d] of [[0, -PLOT_SIZE / 2, PLOT_SIZE + 0.15, 0.1], [0, PLOT_SIZE / 2, PLOT_SIZE + 0.15, 0.1], [-PLOT_SIZE / 2, 0, 0.1, PLOT_SIZE], [PLOT_SIZE / 2, 0, 0.1, PLOT_SIZE]] as const)
-            p.add(box(w, 0.2, d), '#a0703c', { p: [pl.x + dx, 0.1, pl.z + dz] });
-          // three raised rows of darker, tilled soil
-          for (const dz of [-0.7, 0, 0.7]) p.add(cyl(0.2, 0.2, PLOT_SIZE - 0.25, 8, false, 0, Math.PI), '#4f3422', { p: [pl.x, 0.07, pl.z + dz], r: [0, 0, Math.PI / 2], s: [0.4, 1, 1] });
-        }
         // apple orchard
         for (const o of ORCHARD) {
           tree(p, o.x, o.z, 1, '#5fae4e');
@@ -90,55 +79,36 @@ function Sails() {
   );
 }
 
-/** The learner's six garden plots with their current crop (stage from the server state). */
-function Garden() {
-  const farm = useFarm((s) => s.farm);
-  const skew = useFarm((s) => s.skew);
-  const load = useFarm((s) => s.load);
-  const setPlot = useFarm((s) => s.setPlot);
-  const openPanel = useArea((s) => s.setPanel);
-  const visiting = useFarm((s) => s.visiting);
-  const visited = useGame((s) => (visiting ? s.players[visiting]?.garden ?? '' : ''));
-  const plots = useMemo(() => (visiting && visited ? decodeGarden(visited) : null), [visiting, visited]);
-  useEffect(() => {
-    void load();
-    const t = setInterval(() => void load(), 30_000);
-    return () => clearInterval(t);
-  }, [load]);
-  // re-render every few seconds so growth shows
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 5000);
-    return () => clearInterval(t);
-  }, []);
-  const now = Date.now() + skew;
+/** The public flower garden (world/farmLayout.ts FLOWER_GARDEN): paths, beds, flower boxes, bushes, benches. */
+preloadLpm('farm_garden');
+preloadLpm('zoo_kit');
+const GARDEN_PART = { planter: 'SM_FG_Planter', clump: 'SM_FG_Clump', bush: 'SM_FG_Bush', sunflowers: 'SM_FG_Sunflowers' } as const;
+function FlowerGarden() {
+  const garden = useLpmParts('farm_garden');
+  const zoo = useLpmParts('zoo_kit');
+  const { x0, x1, z0, z1, cx, cz } = FLOWER_GARDEN;
   return (
-    <group>
-      {PLOTS.map((pl, i) => {
-        const plot = plots ? plots[i] : farm.plots[i];
-        const st = plotStage(plot, now);
-        return (
-          <group
-            key={i}
-            position={[pl.x, 0, pl.z]}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (plots) return; // someone else's garden: look, don't touch
-              setPlot(i);
-              openPanel(true, 'farm');
-            }}
-          >
-            {/* invisible hit box over the bed */}
-            <mesh position={[0, 0.3, 0]} visible={false}>
-              <boxGeometry args={[PLOT_SIZE, 0.6, PLOT_SIZE]} />
-            </mesh>
-            {plot?.crop ? <Plants crop={plot.crop} stage={st.stage} progress={st.progress} /> : null}
-            {st.stage === 'seed' ? <Marker kind="water" y={plot?.crop === 'corn' ? 1.0 : 0.9} /> : null}
-            {st.stage === 'ready' ? <Marker kind="ready" y={plot?.crop === 'corn' ? 2.3 : plot?.crop === 'tomato' ? 1.5 : 1.15} /> : null}
-          </group>
-        );
-      })}
-    </group>
+    <>
+      <Merged
+        deps={[garden, zoo]}
+        build={(p) => {
+          // gravel paths in a cross, stopping at the round bed
+          const path = '#d9c49a';
+          p.add(box(2, 0.02, cz - 1.5 - z0), path, { p: [cx, 0.035, (z0 + cz - 1.5) / 2] });
+          p.add(box(2, 0.02, z1 - cz - 1.5), path, { p: [cx, 0.035, (z1 + cz + 1.5) / 2] });
+          p.add(box(cx - 1.5 - x0, 0.02, 1.6), path, { p: [(x0 + cx - 1.5) / 2, 0.036, cz] });
+          p.add(box(x1 - cx - 1.5, 0.02, 1.6), path, { p: [(x1 + cx + 1.5) / 2, 0.036, cz] });
+          // the round bed: soil with a low stone edge
+          p.add(cyl(1.55, 1.55, 0.06, 20), '#c9c2b4', { p: [cx, 0.06, cz] });
+          p.add(cyl(1.4, 1.4, 0.1, 20), '#6b4a30', { p: [cx, 0.08, cz] });
+          for (const g of GARDEN_PROPS) {
+            const geo = g.kind === 'bench' ? zoo.SM_Bench : garden[GARDEN_PART[g.kind]];
+            if (geo) p.addColored(geo, { p: [g.x, g.kind === 'sunflowers' || (g.kind === 'clump' && Math.hypot(g.x - cx, g.z - cz) < 1.5) ? 0.12 : 0, g.z], r: [0, g.r, 0], s: [g.s, g.s, g.s] });
+          }
+        }}
+      />
+      <Sign x={cx - 2.6} z={z0 + 0.1} text="FLOWER GARDEN" sub="sit down · smell the flowers" color="#2f6b3a" y={1.3} rot={Math.PI} />
+    </>
   );
 }
 
@@ -279,11 +249,10 @@ export function Farm() {
         <Ground x0={110} x1={166} z0={6} z1={15.5} color="#9cc96b" y={0.03} />
         <FarmStatic />
         <Sails />
-        <Garden />
+        <FlowerGarden />
         {PENS.map((p) => (
           <Sign key={p.id} x={(p.x0 + p.x1) / 2 + 2} z={p.z1 + 0.45} text={p.animals.map((a) => a.item.toUpperCase()).filter((v, i, l) => l.indexOf(v) === i).join(' · ')} color="#7a4a2a" y={1.1} />
         ))}
-        <Sign x={124} z={14.9} text="MY GARDEN" color="#7a4a2a" y={1.1} />
         <MyFarmGate />
         <Sign x={STALL.x} z={STALL.z + 0.9} text="FARM MARKET" color="#c0392b" y={2.9} w={3.2} />
         {animals.map((x) => (

@@ -43,7 +43,7 @@ const DAILY: Record<string, Text> = {
   'd-sport': { title: tk('Play a sports game'), how: tk('Football, hoops, a race or "Coach says" at the sports park.') },
   'd-hug': { title: tk('Hug a pet'), how: tk('Walk up to a cat or a dog and give it a hug.') },
   'd-quiz': { title: tk('Pass an area quiz'), how: tk('Open an area guide (G) and take its quiz.') },
-  'd-farm': { title: tk('Harvest on the farm'), how: tk('Plant seeds at the farm, wait, and harvest them.') },
+  'd-farm': { title: tk('Harvest on the farm'), how: tk('Plant seeds in your own farm (MY FARM gate at Green Valley Farm), wait, and harvest them.') },
 };
 /** Area tasks: by the part after the area in the id. */
 const AREA: Record<string, Text> = {
@@ -57,9 +57,9 @@ const AREA: Record<string, Text> = {
   usher: { title: tk('At the cinema'), how: tk('Finish a conversation quest with the usher.') },
   master: { title: tk('Ask the station master'), how: tk('Finish a conversation quest at the station.') },
   doctor: { title: tk('See the doctor'), how: tk('Finish a conversation quest with the doctor.') },
-  plant: { title: tk('Plant a seed'), how: tk('Plant something in your farm plot.') },
+  plant: { title: tk('Plant a seed'), how: tk('Plant something in your own farm: go through the MY FARM gate at Green Valley Farm.') },
   harvest: { title: tk('Harvest your crop'), how: tk('Harvest something you planted.') },
-  visit: { title: tk("Visit a neighbour's garden"), how: tk("Visit another player's farm garden.") },
+  visit: { title: tk("Visit a friend's farm"), how: tk("Visit another player's own farm (open your Friends list).") },
   order: { title: tk('Order a meal'), how: tk('Sit at a table and order from the waiter.') },
   cook: { title: tk('Cook in the kitchen'), how: tk('Cook a dish in the restaurant kitchen.') },
   tip: { title: tk('Leave a tip'), how: tk('Pay the bill with a 10, 15 or 20% tip and work out the right total.') },

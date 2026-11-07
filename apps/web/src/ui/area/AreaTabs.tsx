@@ -3,10 +3,9 @@ import { useWorld } from '../../store/world';
 import { useExpire } from '../useExpire';
 /** Stable empty list for selectors. */
 const NONE: string[] = [];
-import { CROPS, CROP_PRICE, FARM, GROW_MS, plotStage, type AreaContentDto, type Crop } from '@es/shared';
+import { CROP_PRICE, FARM, type AreaContentDto, type Crop } from '@es/shared';
 import { useFarm } from '../../store/farm';
-import { useGame } from '../../store/game';
-import { areaAt } from '../../world/areas';
+import { useMyFarm } from '../../store/myFarm';
 import { useRestaurant } from '../../store/restaurant';
 import { useShopping } from '../../store/shopping';
 import { useArea } from '../../store/area';
@@ -25,53 +24,15 @@ const ERR: Record<string, string> = {
   already_watered: tk('It already has water.'),
 };
 
-/** 🌱 My garden (6 plots), basket + market, animal chores. */
-/** Other players at the farm who have something planted: visit = their crops show on the plots. */
-function Neighbours() {
-  const t = useT();
-  const visiting = useFarm((s) => s.visiting);
-  const visit = useFarm((s) => s.visit);
-  const setPanel = useArea((s) => s.setPanel);
-  const me = useGame((s) => s.sessionId);
-  const players = useGame((s) => s.players);
-  const list = Object.entries(players).filter(([id, p]) => id !== me && /[a-z]/.test(p.garden ?? '') && areaAt(p.x, p.z) === 'farm');
-  if (!list.length && !visiting) return null;
-  return (
-    <section className="rounded-lg border border-green-200 bg-green-50/60 px-3 py-2">
-      <h3 className="mb-1.5 text-sm font-semibold">👀 {t("Neighbours' gardens")}</h3>
-      <div className="flex flex-wrap gap-1.5">
-        {visiting && (
-          <button type="button" onClick={() => visit(null)} className="rounded-full bg-green-700 px-3 py-1 text-xs font-semibold text-white">
-            ← {t('Back to my garden')}
-          </button>
-        )}
-        {list.map(([id, p]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => {
-              visit(id);
-              setPanel(false);
-            }}
-            className={`rounded-full border px-3 py-1 text-xs ${visiting === id ? 'border-green-700 bg-white font-semibold' : 'bg-white'}`}
-          >
-            🌱 {p.name}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
+/** Farm tab: a way into your own farm, the basket (crops from the old garden) and the animal chores. */
 export function FarmTab({ content }: { content: AreaContentDto }) {
   const t = useT();
-  const { farm, skew, act, busy, last, plot, setPlot } = useFarm();
+  const { farm, act, busy, last } = useFarm();
   const [, tick] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => tick((n) => n + 1), 2000);
     return () => clearInterval(iv);
   }, []);
-  const now = Date.now() + skew;
   const item = (id: string) => content.items.find((i) => i.id === id);
   const label = (id: string) => item(id)?.en ?? id;
   const tr = (id: string) => item(id)?.tr.meaning;
@@ -90,70 +51,23 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
           )}
         </div>
       ) : null}
-      <Neighbours />
-      <section>
-        <h3 className="mb-2 text-sm font-semibold">🌱 {t('My garden')}</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {farm.plots.slice(0, FARM.plotCount).map((p, i) => {
-            const st = plotStage(p, now);
-            const sel = plot === i;
-            return (
-              <button key={i} type="button" onClick={() => setPlot(sel ? null : i)} className={`min-h-20 rounded-xl border-2 p-1 text-center ${sel ? 'border-green-600 bg-green-50' : 'border-amber-200 bg-amber-50/50'}`}>
-                <div className="text-2xl">{p.crop ? icon(p.crop) : '🟫'}</div>
-                <div className="text-[11px]" dir="ltr">
-                  {p.crop ? label(p.crop) : t('empty')}
-                </div>
-                <div className="text-[10px] text-gray-500">
-                  {st.stage === 'seed' ? `💧 ${t('needs water')}` : st.stage === 'growing' ? `${Math.round(st.progress * 100)}%` : st.stage === 'ready' ? `⭐ ${t('ready!')}` : ''}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        {plot !== null ? (
-          <div className="mt-2 rounded-xl bg-gray-50 p-2">
-            {(() => {
-              const p = farm.plots[plot];
-              const st = plotStage(p, now);
-              if (st.stage === 'empty')
-                return (
-                  <>
-                    <div className="mb-1 text-xs text-gray-600">{t('Choose seeds to plant:')}</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {CROPS.filter((c) => !FARM.disabled.includes(c)).map((c) => (
-                        <button key={c} type="button" disabled={busy} onClick={() => void act({ action: 'plant', plot, crop: c })} className="min-h-9 rounded-full border bg-white px-2.5 text-sm" title={`${Math.round(GROW_MS[c] / 60000)} min`}>
-                          {icon(c)} <span dir="ltr">{label(c)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                );
-              if (st.stage === 'seed')
-                return (
-                  <button type="button" disabled={busy} onClick={() => void act({ action: 'water', plot })} className="min-h-10 w-full rounded-lg bg-sky-600 text-sm font-semibold text-white">
-                    💧 <span dir="ltr">Water the {label(p!.crop!)}</span>
-                  </button>
-                );
-              if (st.stage === 'growing')
-                return (
-                  <div className="text-sm text-gray-600">
-                    {t('Growing… ready in about {m} min.', { m: Math.max(1, Math.ceil(((1 - st.progress) * GROW_MS[p!.crop as Crop]) / 60000)) })}
-                  </div>
-                );
-              return (
-                <button type="button" disabled={busy} onClick={() => void act({ action: 'harvest', plot })} className="min-h-10 w-full rounded-lg bg-amber-500 text-sm font-semibold text-white">
-                  🧺 <span dir="ltr">Harvest the {label(p!.crop!)}</span>
-                </button>
-              );
-            })()}
-          </div>
-        ) : null}
+      <section className="rounded-lg border border-green-200 bg-green-50/60 px-3 py-2">
+        <h3 className="mb-1 text-sm font-semibold">🌾 {t('My farm')}</h3>
+        <p className="mb-2 text-xs text-gray-600">{t('Your fields and animals are in your own farm. Go through the yellow MY FARM gate by the yard path.')}</p>
+        <button
+          type="button"
+          onClick={() => {
+            useArea.getState().setPanel(false);
+            useMyFarm.getState().enter();
+          }}
+          className="min-h-10 w-full rounded-lg bg-green-700 text-sm font-semibold text-white"
+        >
+          {t('Go to my farm')}
+        </button>
       </section>
+      {Object.values(farm.basket).some((n) => n > 0) ? (
       <section>
         <h3 className="mb-2 text-sm font-semibold">🧺 {t('My basket')} · {t('Farm market')}</h3>
-        {Object.values(farm.basket).every((n) => !n) ? (
-          <p className="text-xs text-gray-500">{t('Harvest something, then sell it here.')}</p>
-        ) : (
           <div className="space-y-1">
             {Object.entries(farm.basket)
               .filter(([, n]) => n > 0)
@@ -168,8 +82,8 @@ export function FarmTab({ content }: { content: AreaContentDto }) {
                 </div>
               ))}
           </div>
-        )}
       </section>
+      ) : null}
       <section>
         <h3 className="mb-2 text-sm font-semibold">🐄 {t('Farm jobs')}</h3>
         <div className="grid grid-cols-3 gap-2">

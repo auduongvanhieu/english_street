@@ -4,8 +4,6 @@ import { useArea } from '../../store/area';
 import { useRestaurant } from '../../store/restaurant';
 import { useSeat } from '../../store/seat';
 import { ActionCircle } from '../Hud';
-import { useFarm } from '../../store/farm';
-import { useGame } from '../../store/game';
 import { tk, useLang, useT } from '../../i18n';
 import { serverNow } from '../../net/client';
 import { feedingNow } from '../../world/zooLayout';
@@ -202,27 +200,6 @@ export function FeedingToast() {
   return (
     <div className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+6.5rem)] z-10 -translate-x-1/2 rounded-full bg-orange-500/90 px-4 py-1.5 text-sm font-semibold text-white shadow">
       🐟 <span dir="ltr">Feeding time at the penguin pool!</span> · {t('Visit the zookeeper')}
-    </div>
-  );
-}
-
-/** "👀 Minh's garden ✕" while the plots show someone else's crops. */
-export function GardenVisitChip() {
-  const t = useT();
-  const visiting = useFarm((s) => s.visiting);
-  const visit = useFarm((s) => s.visit);
-  const name = useGame((s) => (visiting ? s.players[visiting]?.name : undefined));
-  const inFarm = useArea((s) => s.current === 'farm');
-  useEffect(() => {
-    if (visiting && (!name || !inFarm)) visit(null);
-  }, [visiting, name, inFarm, visit]);
-  if (!visiting || !name) return null;
-  return (
-    <div className="absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+6.5rem)] z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-green-700/90 px-4 py-1.5 text-sm font-semibold text-white shadow">
-      👀 {t("{name}'s garden", { name })}
-      <button type="button" onClick={() => visit(null)} aria-label={t('Back to my garden')} className="rounded-full bg-white/20 px-2 text-xs">
-        ✕
-      </button>
     </div>
   );
 }
