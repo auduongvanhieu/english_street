@@ -15,6 +15,7 @@ export * from './world';
 export * from './device';
 export * from './weather';
 export * from './interiors';
+export * from './home';
 export * from './shop';
 export * from './sports';
 export * from './boats';

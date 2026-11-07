@@ -1,0 +1,113 @@
+import { FURNITURE, furniture } from '@es/shared';
+import { getPlayerId } from '../net/player';
+import { canBuyMore, inBag, useMyRoom } from '../store/myRoom';
+import { useProfile } from '../store/profile';
+import { useVoice } from '../store/voice';
+import { useT } from '../i18n';
+
+/** My room: shop and bag, the carried piece's controls, and the visitor bar. */
+export function MyRoomHud() {
+  const t = useT();
+  const owner = useMyRoom((s) => s.owner);
+  const ownerName = useMyRoom((s) => s.ownerName);
+  const items = useMyRoom((s) => s.items);
+  const owned = useMyRoom((s) => s.owned);
+  const ghost = useMyRoom((s) => s.ghost);
+  const panel = useMyRoom((s) => s.panel);
+  const note = useMyRoom((s) => s.note);
+  const coins = useProfile((s) => s.profile?.coins ?? 0);
+  const m = useMyRoom.getState();
+  if (!owner) return null;
+  const mine = owner === getPlayerId();
+  const bag = inBag({ items, owned });
+  const bagN = Object.values(bag).reduce((a, b) => a + b, 0);
+  const speak = (w: string) => useVoice.getState().speakAs('me', w, 'en-US');
+  const bar = (
+    <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/95 px-2 py-1.5 text-sm shadow-lg">
+      <b className="px-1">🏠 {mine ? t('My room') : t("{name}'s room", { name: ownerName })}</b>
+      {mine ? (
+        <>
+          <button type="button" onClick={() => m.setPanel(panel === 'shop' ? null : 'shop')} className={`min-h-9 rounded-xl px-2.5 ${panel === 'shop' ? 'bg-amber-400' : 'bg-amber-100'}`}>
+            🛒 {t('Furniture shop')}
+          </button>
+          <button type="button" onClick={() => m.setPanel(panel === 'bag' ? null : 'bag')} className={`min-h-9 rounded-xl px-2.5 ${panel === 'bag' ? 'bg-sky-400' : 'bg-sky-100'}`}>
+            🎒 {t('My things')} ({bagN})
+          </button>
+        </>
+      ) : null}
+      <button type="button" onClick={() => m.leave()} className="min-h-9 rounded-xl bg-gray-100 px-2.5">
+        🚪 {t('Go out')}
+      </button>
+    </div>
+  );
+  return (
+    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 flex w-[94vw] max-w-md -translate-x-1/2 flex-col items-center gap-2">
+      {bar}
+      {ghost ? (
+        <div className="pointer-events-auto w-full rounded-2xl bg-white/95 p-2.5 shadow-xl">
+          <p className="mb-1.5 text-center text-sm" dir="ltr">
+            {furniture(ghost.id)?.icon} <b>{furniture(ghost.id)?.en}</b> — {ghost.ok ? t('Walk and turn to choose the place.') : t('No space here. Move a little.')}
+          </p>
+          <div className="flex gap-1.5">
+            {!furniture(ghost.id)?.wallY ? (
+              <button type="button" onClick={() => m.rotate()} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm font-semibold">
+                ↻ {t('Turn')}
+              </button>
+            ) : null}
+            <button type="button" disabled={!ghost.ok} onClick={() => m.place()} className="min-h-11 flex-[2] rounded-xl bg-green-600 text-sm font-semibold text-white disabled:opacity-40">
+              ✓ {t('Put it here')}
+            </button>
+            <button type="button" onClick={() => m.putAway()} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm">
+              🎒 {t('Put away')}
+            </button>
+          </div>
+        </div>
+      ) : panel ? (
+        <div className="pointer-events-auto max-h-[55vh] w-full overflow-y-auto rounded-2xl bg-white/95 p-2.5 shadow-xl">
+          {panel === 'shop' ? (
+            <>
+              <p className="mb-1.5 text-xs text-gray-600">
+                {t('Buy furniture for your room. Every piece is an English word!')} 🪙 {coins}
+              </p>
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4" dir="ltr">
+                {FURNITURE.map((f) => {
+                  const can = canBuyMore(owned, f.id) && coins >= f.price;
+                  return (
+                    <button key={f.id} type="button" disabled={!can} onClick={() => void m.buy(f.id)} onMouseEnter={() => undefined} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-1 text-xs disabled:opacity-40">
+                      <span className="text-2xl">{f.icon}</span>
+                      <b className="text-sm">{f.en}</b>
+                      <span>
+                        🪙 {f.price}
+                        {owned[f.id] ? ` · ×${owned[f.id]}` : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {note ? <p className="mt-1 text-xs text-red-600">{note}</p> : null}
+            </>
+          ) : (
+            <>
+              <p className="mb-1.5 text-xs text-gray-600">{t('Tap a thing to carry it, then put it where you like.')}</p>
+              {bagN ? (
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4" dir="ltr">
+                  {Object.entries(bag).map(([id, n]) => {
+                    const f = furniture(id)!;
+                    return (
+                      <button key={id} type="button" onClick={() => (speak(f.en), m.carry(id))} className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-xs">
+                        <span className="text-2xl">{f.icon}</span>
+                        <b>{f.en}</b>×{n}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">{t('Everything is in its place. Buy more in the shop!')}</p>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}

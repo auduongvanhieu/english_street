@@ -38,6 +38,7 @@ const DAILY: Record<string, Text> = {
   'd-doctor': { title: tk('See a doctor'), how: tk('Check in at the hospital reception, see Dr. Chen and get your medicine at the pharmacy.') },
   'd-zoo-feed': { title: tk('Feed the zoo animals'), how: tk('Take the feeding list by the zookeeper hut and give each animal the right food.') },
   'd-farmhand': { title: tk('Help on the farm'), how: tk('Milk the cow or collect the eggs at Green Valley Farm.') },
+  'd-room': { title: tk('Decorate your room'), how: tk('Go to My room by the house, buy a piece of furniture and put it in your room.') },
   'd-train': { title: tk('Take the train'), how: tk('Buy the right ticket at the station machine and ride the train.') },
   'd-sport': { title: tk('Play a sports game'), how: tk('Football, hoops, a race or "Coach says" at the sports park.') },
   'd-hug': { title: tk('Hug a pet'), how: tk('Walk up to a cat or a dog and give it a hug.') },

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
+import { FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
 import type { AttemptRepo } from '../npc/attempts';
 import { playerIdFrom } from '../auth';
 import { limiter } from '../npc/ratelimit';
@@ -16,6 +16,8 @@ interface ShopState {
   /** river boat hire: valid until (ms); first hire free */
   boatUntil?: number;
   boatFreeUsed?: boolean;
+  /** "My room": furniture owned (count per id) and placed */
+  room?: RoomState;
 }
 
 export function shopRoutes(repo: AttemptRepo) {
@@ -55,6 +57,56 @@ export function shopRoutes(repo: AttemptRepo) {
       }
       await repo.logEvent({ name: 'boat_hire', playerId: id, props: { free } });
       return { until, coins: u.coins - cost, free };
+    });
+
+    // ---- My room: buy furniture, save where it stands, let friends look ----
+    const roomOf = (gs: ShopState): RoomState => ({ owned: gs.room?.owned ?? {}, items: gs.room?.items ?? [] });
+    app.get('/me/room', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      const { gs, u } = await load(id);
+      return { ...roomOf(gs), coins: u.coins };
+    });
+    app.post('/me/room/buy', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`room:${id}`, 30))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ item: z.string().max(20) }).safeParse(req.body);
+      const f = body.success ? furniture(body.data.item) : undefined;
+      if (!f) return reply.code(400).send({ error: 'bad_request' });
+      const { u, gs } = await load(id);
+      const room = roomOf(gs);
+      if ((room.owned[f.id] ?? 0) >= FURNITURE_MAX) return reply.code(409).send({ error: 'too_many' });
+      if (u.coins < f.price) return reply.code(402).send({ error: 'not_enough_coins' });
+      room.owned = { ...room.owned, [f.id]: (room.owned[f.id] ?? 0) + 1 };
+      await save(id, { ...gs, room });
+      await repo.updateUser(id, { coins: u.coins - f.price });
+      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'furniture', coins: f.price } });
+      await repo.logEvent({ name: 'home_buy', playerId: id, props: { item: f.id } });
+      return { ...room, coins: u.coins - f.price };
+    });
+    app.post('/me/room/save', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`roomsave:${id}`, 60))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ items: z.array(PlacedSchema).max(ROOM_MAX_ITEMS) }).safeParse(req.body);
+      if (!body.success || body.data.items.some((p) => !furniture(p.id))) return reply.code(400).send({ error: 'bad_request' });
+      const { gs } = await load(id);
+      const room = roomOf(gs);
+      const used: Record<string, number> = {};
+      for (const p of body.data.items) used[p.id] = (used[p.id] ?? 0) + 1;
+      if (Object.entries(used).some(([k, n]) => n > (room.owned[k] ?? 0))) return reply.code(409).send({ error: 'not_owned' });
+      const placedBefore = room.items.length;
+      room.items = body.data.items;
+      await save(id, { ...gs, room });
+      if (room.items.length > placedBefore) await repo.logEvent({ name: 'home_place', playerId: id, props: { count: room.items.length } });
+      return room;
+    });
+    /** A friend's room (anyone can look: it is only furniture). */
+    app.get<{ Params: { id: string } }>('/rooms/:id', async (req, reply) => {
+      const u = await repo.getUser(req.params.id);
+      if (!u) return reply.code(404).send({ error: 'not_found' });
+      return { name: u.name, items: roomOf((u.gameState ?? {}) as ShopState).items };
     });
 
     app.get('/me/hotel', async (req, reply) => {

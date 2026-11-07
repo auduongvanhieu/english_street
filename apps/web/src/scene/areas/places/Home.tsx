@@ -8,6 +8,8 @@ import { useArea } from '../../../store/area';
 import { AreaGroup, Ground, Merged, box, cyl, sphere, tree, type Part } from '../kit';
 import { useBooks } from '../../../store/books';
 import { useUsable } from '../../../world/usables';
+import { useMyRoom } from '../../../store/myRoom';
+import { useT } from '../../../i18n';
 import { t as tr } from '../../../i18n';
 
 /** The living-room bookcase holds the books you bought in the library: walk up to it and read them here. */
@@ -320,11 +322,23 @@ function onTap(e: ThreeEvent<MouseEvent>) {
   else useArea.getState().openCard({ area: 'home', item: best.item });
 }
 
+/** The front door of the house leads to "My room" too (your own room off the map). */
+function MyRoomDoor() {
+  const t = useT();
+  const [x, z] = FRAME.toWorld(2.3, HOUSE.z1 + 0.9);
+  useUsable({ id: 'home-my-room', x, z, r: 1.4, icon: '🏠', label: t('My room'), use: () => void useMyRoom.getState().enter() });
+  return null;
+}
+
 export default function Home() {
   const inside = useInside();
   return (
     <AreaGroup area={AREA}>
       <MyBookshelf />
+      <MyRoomDoor />
+      <Text position={[2.3, 2.3, HOUSE.z1 + 0.05]} fontSize={0.2} color="#8d5a3b" anchorX="center" anchorY="middle" outlineWidth={0.015} outlineColor="#ffffff">
+        🏠 MY ROOM
+      </Text>
       <Ground x0={-28} x1={28} z0={-23.5} z1={0} color="#a9d67f" y={0.006} />
       <Ground x0={-1.6} x1={1.6} z0={H.z1} z1={0} color="#cdbf9f" y={0.01} />
       <Merged build={shell} />

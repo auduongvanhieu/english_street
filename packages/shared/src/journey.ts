@@ -88,6 +88,7 @@ export const DAILY_POOL: JourneyStep[] = [
   { id: 'd-doctor', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'clinic' } }, reward: R(15, 3), guide: { area: 'hospital' } },
   { id: 'd-zoo-feed', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'zookeeper' } }, reward: R(15, 3), guide: { area: 'zoo' } },
   { id: 'd-farmhand', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'farmhand' } }, reward: R(10, 3), guide: { area: 'farm' } },
+  { id: 'd-room', kind: 'daily', goal: { event: 'home_place' }, reward: R(10, 3), guide: { area: 'home' } },
   { id: 'd-train', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'train' } }, reward: R(15, 3), guide: { area: 'station' } },
 ];
 export const DAILY_COUNT = 3;

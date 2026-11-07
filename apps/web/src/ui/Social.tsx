@@ -1,3 +1,4 @@
+import { useMyRoom } from '../store/myRoom';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { GROUP_CHAT_MAX, GROUP_MAX, GROUP_NAME_MAX } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
@@ -168,6 +169,18 @@ export function FriendsTab() {
                     )}
                   </span>
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void useMyRoom.getState().visit(f.pid);
+                    useGame.getState().setUiPanel(null);
+                  }}
+                  title={t('Visit their room')}
+                  aria-label={t('Visit their room')}
+                  className="min-h-9 rounded-lg border px-2 text-sm"
+                >
+                  🏠
+                </button>
                 {sameZone ? (
                   <button
                     type="button"
