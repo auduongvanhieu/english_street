@@ -77,5 +77,12 @@ export const NPC_CHIBI: Record<string, ChibiSpec> = {
   receptionist: npc({ body: 'suit', skin: '#eec1a0', hair: '#1c1410', hairStyle: 'ponytail', top: '#8d1c2c', bottom: '#1f1f1f', extras: ['badge'] }),
   coach: npc({ body: 'hoodie', skin: '#c98e62', hair: '#1c1410', hairStyle: 'spiky', top: '#43a047', bottom: '#1b5e20', shoes: '#f2f2f2', hat: 'cap', hatColor: '#f2c94c' }),
 };
+/** Shoppers queueing at the supermarket checkouts. */
+export const SHOPPER_CHIBI: ChibiSpec[] = [
+  npc({ body: 'hoodie', skin: '#c98e62', hair: '#1c1410', hairStyle: 'curly', top: '#ef6c00', bottom: '#37474f', bag: 'backpack' }),
+  npc({ body: 'dress', skin: '#f6d7c3', hair: '#b5652b', hairStyle: 'bob', top: '#43a047', bottom: '#f3e3c3', shoes: '#4e342e' }),
+  npc({ body: 'tee', skin: '#8a5634', hair: '#3a2618', hairStyle: 'short', top: '#5c6bc0', bottom: '#263238', hat: 'cap', hatColor: '#c62828' }),
+  npc({ body: 'girl', skin: '#e0ac80', hair: '#e8c46a', hairStyle: 'ponytail', top: '#ec407a', bottom: '#5b8def' }),
+];
 /** Any NPC without a hand-made look. */
 export const NPC_CHIBI_DEFAULT = npc({ body: 'hoodie', top: '#8e5bd8', hairStyle: 'short' });

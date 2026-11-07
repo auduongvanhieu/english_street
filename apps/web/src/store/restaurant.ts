@@ -38,6 +38,18 @@ interface RestaurantStore {
   askBill: () => void;
   /** pay the bill: tip in percent, and the total the guest worked out (null = no tip) */
   pay: (tip?: number, total?: number) => void;
+  /** Eating with other players at the table: everybody's dishes on one bill. */
+  bill: BillLine[];
+  /** Shared bill: split it equally (the share the guest worked out) or pay for everybody. */
+  payShared: (mode: 'split' | 'treat', amount: number) => void;
+}
+
+export interface BillLine {
+  /** '' = me */
+  who: string;
+  name: string;
+  item: string;
+  price: number;
 }
 
 const EAT_MS = 9000;
@@ -75,6 +87,7 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
     order: null,
     step: 'greet',
     eaten: 0,
+    bill: [],
     setNear: (near) => {
       const cur = get().near;
       if (cur?.table === near?.table && cur?.seat === near?.seat) return;
@@ -85,7 +98,8 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
       if (!seat) return;
       teleportTo(seat.x, seat.z, seat.rot);
       clearTimers();
-      set({ seat: s, step: 'greet', order: null, eaten: 0 });
+      set({ seat: s, step: 'greet', order: null, eaten: 0, bill: [] });
+      mateDish.clear();
       track('restaurant_sit', { table: s.table });
       // Mia comes over with the menu
       goToTable(s, '', () => {
@@ -99,7 +113,7 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
       if (!get().seat) return;
       clearTimers();
       sendProp('');
-      set({ seat: null, order: null, step: 'greet', eaten: 0 });
+      set({ seat: null, order: null, step: 'greet', eaten: 0, bill: [] });
       waiterHome();
     },
     orderDish(item) {
@@ -158,9 +172,14 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
           later(1200, () => {
             if (!still(s)) return;
             goToTable(s, 'bill', () => {
-              const price = menuItem(get().order?.item ?? '')?.price;
-              serverSays(price ? `Here is your bill. That's ${price} dollars, please.` : 'Here is your bill.');
-              set({ step: 'paying' });
+              const item = get().order?.item ?? '';
+              const price = menuItem(item)?.price;
+              const bill = tableBill(s.table, item);
+              if (bill.length > 1) {
+                const total = Math.round(bill.reduce((a, l) => a + l.price, 0) * 100) / 100;
+                serverSays(`Here is the bill for the table. That's ${total} dollars altogether. Would you like to pay together or separately?`);
+              } else serverSays(price ? `Here is your bill. That's ${price} dollars, please.` : 'Here is your bill.');
+              set({ step: 'paying', bill: bill.length > 1 ? bill : [] });
             });
           }),
       });
@@ -177,12 +196,71 @@ export const useRestaurant = create<RestaurantStore>((set, get) => {
         if (!still(s)) return;
         serverSays(!tip ? 'Thank you very much! Have a nice day!' : ok ? "That's very kind of you, thank you so much! Have a nice day!" : `Thank you! Actually, with the tip it's ${money(right)}. Have a nice day!`);
         sendProp('');
-        set({ step: 'menu', order: null, eaten: 0 });
+        set({ step: 'menu', order: null, eaten: 0, bill: [] });
+        later(1500, () => still(s) && waiterHome());
+      });
+    },
+    payShared(mode, amount) {
+      const s = get().seat;
+      const bill = get().bill;
+      if (!s || get().step !== 'paying' || bill.length < 2) return;
+      const total = Math.round(bill.reduce((a, l) => a + l.price, 0) * 100) / 100;
+      const each = shareOf(total, bill.length);
+      const ok = mode === 'treat' ? Math.abs(amount - total) < 0.005 : Math.abs(amount - each) < 0.005;
+      iSay(mode === 'treat' ? `It's on me! Here's ${money(total)} for everyone.` : `Can we split the bill, please? Here's my share: ${money(amount)}.`);
+      track('restaurant_pay_shared', { mode, people: bill.length, ok });
+      later(2400, () => {
+        if (!still(s)) return;
+        serverSays(
+          mode === 'treat'
+            ? "That's very generous of you! Thank you, and have a lovely evening!"
+            : ok
+              ? `Of course. That's ${money(each)} each. Thank you very much!`
+              : `Let me check: ${money(total)} divided by ${bill.length} is ${money(each)} each. Thank you!`,
+        );
+        sendProp('');
+        set({ step: 'menu', order: null, eaten: 0, bill: [] });
         later(1500, () => still(s) && waiterHome());
       });
     },
   };
 });
+
+/** Equal share of a bill, rounded to cents. */
+export const shareOf = (total: number, people: number) => Math.round((total / people) * 100) / 100;
+
+/** What the other players at my table ordered (seen on their plates: prop "dish:<item>"). */
+const mateDish = new Map<string, string>();
+/** Other players sitting on a chair of this table. */
+function tableMates(table: number) {
+  const t = TABLES[table];
+  const g = useGame.getState();
+  if (!t) return [];
+  return Object.values(g.players).filter(
+    (p) => p.id !== g.sessionId && (p.anim === 'sit' || p.anim === 'eat') && t.seats.some((c) => Math.abs(p.x - c.x) < 0.3 && Math.abs(p.z - c.z) < 0.3),
+  );
+}
+useGame.subscribe((g) => {
+  const seat = useRestaurant.getState().seat;
+  if (!seat) return;
+  for (const p of tableMates(seat.table)) {
+    const m = /^dish:([a-z-]+)$/.exec(p.prop);
+    if (m && m[1] !== 'empty' && menuItem(m[1]!)) mateDish.set(p.id, m[1]!);
+  }
+  void g;
+});
+/** The table's bill: my dish first, then each table mate whose dish I saw. */
+function tableBill(table: number, mine: string): BillLine[] {
+  const lines: BillLine[] = [];
+  const me = menuItem(mine);
+  if (me) lines.push({ who: '', name: 'You', item: me.en, price: me.price ?? 0 });
+  for (const p of tableMates(table)) {
+    const d = mateDish.get(p.id);
+    const it = d ? menuItem(d) : undefined;
+    if (it) lines.push({ who: p.id, name: p.name, item: it.en, price: it.price ?? 0 });
+  }
+  return lines;
+}
 
 /** Seats taken by other players (they sit exactly on the chair). */
 export function seatTaken(x: number, z: number): boolean {

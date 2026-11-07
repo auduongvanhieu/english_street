@@ -42,3 +42,44 @@ export interface MyBooks {
   owned: string[];
   done: Record<string, number[]>;
 }
+
+/* ------------------------------------------------------------------------------------- the weekly book club */
+/** Book club weeks start on Monday 00:00 UTC; week 0 = the week of 1 Jan 1970 (a Thursday, hence the +3 days). */
+export const clubWeek = (ms: number) => Math.floor((ms / 86_400_000 + 3) / 7);
+/** Start of a club week (ms). */
+export const clubWeekStart = (week: number) => (week * 7 - 3) * 86_400_000;
+/** The book of the week: the books in id order, one a week, round and round. */
+export const clubBookId = (ids: readonly string[], week: number) => [...ids].sort()[week % ids.length] ?? '';
+/** Chapter quizzes to pass this week for the book club bonus, and the bonus. */
+export const CLUB_GOAL = 2;
+export const CLUB_COINS = 15;
+export const CLUB_NOTE_MAX = 140;
+export interface BookClubNote {
+  name: string;
+  text: string;
+  at: number;
+}
+export interface BookClub {
+  week: number;
+  /** ms until the next book */
+  endsIn: number;
+  book: BookCard;
+  /** chapters of the club book I passed this week */
+  mine: number[];
+  claimed: boolean;
+  /** members this week (passed at least one chapter), newest first */
+  members: string[];
+  notes: BookClubNote[];
+  /** a question to talk about this week */
+  question: string;
+}
+/** Talking points, one a week. */
+export const CLUB_QUESTIONS = [
+  'Who is your favourite character? Why?',
+  'What was the best part of the story?',
+  'How would you change the ending?',
+  'Would you like to be in this story? Why or why not?',
+  'What did you learn from this book?',
+  'Which new word from the book do you like best?',
+  'What would you say to the main character?',
+];

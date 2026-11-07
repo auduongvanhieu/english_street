@@ -27,6 +27,36 @@ export function CheckoutHud() {
 
   if (!till) return null;
   const s = useShopping.getState();
+  if (till.stage === 'line' || till.stage === 'wait')
+    return (
+      <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2">
+        <div className="pointer-events-auto rounded-2xl bg-white/95 p-3 shadow-2xl" data-testid="checkout-queue">
+          <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+            <span className="font-semibold text-gray-800">🧍🧍 {t('The queue at the checkout')}</span>
+            <button type="button" onClick={() => s.closeTill()} className="min-h-8 min-w-8 rounded-full text-base" aria-label={t('Close')}>
+              ✕
+            </button>
+          </div>
+          {till.stage === 'line' ? (
+            <>
+              <p className="text-sm">{t('{n} people are waiting. Ask before you join the queue:', { n: till.ahead })}</p>
+              <div className="mt-1 flex flex-col gap-1" dir="ltr">
+                {till.lineOptions.map((l) => (
+                  <button key={l} type="button" onClick={() => s.joinQueue(l)} className={`min-h-10 rounded-xl border px-2 text-left text-sm ${till.note === l ? 'border-red-400 bg-red-50 line-through' : 'border-gray-200 bg-white'}`}>
+                    🗣️ {l}
+                  </button>
+                ))}
+              </div>
+              {till.note ? <p className="mt-1 text-sm text-red-600">{t('Not quite right. Try another one.')}</p> : null}
+            </>
+          ) : (
+            <p className="text-sm" dir="ltr">
+              ⏳ {till.ahead === 1 ? '1 person' : `${till.ahead} people`} in front of you. {t('Wait for “Next, please!”')}
+            </p>
+          )}
+        </div>
+      </div>
+    );
   const shown = till.lines.slice(0, till.scanned);
   const sub = shown.reduce((a, l) => a + l.qty * l.price, 0);
   return (

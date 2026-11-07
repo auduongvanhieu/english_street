@@ -110,3 +110,14 @@ registerSeats(
     ...benchPair(14, -2, 0),
   ]),
 );
+
+/** Screen 1 seat names: rows A (front) … C, seats 1 … 13 from the left (as you face the screen). */
+export const SEAT_ROW_NAMES = ['A', 'B', 'C'];
+export const seatName = (row: number, n: number) => `${SEAT_ROW_NAMES[row]}${n + 1}`;
+/** The Screen 1 seat at this world position (a seat you sit on), or null. */
+export function cinemaSeatAt(x: number, z: number): { row: number; n: number } | null {
+  const [lx, lz] = FRAME.toLocal(x, z);
+  const row = SEAT_ROWS.findIndex((r) => Math.abs(r - lz) < 0.3);
+  const n = SEAT_XS.findIndex((sx) => Math.abs(sx - lx) < 0.3);
+  return row >= 0 && n >= 0 ? { row, n } : null;
+}

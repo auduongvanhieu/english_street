@@ -5,6 +5,9 @@ import { track } from '../net/analytics';
 import { useArea } from './area';
 import { useProfile } from './profile';
 import { useVoice } from './voice';
+import { useSeat } from './seat';
+import { seatTaken } from './restaurant';
+import { FRAME, SEAT_ROWS, SEAT_XS, cinemaSeatAt, seatName } from '../world/places/cinema';
 
 /**
  * Star Cinema, Screen 1: shows on the shared clock (scene/areas/places/cartoon.ts showPhase). Sitting in the room
@@ -78,7 +81,20 @@ interface MovieStore {
   chooseSnack: (s: SnackItem | null) => void;
   sayLine: (line: string) => void;
   closeSnacks: () => void;
+  /** My Screen 1 ticket: the seat on it (row 0 = A), found = I sat on it. */
+  ticket: { row: number; n: number; found: boolean } | null;
+  /** buying a ticket at the box office (as a customer) */
+  ticketOpen: boolean;
+  ticketLines: string[];
+  ticketNote: string | null;
+  /** the last wrong seat I sat on (for the hint) */
+  wrongSeat: string | null;
+  openTicket: () => void;
+  sayTicket: (line: string) => void;
+  closeTicket: () => void;
 }
+
+const TICKET_LINES = ["One ticket for the next show, please.", "One ticket for the next show, pleased.", "Give one ticket next show."];
 
 const staff = (text: string) => useVoice.getState().speakAs('usher', text, 'en-US');
 
@@ -141,7 +157,56 @@ export const useMovie = create<MovieStore>((set, get) => ({
     set({ holding: s.prop, snackOpen: false, snackItem: null, snackNote: null });
   },
   closeSnacks: () => set({ snackOpen: false, snackItem: null, snackNote: null }),
+  ticket: null,
+  ticketOpen: false,
+  ticketLines: [],
+  ticketNote: null,
+  wrongSeat: null,
+  openTicket() {
+    set({ ticketOpen: true, ticketLines: shuffle(TICKET_LINES), ticketNote: null });
+    staff('Hello! How can I help you?');
+  },
+  sayTicket(line) {
+    if (line !== TICKET_LINES[0]) return set({ ticketNote: line });
+    useVoice.getState().speakAs('me', line, 'en-US');
+    // a free seat, not in the front row if we can help it
+    const free: { row: number; n: number }[] = [];
+    SEAT_ROWS.forEach((lz, row) =>
+      SEAT_XS.forEach((lx, n) => {
+        const [x, z] = FRAME.toWorld(lx, lz);
+        if (!seatTaken(x, z)) free.push({ row, n });
+      }),
+    );
+    const pool = free.filter((f) => f.row > 0).length ? free.filter((f) => f.row > 0) : free;
+    const pick = pool[Math.floor(Math.random() * pool.length)] ?? { row: 1, n: 4 };
+    const row = 'ABC'[pick.row]!;
+    window.setTimeout(() => staff(`Here you are. That's eight dollars. You're in row ${row}, seat ${pick.n + 1}. Screen 1 is on the left. Enjoy the film!`), 1600);
+    set({ ticket: { ...pick, found: false }, ticketOpen: false, ticketNote: null, wrongSeat: null });
+    track('cinema_ticket_buy', { seat: seatName(pick.row, pick.n) });
+  },
+  closeTicket: () => set({ ticketOpen: false, ticketNote: null }),
 }));
+
+// sitting down in Screen 1 with a ticket: the right seat (a small reward, once per ticket) or a hint
+useSeat.subscribe((s, prev) => {
+  if (!s.seat || s.seat === prev.seat) return;
+  const m = useMovie.getState();
+  const tk = m.ticket;
+  if (!tk || tk.found) return;
+  const at = cinemaSeatAt(s.seat.x, s.seat.z);
+  if (!at) return;
+  if (at.row === tk.row && at.n === tk.n) {
+    useMovie.setState({ ticket: { ...tk, found: true }, wrongSeat: null });
+    useVoice.getState().speakAs('me', `Row ${'ABC'[tk.row]}, seat ${tk.n + 1}. This is my seat!`, 'en-US');
+    track('cinema_seat_found');
+    void reportMinigame('seatfind', { score: 1 })
+      .then(() => void useProfile.getState().refresh())
+      .catch(() => undefined);
+  } else {
+    useMovie.setState({ wrongSeat: seatName(at.row, at.n) });
+    track('cinema_seat_wrong');
+  }
+});
 
 /** Called ~4×/s by the cinema scene: am I in Screen 1, which show is on, what does the subtitle say. */
 export function watchTick(inRoom: boolean, show: number, phase: 'countdown' | 'film' | 'break', sub: string, dt: number) {
@@ -170,4 +235,5 @@ useArea.subscribe((s, prev) => {
     sendProp('');
     useMovie.setState({ holding: '', snackOpen: false });
   }
+  if (s.current !== prev.current && prev.current === 'cinema') useMovie.setState({ ticket: null, ticketOpen: false, wrongSeat: null });
 });

@@ -16,9 +16,55 @@ export function MovieHud() {
   const snackItem = useMovie((s) => s.snackItem);
   const snackLines = useMovie((s) => s.snackLines);
   const snackNote = useMovie((s) => s.snackNote);
+  const ticket = useMovie((s) => s.ticket);
+  const ticketOpen = useMovie((s) => s.ticketOpen);
+  const ticketLines = useMovie((s) => s.ticketLines);
+  const ticketNote = useMovie((s) => s.ticketNote);
+  const wrongSeat = useMovie((s) => s.wrongSeat);
   const m = useMovie.getState();
   return (
     <>
+      {ticket && !after && !ticketOpen ? (
+        <div data-ui data-testid="cinema-ticket" className="pointer-events-none absolute left-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+9.5rem)] z-10 max-w-[60vw] rounded-xl border-2 border-dashed border-violet-400 bg-violet-50/95 p-2 text-xs shadow-lg">
+          <div className="font-bold text-violet-900">🎟️ STAR CINEMA · Screen 1</div>
+          <div className="font-mono text-sm" dir="ltr">
+            Row <b>{'ABC'[ticket.row]}</b> · Seat <b>{ticket.n + 1}</b>
+          </div>
+          {ticket.found ? (
+            <div className="mt-0.5 font-semibold text-green-700">✅ {t('You found your seat!')}</div>
+          ) : wrongSeat ? (
+            <div className="mt-0.5 text-amber-800">{t('This is seat {seat}. Check the row letter and the seat number.', { seat: wrongSeat })}</div>
+          ) : (
+            <div className="mt-0.5 text-gray-600">{t('Find your seat in Screen 1 and sit down.')}</div>
+          )}
+        </div>
+      ) : null}
+
+      {ticketOpen ? (
+        <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2">
+          <div className="pointer-events-auto rounded-2xl bg-white/95 p-3 shadow-2xl">
+            <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+              <span className="font-semibold text-gray-800">🎟️ {t('Box office')}</span>
+              <button type="button" onClick={() => m.closeTicket()} className="min-h-8 min-w-8 rounded-full text-base" aria-label={t('Close')}>
+                ✕
+              </button>
+            </div>
+            <p className="mb-1 text-sm font-semibold" dir="ltr">
+              🗣️ “Hello! How can I help you?”
+            </p>
+            <p className="mb-1 text-xs text-gray-600">{t('Buy a ticket for the next show. What do you say?')}</p>
+            <div className="flex flex-col gap-1" dir="ltr">
+              {ticketLines.map((l) => (
+                <button key={l} type="button" onClick={() => m.sayTicket(l)} className={`min-h-10 rounded-xl border px-2 text-left text-sm ${ticketNote === l ? 'border-red-400 bg-red-50 line-through' : 'border-gray-200 bg-white'}`}>
+                  🗣️ {l}
+                </button>
+              ))}
+            </div>
+            {ticketNote ? <p className="mt-1 text-sm text-red-600">{t('Not quite right. Try another one.')}</p> : null}
+          </div>
+        </div>
+      ) : null}
+
       {inRoom && !after ? (
         <div data-ui className="pointer-events-none absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+11rem)] left-1/2 z-20 w-[92vw] max-w-xl -translate-x-1/2 text-center">
           {sub ? (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text } from '@react-three/drei';
+import { Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { TRAIN_CAR, inRect, trainCarRect } from '@es/shared';
 import { serverNow } from '../../../net/client';
@@ -10,7 +10,7 @@ import { Chibi } from '../../chibi/Chibi';
 import { Part, box, chibiMaterial, cyl } from '../../chibi/buildChibi';
 import { NPC_CHIBI } from '../../npcLook';
 import { rideTick, strandedCheck, useTrain } from '../../../store/train';
-import { DIST_ARRIVE, DIST_HOME, RIDE, distAt } from '../../../world/train';
+import { DIST_ARRIVE, DIST_HOME, RIDE, TRAIN_SEATS, distAt } from '../../../world/train';
 
 /**
  * Inside the train (off the map at TRAIN_CAR): the carriage (LPM assets-src/lpm/recipes/train_interior.py), the
@@ -195,6 +195,30 @@ function Carriage() {
   );
 }
 
+/** Seat numbers above the seats (turned to the camera) while you hold a ticket with a reserved seat; yours in orange. */
+function SeatNumbers() {
+  const ticket = useTrain((s) => s.ticket);
+  if (!ticket) return null;
+  return (
+    <group>
+      {TRAIN_SEATS.map((st, i) => (
+        <Billboard key={i} position={[st.x, 1.42, st.z]}>
+        <Text
+          fontSize={i + 1 === ticket.seat ? 0.2 : 0.15}
+          color={i + 1 === ticket.seat ? '#ff9800' : '#ffffff'}
+          outlineWidth={0.012}
+          outlineColor="#263238"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {String(i + 1)}
+        </Text>
+        </Billboard>
+      ))}
+    </group>
+  );
+}
+
 export default function TrainRide() {
   const ride = useTrain((s) => s.ride);
   const [inside, setInside] = useState(false);
@@ -233,6 +257,7 @@ export default function TrainRide() {
           <Platform name={dest} at={DIST_ARRIVE} dist={dist} />
           {back ? null : <Platform name="English Street Central" at={DIST_HOME} dist={dist} />}
           {back ? null : <Inspector dep={ride.dep} />}
+          {back ? null : <SeatNumbers />}
         </>
       ) : null}
     </group>

@@ -25,6 +25,23 @@ export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '
       {prop.startsWith('dish:') ? <Dish item={prop.slice(5)} /> : null}
       {prop.startsWith('cart:') && !sit ? <Trolley n={Number(prop.slice(5)) || 0} /> : null}
       {prop.startsWith('snack:') ? <Snack kind={prop.slice(6)} sit={sit} /> : null}
+      {prop.startsWith('book:') ? (
+        // reading in the library: an open book held up in front (others nearby can read along)
+        <group position={[0, sit ? 0.86 : 0.76, 0.3]} rotation-x={-0.5}>
+          {[-1, 1].map((s) => (
+            <group key={s} rotation-y={s * 0.35}>
+              <mesh position={[s * 0.11, 0, 0]}>
+                <boxGeometry args={[0.22, 0.28, 0.02]} />
+                <meshStandardMaterial color="#c0392b" />
+              </mesh>
+              <mesh position={[s * 0.105, 0, 0.012]}>
+                <boxGeometry args={[0.2, 0.26, 0.01]} />
+                <meshStandardMaterial color="#fffaf0" />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      ) : null}
     </>
   );
 });

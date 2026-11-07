@@ -11,7 +11,7 @@ import { useShopping } from '../../store/shopping';
 import { useArea } from '../../store/area';
 import { tk, useLang, useT } from '../../i18n';
 import { say } from './common';
-import { menuItem, money, tipTotal, type MealStep } from '../../store/restaurant';
+import { menuItem, money, shareOf, tipTotal, type BillLine, type MealStep } from '../../store/restaurant';
 
 const ERR: Record<string, string> = {
   not_ready: tk("It isn't ready yet. Wait a little!"),
@@ -196,6 +196,7 @@ export function MealButtons({ onMenu, onStand }: { onMenu?: () => void; onStand?
   const step = useRestaurant((s) => s.step);
   const eaten = useRestaurant((s) => s.eaten);
   const order = useRestaurant((s) => s.order);
+  const bill = useRestaurant((s) => s.bill);
   const { eat, askBill, pay } = useRestaurant.getState();
   const item = order ? menuItem(order.item) : undefined;
   const pill = 'min-h-12 rounded-full px-4 text-sm font-semibold shadow-lg';
@@ -216,6 +217,8 @@ export function MealButtons({ onMenu, onStand }: { onMenu?: () => void; onStand?
         <button type="button" onClick={askBill} className={`${pill} animate-pulse bg-emerald-600 text-white ring-2 ring-white`}>
           🧾 {t('Ask for the bill')}
         </button>
+      ) : step === 'paying' && bill.length > 1 ? (
+        <SharedBill bill={bill} item={item?.en ?? ''} price={item?.price ?? 0} pay={pay} />
       ) : step === 'paying' ? (
         <PayWithTip item={item?.en ?? ''} price={item?.price ?? 0} pay={pay} />
       ) : onMenu ? (
@@ -434,6 +437,67 @@ export function ShoppingMini() {
       ) : null}
       {done ? <div className="mt-1 font-semibold text-teal-700">💳 {t('All done! Go to the checkout.')}</div> : null}
     </button>
+  );
+}
+
+/**
+ * Eating with friends: the bill for the whole table. Pay separately (my dish, with a tip if I like), split it
+ * equally (work out the share), or treat everybody ("It's on me!").
+ */
+function SharedBill({ bill, item, price, pay }: { bill: BillLine[]; item: string; price: number; pay: (tip?: number, total?: number) => void }) {
+  const t = useT();
+  const [mode, setMode] = useState<'' | 'separate' | 'split'>('');
+  const payShared = useRestaurant((s) => s.payShared);
+  const total = Math.round(bill.reduce((a, l) => a + l.price, 0) * 100) / 100;
+  const each = shareOf(total, bill.length);
+  const options = useMemo(() => {
+    const wrong = [shareOf(total, bill.length + 1), shareOf(total, Math.max(1, bill.length - 1)), Math.round((each + 1) * 100) / 100];
+    return [...new Set([each, ...wrong.filter((v) => Math.abs(v - each) > 0.005)])].slice(0, 3).sort(() => Math.random() - 0.5);
+  }, [total, each, bill.length]);
+  if (mode === 'separate') return <PayWithTip item={item} price={price} pay={pay} />;
+  const btn = 'min-h-10 rounded-full px-3 text-sm font-semibold';
+  return (
+    <div className="max-w-[92vw] rounded-2xl bg-white px-3 py-2 shadow-lg" data-testid="shared-bill">
+      <div className="text-sm font-semibold">🧾 {t('The bill for the table')}</div>
+      <div className="my-1 rounded-lg bg-amber-50 px-2 py-1 font-mono text-xs" dir="ltr">
+        {bill.map((l, i) => (
+          <div key={i} className="flex justify-between gap-3">
+            <span className="truncate">
+              {l.who ? l.name : t('You')}: {l.item}
+            </span>
+            <span>{money(l.price)}</span>
+          </div>
+        ))}
+        <div className="mt-0.5 flex justify-between border-t border-amber-300 pt-0.5 font-bold">
+          <span>TOTAL</span>
+          <span>{money(total)}</span>
+        </div>
+      </div>
+      {mode === 'split' ? (
+        <>
+          <p className="text-xs text-gray-600">{t('Split it between {n} people. How much is each share?', { n: bill.length })}</p>
+          <div className="mt-1 flex gap-1.5">
+            {options.map((v) => (
+              <button key={v} type="button" onClick={() => payShared('split', v)} className={`${btn} flex-1 bg-emerald-600 text-white`}>
+                💵 {money(v)}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap gap-1.5" dir="ltr">
+          <button type="button" onClick={() => setMode('split')} className={`${btn} bg-emerald-600 text-white`}>
+            “Can we split the bill?”
+          </button>
+          <button type="button" onClick={() => setMode('separate')} className={`${btn} bg-sky-600 text-white`}>
+            “Can we pay separately?”
+          </button>
+          <button type="button" onClick={() => payShared('treat', total)} className={`${btn} bg-amber-400 text-black`}>
+            “It's on me!” {money(total)}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

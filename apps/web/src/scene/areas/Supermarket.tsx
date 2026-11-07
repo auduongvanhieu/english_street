@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { CHECKOUTS, SHELVES, SUPERMARKET, type Shelf } from '../../world/buildings';
 import { FRONT_Z, areaById } from '../../world/areas';
 import { useArea } from '../../store/area';
-import { useShopping } from '../../store/shopping';
+import { queueSpot, useShopping } from '../../store/shopping';
+import { Chibi } from '../chibi/Chibi';
+import { SHOPPER_CHIBI } from '../npcLook';
 import { BuildingShell } from './Building';
 import { Ground, InstancedProp, Merged, NearArea, box, cyl } from './kit';
 import { PRODUCTS_BY_CATEGORY, productShape } from './products';
@@ -88,7 +90,47 @@ export const PICK_SPOTS = SHELVES.flatMap((s) => {
 });
 /** Trolley bay by the door and the customer side of each checkout. */
 export const TROLLEY_BAY = { x: -82.2, z: -10.9 };
-export const TILLS = CHECKOUTS.map((c) => ({ x: (c.minX + c.maxX) / 2, z: c.maxZ + 0.9 }));
+
+/** Shoppers waiting at the checkouts (store/shopping.ts queue); the first one is being served. */
+function QueueShoppers() {
+  const queue = useShopping((s) => s.queue);
+  const waiting = useShopping((s) => (s.till?.stage === 'wait' ? s.till.at : -1));
+  return (
+    <>
+      {queue.flatMap((n, i) =>
+        Array.from({ length: n }, (_, k) => {
+          const p = queueSpot(i, k);
+          return (
+            <group key={`${i}-${k}-${n}`} position={[p.x, 0, p.z]} rotation-y={p.rot}>
+              <Chibi spec={SHOPPER_CHIBI[(i * 2 + k + n) % SHOPPER_CHIBI.length]!} anim={k === 0 && waiting === i ? 'talk' : 'idle'} />
+            </group>
+          );
+        }),
+      )}
+    </>
+  );
+}
+
+/** The checkout usable: at the till, or at the end of its queue ("Join the queue"). */
+function TillUsable({ i }: { i: number }) {
+  const t = useT();
+  const items = useShopping((s) => Object.keys(s.cart).length);
+  const n = useShopping((s) => s.queue[i] ?? 0);
+  const busy = useShopping((s) => !!s.till && s.till.stage !== 'done');
+  const p = queueSpot(i, n);
+  useUsable({
+    id: `market-till-${i}`,
+    x: p.x,
+    z: p.z,
+    r: 1.7,
+    icon: n ? '🧍' : '💳',
+    label: n ? t('Join the queue') : t('Pay at the checkout'),
+    priority: true,
+    disabled: busy ? t('You are at the checkout') : items ? undefined : t('Your trolley is empty'),
+    use: () => useShopping.getState().openTill(i),
+  });
+  return null;
+}
 
 function PickSpot({ spot }: { spot: (typeof PICK_SPOTS)[number] }) {
   const t = useT();
@@ -113,7 +155,6 @@ function PickSpot({ spot }: { spot: (typeof PICK_SPOTS)[number] }) {
 function MarketUsables() {
   const t = useT();
   const trolley = useShopping((s) => s.trolley);
-  const items = useShopping((s) => Object.keys(s.cart).length);
   useEffect(() => {
     void useArea.getState().load('supermarket');
   }, []);
@@ -125,28 +166,11 @@ function MarketUsables() {
     label: trolley ? t('Return the trolley') : t('Take a trolley'),
     use: () => (trolley ? useShopping.getState().returnTrolley() : useShopping.getState().takeTrolley()),
   });
-  useUsable({
-    id: 'market-till-0',
-    ...TILLS[0]!,
-    r: 1.7,
-    icon: '💳',
-    label: t('Pay at the checkout'),
-    priority: true,
-    disabled: items ? undefined : t('Your trolley is empty'),
-    use: () => useShopping.getState().openTill(),
-  });
-  useUsable({
-    id: 'market-till-1',
-    ...TILLS[1]!,
-    r: 1.7,
-    icon: '💳',
-    label: t('Pay at the checkout'),
-    priority: true,
-    disabled: items ? undefined : t('Your trolley is empty'),
-    use: () => useShopping.getState().openTill(),
-  });
   return (
     <>
+      <TillUsable i={0} />
+      <TillUsable i={1} />
+      <QueueShoppers />
       {PICK_SPOTS.map((sp) => (
         <PickSpot key={`${sp.id}${sp.z}`} spot={sp} />
       ))}

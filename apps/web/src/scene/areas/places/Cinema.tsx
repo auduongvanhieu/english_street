@@ -437,6 +437,38 @@ function BookDisplay() {
   );
 }
 
+/**
+ * With a ticket in Screen 1: the row letter at both ends of each row, the number on every seat back (read from
+ * behind, as you walk in) and a gold plate on the seat on your ticket.
+ */
+function SeatLabels() {
+  const ticket = useMovie((s) => s.ticket);
+  if (!ticket) return null;
+  const mine = { x: SEAT_XS[ticket.n]!, z: SEAT_ROWS[ticket.row]! };
+  return (
+    <group>
+      {SEAT_ROWS.map((z, row) =>
+        [SEAT_XS[0]! - 0.75, SEAT_XS[SEAT_XS.length - 1]! + 0.75].map((x) => (
+          <Text key={`${row}${x}`} position={[x, 1.25, z]} rotation-y={0} fontSize={0.34} color="#ffe27a" outlineWidth={0.02} outlineColor="#000" anchorX="center" anchorY="middle">
+            {'ABC'[row]}
+          </Text>
+        )),
+      )}
+      {SEAT_ROWS.flatMap((z, row) =>
+        SEAT_XS.map((x, n) => (
+          <Text key={`${row}-${n}`} position={[x, 1.02, z + 0.39]} fontSize={0.16} color="#ffffff" anchorX="center" anchorY="middle">
+            {`${'ABC'[row]}${n + 1}`}
+          </Text>
+        )),
+      )}
+      <mesh position={[mine.x, 0.52, mine.z]}>
+        <boxGeometry args={[0.7, 0.03, 0.5]} />
+        <meshBasicMaterial color={ticket.found ? '#66bb6a' : '#ffd54f'} />
+      </mesh>
+    </group>
+  );
+}
+
 /** Screen 1 shows and the snack bar: who is watching (4×/s), and the "Buy a snack" spot at the counter. */
 function ShowWatcher({ inScreen }: { inScreen: boolean }) {
   const acc = useRef(0);
@@ -450,6 +482,9 @@ function ShowWatcher({ inScreen }: { inScreen: boolean }) {
     acc.current = 0;
   });
   const [x, z] = FRAME.toWorld((SNACK_BAR.minX + SNACK_BAR.maxX) / 2, SNACK_BAR.maxZ + 0.85);
+  const hasTicket = useMovie((s) => !!s.ticket);
+  const [tx, tz] = FRAME.toWorld((BOX_OFFICE.minX + BOX_OFFICE.maxX) / 2, BOX_OFFICE.maxZ + 0.85);
+  useUsable({ id: 'cinema-ticket', x: tx, z: tz, r: 1.8, icon: '🎟️', label: hasTicket ? tr('Buy another ticket') : tr('Buy a cinema ticket'), priority: true, use: () => useMovie.getState().openTicket() });
   useUsable({ id: 'cinema-snacks', x, z, r: 1.8, icon: '🍿', label: holding ? tr('Buy another snack') : tr('Buy a snack'), priority: true, use: () => useMovie.getState().openSnacks() });
   return null;
 }
@@ -520,6 +555,7 @@ export default function Cinema() {
         {/* the screen plays a short cartoon while you are in the building; click = buy tickets */}
         <CartoonScreen playing={inside} onClick={tickets} />
         {inside ? <ShowWatcher inScreen={inScreen} /> : null}
+        {inScreen ? <SeatLabels /> : null}
         {POSTERS.map((f, i) =>
           inScreen && !f.rot ? null : (
             <PosterTitle

@@ -77,5 +77,7 @@ export const MINIGAMES = {
   cleaner: { perPoint: 2, max: 12, perDay: 4 },
   /** farm: driving the tractor to the barn (0-3 good drives) */
   tractor: { perPoint: 4, max: 12, perDay: 4 },
+  /** cinema / train: sitting in the seat on your ticket */
+  seatfind: { perPoint: 4, max: 4, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

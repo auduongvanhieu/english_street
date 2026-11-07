@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Book, BookCard } from '@es/shared';
+import { CLUB_COINS, CLUB_GOAL, CLUB_NOTE_MAX, type Book, type BookCard } from '@es/shared';
 import { Sheet, SheetHeader } from '../Sheet';
-import { useBooks } from '../../store/books';
+import { nearReaders, useBooks, type NearReader } from '../../store/books';
+import { useGame } from '../../store/game';
 import { useProfile } from '../../store/profile';
 import { useSettings } from '../../store/settings';
 import { useVoice } from '../../store/voice';
@@ -35,6 +36,7 @@ function Shelf() {
   const mine = useBooks((s) => s.mine);
   const [level, setLevel] = useState<string>('all');
   const [pick, setPick] = useState<BookCard | null>(null);
+  const [club, setClub] = useState(false);
   const coins = useProfile((s) => s.profile?.coins ?? 0);
   const error = useBooks((s) => s.error);
   const list = cards.filter((c) => (open === 'home' ? mine.owned.includes(c.id) : true) && (level === 'all' || c.level === level));
@@ -73,8 +75,15 @@ function Shelf() {
       </div>
     );
   }
+  if (club) return <Club onBack={() => setClub(false)} />;
   return (
     <div>
+      {open === 'library' ? (
+        <>
+          <ReadersNear />
+          <ClubCard onOpen={() => setClub(true)} />
+        </>
+      ) : null}
       <div className="mb-3 flex flex-wrap gap-1.5">
         {['all', ...LEVELS].map((l) => (
           <button key={l} type="button" onClick={() => setLevel(l)} className={`min-h-9 rounded-full px-3 text-sm ${level === l ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
@@ -92,6 +101,151 @@ function Shelf() {
             </span>
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/** "Reading corner": other players close by who are reading; read along = their page turns yours. */
+function ReadersNear() {
+  const t = useT();
+  const cards = useBooks((s) => s.cards);
+  // re-read the players a few times a second (positions and props change)
+  const sig = useGame((s) =>
+    Object.values(s.players)
+      .map((p) => (p.prop.startsWith('book:') ? `${p.id}${p.prop}` : ''))
+      .join('|'),
+  );
+  const [list, setList] = useState<NearReader[]>([]);
+  useEffect(() => {
+    const tick = () => setList(nearReaders());
+    tick();
+    const id = window.setInterval(tick, 1500);
+    return () => window.clearInterval(id);
+  }, [sig]);
+  if (!list.length) return null;
+  return (
+    <div className="mb-3 rounded-xl border border-sky-200 bg-sky-50 p-2" data-testid="readers-near">
+      <p className="mb-1 text-xs font-semibold text-sky-900">👥 {t('Reading near you')}</p>
+      {list.map((r) => (
+        <div key={r.id} className="flex items-center gap-2 py-0.5 text-sm">
+          <span className="min-w-0 flex-1 truncate">
+            <b>{r.name}</b> · <span dir="ltr">{cards.find((c) => c.id === r.book)?.title ?? r.book}</span>{' '}
+            <span className="text-xs text-gray-500">({t('Chapter {n}', { n: r.chapter + 1 })})</span>
+          </span>
+          <button type="button" onClick={() => void useBooks.getState().readAlong(r.id)} className="min-h-9 rounded-full bg-sky-600 px-3 text-xs font-semibold text-white">
+            📖 {t('Read along')}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const daysLeft = (ms: number) => Math.max(1, Math.ceil(ms / 86_400_000));
+
+/** The book of the week on top of the library shelf. */
+function ClubCard({ onOpen }: { onOpen: () => void }) {
+  const t = useT();
+  const club = useBooks((s) => s.club);
+  useEffect(() => {
+    void useBooks.getState().loadClub();
+  }, []);
+  if (!club) return null;
+  const goal = Math.min(CLUB_GOAL, club.book.chapters);
+  return (
+    <button type="button" onClick={onOpen} className="mb-3 flex w-full items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-2 text-left" data-testid="club-card">
+      <Cover c={club.book} small />
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs font-bold uppercase text-amber-800">☕ {t('Book club · book of the week')}</span>
+        <span className="block font-bold" dir="ltr">
+          {club.book.title}
+        </span>
+        <span className="block text-xs text-gray-600">
+          {club.claimed ? `✅ ${t('Done this week!')}` : t('Pass {n} chapter quizzes this week: +{coins} 🪙', { n: goal, coins: CLUB_COINS })} · {Math.min(club.mine.length, goal)}/{goal}
+        </span>
+        <span className="block text-xs text-gray-500">
+          👥 {t('Members this week: {n}', { n: club.members.length })} · {t('{d} days left', { d: daysLeft(club.endsIn) })}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/** The book club page: the book, my progress, this week's question, members and their notes. */
+function Club({ onBack }: { onBack: () => void }) {
+  const t = useT();
+  const club = useBooks((s) => s.club);
+  const [text, setText] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!club) return null;
+  const goal = Math.min(CLUB_GOAL, club.book.chapters);
+  const member = club.mine.length > 0;
+  const send = async () => {
+    setBusy(true);
+    const e = await useBooks.getState().postNote(text.trim());
+    setBusy(false);
+    if (!e) setText('');
+    setErr(e === 'profanity' ? t('Please be kind.') : e === 'not_member' ? t('Pass a chapter quiz of this book first.') : e === 'rate_limited' ? t('Too fast. Try again in a minute.') : e);
+  };
+  return (
+    <div data-testid="club">
+      <button type="button" onClick={onBack} className="mb-2 min-h-9 text-sm text-blue-700">
+        ← {t('Back to the shelf')}
+      </button>
+      <div className="flex gap-3">
+        <Cover c={club.book} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase text-amber-800">☕ {t('Book club · book of the week')}</p>
+          <h3 className="text-lg font-bold" dir="ltr">
+            {club.book.title}
+          </h3>
+          <p className="text-sm" dir="ltr">
+            {club.book.summary}
+          </p>
+          <p className="mt-1 text-xs text-gray-600">
+            {t('Read it and pass {n} chapter quizzes this week: +{coins} 🪙', { n: goal, coins: CLUB_COINS })} ·{' '}
+            <b>
+              {Math.min(club.mine.length, goal)}/{goal}
+            </b>{' '}
+            {club.claimed ? '✅' : ''}
+          </p>
+          <button type="button" onClick={() => void useBooks.getState().read(club.book.id)} className="mt-2 min-h-10 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white">
+            📖 {t('Read')}
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 rounded-xl bg-violet-50 p-2">
+        <p className="text-xs font-semibold text-violet-900">💬 {t('This week we talk about:')}</p>
+        <p className="font-semibold" dir="ltr">
+          {club.question}
+        </p>
+      </div>
+      <div className="mt-3">
+        <p className="text-xs font-semibold text-gray-600">
+          👥 {t('Members this week: {n}', { n: club.members.length })}
+          {club.members.length ? ': ' : ''}
+          <span className="font-normal">{club.members.slice(0, 12).join(', ')}</span>
+        </p>
+        {member ? (
+          <div className="mt-2 flex gap-1.5">
+            <input value={text} maxLength={CLUB_NOTE_MAX} onChange={(e) => setText(e.target.value)} placeholder={club.question} className="min-h-10 min-w-0 flex-1 rounded-xl border px-3 text-sm" dir="ltr" />
+            <button type="button" disabled={busy || text.trim().length < 3} onClick={() => void send()} className="min-h-10 rounded-xl bg-violet-600 px-3 text-sm font-semibold text-white disabled:opacity-50">
+              {t('Send')}
+            </button>
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-gray-500">{t('Pass a chapter quiz of this book to join the club and write a note.')}</p>
+        )}
+        {err ? <p className="mt-1 text-xs text-red-600">{err}</p> : null}
+        <div className="mt-2 space-y-1">
+          {club.notes.map((n, i) => (
+            <div key={i} className="rounded-lg border px-2 py-1 text-sm">
+              <b>{n.name}:</b> <span dir="ltr">{n.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -171,7 +325,7 @@ function Quiz({ book }: { book: Book }) {
   const chapter = useBooks((s) => s.chapter);
   const ch = book.chapters[chapter]!;
   const [picked, setPicked] = useState<number[]>([-1, -1, -1]);
-  const [result, setResult] = useState<{ right: boolean[]; correct: number; passed: boolean; xp: number; answers: number[] } | null>(null);
+  const [result, setResult] = useState<{ right: boolean[]; correct: number; passed: boolean; xp: number; clubCoins?: number; answers: number[] } | null>(null);
   const last = chapter >= book.chapters.length - 1;
   return (
     <div dir="ltr">
@@ -211,6 +365,7 @@ function Quiz({ book }: { book: Book }) {
           <p className={`text-center font-semibold ${result.passed ? 'text-green-700' : 'text-amber-700'}`}>
             {result.correct} / 3 {result.passed ? '🎉' : ''} {result.xp ? `· +${result.xp} XP` : ''}
           </p>
+          {result.clubCoins ? <p className="text-center text-sm font-semibold text-amber-700">☕ {t('Book club: +{coins} 🪙', { coins: result.clubCoins })}</p> : null}
           <div className="flex gap-2">
             <button type="button" onClick={() => useBooks.getState().setPage(chapter, 0)} className="min-h-11 flex-1 rounded-xl border text-sm">
               {t('Read again')}
@@ -236,6 +391,7 @@ function Reader({ book }: { book: Book }) {
   const chapter = useBooks((s) => s.chapter);
   const page = useBooks((s) => s.page);
   const quiz = useBooks((s) => s.quiz);
+  const along = useBooks((s) => s.along);
   const [active, setActive] = useState(-1);
   const [tip, setTip] = useState<{ w: string; s: string } | null>(null);
   const cancel = useRef<(() => void) | null>(null);
@@ -277,6 +433,14 @@ function Reader({ book }: { book: Book }) {
           {book.title} · {t('Chapter {n}', { n: chapter + 1 })}/{book.chapters.length} · {quiz ? '❓' : `${page + 1}/${ch.pages.length}`}
         </span>
       </div>
+      {along ? (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-sky-50 px-2 py-1 text-xs text-sky-900" data-testid="reading-along">
+          👥 {t('Reading along with {name}: the pages turn together.', { name: along.name })}
+          <button type="button" onClick={() => useBooks.getState().stopAlong()} className="ml-auto rounded-full bg-white px-2 py-0.5">
+            {t('Stop')}
+          </button>
+        </div>
+      ) : null}
       {quiz ? (
         <Quiz book={book} />
       ) : (

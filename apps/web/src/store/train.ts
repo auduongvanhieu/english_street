@@ -10,7 +10,7 @@ import { useSeat } from './seat';
 import { useSettings } from './settings';
 import { useVoice } from './voice';
 import { FRAME, JOURNEY_MIN, TRAIN_SLOT_MS, fmtTime, service, type TrainService } from '../world/places/station';
-import { RIDE, carSpot } from '../world/train';
+import { RIDE, TRAIN_SEATS, carSpot, trainSeatAt } from '../world/train';
 import { ARRIVE as BAY_ARRIVE } from '../world/sunnyBay';
 import { ARRIVE as HILL_ARRIVE } from '../world/mapleHill';
 import { ARRIVE as RIVER_ARRIVE } from '../world/riverside';
@@ -24,6 +24,10 @@ import { ARRIVE as TOWN_ARRIVE } from '../world/oldTown';
 export interface Ticket {
   dest: TrainService['dest'];
   type: 'single' | 'return';
+  /** reserved seat (1 … 32, world/train.ts TRAIN_SEATS) */
+  seat: number;
+  /** I sat in it */
+  found?: boolean;
 }
 export interface Ride {
   slot: number;
@@ -51,6 +55,8 @@ interface TrainStore {
   caption: { who: 'pa' | 'inspector'; text: string; at: number } | null;
   /** the inspector is asking: show the ticket card */
   asking: boolean;
+  /** the last seat I sat on that isn't mine (0 = none) */
+  wrongSeat: number;
   openMachine: () => void;
   machineDest: (d: TrainService['dest']) => void;
   machineType: (t: 'single' | 'return') => void;
@@ -96,12 +102,13 @@ export const useTrain = create<TrainStore>((set, get) => ({
   ride: null,
   caption: null,
   asking: false,
+  wrongSeat: 0,
   openMachine: () => set({ machine: { step: 'dest', dest: null } }),
   machineDest: (dest) => set({ machine: { step: 'type', dest } }),
   machineType(type) {
     const m = get().machine;
     if (!m?.dest) return;
-    set({ ticket: { dest: m.dest, type }, machine: { ...m, step: 'done' } });
+    set({ ticket: { dest: m.dest, type, seat: 1 + Math.floor(Math.random() * TRAIN_SEATS.length) }, machine: { ...m, step: 'done' } });
     track('station_ticket_buy', { dest: m.dest, type });
   },
   closeMachine: () => set({ machine: null }),
@@ -129,7 +136,7 @@ export const useTrain = create<TrainStore>((set, get) => ({
       text = `This is a single ticket to ${r.dest}. You are coming back with us, so you need a return. I'll change it for you this time.`;
     } else {
       ok = 2;
-      text = `A return to ${r.dest}. That's fine, thank you. Enjoy your journey!`;
+      text = `A return to ${r.dest}. That's fine, thank you.${tk.found ? ` And you're in seat ${tk.seat}, the right seat.` : ` Your seat is number ${tk.seat}.`} Enjoy your journey!`;
     }
     inspector(text);
     set({ ride: { ...r, check: { ok, text } }, asking: false });
@@ -170,6 +177,21 @@ export const useTrain = create<TrainStore>((set, get) => ({
     }
   },
 }));
+
+// sitting down in the carriage: the reserved seat on my ticket? (a small reward, once per ticket)
+useSeat.subscribe((s, prev) => {
+  const tk = useTrain.getState().ticket;
+  if (!s.seat || s.seat === prev.seat || !tk || tk.found || !useTrain.getState().ride) return;
+  const n = trainSeatAt(s.seat.x, s.seat.z);
+  if (!n) return;
+  useTrain.setState({ wrongSeat: n === tk.seat ? 0 : n });
+  if (n !== tk.seat) return;
+  useTrain.setState({ ticket: { ...tk, found: true } });
+  track('station_seat_found');
+  void reportMinigame('seatfind', { score: 1 })
+    .then(() => void useProfile.getState().refresh())
+    .catch(() => undefined);
+});
 
 /** Ride script, called a few times a second by the carriage scene. */
 export function rideTick() {

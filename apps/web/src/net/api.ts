@@ -1,4 +1,4 @@
-import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode, MinigameId, Book, BookCard, MyBooks } from '@es/shared';
+import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode, MinigameId, Book, BookCard, BookClub, BookClubNote, MyBooks } from '@es/shared';
 import { learnerLang, t, tk } from '../i18n';
 import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
@@ -61,7 +61,9 @@ export const fetchBooks = () => get<{ books: BookCard[] }>('/books');
 export const fetchBook = (id: string) => get<{ book: Book }>(`/books/${encodeURIComponent(id)}`);
 export const fetchMyBooks = () => get<MyBooks>(`/me/books?playerId=${encodeURIComponent(getPlayerId())}`);
 export const buyBook = (book: string) => post<MyBooks & { coins: number }>('/me/books/buy', { playerId: getPlayerId(), book });
-export const bookQuiz = (book: string, chapter: number, answers: number[]) => post<{ right: boolean[]; correct: number; passed: boolean; xp: number; answers: number[] }>('/me/books/quiz', { playerId: getPlayerId(), book, chapter, answers });
+export const fetchClub = () => get<BookClub>(`/books/club?playerId=${encodeURIComponent(getPlayerId())}`);
+export const postClubNote = (text: string) => post<{ ok: boolean; note: BookClubNote }>('/me/books/club/note', { playerId: getPlayerId(), text });
+export const bookQuiz = (book: string, chapter: number, answers: number[]) => post<{ right: boolean[]; correct: number; passed: boolean; xp: number; clubCoins?: number; answers: number[] }>('/me/books/quiz', { playerId: getPlayerId(), book, chapter, answers });
 export const fetchBoat = () => get<{ until: number; price: number; minutes: number; free: boolean }>(`/me/boat?playerId=${encodeURIComponent(getPlayerId())}`);
 export const hireBoat = () => post<{ until: number; coins: number; free: boolean }>('/me/boat/hire', { playerId: getPlayerId() });
 export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);

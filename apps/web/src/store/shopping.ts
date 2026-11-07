@@ -7,6 +7,8 @@ import { useArea } from './area';
 import { useProfile } from './profile';
 import { useVoice } from './voice';
 import { track } from '../net/analytics';
+import { CHECKOUTS } from '../world/buildings';
+import { teleportTo } from '../scene/LocalPlayer';
 
 /** One line of the shopping list, written the way people say it ("two loaves of bread"). */
 export interface ListLine {
@@ -50,7 +52,7 @@ export interface TillLine {
   name: string;
   price: number;
 }
-export type TillStage = 'scan' | 'pay' | 'change' | 'bag' | 'done';
+export type TillStage = 'line' | 'wait' | 'scan' | 'pay' | 'change' | 'bag' | 'done';
 export interface Till {
   stage: TillStage;
   lines: TillLine[];
@@ -62,7 +64,32 @@ export interface Till {
   options: number[];
   changeRight: boolean | null;
   note: string | null;
+  /** which checkout (0 / 1) */
+  at: number;
+  /** shoppers in front of me (stage 'line' / 'wait') */
+  ahead: number;
+  /** what to say when you join the queue (the right line first, shown shuffled) */
+  lineOptions: string[];
 }
+
+/** Joining the queue: the polite question first. */
+export const QUEUE_LINES = ['Excuse me, is this the end of the queue?', 'Hey! Me first, I am in a hurry.', 'Excuse me, is this the end of the queue, yes, no?'];
+/** Where the shopper stands at a checkout (being served). */
+export const tillSpot = (i: number) => {
+  const c = CHECKOUTS[i] ?? CHECKOUTS[0]!;
+  return { x: (c.minX + c.maxX) / 2, z: c.maxZ + 0.9 };
+};
+export const QUEUE_GAP = 0.95;
+/**
+ * The k-th place in a checkout's queue (0 = being served). The front wall is close behind the tills, so the queue
+ * runs along the counter towards the middle of the shop; people face the person in front (the first one the till).
+ */
+export const queueSpot = (i: number, k: number) => {
+  const p = tillSpot(i);
+  const dir = i === 0 ? 1 : -1;
+  return { x: p.x + dir * k * QUEUE_GAP, z: p.z, rot: k === 0 ? Math.PI : dir > 0 ? -Math.PI / 2 : Math.PI / 2 };
+};
+const newQueue = () => [1 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 2)];
 
 interface ShoppingStore {
   list: ListLine[];
@@ -73,13 +100,17 @@ interface ShoppingStore {
   note: { text: string; ok: boolean; at: number } | null;
   result: { correct: number; total: number; xp: number; coins: number; change?: boolean } | null;
   till: Till | null;
+  /** shoppers waiting at each checkout (drawn in the scene) */
+  queue: number[];
   start: () => Promise<void>;
   pick: (item: string) => void;
   remove: (item: string) => void;
   takeTrolley: () => void;
   returnTrolley: () => void;
   /** walk up to the checkout: the cashier scans the trolley */
-  openTill: () => void;
+  openTill: (at?: number) => void;
+  /** in the queue: say the line (the right one lets you join) */
+  joinQueue: (line: string) => void;
   scanNext: () => void;
   payWith: (note: number) => void;
   sayChange: (v: number) => void;
@@ -120,6 +151,7 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
   note: null,
   result: null,
   till: null,
+  queue: newQueue(),
   async start() {
     const c = await useArea.getState().load('supermarket');
     if (!c) return;
@@ -161,7 +193,7 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
     set({ trolley: false });
     sendProp('');
   },
-  openTill() {
+  openTill(at = 0) {
     const { cart, till } = get();
     if (till && till.stage !== 'done') return;
     const items = useArea.getState().content.supermarket?.items ?? [];
@@ -171,9 +203,46 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
     });
     if (!lines.length) return;
     const total = round2(lines.reduce((a, l) => a + l.qty * l.price, 0));
-    set({ result: null, till: { stage: 'scan', lines, scanned: 0, total, paid: 0, options: [], changeRight: null, note: null } });
+    const ahead = get().queue[at] ?? 0;
+    const base = { lines, scanned: 0, total, paid: 0, options: [], changeRight: null, note: null, at, ahead, lineOptions: [...QUEUE_LINES].sort(() => Math.random() - 0.5) };
+    if (ahead > 0) {
+      // people are waiting: join the end of the queue first
+      set({ result: null, till: { ...base, stage: 'line' } });
+      track('supermarket_queue', { ahead });
+      return;
+    }
+    set({ result: null, till: { ...base, stage: 'scan' } });
     cashier('Hi there! Did you find everything you need?');
     track('supermarket_till', { lines: lines.length });
+  },
+  joinQueue(line) {
+    const till = get().till;
+    if (!till || till.stage !== 'line') return;
+    if (line !== QUEUE_LINES[0]) return set({ till: { ...till, note: line } });
+    useVoice.getState().speakAs('me', line, 'en-US');
+    window.setTimeout(() => useVoice.getState().speakAs('shopper', 'Yes, it is. Go ahead and wait behind me.', 'en-GB'), 1800);
+    // stand at the end of the line
+    const sp = queueSpot(till.at, till.ahead);
+    teleportTo(sp.x, sp.z, sp.rot);
+    set({ till: { ...till, stage: 'wait', note: null } });
+    const step = () => {
+      const t = get().till;
+      if (!t || t.stage !== 'wait') return;
+      const ahead = t.ahead - 1;
+      const queue = get().queue.map((n, i) => (i === t.at ? Math.max(0, n - 1) : n));
+      cashier(ahead > 0 ? 'Thank you! Next, please!' : 'Next, please!');
+      const p = queueSpot(t.at, ahead);
+      teleportTo(p.x, p.z, p.rot);
+      if (ahead > 0) {
+        set({ queue, till: { ...t, ahead } });
+        window.setTimeout(step, 4000);
+        return;
+      }
+      set({ queue, till: { ...t, ahead: 0, stage: 'scan' } });
+      window.setTimeout(() => cashier('Hi there! Did you find everything you need?'), 1400);
+      track('supermarket_till', { lines: t.lines.length, queued: true });
+    };
+    window.setTimeout(step, 4500);
   },
   scanNext() {
     const till = get().till;
@@ -212,6 +281,8 @@ export const useShopping = create<ShoppingStore>((set, get) => ({
     cashier(yes ? "Here you are. That's ten cents for the bag. Have a nice day!" : 'No problem. Here is your receipt. Have a nice day!');
     set({ till: { ...till, stage: 'done' } });
     void finish(!!till.changeRight);
+    // more shoppers arrive at the checkouts
+    window.setTimeout(() => useShopping.setState({ queue: newQueue() }), 20_000);
   },
   closeTill: () => set({ till: null }),
   async checkout() {

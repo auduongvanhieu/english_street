@@ -58,6 +58,10 @@ for (const b of BAYS)
       ] as const)
         seats.push({ x: CX + b + dx, z: CZ + side * dz, rot });
 registerSeats(seats);
+/** Seat numbers on train tickets: 1 … 32 in this order. */
+export const TRAIN_SEATS: readonly Seat[] = seats;
+/** The seat number (1 …) at this position, or 0. */
+export const trainSeatAt = (x: number, z: number) => seats.findIndex((s) => Math.abs(s.x - x) < 0.2 && Math.abs(s.z - z) < 0.2) + 1;
 
 const blockers: Aabb[] = [
   // side walls and end walls

@@ -15,6 +15,7 @@ export function TrainHud() {
   const ride = useTrain((s) => s.ride);
   const caption = useTrain((s) => s.caption);
   const asking = useTrain((s) => s.asking);
+  const wrongSeat = useTrain((s) => s.wrongSeat);
   const [, tick] = useState(0);
   useEffect(() => {
     if (!machine) return;
@@ -86,6 +87,7 @@ export function TrainHud() {
                 <div className="mx-auto w-56 rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-2 text-sm">
                   <b>🎫 {ticket.type === 'return' ? 'RETURN' : 'SINGLE'}</b>
                   <div>English Street Central → {ticket.dest}</div>
+                  <div className="font-mono">Coach A · Seat {ticket.seat}</div>
                 </div>
                 <p className="mt-2 text-xs text-gray-600">{t('Go to platform 1 and get on when the doors open.')}</p>
                 <button type="button" onClick={() => st.closeMachine()} className="mt-2 min-h-10 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white">
@@ -115,6 +117,12 @@ export function TrainHud() {
             {caption ? (
               <p className="text-sm" dir="ltr">
                 {caption.who === 'pa' ? '📢' : '🧑‍✈️'} {caption.text}
+              </p>
+            ) : null}
+            {ticket && !ride.returning && !ride.done ? (
+              <p className="mt-1 rounded-lg bg-orange-50 px-2 py-1 text-xs" data-testid="train-seat">
+                🎫 <span dir="ltr">Seat {ticket.seat}</span> ·{' '}
+                {ticket.found ? <b className="text-green-700">✅ {t('You found your seat!')}</b> : wrongSeat ? t('This is seat {seat}. Find seat {mine}: the numbers are above the seats.', { seat: wrongSeat, mine: ticket.seat }) : t('Find your seat: the numbers are above the seats.')}
               </p>
             ) : null}
             {STOPS[ride.dest] && !ride.returning && atBay ? (
