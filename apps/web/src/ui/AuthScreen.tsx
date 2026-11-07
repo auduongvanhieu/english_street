@@ -16,9 +16,6 @@ import { Turnstile } from './Turnstile';
 
 type Mode = 'guest' | 'login' | 'register' | 'forgot' | 'reset';
 
-/** ?reset=<token> from a password-reset e-mail. */
-const resetToken = () => new URLSearchParams(location.search).get('reset') ?? '';
-
 export function AuthScreen({
   initialName,
   onPlay,
@@ -34,10 +31,9 @@ export function AuthScreen({
 }) {
   const t = useT();
   const { loggedIn, profile, login, register, logout } = useProfile();
-  const [mode, setMode] = useState<Mode>(resetToken() ? 'reset' : loggedIn ? 'login' : 'guest');
-  const [contact, setContact] = useState('');
+  const [mode, setMode] = useState<Mode>(loggedIn ? 'login' : 'guest');
+  const [code, setCode] = useState('');
   const [password2, setPassword2] = useState('');
-  const [sent, setSent] = useState<null | { mail: boolean }>(null);
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,7 +48,7 @@ export function AuthScreen({
   const [hasPass, setHasPass] = useState(() => !!getHumanPass());
   // Signed in = a saved token whose profile loaded; until then (or if it fails) the normal forms + check apply.
   const signedIn = loggedIn && !!profile;
-  const needCaptcha = !signedIn && mode !== 'reset' && !sent && (mode !== 'guest' || !hasPass);
+  const needCaptcha = !signedIn && mode !== 'reset' && (mode !== 'guest' || !hasPass);
   useEffect(() => {
     if (loggedIn && !profile) void useProfile.getState().refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,12 +132,13 @@ export function AuthScreen({
       setBusy(false);
     }
     if (mode === 'reset') {
+      if (!/^\d{6}$/.test(code.trim())) return setError(t('Type the 6-digit code from the e-mail.'));
       if (password.length < 6) return setError(t('Password (6+ characters)'));
       if (password !== password2) return setError(t('The two passwords are not the same.'));
       setBusy(true);
       try {
-        await useProfile.getState().resetPassword(resetToken(), password);
-        history.replaceState(null, '', location.pathname);
+        await useProfile.getState().resetPassword(email.trim(), code.trim(), password);
+        setCode('');
         setPassword('');
         setPassword2('');
         setMode('login');
@@ -153,13 +150,16 @@ export function AuthScreen({
       return;
     }
     if (mode === 'forgot') {
-      if (sent) return setMode('login');
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError(t('Email'));
       const c = humanAnswer();
       if (!c) return;
       setBusy(true);
       try {
-        setSent(await forgotPassword(email.trim(), contact.trim(), c));
+        await forgotPassword(email.trim(), c);
+        setCode('');
+        setPassword('');
+        setPassword2('');
+        setMode('reset');
       } catch (err) {
         setError((err as Error).message);
         resetCheck();
@@ -295,28 +295,26 @@ export function AuthScreen({
             <h2 className="mb-2 font-semibold">{mode === 'reset' ? t('Choose a new password') : t('Forgot your password?')}</h2>
             {mode === 'reset' ? (
               <>
+                <p className="mb-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+                  {t('If {email} has an account, we sent a 6-digit code to it. It is valid for 10 minutes (check the spam folder too).', { email: email.trim() })}
+                </p>
+                <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder={t('6-digit code')} className="mb-2 w-full rounded-lg border px-3 py-2 text-center font-mono text-xl tracking-[0.4em] placeholder:font-sans placeholder:text-base placeholder:tracking-normal" />
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('New password (6+ characters)')} autoComplete="new-password" className="mb-2 w-full rounded-lg border px-3 py-2" />
                 <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={t('New password again')} autoComplete="new-password" className="mb-2 w-full rounded-lg border px-3 py-2" />
+                <button type="button" onClick={() => (setError(null), setMode('forgot'))} className="mb-1 me-3 text-xs text-blue-700 underline">
+                  ↻ {t('Send a new code')}
+                </button>
               </>
-            ) : sent ? (
-              <p className="mb-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
-                {sent.mail
-                  ? t('If this email has an account, we sent a link to it. Open it within 30 minutes to choose a new password.')
-                  : t('Request sent. An admin will check it and send you a temporary password through the contact you gave.')}
-              </p>
             ) : (
               <>
-                <p className="mb-2 text-xs text-gray-600">{t('Enter the email of your account. Add a way to reach you (Zalo, Facebook, phone) in case we need to contact you.')}</p>
+                <p className="mb-2 text-xs text-gray-600">{t('Enter the email of your account. We will send you a 6-digit code to choose a new password.')}</p>
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('Email')} autoComplete="email" className="mb-2 w-full rounded-lg border px-3 py-2" />
-                <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder={t('Zalo / Facebook / phone (optional)')} maxLength={120} className="mb-2 w-full rounded-lg border px-3 py-2" />
                 {checkUi}
               </>
             )}
             <button
               type="button"
               onClick={() => {
-                if (mode === 'reset') history.replaceState(null, '', location.pathname);
-                setSent(null);
                 setError(null);
                 setMode('login');
               }}
@@ -393,7 +391,7 @@ export function AuthScreen({
                   </button>
                 </div>
                 {mode === 'login' && (
-                  <button type="button" onClick={() => (setError(null), setSent(null), setMode('forgot'))} className="mb-2 text-xs text-blue-700 underline">
+                  <button type="button" onClick={() => (setError(null), setMode('forgot'))} className="mb-2 text-xs text-blue-700 underline">
                     {t('Forgot password?')}
                   </button>
                 )}
@@ -431,9 +429,7 @@ export function AuthScreen({
               : mode === 'reset'
                 ? t('Save the new password')
                 : mode === 'forgot'
-                  ? sent
-                    ? t('Back to sign in')
-                    : t('Send')
+                  ? t('Send me a code')
               : mode === 'register' && !loggedIn
                 ? t('Create account & play')
                 : t('Enter the street')}

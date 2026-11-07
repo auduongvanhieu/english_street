@@ -28,7 +28,10 @@ export const ERROR_TEXT: Record<string, string> = {
   no_stay: tk('You are not staying at the hotel.'),
   minibar_empty: tk('The minibar is empty.'),
   wrong_password: tk('Your current password is wrong.'),
-  link_expired: tk('This link has expired or was already used. Ask for a new one.'),
+  code_expired: tk('This code has expired. Ask for a new one.'),
+  wrong_code: tk('Wrong code. Check the e-mail and try again.'),
+  mail_off: tk('Sending e-mail is not set up yet. Please contact the admin.'),
+  mail_failed: tk('We could not send the e-mail. Please try again later.'),
   bad_name: tk('Name must be at least 2 characters.'),
 };
 
@@ -81,8 +84,8 @@ export const guestPass = (c: CaptchaAnswer) => post<{ pass: string }>('/auth/gue
 export const fetchCaptcha = () => get<{ id: string; svg: string }>('/auth/captcha');
 export const register = (email: string, password: string, name: string, guestId: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/register', { email, password, name, guestId, ...c });
 export const login = (email: string, password: string, c: CaptchaAnswer) => post<AuthResponse>('/auth/login', { email, password, ...c });
-export const forgotPassword = (email: string, contact: string, c: CaptchaAnswer) => post<{ ok: boolean; mail: boolean }>('/auth/forgot', { email, contact, ...c });
-export const resetPassword = (token: string, password: string) => post<AuthResponse>('/auth/reset', { token, password });
+export const forgotPassword = (email: string, c: CaptchaAnswer) => post<{ ok: boolean }>('/auth/forgot', { email, ...c });
+export const resetPassword = (email: string, code: string, password: string) => post<AuthResponse>('/auth/reset', { email, code, password });
 export const changePassword = (current: string, password: string) => post<{ token: string }>('/me/password', { current, password });
 export const changeName = (name: string) => post<{ name: string }>(`/me/name?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name });
 export const fetchMe = () => get<Profile & { quota: { turnsLeftToday: number } }>(`/me${q()}`);

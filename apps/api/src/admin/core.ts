@@ -26,7 +26,7 @@ declare module 'fastify' {
 export const ADMIN_SESSION_S = 12 * 3600;
 
 /** Paths only the `admin` role may use (editors manage content and read stats). */
-const ADMIN_ONLY = ['/admin/users', '/admin/online', '/admin/kick', '/admin/reports', '/admin/feedback', '/admin/settings', '/admin/beta', '/admin/announcements', '/admin/audit', '/admin/budget', '/admin/journey'];
+const ADMIN_ONLY = ['/admin/users', '/admin/online', '/admin/kick', '/admin/reports', '/admin/feedback', '/admin/settings', '/admin/beta', '/admin/announcements', '/admin/audit', '/admin/budget', '/admin/journey', '/admin/password-requests'];
 
 const sameSecret = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 

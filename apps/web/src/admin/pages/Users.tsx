@@ -55,7 +55,6 @@ export function UsersPage() {
   const reset = <T,>(f: (v: T) => void) => (v: T) => (f(v), setPage(1));
   return (
     <Page title={L('Người chơi', 'Players')}>
-      <PasswordRequests />
       <Card>
         <form
           className="grid gap-2 md:grid-cols-[2fr_repeat(5,1fr)_auto]"
@@ -181,68 +180,3 @@ export function UsersPage() {
   );
 }
 
-interface PwRequest {
-  id: string;
-  name: string;
-  email: string | null;
-  at: string;
-  contact: string;
-  mailed: boolean;
-  count: number;
-}
-/** "Forgot password" requests: give a temporary password (shown once, pass it on through their contact) or dismiss. */
-function PasswordRequests() {
-  const L = useL();
-  const [n, setN] = useState(0);
-  const s = useLoad(() => get<{ rows: PwRequest[] }>('/admin/users/password-requests'), [n]);
-  const [temp, setTemp] = useState<Record<string, string>>({});
-  const rows = s.data?.rows ?? [];
-  if (!rows.length) return null;
-  return (
-    <Card title={`🔑 ${L('Yêu cầu quên mật khẩu', 'Forgot-password requests')} (${rows.length})`}>
-      <ul className="divide-y text-sm">
-        {rows.map((r) => (
-          <li key={r.id} className="flex flex-wrap items-center gap-2 py-2">
-            <button type="button" className="font-semibold text-blue-700 underline" onClick={() => go(`users/${encodeURIComponent(r.id)}`)}>
-              {r.name}
-            </button>
-            <span className="text-gray-600">{r.email}</span>
-            {r.contact ? <Badge>📞 {r.contact}</Badge> : null}
-            <span className="text-xs text-gray-500">
-              {ago(r.at)}
-              {r.count > 1 ? ` · ×${r.count}` : ''}
-              {r.mailed ? ` · ${L('đã gửi email', 'e-mailed')}` : ''}
-            </span>
-            <span className="ml-auto flex items-center gap-2">
-              {temp[r.id] ? (
-                <span className="rounded bg-yellow-100 px-2 py-1 font-mono">
-                  {L('Mật khẩu tạm', 'Temporary password')}: <b>{temp[r.id]}</b>
-                </span>
-              ) : (
-                <Btn
-                  kind="primary"
-                  onClick={async () => {
-                    if (!(await confirmDialog(L(`Tạo mật khẩu tạm cho ${r.name}? Mật khẩu cũ và các phiên đăng nhập sẽ hết hiệu lực.`, `Make a temporary password for ${r.name}? The old password and sessions stop working.`)))) return;
-                    const x = await api<{ password: string }>('POST', `/admin/users/${encodeURIComponent(r.id)}/reset-password`);
-                    setTemp((t) => ({ ...t, [r.id]: x.password }));
-                    toast(L('Gửi mật khẩu này cho người chơi. Họ nên đổi lại trong Cài đặt.', 'Send this password to the player. They should change it in Settings.'));
-                  }}
-                >
-                  {L('Cấp mật khẩu tạm', 'Temporary password')}
-                </Btn>
-              )}
-              <Btn
-                onClick={async () => {
-                  await api('POST', `/admin/users/${encodeURIComponent(r.id)}/password-request/dismiss`);
-                  setN((k) => k + 1);
-                }}
-              >
-                {temp[r.id] ? L('Xong', 'Done') : L('Bỏ qua', 'Dismiss')}
-              </Btn>
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}

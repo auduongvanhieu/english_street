@@ -13,8 +13,8 @@ interface ProfileStore {
   refresh: () => Promise<void>;
   login: (email: string, password: string, captcha: CaptchaAnswer) => Promise<void>;
   register: (email: string, password: string, name: string, captcha: CaptchaAnswer) => Promise<void>;
-  /** New password from an e-mailed / admin reset link: signs in. */
-  resetPassword: (token: string, password: string) => Promise<void>;
+  /** New password with the 6-digit code from the e-mail: signs in. */
+  resetPassword: (email: string, code: string, password: string) => Promise<void>;
   /** Change the password (other devices are signed out; this one gets a fresh token). */
   changePassword: (current: string, password: string) => Promise<void>;
   /** New display name (guests too): saved, and the name tag in the street changes. */
@@ -67,8 +67,8 @@ export const useProfile = create<ProfileStore>((set, get) => ({
     setSession(r.token, r.profile.id);
     set({ profile: r.profile, loggedIn: true });
   },
-  async resetPassword(token, password) {
-    const r = await apiResetPassword(token, password);
+  async resetPassword(email, code, password) {
+    const r = await apiResetPassword(email, code, password);
     setSession(r.token, r.profile.id);
     set({ profile: r.profile, loggedIn: true });
     syncLang(r.profile);

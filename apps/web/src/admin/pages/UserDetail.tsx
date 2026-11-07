@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CROPS, LANGS, countryFlag, deviceModelName, type FarmState, type PlayerSettings } from '@es/shared';
+import { SetPasswordButton } from './PasswordRequests';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
@@ -313,8 +314,9 @@ function ModerationButtons({ id, d, self, reload, post }: { id: string; d: Detai
           setPw(r.password);
         }}
       >
-        🔑 {L('Mật khẩu tạm', 'Temporary password')}
+        🎲 {L('Mật khẩu tạm', 'Temporary password')}
       </AsyncBtn>
+      <SetPasswordButton id={id} name={u.name} disabled={!u.email} onDone={reload} />
       <AsyncBtn
         onRun={async () => {
           if (!(await confirmDialog(L('Đặt lại Hành trình (chương, tem, việc hôm nay) của người này về đầu?', "Start this player's Journey (chapters, stamps, today's tasks) again?")))) return;

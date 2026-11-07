@@ -68,9 +68,8 @@ Mở NPC hoặc nhiệm vụ, chọn tab **Thử nói chuyện**.
 ### Quên mật khẩu, thông tin thiết bị
 
 - Người chơi tự đổi tên (cả khách) và đổi mật khẩu trong ⚙️ Cài đặt → Tài khoản. Đổi mật khẩu sẽ đăng xuất các máy khác.
-- "Quên mật khẩu?" ở màn hình đăng nhập:
-  - có `RESEND_API_KEY` trong `.env` thì người chơi nhận email chứa link đặt mật khẩu mới (30 phút, dùng một lần);
-  - nếu không có, yêu cầu hiện trong thẻ 🔑 ở đầu trang Người chơi, kèm cách liên lạc người chơi để lại. Bấm "Cấp mật khẩu tạm", gửi mật khẩu đó cho họ, rồi bấm "Xong".
+- "Quên mật khẩu?" ở màn hình đăng nhập gửi **mã 6 số (OTP)** tới email của tài khoản. Mã có hạn 10 phút, cho sai tối đa 5 lần, mỗi phút gửi được 1 mã. Người chơi tự nhập mã cùng mật khẩu mới, không cần admin. Cần cấu hình gửi mail trong `.env`: `SMTP_HOST/PORT/USER/PASS` (ví dụ Gmail với app password) hoặc `RESEND_API_KEY`.
+- Menu **🔑 Quên mật khẩu** liệt kê các yêu cầu trong 30 ngày: email đã gửi được chưa, người chơi đã tự đổi xong chưa. Ai còn kẹt thì bấm "Đặt mật khẩu mới" để nhập mật khẩu cho họ, rồi báo lại cho họ. Trang chi tiết người chơi cũng có nút này, bên cạnh "Mật khẩu tạm" (mật khẩu ngẫu nhiên).
 - Mỗi lần vào game, người chơi lưu thêm: quốc gia (tra từ IP bằng bảng GeoLite2 offline), mã thiết bị (ngẫu nhiên, giữ trong trình duyệt/app), múi giờ và user agent. Cột "Nước" có trong danh sách; chi tiết nằm ở mục Thiết bị.
 
 ### Cài đặt trong game của từng người chơi

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { setting } from '../settings';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -36,14 +36,15 @@ import { captcha, humanCheck } from '../captcha';
 import { env } from '../env';
 import { prisma } from '../plugins/prisma';
 import { isBanned, userStatus } from '../moderation';
-import { HUMAN_PASS_TTL_S, signToken as signShared, verifyToken as verifyShared } from '@es/shared/token';
+import { HUMAN_PASS_TTL_S, signToken as signShared } from '@es/shared/token';
 import { forgetStatus } from '../moderation';
 import { sendMail, mailEnabled } from '../mailer';
 import { countryOf } from '../geo';
 import { gameRename } from '../admin/game';
-import { webOrigins } from '../env';
 
-const RESET_TTL_S = 30 * 60;
+const OTP_TTL_MS = 10 * 60_000;
+const OTP_TRIES = 5;
+const escapeHtml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 /** Display names: letters of any language, digits, dash, space (same rule as the game server). */
 export const cleanName = (n: string) => maskProfanity(n.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 20));
 
@@ -164,42 +165,57 @@ export function accountRoutes(repo: AttemptRepo) {
       return { token: signToken(u.id, st?.tokenVersion ?? 0), profile: await profile((await repo.getUser(u.id)) ?? u) };
     });
 
-    // ---- password reset: an e-mailed link when mail is set up, else a request the admin site answers ----
+    // ---- forgot password: a 6-digit code (OTP) e-mailed to the account; the player types it with a new password ----
+    // The code is kept hashed in User.gameState.pwOtp for OTP_TTL_MS, OTP_TRIES wrong tries; one per minute at most.
+    const otpHash = (id: string, code: string) => createHmac('sha256', env.AUTH_SECRET).update(`otp:${id}:${code}`).digest('hex');
     app.post('/auth/forgot', async (req, reply) => {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
-      const body = z.object({ email: z.string().email().max(120), contact: z.string().max(120).default(''), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional(), turnstileToken: z.string().max(4096).optional() }).safeParse(req.body);
+      const body = z.object({ email: z.string().email().max(120), captchaId: z.string().max(64).optional(), captchaAnswer: z.string().max(16).optional(), turnstileToken: z.string().max(4096).optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       if (!(await humanCheck(body.data, req.ip, env.TURNSTILE_SECRET))) return reply.code(400).send({ error: 'captcha_failed' });
-      if (!(await limiter.allow(`forgot:${body.data.email.toLowerCase()}`, 3, 3600))) return reply.code(429).send({ error: 'rate_limited' });
+      if (!mailEnabled()) return reply.code(503).send({ error: 'mail_off' });
+      if (!(await limiter.allow(`forgot:${body.data.email.toLowerCase()}`, 5, 3600))) return reply.code(429).send({ error: 'rate_limited' });
       const u = await repo.getUserByEmail(body.data.email);
-      let mailed = false;
       if (u?.passwordHash) {
-        const token = signShared(env.AUTH_SECRET, `pwreset:${u.id}`, RESET_TTL_S, { h: u.passwordHash.slice(-16) });
-        const link = `${webOrigins[0] ?? ''}/?reset=${encodeURIComponent(token)}`;
-        mailed = await sendMail(
-          u.email!,
-          'English Street: reset your password',
-          `Hi ${u.name},\n\nOpen this link within 30 minutes to choose a new password:\n${link}\n\nIf you did not ask for this, ignore this e-mail.`,
-        );
-        await repo.logEvent({ name: 'password_reset_request', playerId: u.id, props: { email: u.email, contact: maskProfanity(body.data.contact.trim()), mailed } });
+        const gs = (u.gameState ?? {}) as Record<string, unknown> & { pwOtp?: { at: number } };
+        if (!gs.pwOtp || Date.now() - gs.pwOtp.at > 60_000) {
+          const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+          await repo.updateUser(u.id, { gameState: { ...gs, pwOtp: { h: otpHash(u.id, code), at: Date.now(), exp: Date.now() + OTP_TTL_MS, tries: 0 } } });
+          const mailed = await sendMail(
+            u.email!,
+            `English Street: ${code} là mã đặt lại mật khẩu / is your reset code`,
+            `Xin chào ${u.name},\n\nMã đặt lại mật khẩu English Street của bạn là: ${code}\nMã có hiệu lực trong 10 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\nHi ${u.name},\nYour English Street password reset code is: ${code}\nIt is valid for 10 minutes. If you did not ask for it, ignore this e-mail.`,
+            `<div style="font-family:sans-serif;font-size:15px"><p>Xin chào <b>${escapeHtml(u.name)}</b>,</p><p>Mã đặt lại mật khẩu English Street của bạn:</p><p style="font-size:30px;font-weight:bold;letter-spacing:6px">${code}</p><p>Mã có hiệu lực trong 10 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p><hr><p style="color:#666">Your English Street password reset code is <b>${code}</b> (valid for 10 minutes).</p></div>`,
+          );
+          await repo.logEvent({ name: 'password_reset_request', playerId: u.id, props: { email: u.email, mailed } });
+          if (!mailed) return reply.code(502).send({ error: 'mail_failed' });
+        }
       }
       // the same answer whether or not the address has an account
-      return { ok: true, mail: mailEnabled() };
+      return { ok: true };
     });
 
     app.post('/auth/reset', async (req, reply) => {
       if (!(await allowAuth(req.ip))) return reply.code(429).send({ error: 'rate_limited' });
-      const body = z.object({ token: z.string().max(600), password: z.string().min(6).max(100) }).safeParse(req.body);
+      const body = z.object({ email: z.string().email().max(120), code: z.string().regex(/^\d{6}$/), password: z.string().min(6).max(100) }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
-      const c = verifyShared(env.AUTH_SECRET, body.data.token);
-      const id = c?.sub.startsWith('pwreset:') ? c.sub.slice(8) : '';
-      const u = id ? await prisma.user.findUnique({ where: { id } }) : null;
-      // single use: the link stops working once the password has changed
-      if (!u?.passwordHash || u.passwordHash.slice(-16) !== c?.h) return reply.code(400).send({ error: 'link_expired' });
-      const nu = await prisma.user.update({ where: { id }, data: { passwordHash: await hashPassword(body.data.password), tokenVersion: { increment: 1 } } });
-      forgetStatus(id);
-      await repo.logEvent({ name: 'password_reset', playerId: id, props: { via: 'link' } });
-      return { token: signToken(id, nu.tokenVersion), profile: await profile((await repo.getUser(id))!) };
+      const u = await repo.getUserByEmail(body.data.email);
+      const gs = (u?.gameState ?? {}) as Record<string, unknown> & { pwOtp?: { h: string; exp: number; tries: number; at: number } };
+      const otp = gs.pwOtp;
+      if (!u || !otp || otp.exp < Date.now() || otp.tries >= OTP_TRIES) return reply.code(400).send({ error: 'code_expired' });
+      const want = Buffer.from(otp.h);
+      const got = Buffer.from(otpHash(u.id, body.data.code));
+      if (want.length !== got.length || !timingSafeEqual(want, got)) {
+        await repo.updateUser(u.id, { gameState: { ...gs, pwOtp: { ...otp, tries: otp.tries + 1 } } });
+        return reply.code(400).send({ error: otp.tries + 1 >= OTP_TRIES ? 'code_expired' : 'wrong_code' });
+      }
+      const rest = { ...gs };
+      delete rest.pwOtp;
+      await repo.updateUser(u.id, { gameState: rest });
+      const nu = await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await hashPassword(body.data.password), tokenVersion: { increment: 1 } } });
+      forgetStatus(u.id);
+      await repo.logEvent({ name: 'password_reset', playerId: u.id, props: { via: 'otp' } });
+      return { token: signToken(u.id, nu.tokenVersion), profile: await profile((await repo.getUser(u.id))!) };
     });
 
     // Signed-in players: change the password (the old one is needed; other devices are signed out).

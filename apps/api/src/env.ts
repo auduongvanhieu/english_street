@@ -46,7 +46,11 @@ const EnvSchema = z.object({
   /** Cloudflare Turnstile (sign-in / sign-up). Without them the built-in image captcha is used. */
   TURNSTILE_SITE_KEY: z.string().default(''),
   TURNSTILE_SECRET: z.string().default(''),
-  /** Password-reset e-mails through Resend (https://resend.com). Empty = requests go to the admin site instead. */
+  /** Password-reset codes by e-mail: SMTP (e.g. Gmail with an app password) or Resend (https://resend.com). */
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
   RESEND_API_KEY: z.string().default(''),
   MAIL_FROM: z.string().default('English Street <no-reply@englishstreet.coffeesos.online>'),
   /** 127.0.0.1 behind a reverse proxy (only it can reach the API; client IP headers can't be faked). */

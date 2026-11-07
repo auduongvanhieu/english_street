@@ -238,21 +238,59 @@ export function adminUserRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  /** "Forgot password" requests not answered yet (newer than the player's last password change / reset / dismissal). */
-  app.get('/admin/users/password-requests', async () => {
-    const since = new Date(Date.now() - 14 * 24 * 3600 * 1000);
-    const ev = await prisma.event.findMany({ where: { name: { in: ['password_reset_request', 'password_reset', 'password_change', 'password_request_dismissed'] }, createdAt: { gte: since } }, orderBy: { createdAt: 'asc' }, select: { name: true, playerId: true, props: true, createdAt: true } });
-    const open = new Map<string, { at: Date; email: string; contact: string; mailed: boolean; count: number }>();
+  /**
+   * "Forgot password" requests of the last 30 days, newest first, with what happened after: the player reset it with
+   * the e-mailed code (or changed it), an admin set it, the admin marked it handled, or still open.
+   */
+  app.get('/admin/password-requests', async () => {
+    const since = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+    const ev = await prisma.event.findMany({ where: { name: { in: ['password_reset_request', 'password_reset', 'password_change', 'password_request_dismissed'] }, createdAt: { gte: since }, playerId: { not: null } }, orderBy: { createdAt: 'asc' }, select: { name: true, playerId: true, props: true, createdAt: true } });
+    type Row = { playerId: string; at: Date; mailed: boolean; count: number; status: 'open' | 'self' | 'admin' | 'dismissed'; doneAt: Date | null };
+    const rows: Row[] = [];
+    const openBy = new Map<string, Row>();
     for (const e of ev) {
-      if (!e.playerId) continue;
+      const id = e.playerId!;
+      const p = (e.props ?? {}) as { mailed?: boolean; via?: string };
+      const cur = openBy.get(id);
       if (e.name === 'password_reset_request') {
-        const p = (e.props ?? {}) as { email?: string; contact?: string; mailed?: boolean };
-        const prev = open.get(e.playerId);
-        open.set(e.playerId, { at: e.createdAt, email: p.email ?? '', contact: p.contact || prev?.contact || '', mailed: !!p.mailed, count: (prev?.count ?? 0) + 1 });
-      } else open.delete(e.playerId);
+        if (cur) {
+          cur.count += 1;
+          cur.at = e.createdAt;
+          cur.mailed ||= !!p.mailed;
+        } else {
+          const r: Row = { playerId: id, at: e.createdAt, mailed: !!p.mailed, count: 1, status: 'open', doneAt: null };
+          rows.push(r);
+          openBy.set(id, r);
+        }
+      } else if (cur) {
+        cur.status = e.name === 'password_request_dismissed' ? 'dismissed' : p.via === 'admin' ? 'admin' : 'self';
+        cur.doneAt = e.createdAt;
+        openBy.delete(id);
+      }
     }
-    const users = await prisma.user.findMany({ where: { id: { in: [...open.keys()] } }, select: { id: true, name: true, email: true } });
-    return { rows: users.map((u) => ({ ...open.get(u.id)!, id: u.id, name: u.name, email: u.email })).sort((a, b) => +b.at - +a.at) };
+    const users = await prisma.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.playerId))] } }, select: { id: true, name: true, email: true, lastActiveAt: true } });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return {
+      rows: rows
+        .filter((r) => byId.has(r.playerId))
+        .reverse()
+        .map((r) => ({ ...r, id: r.playerId, name: byId.get(r.playerId)!.name, email: byId.get(r.playerId)!.email, lastActiveAt: byId.get(r.playerId)!.lastActiveAt })),
+      open: openBy.size,
+    };
+  });
+
+  /** The admin types a new password for the player (they tell the player); old sessions end. */
+  app.post<{ Params: { id: string } }>('/admin/users/:id/set-password', async (req, reply) => {
+    const pw = (req.body as { password?: unknown } | undefined)?.password;
+    if (typeof pw !== 'string' || pw.length < 6 || pw.length > 100) return bad(reply, 'bad_password', 400, { detail: 'At least 6 characters.' });
+    const u = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!u?.email) return bad(reply, 'no_account', 400, { detail: 'Guests have no password.' });
+    await prisma.user.update({ where: { id: u.id }, data: { passwordHash: await hashPassword(pw), tokenVersion: { increment: 1 } } });
+    forgetStatus(u.id);
+    await gameKick(u.id, 'Your password was changed. Please sign in again.');
+    await prisma.event.create({ data: { name: 'password_reset', playerId: u.id, props: { via: 'admin' } } });
+    await audit(req, 'user.set_password', u.id);
+    return { ok: true };
   });
 
   app.post<{ Params: { id: string } }>('/admin/users/:id/password-request/dismiss', async (req) => {
