@@ -57,7 +57,7 @@ import { Boats } from './boats';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
-import { accountStatus, isMuted, live, mutes, sampleHeat } from '../admin';
+import { accountStatus, addPlay, isMuted, live, mutes, sampleHeat } from '../admin';
 
 /** Every open room (for the admin site: online list, kicks, notices). */
 export const ROOMS = new Set<StreetRoom>();
@@ -426,10 +426,15 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     // 30 Hz: the football (only while somebody is near the pitch); once a second: chat bubbles and the heat map
     let lastHeat = Date.now();
     let lastSecond = Date.now();
+    let lastPlay = Date.now();
     this.setSimulationInterval((dtMs) => {
       if (this.football!.awake()) this.football!.step(Math.min(0.1, dtMs / 1000));
       const now = Date.now();
       if (now - lastSecond < 1000) return;
+      if (now - lastPlay >= 60_000) {
+        lastPlay = now;
+        this.tallyPlay(now);
+      }
       lastSecond = now;
       this.expireBubbles();
       this.boatsSim?.tick(now);
@@ -486,6 +491,17 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     return n;
   }
   /** Admin changed this player's in-game settings: send them to every open game of theirs. */
+  /** Play time: seconds each player has been here since the last tally (reported to the API by admin.ts). */
+  private playSince = new Map<string, { pid: string; at: number; started: boolean }>();
+  private tallyPlay(now: number, only?: string) {
+    for (const [sid, t] of this.playSince) {
+      if (only && sid !== only) continue;
+      addPlay(t.pid, (now - t.at) / 1000, !t.started);
+      t.at = now;
+      t.started = true;
+    }
+  }
+
   /** The player renamed themselves (or an admin did): new name tag at once. */
   renameUser(uid: string, name: string) {
     const clean = sanitizeName(name);
@@ -603,6 +619,9 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     p.y = SPAWN.y;
     p.z = SPAWN.z + (Math.random() - 0.5) * 2;
     this.state.players.set(client.sessionId, p);
+    // accounts by their verified id, guests by the id their browser keeps
+    const playId = auth?.uid || p.pid;
+    if (playId) this.playSince.set(client.sessionId, { pid: playId, at: Date.now(), started: false });
     client.send(MSG.TIME, { now: Date.now() });
     client.send(MSG.ZONE, { id: this.roomId, ...this.zone });
     console.log(`[street] ${p.name} joined (${this.clients.length}/${this.maxClients})`);
@@ -617,6 +636,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       else guestsByIp.delete(ip);
     }
     this.who.delete(client.sessionId);
+    this.tallyPlay(Date.now(), client.sessionId);
+    this.playSince.delete(client.sessionId);
     const p = this.state.players.get(client.sessionId);
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);

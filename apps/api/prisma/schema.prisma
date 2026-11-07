@@ -61,6 +61,8 @@ model User {
   device       Json     @default("{}")
   /// IP address the player last joined from (POST /me/hello; admin site only).
   lastIp       String   @default("")
+  /// Total time in the street (seconds), counted by the game server; per day in PlayDay.
+  playSeconds  Int      @default(0)
 
   attempts QuestAttempt[]
   vocab    VocabEntry[]
@@ -279,4 +281,15 @@ model Friendship {
 enum FriendStatus {
   pending
   accepted
+}
+
+/// Time in the street per player and day (Vietnam day, UTC+7): seconds online and sessions started.
+model PlayDay {
+  userId   String
+  day      String
+  seconds  Int    @default(0)
+  sessions Int    @default(0)
+
+  @@id([userId, day])
+  @@index([day])
 }

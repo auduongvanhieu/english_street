@@ -5,7 +5,7 @@ import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
 import { AsyncBtn, Badge, Btn, Card, Field, Loaded, Modal, Num, Page, Select, Table, Text, confirmDialog, toast, useLoad } from '../ui';
-import { UserBadges, type UserRow } from './Users';
+import { UserBadges, fmtPlay, type UserRow } from './Users';
 
 interface Detail {
   user: UserRow & { avatarConfig: unknown; gameState: unknown };
@@ -18,6 +18,7 @@ interface Detail {
   reportsAgainst: Report[];
   events: { name: string; props: Record<string, unknown>; createdAt: string }[];
   online: { sessionId: string; zone: string; x: number; z: number; ip: string; since: number }[];
+  playDays: { day: string; seconds: number; sessions: number }[];
 }
 interface Report {
   id: string;
@@ -91,6 +92,10 @@ export function UserDetail({ id }: { id: string }) {
                     <dd>{fmtDate(u.createdAt)}</dd>
                     <dt className="text-gray-500">{L('Hoạt động', 'Active')}</dt>
                     <dd>{ago(u.lastActiveAt)}</dd>
+                    <dt className="text-gray-500">{L('Thời gian chơi', 'Play time')}</dt>
+                    <dd>
+                      <PlayTime total={u.playSeconds ?? 0} days={d.playDays ?? []} />
+                    </dd>
                     {banned ? (
                       <>
                         <dt className="text-gray-500">{L('Khoá đến', 'Banned until')}</dt>
@@ -194,6 +199,42 @@ export function UserDetail({ id }: { id: string }) {
 }
 
 /** Device of the last join: model, OS, browser / app, network, screen, GPU. */
+/** Vietnam day (UTC+7) n days ago, as stored in PlayDay. */
+const vnDay = (ago = 0) => new Date(Date.now() + 7 * 3600_000 - ago * 86_400_000).toISOString().slice(0, 10);
+
+/** Total time in the street, today / 7 / 30 days, and a bar per day for the last 14 days. */
+function PlayTime({ total, days }: { total: number; days: Detail['playDays'] }) {
+  const L = useL();
+  const by = new Map(days.map((d) => [d.day, d]));
+  const sum = (n: number) => days.filter((d) => d.day >= vnDay(n - 1)).reduce((a, d) => a + d.seconds, 0);
+  const sessions30 = days.filter((d) => d.day >= vnDay(29)).reduce((a, d) => a + d.sessions, 0);
+  const last = Array.from({ length: 14 }, (_, i) => vnDay(13 - i));
+  const max = Math.max(60, ...last.map((d) => by.get(d)?.seconds ?? 0));
+  return (
+    <span className="block text-sm">
+      <b>{fmtPlay(total, L)}</b> {L('tổng cộng', 'in total')}
+      <span className="block text-xs text-gray-600">
+        {L('Hôm nay', 'Today')} {fmtPlay(sum(1), L)} · {L('7 ngày', '7 days')} {fmtPlay(sum(7), L)} · {L('30 ngày', '30 days')} {fmtPlay(sum(30), L)}
+        {sessions30 ? ` · ${sessions30} ${L('lượt vào (30 ngày)', 'sessions (30 days)')}` : ''}
+      </span>
+      <span className="mt-1 flex h-10 items-end gap-[2px]" aria-label={L('Thời gian chơi 14 ngày gần nhất', 'Play time, last 14 days')}>
+        {last.map((d) => {
+          const sec = by.get(d)?.seconds ?? 0;
+          return (
+            <span key={d} title={`${d}: ${fmtPlay(sec, L)}`} className="flex h-full w-3 items-end">
+              <span className={`w-full rounded-t ${sec ? 'bg-blue-500' : 'bg-gray-200'}`} style={{ height: `${Math.max(sec ? 8 : 4, (sec / max) * 100)}%` }} />
+            </span>
+          );
+        })}
+      </span>
+      <span className="flex w-[194px] justify-between text-[10px] text-gray-400">
+        <span>{last[0]!.slice(5)}</span>
+        <span>{L('hôm nay', 'today')}</span>
+      </span>
+    </span>
+  );
+}
+
 function DeviceDetails({ d }: { d: UserRow['device'] }) {
   const L = useL();
   if (!d || !d.os) return <span className="text-gray-500">{L('chưa có (người chơi chưa vào lại từ khi bật tính năng này)', 'not known yet (no join since this was added)')}</span>;

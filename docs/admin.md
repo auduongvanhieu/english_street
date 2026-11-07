@@ -72,6 +72,13 @@ Mở NPC hoặc nhiệm vụ, chọn tab **Thử nói chuyện**.
 - Menu **🔑 Quên mật khẩu** liệt kê các yêu cầu trong 30 ngày: email đã gửi được chưa, người chơi đã tự đổi xong chưa. Ai còn kẹt thì bấm "Đặt mật khẩu mới" để nhập mật khẩu cho họ, rồi báo lại cho họ. Trang chi tiết người chơi cũng có nút này, bên cạnh "Mật khẩu tạm" (mật khẩu ngẫu nhiên).
 - Mỗi lần vào game, người chơi lưu thêm: quốc gia (tra từ IP bằng bảng GeoLite2 offline), mã thiết bị (ngẫu nhiên, giữ trong trình duyệt/app), múi giờ và user agent. Cột "Nước" có trong danh sách; chi tiết nằm ở mục Thiết bị.
 
+### Thời gian chơi
+
+- Game server đếm thời gian mỗi người ở trong phố (cập nhật mỗi phút và khi họ thoát). Số liệu lưu ở `User.playSeconds` (tổng) và bảng `PlayDay` (theo ngày giờ Việt Nam, kèm số lượt vào).
+- Danh sách người chơi có cột "Thời gian chơi" và cách sắp xếp "Chơi lâu nhất". Trang chi tiết hiện tổng, hôm nay, 7 ngày, 30 ngày, số lượt vào và biểu đồ 14 ngày.
+- Thời gian trước khi có tính năng này được ước tính một lần từ lịch sử hoạt động (`pnpm --filter @es/api playtime:backfill`): các hoạt động cách nhau không quá 10 phút tính là một lượt chơi. Đây là số tối thiểu, thực tế có thể lâu hơn.
+- Người chơi treo máy trong phố vẫn được tính, vì đây là thời gian online.
+
 ### Cài đặt trong game của từng người chơi
 Trang chi tiết người chơi có thẻ **Cài đặt trong game**: đồ hoạ, ngôn ngữ, phụ đề, IPA, tắt giọng đọc, tốc độ đọc, tiếng chim, kiểu mic, giờ và thời tiết. Thẻ hiện giá trị mà game của người đó báo về lần gần nhất.
 - Bấm **Lưu và áp dụng**: nếu người chơi đang online, server game đẩy cài đặt xuống máy họ và đổi ngay, có thông báo nhỏ trong game. Nếu đang offline, cài đặt được giữ lại và áp dụng ở lần vào game tiếp theo.

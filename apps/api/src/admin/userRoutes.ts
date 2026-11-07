@@ -13,6 +13,7 @@ import { areaStats } from '../routes/play';
 
 const PUBLIC_USER = {
   id: true,
+  playSeconds: true,
   email: true,
   name: true,
   cefrLevel: true,
@@ -38,7 +39,7 @@ const ListQuery = z.object({
   lang: z.string().max(10).optional(),
   kind: z.enum(['all', 'registered', 'guest', 'banned', 'muted', 'staff']).default('all'),
   active: z.coerce.number().int().min(0).max(3650).optional(),
-  sort: z.enum(['recent', 'created', 'xp', 'coins', 'name']).default('recent'),
+  sort: z.enum(['recent', 'created', 'play', 'xp', 'coins', 'name']).default('recent'),
   page: z.coerce.number().int().min(1).default(1),
   size: z.coerce.number().int().min(5).max(200).default(50),
 });
@@ -70,7 +71,7 @@ export function adminUserRoutes(app: FastifyInstance) {
       ...(kind === 'registered' ? { email: { not: null } } : kind === 'guest' ? { email: null } : kind === 'banned' ? { bannedUntil: { gt: now } } : kind === 'muted' ? { mutedUntil: { gt: now } } : kind === 'staff' ? { role: { in: ['editor', 'admin'] } } : {}),
     };
     const orderBy: Prisma.UserOrderByWithRelationInput =
-      sort === 'created' ? { createdAt: 'desc' } : sort === 'xp' ? { xp: 'desc' } : sort === 'coins' ? { coins: 'desc' } : sort === 'name' ? { name: 'asc' } : { lastActiveAt: 'desc' };
+      sort === 'created' ? { createdAt: 'desc' } : sort === 'play' ? { playSeconds: 'desc' } : sort === 'xp' ? { xp: 'desc' } : sort === 'coins' ? { coins: 'desc' } : sort === 'name' ? { name: 'asc' } : { lastActiveAt: 'desc' };
     const [total, rows] = await Promise.all([prisma.user.count({ where }), prisma.user.findMany({ where, orderBy, skip: (page - 1) * size, take: size, select: PUBLIC_USER })]);
     return { total, page, size, rows };
   });
@@ -87,6 +88,7 @@ export function adminUserRoutes(app: FastifyInstance) {
       prisma.event.findMany({ where: { playerId: u.id }, orderBy: { createdAt: 'desc' }, take: 60, select: { name: true, props: true, createdAt: true } }),
       gameOnline(),
     ]);
+    const playDays = await prisma.playDay.findMany({ where: { userId: u.id }, orderBy: { day: 'desc' }, take: 60, select: { day: true, seconds: true, sessions: true } });
     const farm = FarmStateSchema.safeParse(((u.gameState ?? {}) as { farm?: unknown }).farm);
     return {
       user: u,
@@ -99,6 +101,7 @@ export function adminUserRoutes(app: FastifyInstance) {
       reportsAgainst,
       events,
       online: online?.players.filter((p) => p.uid === u.id) ?? [],
+      playDays,
     };
   });
 

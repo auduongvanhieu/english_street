@@ -78,7 +78,24 @@ export function startAdminLink() {
   void pullSettings();
   setInterval(() => void pullSettings(), 30_000).unref();
   setInterval(() => void flushHeat(), 5 * 60_000).unref();
+  setInterval(() => void flushPlay(), 60_000).unref();
 }
 export async function stopAdminLink() {
   await flushHeat();
+  await flushPlay();
+}
+
+// ---------------------------------------------------------------- play time
+/** Seconds online per player since the last report; sent to the API with the next flush (about once a minute). */
+const playQueue: { id: string; sec: number; start?: boolean }[] = [];
+export function addPlay(id: string, sec: number, start = false) {
+  if (!id || (sec <= 0 && !start)) return;
+  playQueue.push({ id, sec: Math.max(0, Math.min(3600, Math.round(sec))), ...(start ? { start } : {}) });
+}
+export async function flushPlay() {
+  if (!playQueue.length) return;
+  const items = playQueue.splice(0, playQueue.length);
+  const ok = await api('/internal/playtime', { method: 'POST', body: JSON.stringify({ items }) });
+  // API down: keep them for the next try (bounded)
+  if (!ok && playQueue.length < 20_000) playQueue.push(...items);
 }

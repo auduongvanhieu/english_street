@@ -5,8 +5,20 @@ import { go } from '../App';
 import { ago, fmtNum, useL } from '../i18n';
 import { Badge, Btn, Card, Loaded, Page, Select, Table, Text, confirmDialog, toast, useLoad } from '../ui';
 
+/** "2 giờ 15 phút" / "2 h 15 min" from seconds. */
+export function fmtPlay(sec: number | undefined, L: (vi: string, en: string) => string): string {
+  const m = Math.floor((sec ?? 0) / 60);
+  if (!sec) return '—';
+  if (m < 1) return L('< 1 phút', '< 1 min');
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  if (!h) return L(`${mm} phút`, `${mm} min`);
+  return mm ? L(`${h} giờ ${mm} phút`, `${h} h ${mm} min`) : L(`${h} giờ`, `${h} h`);
+}
+
 export interface UserRow {
   id: string;
+  playSeconds?: number;
   email: string | null;
   name: string;
   cefrLevel: string;
@@ -47,7 +59,7 @@ export function UsersPage() {
   const [level, setLevel] = useState('');
   const [lang, setLang] = useState('');
   const [active, setActive] = useState('');
-  const [sort, setSort] = useState<'recent' | 'created' | 'xp' | 'coins' | 'name'>('recent');
+  const [sort, setSort] = useState<'recent' | 'created' | 'play' | 'xp' | 'coins' | 'name'>('recent');
   const [page, setPage] = useState(1);
   const params = new URLSearchParams({ kind, sort, page: String(page), size: '50', ...(query ? { q: query } : {}), ...(level ? { level } : {}), ...(lang ? { lang } : {}), ...(active ? { active } : {}) });
   const meId = useSession((x) => x.me?.id);
@@ -98,6 +110,7 @@ export function UsersPage() {
             options={[
               { value: 'recent', label: L('Mới hoạt động', 'Recently active') },
               { value: 'created', label: L('Mới tạo', 'Newest') },
+              { value: 'play', label: L('Chơi lâu nhất', 'Most play time') },
               { value: 'xp', label: 'XP' },
               { value: 'coins', label: 'Coins' },
               { value: 'name', label: L('Tên', 'Name') },
@@ -123,6 +136,7 @@ export function UsersPage() {
                   { key: 'level', label: L('Trình độ', 'Level'), render: (u) => u.cefrLevel },
                   { key: 'lang', label: L('Ngôn ngữ', 'Lang'), render: (u) => u.nativeLang || '—', wide: true },
                   { key: 'dev', label: L('Thiết bị', 'Device'), render: (u) => <span className="text-xs text-gray-600">{deviceSummary(u.device) || '—'}</span> },
+                  { key: 'play', label: L('Thời gian chơi', 'Play time'), render: (u) => <span className="whitespace-nowrap text-xs">{fmtPlay(u.playSeconds, L)}</span> },
                   { key: 'country', label: L('Nước', 'Country'), render: (u) => <span className="text-xs text-gray-600" title={u.device?.country ?? ''}>{u.device?.country ? `${countryFlag(u.device.country)} ${u.device.country}` : '—'}</span> },
                   { key: 'ip', label: 'IP', render: (u) => <span className="font-mono text-xs text-gray-600">{u.lastIp || '—'}</span>, wide: true },
                   { key: 'xp', label: 'XP', render: (u) => fmtNum(u.xp), className: 'text-right tabular-nums' },

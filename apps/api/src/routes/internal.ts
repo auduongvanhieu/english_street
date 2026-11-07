@@ -24,6 +24,33 @@ export function internalRoutes(dbOn: boolean) {
       return { banned: isBanned(s), until: s?.bannedUntil ?? null, reason: s?.banReason ?? '', mutedUntil: s?.mutedUntil ? s.mutedUntil.getTime() : 0, tokenVersion: s?.tokenVersion ?? 0 };
     });
 
+    /**
+     * Time in the street: the game server reports, about once a minute, the seconds each player has been online since
+     * the last report (start = a new session). Added to User.playSeconds and to PlayDay for today (Vietnam day).
+     */
+    app.post('/internal/playtime', async (req, reply) => {
+      const body = z.object({ items: z.array(z.object({ id: z.string().min(1).max(64), sec: z.number().int().min(0).max(3600), start: z.boolean().optional() })).max(5000) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      if (!dbOn) return { ok: true };
+      const day = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+      const merged = new Map<string, { sec: number; start: number }>();
+      for (const it of body.data.items) {
+        const m = merged.get(it.id) ?? { sec: 0, start: 0 };
+        m.sec += it.sec;
+        if (it.start) m.start += 1;
+        merged.set(it.id, m);
+      }
+      const known = new Set((await prisma.user.findMany({ where: { id: { in: [...merged.keys()] } }, select: { id: true } })).map((u) => u.id));
+      for (const [id, m] of merged) {
+        if (!known.has(id) || (!m.sec && !m.start)) continue;
+        await prisma.$transaction([
+          prisma.user.update({ where: { id }, data: { playSeconds: { increment: m.sec } } }),
+          prisma.playDay.upsert({ where: { userId_day: { userId: id, day } }, create: { userId: id, day, seconds: m.sec, sessions: m.start }, update: { seconds: { increment: m.sec }, sessions: { increment: m.start } } }),
+        ]);
+      }
+      return { ok: true };
+    });
+
     /** Heat-map samples: add the counts to the cells (one statement per 2000 cells). */
     app.post('/internal/heat', async (req, reply) => {
       const body = HeatSchema.safeParse(req.body);

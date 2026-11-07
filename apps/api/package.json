@@ -17,6 +17,7 @@
     "i18n:check": "tsx scripts/i18n-translate.ts --check",
     "admin:grant": "tsx scripts/admin-grant.ts",
     "db:backup": "tsx scripts/db-backup.ts",
+    "playtime:backfill": "tsx scripts/playtime-backfill.ts",
     "db:restore": "tsx scripts/db-backup.ts restore"
   },
   "dependencies": {
