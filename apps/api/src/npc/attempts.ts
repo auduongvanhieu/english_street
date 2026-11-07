@@ -89,7 +89,7 @@ export interface AttemptRepo {
   update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
   listCompleted(userId: string): Promise<Pick<AttemptRecord, 'questId' | 'npcId' | 'finishedAt'>[]>;
   /** Add XP / coins; coins are logged as a coins_earned event (economy stats) with their source. */
-  reward(userId: string, xp: number, coins: number, source?: string): Promise<void>;
+  reward(userId: string, xp: number, coins: number, source?: string, extra?: Record<string, unknown>): Promise<void>;
   /** Daily-board bonus if the quest is on today's board and not yet completed today. */
   dailyBonus(userId: string, questId: string): Promise<number>;
 
@@ -194,7 +194,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
   async listCompleted(userId: string) {
     return [...this.attempts.values()].filter((a) => a.userId === userId && a.status === 'completed');
   }
-  async reward(userId: string, xp: number, coins: number, _source = 'other') {
+  async reward(userId: string, xp: number, coins: number, _source = 'other', _extra?: Record<string, unknown>) {
     const u = this.users.get(userId);
     if (u) {
       u.xp += xp;
@@ -319,9 +319,10 @@ export class PrismaAttemptRepo implements AttemptRepo {
   async listCompleted(userId: string) {
     return prisma.questAttempt.findMany({ where: { userId, status: 'completed' }, select: { questId: true, npcId: true, finishedAt: true } });
   }
-  async reward(userId: string, xp: number, coins: number, source = 'other') {
+  async reward(userId: string, xp: number, coins: number, source = 'other', extra?: Record<string, unknown>) {
     await prisma.user.update({ where: { id: userId }, data: { xp: { increment: xp }, coins: { increment: coins } } });
-    if (coins > 0) await this.logEvent({ name: 'coins_earned', playerId: userId, props: { source, coins } });
+    // quests log every reward (even 0 coins) so the admin site can show what each attempt paid
+    if (coins > 0 || extra?.attempt) await this.logEvent({ name: 'coins_earned', playerId: userId, props: { source, coins, xp, ...extra } });
   }
   dailyBonus(userId: string, questId: string) {
     return dailyBonusFor(this, userId, questId);

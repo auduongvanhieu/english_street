@@ -11,7 +11,8 @@ interface Detail {
   user: UserRow & { avatarConfig: unknown; gameState: unknown };
   areas: { areas: Record<string, { learned: number; total: number; quiz: boolean }>; badges: string[] };
   farm: FarmState;
-  attempts: { id: string; questId: string; npcId: string; status: string; score: number | null; turns: number; goalsDone: string[]; startedAt: string; finishedAt: string | null }[];
+  attempts: { id: string; questId: string; npcId: string; status: string; score: number | null; turns: number; goalsDone: string[]; startedAt: string; finishedAt: string | null; reward: { xp: number; coins: number } | null }[];
+  wallet: { at: string; coins: number; source: string; item: string; xp: number }[];
   vocabCount: number;
   vocab: { word: string; meaning: string; lang: string; intervalDays: number; nextReviewAt: string; createdAt: string }[];
   reportsBy: Report[];
@@ -33,6 +34,29 @@ interface Transcript {
   transcript: { role: string; content: string }[];
   corrections: { original: string; corrected: string; explanation: string; type: string }[];
 }
+
+/** Where coins came from / went (event props.source). */
+const COIN_SOURCE: Record<string, [string, string]> = {
+  quest: ['Nhiệm vụ NPC', 'NPC quest'],
+  pair: ['Nhiệm vụ cặp đôi', 'Pair quest'],
+  journey: ['Hành trình', 'Journey'],
+  minigame: ['Trò chơi nhỏ', 'Mini-game'],
+  quiz: ['Quiz khu vực', 'Area quiz'],
+  farm: ['Vườn cũ', 'Old garden'],
+  myfarm: ['Nông trại riêng', 'My farm'],
+  farm_fine: ['Tiền phạt trộm rau', 'Theft fine'],
+  book: ['Mua sách', 'Book'],
+  book_club: ['Câu lạc bộ sách', 'Book club'],
+  avatar: ['Đồ nhân vật', 'Avatar item'],
+  furniture: ['Nội thất phòng', 'Furniture'],
+  taxi: ['Taxi', 'Taxi'],
+  boat: ['Thuê thuyền', 'Boat hire'],
+  hotel: ['Khách sạn', 'Hotel'],
+  hotel_minibar: ['Minibar khách sạn', 'Hotel minibar'],
+  'cinema-vip': ['Ghế VIP rạp phim', 'Cinema VIP seat'],
+  'train-first': ['Vé tàu hạng nhất', 'First-class ticket'],
+  admin: ['Admin chỉnh tay', 'Admin change'],
+};
 
 export function UserDetail({ id }: { id: string }) {
   const L = useL();
@@ -151,10 +175,39 @@ export function UserDetail({ id }: { id: string }) {
                     { key: 'n', label: 'NPC', render: (a) => a.npcId },
                     { key: 's', label: L('Kết quả', 'Result'), render: (a) => <Badge tone={a.status === 'completed' ? 'green' : a.status === 'active' ? 'blue' : 'gray'}>{a.status}</Badge> },
                     { key: 'score', label: L('Điểm', 'Score'), render: (a) => a.score ?? '—', className: 'text-right' },
-                    { key: 't', label: L('Lượt', 'Turns'), render: (a) => a.turns, className: 'text-right', wide: true },
+                    { key: 't', label: L('Lượt', 'Turns'), render: (a) => a.turns, className: 'text-right' },
+                    { key: 'xp', label: 'XP', render: (a) => (a.reward?.xp ? <span className="font-semibold text-emerald-700">+{a.reward.xp}</span> : '—'), className: 'text-right' },
+                    { key: 'c', label: L('Coin nhận', 'Coins'), render: (a) => (a.reward?.coins ? <span className="font-semibold text-amber-600">+{a.reward.coins}</span> : '—'), className: 'text-right', wide: true },
                     { key: 'd', label: L('Lúc', 'When'), render: (a) => fmtDate(a.startedAt) },
                   ]}
                 />
+              </Card>
+
+              <Card title={`${L('Lịch sử tiền', 'Coin history')} (${d.wallet.length})`}>
+                <div className="mb-2 flex flex-wrap gap-4 text-sm">
+                  <span>
+                    {L('Đã kiếm', 'Earned')}: <b className="text-emerald-700">+{d.wallet.filter((w) => w.coins > 0).reduce((n, w) => n + w.coins, 0)}</b>
+                  </span>
+                  <span>
+                    {L('Đã tiêu', 'Spent')}: <b className="text-red-700">{d.wallet.filter((w) => w.coins < 0).reduce((n, w) => n + w.coins, 0)}</b>
+                  </span>
+                  <span>
+                    {L('Đang có', 'Balance')}: <b>{u.coins}</b>
+                  </span>
+                  {d.wallet.length >= 300 ? <span className="text-xs text-gray-500">{L('(300 dòng gần nhất)', '(last 300)')}</span> : null}
+                </div>
+                <div className="max-h-96 overflow-auto">
+                  <Table
+                    rows={d.wallet.map((w, k) => ({ ...w, k }))}
+                    rowKey={(w) => String(w.k)}
+                    cols={[
+                      { key: 'd', label: L('Lúc', 'When'), render: (w) => fmtDate(w.at) },
+                      { key: 's', label: L('Nguồn', 'Source'), render: (w) => L(...(COIN_SOURCE[w.source] ?? [w.source, w.source])) },
+                      { key: 'i', label: L('Chi tiết', 'Detail'), render: (w) => <span className="text-gray-600">{w.item}</span>, wide: true },
+                      { key: 'c', label: 'Coin', render: (w) => <b className={w.coins > 0 ? 'text-emerald-700' : 'text-red-700'}>{w.coins > 0 ? `+${w.coins}` : w.coins}</b>, className: 'text-right' },
+                    ]}
+                  />
+                </div>
               </Card>
 
               <div className="grid gap-4 md:grid-cols-2">

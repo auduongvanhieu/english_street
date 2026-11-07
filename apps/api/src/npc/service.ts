@@ -174,7 +174,7 @@ export class NpcService {
     }
     const bonus = await this.attempts.dailyBonus(s.playerId, quest.id);
     summary.reward.xp += bonus;
-    await this.attempts.reward(s.playerId, summary.reward.xp, summary.reward.coins, 'quest');
+    await this.attempts.reward(s.playerId, summary.reward.xp, summary.reward.coins, 'quest', { quest: quest.id, attempt: s.attemptId ?? '' });
     await this.attempts.saveVocab(s.playerId, s.vocab, s.lang ?? 'vi');
     return summary;
   }

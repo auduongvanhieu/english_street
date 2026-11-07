@@ -1,3 +1,4 @@
+import { getPairQuest, getQuest } from '@es/quests';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -88,13 +89,41 @@ export function adminUserRoutes(app: FastifyInstance) {
       prisma.event.findMany({ where: { playerId: u.id }, orderBy: { createdAt: 'desc' }, take: 60, select: { name: true, props: true, createdAt: true } }),
       gameOnline(),
     ]);
+    // coin history: rewards, spending and admin changes (newest first)
+    const money = await prisma.event.findMany({ where: { playerId: u.id, name: { in: ['coins_earned', 'coins_spent', 'coins_admin'] } }, orderBy: { createdAt: 'desc' }, take: 300, select: { name: true, props: true, createdAt: true } });
+    const wallet = money
+      .map((e) => {
+        const p = (e.props ?? {}) as Record<string, unknown>;
+        const n = Number(p.coins) || 0;
+        const coins = e.name === 'coins_spent' ? -Math.abs(n) : n;
+        return { at: e.createdAt, coins, source: e.name === 'coins_admin' ? 'admin' : String(p.source ?? 'other'), item: String(p.item ?? p.quest ?? (e.name === 'coins_admin' ? (p.by ?? '') : '')), xp: Number(p.xp) || 0 };
+      })
+      .filter((w) => w.coins !== 0);
+    // what each quest attempt paid: the logged reward when there is one, else the reward rule on the quest content
+    const paid = new Map<string, { xp: number; coins: number }>();
+    for (const e of money) {
+      const p = (e.props ?? {}) as Record<string, unknown>;
+      if (e.name === 'coins_earned' && typeof p.attempt === 'string' && p.attempt) paid.set(p.attempt, { xp: Number(p.xp) || 0, coins: Number(p.coins) || 0 });
+    }
+    const rewardOf = (a: (typeof attempts)[number]) => {
+      const got = paid.get(a.id);
+      if (got) return got;
+      if (a.status === 'active' || a.status === 'abandoned') return { xp: 0, coins: 0 };
+      const q = getQuest(a.questId) ?? getPairQuest(a.questId);
+      if (!q) return null;
+      const goals = 'goals' in q ? q.goals.length : Math.max(1, ...q.roles.map((r) => r.goals.length));
+      const ratio = (a.goalsDone?.length ?? 0) / Math.max(1, goals);
+      const full = a.status === 'completed';
+      return { xp: full ? q.reward.xp : Math.round((q.reward.xp * ratio) / 2), coins: full ? q.reward.coins : Math.round((q.reward.coins * ratio) / 2) };
+    };
     const playDays = await prisma.playDay.findMany({ where: { userId: u.id }, orderBy: { day: 'desc' }, take: 60, select: { day: true, seconds: true, sessions: true } });
     const farm = FarmStateSchema.safeParse(((u.gameState ?? {}) as { farm?: unknown }).farm);
     return {
       user: u,
       areas: areaStats(u.gameState),
       farm: farm.success ? farm.data : emptyFarm(),
-      attempts,
+      attempts: attempts.map((a) => ({ ...a, reward: rewardOf(a) })),
+      wallet,
       vocabCount,
       vocab,
       reportsBy,
@@ -135,6 +164,8 @@ export function adminUserRoutes(app: FastifyInstance) {
     }
     const after = await prisma.user.update({ where: { id: u.id }, data, select: PUBLIC_USER });
     forgetStatus(u.id);
+    // the player's coin history (admin page): an admin's change, kept apart from the game economy
+    if (after.coins !== u.coins) await prisma.event.create({ data: { name: 'coins_admin', playerId: u.id, props: { coins: after.coins - u.coins, by: req.admin!.name } } });
     const before = { name: u.name, cefrLevel: u.cefrLevel, role: u.role, coins: u.coins, xp: u.xp, farm: (u.gameState as { farm?: unknown })?.farm ?? null };
     await audit(req, 'user.update', u.id, before, p);
     return after;

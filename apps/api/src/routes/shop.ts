@@ -214,7 +214,10 @@ export function shopRoutes(repo: AttemptRepo) {
       const rest: Record<string, unknown> = { ...gs };
       delete rest.hotel;
       await save(id, rest);
-      if (pay) await repo.updateUser(id, { coins: u.coins - pay });
+      if (pay) {
+        await repo.updateUser(id, { coins: u.coins - pay });
+        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'hotel_minibar', coins: pay } });
+      }
       if (xp) await repo.reward(id, xp, 0, 'hotel');
       await repo.logEvent({ name: 'hotel_checkout', playerId: id, props: { correct, paid: pay } });
       return { correct, wrong, paid: pay, xp, coins: u.coins - pay + 0 };
