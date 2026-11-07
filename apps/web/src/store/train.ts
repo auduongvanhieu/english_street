@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { TRAIN_CAR, inRect, trainCarRect } from '@es/shared';
 import { serverNow } from '../net/client';
-import { reportMinigame, type MinigameResult } from '../net/api';
+import { buyPremium, reportMinigame, type MinigameResult } from '../net/api';
 import { track } from '../net/analytics';
 import { chimeSound } from '../audio/ambient';
 import { teleportTo, localPos } from '../scene/LocalPlayer';
@@ -28,7 +28,11 @@ export interface Ticket {
   seat: number;
   /** I sat in it */
   found?: boolean;
+  /** premium: first class (the last bay, seats FIRST_CLASS) */
+  first?: boolean;
 }
+/** First-class seats: the bay at the far end of the carriage. */
+export const FIRST_CLASS = { from: 25, to: 32 };
 export interface Ride {
   slot: number;
   /** a timetable destination, or 'English Street Central' on the way back from Sunny Bay */
@@ -57,9 +61,10 @@ interface TrainStore {
   asking: boolean;
   /** the last seat I sat on that isn't mine (0 = none) */
   wrongSeat: number;
+  machineError: string | null;
   openMachine: () => void;
   machineDest: (d: TrainService['dest']) => void;
-  machineType: (t: 'single' | 'return') => void;
+  machineType: (t: 'single' | 'return', first?: boolean) => Promise<void>;
   closeMachine: () => void;
   board: (slot: number) => void;
   showTicket: () => void;
@@ -103,13 +108,24 @@ export const useTrain = create<TrainStore>((set, get) => ({
   caption: null,
   asking: false,
   wrongSeat: 0,
+  machineError: null,
   openMachine: () => set({ machine: { step: 'dest', dest: null } }),
   machineDest: (dest) => set({ machine: { step: 'type', dest } }),
-  machineType(type) {
+  async machineType(type, first = false) {
     const m = get().machine;
     if (!m?.dest) return;
-    set({ ticket: { dest: m.dest, type, seat: 1 + Math.floor(Math.random() * TRAIN_SEATS.length) }, machine: { ...m, step: 'done' } });
-    track('station_ticket_buy', { dest: m.dest, type });
+    if (first) {
+      try {
+        await buyPremium('train-first');
+        void useProfile.getState().refresh();
+      } catch (e) {
+        set({ machineError: (e as Error).message });
+        return;
+      }
+    }
+    const seat = first ? FIRST_CLASS.from + Math.floor(Math.random() * (FIRST_CLASS.to - FIRST_CLASS.from + 1)) : 1 + Math.floor(Math.random() * (FIRST_CLASS.from - 1));
+    set({ ticket: { dest: m.dest, type, seat, ...(first ? { first: true } : {}) }, machine: { ...m, step: 'done' }, machineError: null });
+    track('station_ticket_buy', { dest: m.dest, type, first });
   },
   closeMachine: () => set({ machine: null }),
   board(slot) {
@@ -136,7 +152,7 @@ export const useTrain = create<TrainStore>((set, get) => ({
       text = `This is a single ticket to ${r.dest}. You are coming back with us, so you need a return. I'll change it for you this time.`;
     } else {
       ok = 2;
-      text = `A return to ${r.dest}. That's fine, thank you.${tk.found ? ` And you're in seat ${tk.seat}, the right seat.` : ` Your seat is number ${tk.seat}.`} Enjoy your journey!`;
+      text = `A return to ${r.dest}. That's fine, thank you.${tk.found ? ` And you're in seat ${tk.seat}, the right seat.` : ` Your seat is number ${tk.seat}.`}${tk.first ? ' Welcome to first class! Would you like a free coffee?' : ''} Enjoy your journey!`;
     }
     inspector(text);
     set({ ride: { ...r, check: { ok, text } }, asking: false });

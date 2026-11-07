@@ -1,3 +1,4 @@
+import { PREMIUM_PRICES } from '@es/shared';
 import { SNACKS, useMovie } from '../store/movie';
 import { money } from '../store/restaurant';
 import { useT } from '../i18n';
@@ -26,7 +27,7 @@ export function MovieHud() {
     <>
       {ticket && !after && !ticketOpen ? (
         <div data-ui data-testid="cinema-ticket" className="pointer-events-none absolute left-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+9.5rem)] z-10 max-w-[60vw] rounded-xl border-2 border-dashed border-violet-400 bg-violet-50/95 p-2 text-xs shadow-lg">
-          <div className="font-bold text-violet-900">🎟️ STAR CINEMA · Screen 1</div>
+          <div className="font-bold text-violet-900">🎟️ STAR CINEMA · Screen 1 {ticket.vip ? '⭐ VIP' : ''}</div>
           <div className="font-mono text-sm" dir="ltr">
             Row <b>{'ABC'[ticket.row]}</b> · Seat <b>{ticket.n + 1}</b>
           </div>
@@ -60,7 +61,15 @@ export function MovieHud() {
                 </button>
               ))}
             </div>
-            {ticketNote ? <p className="mt-1 text-sm text-red-600">{t('Not quite right. Try another one.')}</p> : null}
+            {ticketNote === 'coins' ? (
+              <p className="mt-1 text-sm text-red-600">{t('Not enough coins. Do a quiz in any area to earn some!')}</p>
+            ) : ticketNote ? (
+              <p className="mt-1 text-sm text-red-600">{t('Not quite right. Try another one.')}</p>
+            ) : null}
+            <button type="button" onClick={() => void m.buyVip()} className="mt-2 min-h-11 w-full rounded-xl bg-amber-400 px-2 text-left text-sm font-semibold" dir="ltr">
+              ⭐ “One VIP ticket for the next show, please.” <span className="float-right">{PREMIUM_PRICES['cinema-vip']} 🪙</span>
+              <span className="block text-[11px] font-normal">{t('A big recliner in row C and free popcorn')}</span>
+            </button>
           </div>
         </div>
       ) : null}

@@ -74,10 +74,12 @@ function cinemaShell(p: Part) {
       p: [sx + s * ((SCREEN.x1 - SCREEN.x0) / 2 + 0.6), (WALL_H - 0.2) / 2, SCREEN.z + 0.1],
     });
   // red seats facing the screen (-z), backs towards +z
+  // the back row (C) is the VIP row: gold recliners
   for (const z of SEAT_ROWS)
     for (const x of SEAT_XS) {
-      p.add(box(0.8, 0.18, 0.6), '#c62828', { p: [x, 0.42, z] });
-      p.add(box(0.8, 0.75, 0.14), '#b71c1c', { p: [x, 0.75, z + 0.3], r: [-0.12, 0, 0] });
+      const vip = z === SEAT_ROWS[SEAT_ROWS.length - 1];
+      p.add(box(0.8, 0.18, 0.6), vip ? '#d4a017' : '#c62828', { p: [x, 0.42, z] });
+      p.add(box(0.8, vip ? 0.9 : 0.75, 0.14), vip ? '#b8860b' : '#b71c1c', { p: [x, vip ? 0.82 : 0.75, z + 0.3], r: [-0.12, 0, 0] });
       p.add(box(0.08, 0.6, 0.6), '#2b2b2b', { p: [x + 0.43, 0.3, z] });
     }
   // snack bar: counter, popcorn machine, drinks dispenser, cups

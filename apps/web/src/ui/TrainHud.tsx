@@ -1,3 +1,4 @@
+import { PREMIUM_PRICES } from '@es/shared';
 import { useEffect, useState } from 'react';
 import { serverNow } from '../net/client';
 import { STOPS, useTrain } from '../store/train';
@@ -16,6 +17,7 @@ export function TrainHud() {
   const caption = useTrain((s) => s.caption);
   const asking = useTrain((s) => s.asking);
   const wrongSeat = useTrain((s) => s.wrongSeat);
+  const machineError = useTrain((s) => s.machineError);
   const [, tick] = useState(0);
   useEffect(() => {
     if (!machine) return;
@@ -74,20 +76,27 @@ export function TrainHud() {
                 </p>
                 <p className="mb-1 text-xs text-gray-500">{t('The train comes back here after the trip.')}</p>
                 <div className="flex gap-1.5">
-                  <button type="button" onClick={() => st.machineType('single')} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm font-semibold">
+                  <button type="button" onClick={() => void st.machineType('single')} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm font-semibold">
                     ➡️ Single ${PRICE.single}
                   </button>
-                  <button type="button" onClick={() => st.machineType('return')} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm font-semibold">
+                  <button type="button" onClick={() => void st.machineType('return')} className="min-h-11 flex-1 rounded-xl bg-gray-100 text-sm font-semibold">
                     🔁 Return ${PRICE.return}
                   </button>
                 </div>
+                <button type="button" onClick={() => void st.machineType('return', true)} className="mt-1.5 min-h-11 w-full rounded-xl bg-amber-400 px-2 text-sm font-semibold">
+                  ⭐ First class return ${PRICE.return} + {PREMIUM_PRICES['train-first']} 🪙
+                  <span className="block text-[11px] font-normal">{t('A big seat at the end of the carriage and a free coffee')}</span>
+                </button>
+                {machineError ? <p className="mt-1 text-sm text-red-600">{machineError === 'not_enough_coins' ? t('Not enough coins. Do a quiz in any area to earn some!') : machineError}</p> : null}
               </div>
             ) : ticket ? (
               <div className="text-center" dir="ltr">
                 <div className="mx-auto w-56 rounded-lg border-2 border-dashed border-orange-400 bg-orange-50 p-2 text-sm">
                   <b>🎫 {ticket.type === 'return' ? 'RETURN' : 'SINGLE'}</b>
                   <div>English Street Central → {ticket.dest}</div>
-                  <div className="font-mono">Coach A · Seat {ticket.seat}</div>
+                  <div className="font-mono">
+                    Coach A · Seat {ticket.seat} {ticket.first ? '· ⭐ 1st class' : ''}
+                  </div>
                 </div>
                 <p className="mt-2 text-xs text-gray-600">{t('Go to platform 1 and get on when the doors open.')}</p>
                 <button type="button" onClick={() => st.closeMachine()} className="mt-2 min-h-10 w-full rounded-xl bg-blue-600 text-sm font-semibold text-white">

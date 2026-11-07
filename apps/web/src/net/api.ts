@@ -66,8 +66,9 @@ export const postClubNote = (text: string) => post<{ ok: boolean; note: BookClub
 export const bookQuiz = (book: string, chapter: number, answers: number[]) => post<{ right: boolean[]; correct: number; passed: boolean; xp: number; clubCoins?: number; answers: number[] }>('/me/books/quiz', { playerId: getPlayerId(), book, chapter, answers });
 export const fetchBoat = () => get<{ until: number; price: number; minutes: number; free: boolean }>(`/me/boat?playerId=${encodeURIComponent(getPlayerId())}`);
 export const hireBoat = () => post<{ until: number; coins: number; free: boolean }>('/me/boat/hire', { playerId: getPlayerId() });
-export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);
-export const hotelCheckin = (nights: number) => post<{ stay: HotelStay; coins: number; free?: boolean }>('/me/hotel/checkin', { playerId: getPlayerId(), nights });
+export const fetchHotel = () => get<{ stay: HotelStay | null; room: number; price: number; suitePrice?: number; free: boolean; coins: number }>(`/me/hotel?playerId=${encodeURIComponent(getPlayerId())}`);
+export const hotelCheckin = (nights: number, suite = false) => post<{ stay: HotelStay; coins: number; free?: boolean }>('/me/hotel/checkin', { playerId: getPlayerId(), nights, suite });
+export const buyPremium = (item: 'cinema-vip' | 'train-first') => post<{ coins: number }>('/me/premium', { playerId: getPlayerId(), item });
 export const hotelMinibar = (item: string) => post<{ stay: HotelStay }>('/me/hotel/minibar', { playerId: getPlayerId(), item });
 export const hotelBill = () => get<{ bill: HotelBill }>(`/me/hotel/bill?playerId=${encodeURIComponent(getPlayerId())}`);
 export const hotelCheckout = (disputed: number) => post<{ correct: boolean; wrong: number; paid: number; xp: number; coins: number }>('/me/hotel/checkout', { playerId: getPlayerId(), disputed });

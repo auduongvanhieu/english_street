@@ -200,7 +200,7 @@ export function describeLook(l: AvatarLook): string {
   }
   parts.push(`${c(l.shoes)} shoes`);
   if (l.hat === 'crown') parts.push('a crown');
-  else if (l.hat !== 'none') parts.push(`${a(l.hatColor)} ${{ cap: 'cap', beanie: 'beanie', sunhat: 'sun hat', tophat: 'top hat' }[l.hat]}`);
+  else if (l.hat !== 'none') parts.push(`${a(l.hatColor)} ${{ cap: 'cap', beanie: 'beanie', sunhat: 'sun hat', tophat: 'top hat', beret: 'beret', cowboy: 'cowboy hat', party: 'party hat' }[l.hat]}`);
   if (l.glasses !== 'none') parts.push(l.glasses === 'sun' ? 'sunglasses' : 'glasses');
   if (l.bag !== 'none') parts.push('a backpack');
   return `I'm wearing ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}.`;

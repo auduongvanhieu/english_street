@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { TAXI_PRICE, FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
+import { TAXI_PRICE, FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, SUITE_NIGHT_PRICE, PREMIUM_PRICES, type PremiumItem, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
 import type { AttemptRepo } from '../npc/attempts';
 import { playerIdFrom } from '../auth';
 import { limiter } from '../npc/ratelimit';
@@ -122,31 +122,49 @@ export function shopRoutes(repo: AttemptRepo) {
       return { name: u.name, items: roomOf((u.gameState ?? {}) as ShopState).items };
     });
 
+    // premium tickets: pay the coins, the game gives the seat (cinema VIP row, first class on the train)
+    app.post('/me/premium', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`premium:${id}`, 20))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ item: z.enum(Object.keys(PREMIUM_PRICES) as [PremiumItem, ...PremiumItem[]]) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const price = PREMIUM_PRICES[body.data.item];
+      const { u } = await load(id);
+      if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
+      await repo.updateUser(id, { coins: u.coins - price });
+      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: body.data.item, coins: price } });
+      return { coins: u.coins - price };
+    });
+
     app.get('/me/hotel', async (req, reply) => {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       const { gs, u } = await load(id);
-      return { stay: gs.hotel ? strip(gs.hotel) : null, room: hotelRoomFor(id), price: HOTEL_NIGHT_PRICE, free: !gs.hotelFreeUsed, coins: u.coins };
+      return { stay: gs.hotel ? strip(gs.hotel) : null, room: hotelRoomFor(id), price: HOTEL_NIGHT_PRICE, suitePrice: SUITE_NIGHT_PRICE, free: !gs.hotelFreeUsed, coins: u.coins };
     });
 
     app.post('/me/hotel/checkin', async (req, reply) => {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await limiter.allow(`hotel:${id}`, 20))) return reply.code(429).send({ error: 'rate_limited' });
-      const body = z.object({ nights: z.number().int().min(1).max(HOTEL_MAX_NIGHTS) }).safeParse(req.body);
+      const body = z.object({ nights: z.number().int().min(1).max(HOTEL_MAX_NIGHTS), suite: z.boolean().optional() }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const { u, gs } = await load(id);
       if (gs.hotel) return { stay: strip(gs.hotel), coins: u.coins };
-      const free = !gs.hotelFreeUsed;
-      const cost = free ? 0 : body.data.nights * HOTEL_NIGHT_PRICE;
+      const suite = !!body.data.suite;
+      // the free first stay is a standard room; a suite is always paid
+      const free = !suite && !gs.hotelFreeUsed;
+      const night = suite ? SUITE_NIGHT_PRICE : free ? 0 : HOTEL_NIGHT_PRICE;
+      const cost = body.data.nights * night;
       if (u.coins < cost) return reply.code(402).send({ error: 'not_enough_coins' });
-      const stay: HotelStay = { room: hotelRoomFor(id), nights: body.data.nights, since: Date.now(), minibar: [], nightPrice: free ? 0 : HOTEL_NIGHT_PRICE };
-      await save(id, { ...gs, hotel: stay, hotelFreeUsed: true });
+      const stay: HotelStay = { room: hotelRoomFor(id), nights: body.data.nights, since: Date.now(), minibar: [], nightPrice: night, ...(suite ? { suite: true } : {}) };
+      await save(id, { ...gs, hotel: stay, hotelFreeUsed: gs.hotelFreeUsed || free });
       if (cost) {
         await repo.updateUser(id, { coins: u.coins - cost });
         await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'hotel', coins: cost } });
       }
-      await repo.logEvent({ name: 'hotel_checkin', playerId: id, props: { room: stay.room, nights: stay.nights, free } });
+      await repo.logEvent({ name: 'hotel_checkin', playerId: id, props: { room: stay.room, nights: stay.nights, free, suite } });
       return { stay, coins: u.coins - cost, free };
     });
 
@@ -190,7 +208,7 @@ export function shopRoutes(repo: AttemptRepo) {
       const wrong = gs.hotel.bill?.wrong ?? -1;
       const correct = body.data.disputed === wrong;
       // the guest pays the real minibar total (nights were paid at check-in); a correct check earns XP
-      const due = real.filter((l) => !l.en.startsWith(NIGHT_LINE)).reduce((s, l) => s + l.qty * l.price, 0);
+      const due = real.filter((l) => !l.en.startsWith(NIGHT_LINE) && !l.en.startsWith(SUITE_LINE)).reduce((s, l) => s + l.qty * l.price, 0);
       const pay = Math.min(due, u.coins);
       const xp = correct ? 15 : 0;
       const rest: Record<string, unknown> = { ...gs };
@@ -205,13 +223,14 @@ export function shopRoutes(repo: AttemptRepo) {
 }
 
 const NIGHT_LINE = 'Room (per night)';
+const SUITE_LINE = 'Suite (per night)';
 function billLines(h: HotelStay) {
-  const lines = [{ en: h.nightPrice === 0 ? `${NIGHT_LINE} - first stay free` : NIGHT_LINE, qty: h.nights, price: h.nightPrice ?? HOTEL_NIGHT_PRICE }];
+  const lines = [{ en: h.suite ? SUITE_LINE : h.nightPrice === 0 ? `${NIGHT_LINE} - first stay free` : NIGHT_LINE, qty: h.nights, price: h.nightPrice ?? HOTEL_NIGHT_PRICE }];
   const counts = new Map<string, number>();
   for (const m of h.minibar) counts.set(m, (counts.get(m) ?? 0) + 1);
   for (const [mid, qty] of counts) {
     const m = MINIBAR.find((x) => x.id === mid)!;
-    lines.push({ en: `Minibar: ${m.en}`, qty, price: m.price });
+    lines.push({ en: `Minibar: ${m.en}${h.suite ? ' (included)' : ''}`, qty, price: h.suite ? 0 : m.price });
   }
   return lines;
 }

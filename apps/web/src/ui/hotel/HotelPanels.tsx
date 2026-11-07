@@ -85,10 +85,11 @@ function Checkin() {
   const coins = useProfile((p) => p.profile?.coins ?? 0);
   const [step, setStep] = useState(0);
   const [nights, setNights] = useState(1);
+  const [suite, setSuite] = useState<boolean | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const greet = 'Good afternoon! Welcome to the Riverside Hotel. How can I help you?';
   useEffect(() => say(greet), []);
-  const cost = s.free ? 0 : nights * s.price;
+  const cost = suite ? nights * s.suitePrice : s.free ? 0 : nights * s.price;
   const wrong = (h: string) => setHint(h);
   return (
     <div>
@@ -115,8 +116,20 @@ function Checkin() {
           <Choice text="No, I don't. Do you have a room for tonight?" onPick={() => setStep(2)} />
         </>
       ) : null}
-      {step >= 2 ? <Line who="💁" text="Yes, we have a lovely room for you. How many nights would you like to stay?" /> : null}
-      {step === 2 ? (
+      {step >= 2 ? <Line who="💁" text={`Would you like a standard room or a suite? A suite has a big bed, a view of the river, and the minibar is included. It's ${s.suitePrice} coins a night.`} /> : null}
+      {step === 2 && suite === null ? (
+        <>
+          <Choice text="A standard room, please." onPick={() => setSuite(false)} />
+          <Choice text={`I'd like a suite, please. (⭐ ${s.suitePrice} 🪙 / night)`} onPick={() => setSuite(true)} />
+        </>
+      ) : null}
+      {step >= 2 && suite !== null ? (
+        <p className="mb-2 rounded-2xl bg-blue-600 px-3 py-2 text-right text-sm text-white" dir="ltr">
+          {suite ? "I'd like a suite, please." : 'A standard room, please.'}
+        </p>
+      ) : null}
+      {step >= 2 && suite !== null ? <Line who="💁" text={suite ? 'Excellent choice! How many nights would you like to stay?' : 'Yes, we have a lovely room for you. How many nights would you like to stay?'} /> : null}
+      {step === 2 && suite !== null ? (
         <div className="grid grid-cols-3 gap-2">
           {Array.from({ length: HOTEL_MAX_NIGHTS }, (_, i) => i + 1).map((n) => (
             <Choice
@@ -133,18 +146,18 @@ function Checkin() {
       {step >= 3 ? (
         <Line
           who="💁"
-          text={s.free ? `${nights === 1 ? 'One night' : `${nights} nights`}. Good news: your first stay is free!` : `${nights === 1 ? 'One night' : `${nights} nights`}. That's ${cost} coins, please.`}
+          text={s.free && !suite ? `${nights === 1 ? 'One night' : `${nights} nights`}. Good news: your first stay is free!` : `${nights === 1 ? 'One night' : `${nights} nights`}${suite ? ' in a suite' : ''}. That's ${cost} coins, please.`}
         />
       ) : null}
       {step === 3 ? (
         <>
           <p className="mb-2 text-xs text-gray-500">
-            {t('You have {coins} coins.', { coins })} {!s.free && coins < cost ? t('Not enough coins. Do a quiz in any area to earn some!') : null}
+            {t('You have {coins} coins.', { coins })} {cost > 0 && coins < cost ? t('Not enough coins. Do a quiz in any area to earn some!') : null}
           </p>
           <Choice
-            text={s.free ? 'Thank you very much!' : 'Here you are.'}
+            text={cost === 0 ? 'Thank you very much!' : 'Here you are.'}
             onPick={async () => {
-              if (await useHotel.getState().checkin(nights)) setStep(4);
+              if (await useHotel.getState().checkin(nights, !!suite)) setStep(4);
             }}
           />
         </>
@@ -156,7 +169,7 @@ function Checkin() {
 }
 
 /** Shown right after check-in: the key card. */
-export function KeyCard({ room }: { room: number }) {
+export function KeyCard({ room, suite = false }: { room: number; suite?: boolean }) {
   const t = useT();
   const info = hotelRoomInfo(room);
   return (
@@ -165,6 +178,11 @@ export function KeyCard({ room }: { room: number }) {
       <div className="mt-3 text-3xl font-bold" dir="ltr">
         Room {room}
       </div>
+      {suite ? (
+        <div className="mt-1 inline-block rounded bg-amber-300 px-2 text-xs font-bold text-[#3a1a20]" dir="ltr">
+          ⭐ SUITE · minibar included
+        </div>
+      ) : null}
       <div className="text-sm text-amber-100" dir="ltr">
         {ordinal(info.floor)} floor
       </div>
@@ -182,7 +200,7 @@ function Checkout() {
   if (!asked)
     return (
       <div>
-        <KeyCard room={s.stay.room} />
+        <KeyCard room={s.stay.room} suite={!!s.stay.suite} />
         {Date.now() - s.stay.since < 60_000 ? (
           <>
             <Line who="💁" text={`Here is your key card. Your room is ${s.stay.room}, on the ${ordinal(hotelRoomInfo(s.stay.room).floor)} floor. The lift is over there.`} />
@@ -298,7 +316,7 @@ function Minibar() {
   const taken = s.stay?.minibar ?? [];
   return (
     <div>
-      <p className="mb-2 text-xs text-gray-500">{t('Everything you take goes on your bill (you pay at check-out).')}</p>
+      <p className="mb-2 text-xs text-gray-500">{s.stay?.suite ? `⭐ ${t('Suite: the minibar is included. Help yourself!')}` : t('Everything you take goes on your bill (you pay at check-out).')}</p>
       <div className="grid grid-cols-2 gap-2">
         {MINIBAR.map((m) => {
           const n = taken.filter((x) => x === m.id).length;
@@ -307,7 +325,7 @@ function Minibar() {
               <span className="text-2xl">{m.icon}</span>
               <span className="min-w-0 flex-1 text-sm" dir="ltr">
                 {m.en}
-                <span className="block text-xs text-gray-500">{m.price} 🪙</span>
+                <span className="block text-xs text-gray-500">{s.stay?.suite ? t('Included') : `${m.price} 🪙`}</span>
               </span>
               {n ? <span className="rounded-full bg-blue-600 px-2 text-xs font-bold text-white">×{n}</span> : null}
             </button>

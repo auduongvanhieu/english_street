@@ -9,7 +9,7 @@ import { lpmGlassMat, preloadLpm, useLpmParts } from '../../LpmModel';
 import { Chibi } from '../../chibi/Chibi';
 import { Part, box, chibiMaterial, cyl } from '../../chibi/buildChibi';
 import { NPC_CHIBI } from '../../npcLook';
-import { rideTick, strandedCheck, useTrain } from '../../../store/train';
+import { FIRST_CLASS, rideTick, strandedCheck, useTrain } from '../../../store/train';
 import { DIST_ARRIVE, DIST_HOME, RIDE, TRAIN_SEATS, distAt } from '../../../world/train';
 
 /**
@@ -205,7 +205,7 @@ function SeatNumbers() {
         <Billboard key={i} position={[st.x, 1.42, st.z]}>
         <Text
           fontSize={i + 1 === ticket.seat ? 0.2 : 0.15}
-          color={i + 1 === ticket.seat ? '#ff9800' : '#ffffff'}
+          color={i + 1 === ticket.seat ? '#ff9800' : i + 1 >= FIRST_CLASS.from ? '#ffd54f' : '#ffffff'}
           outlineWidth={0.012}
           outlineColor="#263238"
           anchorX="center"
@@ -215,6 +215,12 @@ function SeatNumbers() {
         </Text>
         </Billboard>
       ))}
+      {/* the first-class bay */}
+      <Billboard position={[(TRAIN_SEATS[FIRST_CLASS.from - 1]!.x + TRAIN_SEATS[FIRST_CLASS.to - 1]!.x) / 2, 1.85, CZ]}>
+        <Text fontSize={0.18} color="#ffd54f" outlineWidth={0.012} outlineColor="#263238" anchorX="center" anchorY="middle">
+          ⭐ FIRST CLASS
+        </Text>
+      </Billboard>
     </group>
   );
 }

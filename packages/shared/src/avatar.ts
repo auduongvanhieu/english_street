@@ -14,7 +14,7 @@ export const AVATAR_HAIRSTYLES = ['short', 'spiky', 'curly', 'bob', 'long', 'pon
 export type AvatarHairStyle = (typeof AVATAR_HAIRSTYLES)[number];
 export const HAIRSTYLE_LABELS: Record<AvatarHairStyle, string> = { short: 'Short', spiky: 'Spiky', curly: 'Curly', bob: 'Bob', long: 'Long', ponytail: 'Ponytail', buns: 'Buns', bald: 'Bald' };
 
-export const AVATAR_HATS = ['none', 'cap', 'beanie', 'sunhat', 'tophat', 'crown'] as const;
+export const AVATAR_HATS = ['none', 'cap', 'beanie', 'sunhat', 'tophat', 'crown', 'beret', 'cowboy', 'party'] as const;
 export const AVATAR_GLASSES = ['none', 'round', 'sun'] as const;
 export const AVATAR_BAGS = ['none', 'backpack'] as const;
 export type AvatarHat = (typeof AVATAR_HATS)[number];
@@ -49,6 +49,10 @@ export const CLOTH_COLORS: PaletteColor[] = [
   { id: 'gold', hex: '#f2c41d', price: 50 },
   { id: 'crimson', hex: '#d93a4a', price: 50 },
   { id: 'midnight', hex: '#1f2a44', price: 80 },
+  { id: 'mint', hex: '#8fe3c0', price: 40 },
+  { id: 'coral', hex: '#ff7f66', price: 40 },
+  { id: 'lavender', hex: '#b9a3e8', price: 40 },
+  { id: 'silver', hex: '#c9ced6', price: 60 },
 ];
 
 export interface ShopItem {
@@ -63,6 +67,9 @@ export const HAT_ITEMS: Record<AvatarHat, ShopItem> = {
   sunhat: { id: 'hat:sunhat', label: 'Sun hat', price: 40 },
   tophat: { id: 'hat:tophat', label: 'Top hat', price: 80 },
   crown: { id: 'hat:crown', label: 'Crown', price: 150 },
+  beret: { id: 'hat:beret', label: 'Beret', price: 60 },
+  cowboy: { id: 'hat:cowboy', label: 'Cowboy hat', price: 90 },
+  party: { id: 'hat:party', label: 'Party hat', price: 50 },
 };
 export const GLASSES_ITEMS: Record<AvatarGlasses, ShopItem> = {
   none: { id: 'glasses:none', label: 'None', price: 0 },

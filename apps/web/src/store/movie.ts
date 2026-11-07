@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { reportMinigame, type MinigameResult } from '../net/api';
+import { buyPremium, reportMinigame, type MinigameResult } from '../net/api';
 import { sendProp } from '../net/client';
 import { track } from '../net/analytics';
 import { useArea } from './area';
@@ -82,7 +82,7 @@ interface MovieStore {
   sayLine: (line: string) => void;
   closeSnacks: () => void;
   /** My Screen 1 ticket: the seat on it (row 0 = A), found = I sat on it. */
-  ticket: { row: number; n: number; found: boolean } | null;
+  ticket: { row: number; n: number; found: boolean; vip?: boolean } | null;
   /** buying a ticket at the box office (as a customer) */
   ticketOpen: boolean;
   ticketLines: string[];
@@ -91,6 +91,8 @@ interface MovieStore {
   wrongSeat: string | null;
   openTicket: () => void;
   sayTicket: (line: string) => void;
+  /** premium: a VIP recliner in the back row (row C) with free popcorn */
+  buyVip: () => Promise<void>;
   closeTicket: () => void;
 }
 
@@ -169,14 +171,8 @@ export const useMovie = create<MovieStore>((set, get) => ({
   sayTicket(line) {
     if (line !== TICKET_LINES[0]) return set({ ticketNote: line });
     useVoice.getState().speakAs('me', line, 'en-US');
-    // a free seat, not in the front row if we can help it
-    const free: { row: number; n: number }[] = [];
-    SEAT_ROWS.forEach((lz, row) =>
-      SEAT_XS.forEach((lx, n) => {
-        const [x, z] = FRAME.toWorld(lx, lz);
-        if (!seatTaken(x, z)) free.push({ row, n });
-      }),
-    );
+    // a free seat in rows A-B (row C is the VIP row), not in the front row if we can help it
+    const free = freeSeats([0, 1]);
     const pool = free.filter((f) => f.row > 0).length ? free.filter((f) => f.row > 0) : free;
     const pick = pool[Math.floor(Math.random() * pool.length)] ?? { row: 1, n: 4 };
     const row = 'ABC'[pick.row]!;
@@ -184,8 +180,35 @@ export const useMovie = create<MovieStore>((set, get) => ({
     set({ ticket: { ...pick, found: false }, ticketOpen: false, ticketNote: null, wrongSeat: null });
     track('cinema_ticket_buy', { seat: seatName(pick.row, pick.n) });
   },
+  async buyVip() {
+    try {
+      await buyPremium('cinema-vip');
+    } catch (e) {
+      set({ ticketNote: (e as Error).message === 'not_enough_coins' ? 'coins' : 'error' });
+      return;
+    }
+    void useProfile.getState().refresh();
+    useVoice.getState().speakAs('me', 'One VIP ticket for the next show, please.', 'en-US');
+    const free = freeSeats([2]);
+    const pick = free[Math.floor(Math.random() * free.length)] ?? { row: 2, n: 6 };
+    window.setTimeout(() => staff(`Of course! A VIP recliner in row C, seat ${pick.n + 1}. And here's your free popcorn. Enjoy the film!`), 1600);
+    sendProp('snack:popcorn');
+    set({ ticket: { ...pick, found: false, vip: true }, holding: 'popcorn', ticketOpen: false, ticketNote: null, wrongSeat: null });
+    track('cinema_ticket_vip', { seat: seatName(pick.row, pick.n) });
+  },
   closeTicket: () => set({ ticketOpen: false, ticketNote: null }),
 }));
+
+/** Screen 1 seats nobody is sitting on, in these rows. */
+function freeSeats(rows: number[]) {
+  const free: { row: number; n: number }[] = [];
+  for (const row of rows)
+    SEAT_XS.forEach((lx, n) => {
+      const [x, z] = FRAME.toWorld(lx, SEAT_ROWS[row]!);
+      if (!seatTaken(x, z)) free.push({ row, n });
+    });
+  return free;
+}
 
 // sitting down in Screen 1 with a ticket: the right seat (a small reward, once per ticket) or a hint
 useSeat.subscribe((s, prev) => {

@@ -283,6 +283,22 @@ function addHat(h: Part, s: ChibiSpec) {
       }
       return;
     }
+    case 'beret':
+      h.add(sphere(0.34 * big), c, { p: [0.03, y + 0.27, -0.02], r: [0, 0, 0.18], s: [1.08, 0.32, 1.08] });
+      h.add(cyl(0.3 * big, 0.31 * big, 0.04, 20, true), shade(c, 0.8), { p: [0, y + 0.2, 0] });
+      h.add(sphere(0.025), shade(c, 0.7), { p: [0.05, y + 0.38, -0.02] });
+      return;
+    case 'cowboy':
+      h.add(cyl(0.2, 0.24, 0.22, 16), c, { p: [0, y + 0.39 * big, 0] });
+      h.add(cyl(0.243, 0.243, 0.05, 16, true), shade(c, 0.55), { p: [0, y + 0.31 * big, 0] });
+      h.add(cyl(0.52, 0.52, 0.025, 24), c, { p: [0, y + 0.27 * big, 0], s: [1.15, 1, 1] });
+      for (const sx of [-1, 1]) h.add(box(0.12, 0.022, 0.5), c, { p: [sx * 0.55, y + 0.31 * big, 0], r: [0, 0, sx * 0.6] });
+      return;
+    case 'party':
+      h.add(new THREE.ConeGeometry(0.15, 0.36, 12), c, { p: [0.04, y + 0.5 * big, 0], r: [0, 0, -0.12] });
+      h.add(cyl(0.12, 0.13, 0.03, 12, true), '#ffffff', { p: [0.025, y + 0.42 * big, 0], r: [0, 0, -0.12] });
+      h.add(sphere(0.05), '#ffffff', { p: [0.065, y + 0.69 * big, 0] });
+      return;
     case 'helmet': {
       // bike helmet: rounded shell with a light stripe and a little visor
       h.add(sphere(0.35 * big, 0, 1.3, 0, Math.PI * 2, 20, 10), c, { p: [0, y + 0.02, -0.01], s: [1, 0.95, 1.08] });

@@ -61,7 +61,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'extras', label: 'Extras' },
 ];
 const BODY_ICON: Record<AvatarBody, string> = { tee: '👕', hoodie: '🧥', suit: '🤵', girl: '👖', dress: '👗', robot: '🤖' };
-const HAT_ICON: Record<string, string> = { none: '🚫', cap: '🧢', beanie: '🧶', sunhat: '👒', tophat: '🎩', crown: '👑' };
+const HAT_ICON: Record<string, string> = { none: '🚫', cap: '🧢', beanie: '🧶', sunhat: '👒', tophat: '🎩', crown: '👑', beret: '🎨', cowboy: '🤠', party: '🥳' };
 const GLASSES_ICON: Record<string, string> = { none: '🚫', round: '👓', sun: '🕶️' };
 const HAIR_ICON: Record<string, string> = { short: '👦', spiky: '⚡', curly: '🌀', bob: '👧', long: '👩', ponytail: '🎀', buns: '🍡', bald: '🥚' };
 const HAIRSTYLE_ITEMS = Object.fromEntries(AVATAR_HAIRSTYLES.map((k) => [k, { id: `hair:${k}`, label: HAIRSTYLE_LABELS[k], price: 0 }])) as Record<(typeof AVATAR_HAIRSTYLES)[number], ShopItem>;

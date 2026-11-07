@@ -40,6 +40,7 @@ interface HotelStore {
   stay: HotelStay | null;
   room: number;
   price: number;
+  suitePrice: number;
   free: boolean;
   loaded: boolean;
   panel: HotelPanel;
@@ -58,7 +59,7 @@ interface HotelStore {
   result: { correct: boolean; wrong: number; paid: number; xp: number } | null;
   load: () => Promise<void>;
   open: (p: HotelPanel) => void;
-  checkin: (nights: number) => Promise<boolean>;
+  checkin: (nights: number, suite?: boolean) => Promise<boolean>;
   takeMinibar: (id: string) => Promise<void>;
   loadBill: () => Promise<void>;
   checkout: (disputed: number) => Promise<void>;
@@ -78,6 +79,7 @@ export const useHotel = create<HotelStore>((set, get) => ({
   stay: null,
   room: 0,
   price: 5,
+  suitePrice: 15,
   free: true,
   loaded: false,
   panel: null,
@@ -94,7 +96,7 @@ export const useHotel = create<HotelStore>((set, get) => ({
   async load() {
     try {
       const r = await fetchHotel();
-      set({ stay: r.stay, room: r.room, price: r.price, free: r.free, loaded: true, error: null });
+      set({ stay: r.stay, room: r.room, price: r.price, suitePrice: r.suitePrice ?? 15, free: r.free, loaded: true, error: null });
     } catch (e) {
       set({ error: (e as Error).message });
     }
@@ -103,11 +105,11 @@ export const useHotel = create<HotelStore>((set, get) => ({
     set({ panel, error: null, result: panel === 'reception' ? null : get().result });
     if (panel === 'reception' && get().stay) void get().loadBill();
   },
-  async checkin(nights) {
+  async checkin(nights, suite = false) {
     try {
-      const r = await hotelCheckin(nights);
+      const r = await hotelCheckin(nights, suite);
       set({ stay: r.stay, free: false, error: null, delivered: [], dnd: false });
-      track('hotel_checkin', { nights, room: r.stay.room });
+      track('hotel_checkin', { nights, room: r.stay.room, suite });
       void useProfile.getState().refresh();
       const info = hotelRoomInfo(r.stay.room);
       say(`Here is your key card. Your room is ${r.stay.room}, on the ${ordinal(info.floor)} floor. The lift is over there.`);
