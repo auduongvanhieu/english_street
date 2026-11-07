@@ -118,8 +118,8 @@ export function TrainHud() {
               </p>
             ) : null}
             {STOPS[ride.dest] && !ride.returning && atBay ? (
-              <button type="button" onClick={() => st.getOff()} className={`mt-2 min-h-11 w-full rounded-xl text-sm font-bold text-white ${ride.dest === 'Maple Hill' ? 'bg-orange-600' : 'bg-sky-500'}`}>
-                {ride.dest === 'Maple Hill' ? `🍁 ${t('Get off at Maple Hill')}` : `🏖️ ${t('Get off at Sunny Bay')}`}
+              <button type="button" onClick={() => st.getOff()} className={`mt-2 min-h-11 w-full rounded-xl text-sm font-bold text-white ${STOPS[ride.dest]!.color}`}>
+                {STOPS[ride.dest]!.icon} {t('Get off at {place}', { place: ride.dest })}
               </button>
             ) : null}
             {asking && !ride.check ? (

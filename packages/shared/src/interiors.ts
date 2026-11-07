@@ -9,13 +9,19 @@ export interface Rect {
   minZ: number;
   maxZ: number;
 }
-export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 260, minZ: -600, maxZ: -100 };
+export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 260, minZ: -920, maxZ: -100 };
 /** Sunny Bay, the seaside reached by train (scene/areas/places/SunnyBay.tsx): far south of the interiors. */
 export const SUNNY_BAY: Rect = { minX: -55, maxX: 55, minZ: -560, maxZ: -450 };
 /** Maple Hill, the hills reached by train (scene/areas/places/MapleHill.tsx): east of Sunny Bay. The ground rises to
  * the summit, so players there may be up to MAPLE_HILL_TOP metres high (plus a jump). */
 export const MAPLE_HILL: Rect = { minX: 152, maxX: 248, minZ: -598, maxZ: -440 };
 export const MAPLE_HILL_TOP = 17;
+/** Riverside, a village with a market and a water mill (scene/areas/places/Riverside.tsx), south of Sunny Bay. */
+export const RIVERSIDE: Rect = { minX: -60, maxX: 60, minZ: -770, maxZ: -660 };
+/** Old Town, a clock tower square and a museum (scene/areas/places/OldTown.tsx), south of Riverside. */
+export const OLD_TOWN: Rect = { minX: -60, maxX: 60, minZ: -905, maxZ: -800 };
+/** Places reached by train that are outdoors (the street's weather applies there). */
+export const TRIP_PLACES: Rect[] = [SUNNY_BAY, RIVERSIDE, OLD_TOWN];
 export const inRect = (r: Rect, x: number, z: number, m = 0) => x >= r.minX - m && x <= r.maxX + m && z >= r.minZ - m && z <= r.maxZ + m;
 
 /* ------------------------------------------------------------------------------------------- hotel */
