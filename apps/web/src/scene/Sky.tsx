@@ -11,6 +11,7 @@ import { cloudTexture } from './Horizon';
 import { glowTexture } from './nightGlow';
 import { localPos } from './LocalPlayer';
 import { INTERIOR_BOUNDS, inRect } from '@es/shared';
+import { hillRain } from '../world/mapleHill';
 import { preloadLpm, useLpmGeometry } from './LpmModel';
 import { ambientBirds } from '../audio/ambient';
 
@@ -245,9 +246,12 @@ export function Rain({ low }: { low: boolean }) {
     const l = lines.current;
     if (!l) return;
     // no rain indoors (hotel rooms and other interiors off the map)
-    l.visible = sky.rain > 0.02 && !inRect(INTERIOR_BOUNDS, localPos.x, localPos.z);
+    // Maple Hill has its own weather (world/mapleHill.ts)
+    const hill = hillRain(localPos.x, localPos.z, serverNow());
+    const rain = hill ?? (inRect(INTERIOR_BOUNDS, localPos.x, localPos.z) ? 0 : sky.rain);
+    l.visible = rain > 0.02;
     if (!l.visible) return;
-    geo.setDrawRange(0, Math.ceil(N * Math.min(1, sky.rain)) * 2);
+    geo.setDrawRange(0, Math.ceil(N * Math.min(1, rain)) * 2);
     mat.uniforms.uCam!.value.copy(camera.position);
     mat.uniforms.uTime!.value = (serverNow() / 1000) % 1000;
     mat.uniforms.uWind!.value = -sky.windX;

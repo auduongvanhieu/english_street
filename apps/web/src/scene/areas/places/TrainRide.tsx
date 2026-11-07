@@ -218,7 +218,7 @@ export default function TrainRide() {
   const back = !!ride?.returning;
   const dest = ride?.dest ?? 'Riverside';
   // on the way back from Sunny Bay: the sea first, then the countryside, and home is the first stop
-  const theme = back ? 'sea' : (DEST_THEME[dest] ?? 'country');
+  const theme = back ? (DEST_THEME[ride?.from ?? ''] ?? 'sea') : (DEST_THEME[dest] ?? 'country');
   const away = () => {
     const d = dist.d;
     return back ? d < 200 : d > DIST_ARRIVE - 220 && d < DIST_ARRIVE + 200;

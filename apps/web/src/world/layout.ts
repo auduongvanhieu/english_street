@@ -1,4 +1,4 @@
-import { WORLD_BOUNDS } from '@es/shared';
+import { INTERIOR_BOUNDS, WORLD_BOUNDS, inRect } from '@es/shared';
 import { SOUTH_END_X, SOUTH_ROAD_Z, STREET_END_X, areaFenceBlockers, walkable } from './areas';
 
 /** One Kenney city tile = TILE world units (metres). */
@@ -222,8 +222,10 @@ export function resolveMove(
   if (collides(nx, z, blockers) || hitsCircle(nx, z, x, z, circles, y) || (!walkable(nx, z) && walkable(x, z))) nx = x;
   let nz = z + dz;
   if (collides(nx, nz, blockers) || hitsCircle(nx, nz, nx, z, circles, y) || (!walkable(nx, nz) && walkable(nx, z))) nz = z;
-  nx = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, nx));
-  nz = Math.min(BOUNDS.maxZ, Math.max(BOUNDS.minZ, nz));
+  // off the map (hotel floors, Sunny Bay, Maple Hill…) the interior bounds apply, as on the server
+  const b = inRect(INTERIOR_BOUNDS, x, z) ? INTERIOR_BOUNDS : BOUNDS;
+  nx = Math.min(b.maxX, Math.max(b.minX, nx));
+  nz = Math.min(b.maxZ, Math.max(b.minZ, nz));
   return [nx, nz];
 }
 

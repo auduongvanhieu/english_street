@@ -12,6 +12,7 @@ import { useVoice } from './voice';
 import { FRAME, JOURNEY_MIN, TRAIN_SLOT_MS, fmtTime, service, type TrainService } from '../world/places/station';
 import { RIDE, carSpot } from '../world/train';
 import { ARRIVE as BAY_ARRIVE } from '../world/sunnyBay';
+import { ARRIVE as HILL_ARRIVE } from '../world/mapleHill';
 
 /**
  * Riding the train: buy a ticket at the machine (where to? single or return?), board while the doors are open, ride
@@ -33,8 +34,10 @@ export interface Ride {
   check: null | { ok: number; text: string };
   result: MinigameResult | null;
   done: boolean;
-  /** the train back from Sunny Bay to English Street Central (no inspector, no score) */
+  /** the train back from Sunny Bay / Maple Hill to English Street Central (no inspector, no score) */
   returning?: boolean;
+  /** where the returning train comes from */
+  from?: string;
 }
 export type MachineStep = 'dest' | 'type' | 'done';
 
@@ -53,10 +56,10 @@ interface TrainStore {
   board: (slot: number) => void;
   showTicket: () => void;
   leave: () => void;
-  /** at Sunny Bay: step off the train there */
+  /** at Sunny Bay or Maple Hill: step off the train there */
   getOff: () => void;
-  /** at Sunny Bay station: the next train home */
-  startReturn: () => void;
+  /** at the Sunny Bay / Maple Hill station: the next train home */
+  startReturn: (from: string) => void;
 }
 
 const pa = (text: string) => {
@@ -72,6 +75,11 @@ const inspector = (text: string) => {
 const platformSpot = () => {
   const [x, z] = FRAME.toWorld((Math.random() - 0.5) * 6, -14.2);
   return { x, z };
+};
+/** Stops where you can get off (a place to visit off the map): where you arrive, who welcomes you. */
+export const STOPS: Record<string, { at: { x: number; z: number }; event: string; voice: [string, string, string] }> = {
+  'Sunny Bay': { at: BAY_ARRIVE, event: 'beach_arrive', voice: ['lifeguard', 'Welcome to Sunny Bay! Check the flag before you swim.', 'en-AU'] },
+  'Maple Hill': { at: HILL_ARRIVE, event: 'hill_arrive', voice: ['ranger', 'Welcome to Maple Hill! Come and see me at the ranger cabin.', 'en-CA'] },
 };
 export const departureOf = (slot: number) => {
   const s = service(slot);
@@ -125,7 +133,8 @@ export const useTrain = create<TrainStore>((set, get) => ({
   },
   getOff() {
     const r = get().ride;
-    if (!r || r.returning || r.dest !== 'Sunny Bay') return;
+    const stop = r && STOPS[r.dest];
+    if (!r || r.returning || !stop) return;
     const score = r.check?.ok ?? 0;
     track('station_train_ride', { dest: r.dest, score, off: true });
     void reportMinigame('train', { score })
@@ -133,19 +142,19 @@ export const useTrain = create<TrainStore>((set, get) => ({
       .catch(() => undefined);
     useSeat.getState().stand();
     set({ ride: null, asking: false, caption: null, ticket: null });
-    teleportTo(BAY_ARRIVE.x + (Math.random() - 0.5) * 4, BAY_ARRIVE.z, Math.PI);
-    track('beach_arrive');
-    window.setTimeout(() => useVoice.getState().speakAs('lifeguard', 'Welcome to Sunny Bay! Check the flag before you swim.', 'en-AU'), 1500);
+    teleportTo(stop.at.x + (Math.random() - 0.5) * 4, stop.at.z, Math.PI);
+    track(stop.event);
+    window.setTimeout(() => useVoice.getState().speakAs(...stop.voice), 1500);
   },
-  startReturn() {
+  startReturn(from) {
     if (get().ride) return;
     useSeat.getState().stand();
     const sp = carSpot((Math.random() - 0.5) * 4);
     teleportTo(sp.x, sp.z, Math.PI / 2);
     const dep = serverNow() + 6000;
-    set({ ride: { slot: -1, dest: 'English Street Central', dep, said: ['board'], check: null, result: null, done: false, returning: true }, asking: false });
+    set({ ride: { slot: -1, dest: 'English Street Central', dep, said: ['board'], check: null, result: null, done: false, returning: true, from }, asking: false });
     pa('This train is for English Street Central. Please find a seat.');
-    track('station_board', { dest: 'home', from: 'Sunny Bay' });
+    track('station_board', { dest: 'home', from });
   },
   leave() {
     const r = get().ride;
@@ -201,7 +210,7 @@ export function rideTick() {
     if (!useTrain.getState().ride?.check) useTrain.getState().showTicket();
   });
   once('approach', RIDE.approach, () => pa(`We are now approaching ${r.dest}. Please take all your belongings with you.`));
-  once('arrive', RIDE.arrive, () => pa(r.dest === 'Sunny Bay' ? 'This is Sunny Bay. Passengers for the beach, please get off here. This train returns to English Street Central in a few moments.' : `This is ${r.dest}. This train returns to English Street Central in a few moments.`));
+  once('arrive', RIDE.arrive, () => pa(r.dest === 'Sunny Bay' ? 'This is Sunny Bay. Passengers for the beach, please get off here. This train returns to English Street Central in a few moments.' : r.dest === 'Maple Hill' ? 'This is Maple Hill. Passengers for the hiking trails, please get off here. This train returns to English Street Central in a few moments.' : `This is ${r.dest}. This train returns to English Street Central in a few moments.`));
   once('leaveDest', RIDE.leaveDest, () => pa('This train is for English Street Central. Please stand clear of the doors.'));
   once('homeSoon', RIDE.homeSoon, () => pa('We will shortly arrive at English Street Central. Mind the gap when you leave the train.'));
   once('home', RIDE.home, () => {

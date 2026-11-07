@@ -22,6 +22,8 @@ import {
   DM_MAX,
   FRIENDS_MAX,
   INTERIOR_BOUNDS,
+  MAPLE_HILL,
+  MAPLE_HILL_TOP,
   hotelRoomAt,
   inRect,
   isHotelRoom,
@@ -173,7 +175,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const box = inRect(INTERIOR_BOUNDS, mx, mz) ? INTERIOR_BOUNDS : WORLD_BOUNDS;
       p.x = clamp(mx, box.minX, box.maxX);
       p.z = clamp(mz, box.minZ, box.maxZ);
-      p.y = clamp(Number(msg.y) || 0, -0.6, MAX_JUMP_Y); // below 0: sitting low in a boat
+      p.y = clamp(Number(msg.y) || 0, -0.6, MAX_JUMP_Y + (inRect(MAPLE_HILL, p.x, p.z) ? MAPLE_HILL_TOP : 0)); // below 0: sitting low in a boat; on Maple Hill the ground rises
       p.rot = Number(msg.rot) || 0;
       p.anim = typeof msg.anim === 'string' ? msg.anim.slice(0, 16) : 'idle';
       p.voice = msg.voice === true;

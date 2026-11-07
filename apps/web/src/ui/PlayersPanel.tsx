@@ -1,6 +1,6 @@
 import { Icon } from './icons';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { AREA_INFO, DM_MAX, INTERIOR_BOUNDS, SUNNY_BAY, clinicRoomAt, hotelRoomAt, inRect, myRoomAt, trainCarRect } from '@es/shared';
+import { AREA_INFO, DM_MAX, INTERIOR_BOUNDS, MAPLE_HILL, SUNNY_BAY, clinicRoomAt, hotelRoomAt, inRect, myRoomAt, trainCarRect } from '@es/shared';
 import { Sheet, SheetHeader } from './Sheet';
 import { HudButton } from './Hud';
 import { useGame, type RemotePlayer } from '../store/game';
@@ -19,6 +19,7 @@ import { FriendsTab, GroupTab, PanelTabs, SocialActions } from './Social';
 export function placeOf(x: number, z: number, bus = ''): { icon: string; name: string } {
   if (bus) return { icon: '🚌', name: tr('On the bus') };
   if (inRect(SUNNY_BAY, x, z, 5)) return { icon: '🏖️', name: 'Sunny Bay' };
+  if (inRect(MAPLE_HILL, x, z, 5)) return { icon: '🍁', name: 'Maple Hill' };
   if (inRect(trainCarRect(1), x, z)) return { icon: '🚆', name: tr('On the train') };
   if (myRoomAt(x, z) >= 0) return { icon: '🏠', name: tr('In a room at home') };
   if (clinicRoomAt(x, z) >= 0) return { icon: '🩺', name: 'City Hospital' };

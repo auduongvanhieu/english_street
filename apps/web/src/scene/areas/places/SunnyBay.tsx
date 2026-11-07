@@ -164,7 +164,7 @@ function Finds() {
 function Usables() {
   const t = useT();
   const riding = useTrain((s) => !!s.ride);
-  useUsable(riding ? null : { id: 'beach-train', x: 0, z: PLATFORM.z0 - 0.6, r: 3.5, icon: '🚆', label: t('Train to English Street Central'), priority: true, use: () => useTrain.getState().startReturn() });
+  useUsable(riding ? null : { id: 'beach-train', x: 0, z: PLATFORM.z0 - 0.6, r: 3.5, icon: '🚆', label: t('Train to English Street Central'), priority: true, use: () => useTrain.getState().startReturn('Sunny Bay') });
   useUsable({ id: 'beach-kiosk', x: KIOSK_SPOT.x, z: KIOSK_SPOT.z, r: 1.8, icon: '🍦', label: t('Buy an ice cream'), priority: true, use: () => useBeach.getState().openKiosk() });
   useUsable({ id: 'beach-hunt', x: TOWER.x + 2.6, z: TOWER.z + 2.2, r: 1.6, icon: '🔎', label: t('Beach hunt (Kai)'), use: () => useBeach.getState().startHunt() });
   useUsable({ id: 'beach-castle', x: CASTLE_SPOT.x, z: CASTLE_SPOT.z, r: 1.6, icon: '🏰', label: t('Build a sandcastle'), use: () => useBeach.getState().startCastle() });

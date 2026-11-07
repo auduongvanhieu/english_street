@@ -27,7 +27,7 @@ function addToBoard(day: string, game: MinigameId, e: Entry) {
 }
 
 const Body = z.object({
-  game: z.enum(['football', 'hoops', 'race', 'coach', 'fishing', 'cooking', 'checkout', 'movie', 'train', 'class', 'clinic', 'zookeeper', 'farmhand', 'beach']),
+  game: z.enum(['football', 'hoops', 'race', 'coach', 'fishing', 'cooking', 'checkout', 'movie', 'train', 'class', 'clinic', 'zookeeper', 'farmhand', 'beach', 'hill']),
   /** football: 'win' | 'draw' | 'lose' */
   result: z.enum(['win', 'draw', 'lose']).optional(),
   /** hoops: baskets (0-10); race: time in ms; coach: correct moves (0-8) */
@@ -79,7 +79,7 @@ export function minigameRoutes(repo: AttemptRepo) {
         const s = Math.min(6, Math.max(0, Math.round(score ?? 0)));
         xp = Math.min(MINIGAMES.cooking.max, s * MINIGAMES.cooking.perPoint);
         record = prevBest === undefined || s > prevBest;
-      } else if (game === 'checkout' || game === 'movie' || game === 'train' || game === 'class' || game === 'clinic' || game === 'zookeeper' || game === 'farmhand' || game === 'beach') {
+      } else if (game === 'checkout' || game === 'movie' || game === 'train' || game === 'class' || game === 'clinic' || game === 'zookeeper' || game === 'farmhand' || game === 'beach' || game === 'hill') {
         const g = MINIGAMES[game];
         const s = Math.min(g.max / g.perPoint, Math.max(0, Math.round(score ?? 0)));
         xp = s * g.perPoint;

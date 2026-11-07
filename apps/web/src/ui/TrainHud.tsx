@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { serverNow } from '../net/client';
-import { useTrain } from '../store/train';
+import { STOPS, useTrain } from '../store/train';
 import { DESTINATIONS, boardRows } from '../world/places/station';
 import { RIDE } from '../world/train';
 import { useT } from '../i18n';
@@ -26,7 +26,7 @@ export function TrainHud() {
   const tRide = ride ? (serverNow() - ride.dep) / 1000 : 0;
   const atBay = tRide >= RIDE.arrive - 1 && tRide < RIDE.leaveDest;
   useEffect(() => {
-    if (!ride || ride.dest !== 'Sunny Bay') return;
+    if (!ride || !STOPS[ride.dest]) return;
     const id = window.setInterval(() => tick((n) => n + 1), 1000);
     return () => window.clearInterval(id);
   }, [ride]);
@@ -117,9 +117,9 @@ export function TrainHud() {
                 {caption.who === 'pa' ? '📢' : '🧑‍✈️'} {caption.text}
               </p>
             ) : null}
-            {ride.dest === 'Sunny Bay' && !ride.returning && atBay ? (
-              <button type="button" onClick={() => st.getOff()} className="mt-2 min-h-11 w-full rounded-xl bg-sky-500 text-sm font-bold text-white">
-                🏖️ {t('Get off at Sunny Bay')}
+            {STOPS[ride.dest] && !ride.returning && atBay ? (
+              <button type="button" onClick={() => st.getOff()} className={`mt-2 min-h-11 w-full rounded-xl text-sm font-bold text-white ${ride.dest === 'Maple Hill' ? 'bg-orange-600' : 'bg-sky-500'}`}>
+                {ride.dest === 'Maple Hill' ? `🍁 ${t('Get off at Maple Hill')}` : `🏖️ ${t('Get off at Sunny Bay')}`}
               </button>
             ) : null}
             {asking && !ride.check ? (

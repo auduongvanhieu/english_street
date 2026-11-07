@@ -1,5 +1,5 @@
-import { lazy, memo, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { lazy, memo, Suspense, useRef, type ReactNode } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Horizon } from './Horizon';
 import { NightLights } from './NightLights';
@@ -7,7 +7,7 @@ import { InteriorLights } from './InteriorLights';
 import { Clouds, Rain, SkyController, SkyDome, StreetLamps } from './Sky';
 import { GroundClick } from './GroundClick';
 import { City } from './City';
-import { LocalPlayer } from './LocalPlayer';
+import { LocalPlayer, localPos } from './LocalPlayer';
 import { RemotePlayers } from './RemotePlayers';
 import { Npcs } from './Npcs';
 import { TutorialArrow } from './TutorialArrow';
@@ -24,6 +24,16 @@ import { SunFollow } from './SunFollow';
 import { useSettings } from '../store/settings';
 
 /** Movement keys: see input/keys.ts (robust against Vietnamese input methods). */
+
+/** Street decoration, hidden on the places far off the map (Sunny Bay, Maple Hill): the instanced trees and flowers
+ * have bounding spheres as big as the street, so the frustum alone does not drop them from there. */
+function StreetDecor({ children }: { children: ReactNode }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (ref.current) ref.current.visible = localPos.z > -420;
+  });
+  return <group ref={ref}>{children}</group>;
+}
 
 /** Memoised: HUD state changes in App must never re-render (and re-diff) the whole 3D tree. */
 export default memo(function Scene({ playerName }: { playerName: string }) {
@@ -57,6 +67,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
         </Suspense>
         {/* Decoration loads after the street itself so the first frame is never held back by flowers. */}
         <Suspense fallback={null}>
+          <StreetDecor>
           <Horizon />
           <River />
           <NightLights low={low} />
@@ -65,6 +76,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <Cyclists />
           <Buses />
           <Wildlife low={low} />
+          </StreetDecor>
         </Suspense>
         <Suspense fallback={null}>
           <Areas />

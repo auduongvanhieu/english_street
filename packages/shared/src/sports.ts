@@ -53,5 +53,7 @@ export const MINIGAMES = {
   farmhand: { perPoint: 6, max: 6, perDay: 6 },
   /** Sunny Bay: the beach hunt (5) and a sandcastle (0-4 steps right) */
   beach: { perPoint: 3, max: 15, perDay: 4 },
+  /** Maple Hill: the hike (1-5), packing the backpack (0-4), animal riddles (0-4) */
+  hill: { perPoint: 3, max: 15, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

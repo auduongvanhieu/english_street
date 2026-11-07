@@ -68,6 +68,10 @@ import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
 import { POOL_WORLD } from '../world/places/hotel';
 import { SEA_SWIM } from '../world/sunnyBay';
+import { HILL, groundAt } from '../world/mapleHill';
+
+/** Height of the ground under (x, z): 0 everywhere but on Maple Hill. */
+const floorAt = (x: number, z: number) => (x > HILL.minX - 2 && x < HILL.maxX + 2 && z > HILL.minZ - 2 && z < HILL.maxZ + 2 ? groundAt(x, z) : 0);
 
 export type { Controls } from '../input/keys';
 
@@ -89,10 +93,15 @@ function placeCamera(camera: THREE.Camera, p: THREE.Vector3, dt: number, snap: b
   cameraOrbit.tilt += (cameraOrbit.tiltTarget - cameraOrbit.tilt) * (1 - Math.pow(0.02, dt));
   const k = cameraOrbit.tilt;
   const back = cameraOrbit.dist * 0.84 * (1 - 0.35 * k);
-  camTarget.set(p.x + Math.sin(cameraOrbit.yaw) * back, cameraOrbit.dist * 0.55 * (1 - 0.8 * k) + 0.9 * k, p.z + Math.cos(cameraOrbit.yaw) * back);
+  // on a slope the camera follows the ground (and stays above the ground behind the player)
+  const base = floorAt(p.x, p.z);
+  const cx = p.x + Math.sin(cameraOrbit.yaw) * back;
+  const cz = p.z + Math.cos(cameraOrbit.yaw) * back;
+  const camY = cameraOrbit.dist * 0.55 * (1 - 0.8 * k) + 0.9 * k + base;
+  camTarget.set(cx, base ? Math.max(camY, floorAt(cx, cz) + 1.2) : camY, cz);
   if (snap) camera.position.copy(camTarget);
   else camera.position.lerp(camTarget, 1 - Math.pow(0.001, dt));
-  camera.lookAt(p.x, 0.95 + p.y * 0.3 + k * 3, p.z);
+  camera.lookAt(p.x, 0.95 + base + (p.y - base) * 0.3 + k * 3, p.z);
 }
 const dir = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -327,7 +336,11 @@ export function LocalPlayer({ name }: { name: string }) {
       anim.current = swimming ? 'tread' : locked ? 'talk' : 'idle';
     }
 
-    // --- jump: simple vertical ballistics, ground at y = 0 ---
+    // --- on Maple Hill the ground has height: stand on it ---
+    const floorY = floorAt(g.position.x, g.position.z);
+    const onHill = g.position.x > HILL.minX - 2 && g.position.x < HILL.maxX + 2 && g.position.z > HILL.minZ - 2 && g.position.z < HILL.maxZ + 2;
+    if (onHill && !airborne.current && !seated) g.position.y = floorY;
+    // --- jump: simple vertical ballistics, ground at y = 0 (or the hill) ---
     if (jump && !airborne.current) {
       vy.current = JUMP_SPEED;
       airborne.current = true;
@@ -339,8 +352,8 @@ export function LocalPlayer({ name }: { name: string }) {
       const h = dt / steps;
       for (let i = 0; i < steps && airborne.current; i++) {
         vy.current -= GRAVITY * h;
-        g.position.y = Math.max(0, g.position.y + vy.current * h);
-        if (g.position.y === 0 && vy.current < 0) {
+        g.position.y = Math.max(floorY, g.position.y + vy.current * h);
+        if (g.position.y === floorY && vy.current < 0) {
           airborne.current = false;
           vy.current = 0;
         }

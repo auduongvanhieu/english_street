@@ -6,6 +6,10 @@ import { sky } from '../world/sky';
 import { cameraOrbit } from '../input/camera';
 import { speak } from '../voice/tts';
 import { useT } from '../i18n';
+import { inRect } from '@es/shared';
+import { serverNow } from '../net/client';
+import { localPos } from '../scene/LocalPlayer';
+import { HILL, HILL_SKY, weatherAt } from '../world/mapleHill';
 
 const hhmm = (h: number) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
 
@@ -38,8 +42,12 @@ export function WeatherChip({ compact }: { compact: boolean }) {
   const night = sky.day < 0.3;
   const w = WEATHER_WORD[sky.kind];
   const clearish = sky.kind === 'clear' || sky.kind === 'partly';
-  const word = night && clearish ? NIGHT_WORD : w;
-  const icon = night && clearish ? '🌙' : w.icon;
+  const sw = night && clearish ? NIGHT_WORD : w;
+  // Maple Hill has its own weather (world/mapleHill.ts)
+  const hill = inRect(HILL, localPos.x, localPos.z, 30) ? HILL_SKY[weatherAt(serverNow())] : null;
+  const icon = hill ? hill.icon : night && clearish ? '🌙' : w.icon;
+  const tempC = hill ? hill.tempC : now?.tempC;
+  const word = hill ?? sw;
   const lookUp = () => {
     cameraOrbit.tiltTarget = cameraOrbit.tiltTarget > 0.5 ? 0 : 1;
     setLooking(cameraOrbit.tiltTarget > 0.5);
@@ -67,7 +75,7 @@ export function WeatherChip({ compact }: { compact: boolean }) {
           className="flex min-h-9 items-center gap-1.5 rounded-full bg-black/50 px-3 font-medium text-white backdrop-blur-sm hover:bg-black/60"
         >
           <span className="text-base leading-none">{icon}</span>
-          {now?.tempC != null && <span>{Math.round(now.tempC)}°C</span>}
+          {tempC != null && <span>{Math.round(tempC)}°C</span>}
           <span className="tabular-nums opacity-80">{hhmm(sky.hour)}</span>
         </button>
         <button
@@ -97,9 +105,9 @@ export function WeatherChip({ compact }: { compact: boolean }) {
           </div>
           <div className="mt-2 space-y-0.5 border-t pt-2 text-gray-600">
             <div>
-              📍 {now?.place ?? 'Ho Chi Minh City'} · {hhmm(sky.hour)} ({t('Vietnam time')})
+              📍 {hill ? 'Maple Hill' : (now?.place ?? 'Ho Chi Minh City')} · {hhmm(sky.hour)} ({t('Vietnam time')})
             </div>
-            {now?.tempC != null && (
+            {!hill && now?.tempC != null && (
               <div>
                 🌡️ {Math.round(now.tempC)}°C{now.humidity != null ? ` · 💧 ${Math.round(now.humidity)}%` : ''} · 🍃 {Math.round(now.windKmh)} km/h
               </div>
