@@ -7,3 +7,5 @@ canvas { display: block; touch-action: none; }
 
 /* phone keyboard open (chat, forms): the corner HUD steps aside so the chat bar and the game stay clear */
 html.kb-open .hud-top { display: none; }
+/* phones: the top-right menu opens as a row across the top; the chips on the left step aside meanwhile */
+html.hud-row-open .hud-left { display: none; }

@@ -19,19 +19,20 @@ export function NextStepChip({ touch }: { touch: boolean }) {
   return (
     <div
       data-ui
-      className={`hud-top absolute z-10 flex max-w-[min(20rem,62vw)] items-center gap-1 rounded-2xl bg-white/90 py-1 pl-3 pr-1 text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md ${
-        touch ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.6rem)]' : 'left-3 top-24'
+      className={`hud-top absolute z-10 flex items-center gap-1 bg-white/90 text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md ${
+        touch ? 'hud-left left-[calc(max(0.75rem,env(safe-area-inset-left))+3.4rem)] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)] max-w-[52vw] rounded-full py-0.5 pl-2.5 pr-0.5' : 'left-3 top-24 max-w-[min(20rem,62vw)] rounded-2xl py-1 pl-3 pr-1'
       }`}
     >
       <button type="button" onClick={() => useGame.getState().setUiPanel('daily')} className="min-w-0 flex-1 text-left">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">{step.kind === 'main' ? t('Journey') : step.area ? `${step.area === 'river' ? '🚣' : AREA_INFO[step.area].icon} ${t('Passport')}` : t('Today')}</div>
-        <div className="truncate text-sm font-semibold">
+        {/* phones: one small line (the title only) so it does not cover the street */}
+        <div className={`text-[10px] font-semibold uppercase tracking-wide text-amber-600 ${touch ? 'hidden' : ''}`}>{step.kind === 'main' ? t('Journey') : step.area ? `${step.area === 'river' ? '🚣' : AREA_INFO[step.area].icon} ${t('Passport')}` : t('Today')}</div>
+        <div className={`truncate font-semibold ${touch ? 'text-xs' : 'text-sm'}`}>
           {tx.title}
           {need > 1 ? <span className="ml-1 font-normal text-gray-500">{`${Math.min(prog, need)}/${need}`}</span> : null}
         </div>
       </button>
       {step.guide ? (
-        <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+        <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-7 w-7 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
           📍
         </button>
       ) : null}

@@ -183,14 +183,24 @@ export function ZoneChip({ compact, onChange }: { compact: boolean; onChange: ()
     }
   }
   return (
-    <div data-ui className={`absolute ${compact ? 'hud-top ' : ''}${compact ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)]' : 'left-3 top-14'} text-xs`}>
-      <button type="button" onClick={() => setOpen((o) => !o)} title={t('Zone')} className="flex min-h-8 items-center gap-1.5 rounded-full bg-black/50 px-3 text-white backdrop-blur-sm">
-        <Icon name="pin" size={15} />
-        <span dir="auto" className="max-w-28 truncate font-semibold">{zone.name}</span>
-        <span className="opacity-80">· {count}</span>
+    <div data-ui className={`absolute ${open ? 'z-20 ' : ''}${compact ? 'hud-top hud-left ' : ''}${compact ? 'left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)]' : 'left-3 top-14'} text-xs`}>
+      {/* phones: just the pin and the head count (the zone name is in the menu) */}
+      <button type="button" onClick={() => setOpen((o) => !o)} title={`${t('Zone')}: ${zone.name}`} className={`flex items-center rounded-full bg-black/50 text-white backdrop-blur-sm ${compact ? 'min-h-7 w-12 justify-center gap-1 text-[11px]' : 'min-h-8 gap-1.5 px-3'}`}>
+        <Icon name="pin" size={compact ? 13 : 15} />
+        {compact ? null : (
+          <span dir="auto" className="max-w-28 truncate font-semibold">
+            {zone.name}
+          </span>
+        )}
+        <span className="opacity-80">{compact ? count : `· ${count}`}</span>
       </button>
       {open && (
         <div className="mt-1 w-56 rounded-xl bg-white p-2 text-gray-800 shadow-lg">
+          {compact ? (
+            <p dir="auto" className="px-1 text-sm font-semibold">
+              {zone.name}
+            </p>
+          ) : null}
           <p className="mb-1 px-1 text-[11px] text-gray-500">
             {zone.locked ? t('{count} / {max} people here · private', { count, max: STREET_ROOM_MAX_CLIENTS }) : t('{count} / {max} people here', { count, max: STREET_ROOM_MAX_CLIENTS })}
           </p>

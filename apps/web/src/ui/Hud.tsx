@@ -98,6 +98,11 @@ export function Collapsible({ id, icon, title, children, reverse, row }: { id: s
       localStorage.setItem(key, o ? '0' : '1');
       return !o;
     });
+  useEffect(() => {
+    if (!row) return;
+    document.documentElement.classList.toggle('hud-row-open', open);
+    return () => document.documentElement.classList.remove('hud-row-open');
+  }, [row, open]);
   const btn = (
     <HudButton onClick={toggle} title={title} active={open}>
       <Icon name={open ? 'close' : icon} />
@@ -216,7 +221,7 @@ export function HintToast({ touch }: { touch: boolean }) {
   }, [touch]);
   if (!show) return null;
   return (
-    <div className={`pointer-events-none absolute left-1/2 z-10 max-w-[90vw] -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-center text-xs text-white ${touch ? 'top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)]' : 'bottom-3'}`}>
+    <div className={`pointer-events-none absolute left-1/2 z-10 max-w-[90vw] -translate-x-1/2 rounded-full bg-black/60 px-4 py-2 text-center text-xs text-white ${touch ? 'top-[calc(max(0.75rem,env(safe-area-inset-top))+5.6rem)] max-w-[70vw] rounded-2xl' : 'bottom-3'}`}>
       {touch ? t('Joystick to move · drag to look around · walk up to a shop and tap Talk · 🗺️ map and 🚌 bus to the zoo, farm, supermarket and restaurant') : t('WASD / arrows or click to move · Shift to run · E to talk or sit · F to hug a pet · M map · G area guide · Enter to chat · 1-5 emotes · drag to look around')}
     </div>
   );
