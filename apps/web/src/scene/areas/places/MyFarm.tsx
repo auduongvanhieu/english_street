@@ -96,8 +96,9 @@ function Animals({ slot, animals, now }: { slot: number; animals: MyAnimal[]; no
     [slot, animals],
   );
   const f = myFarm(slot);
+  // the paths and the icons are in world coordinates already
   return (
-    <group position={[-f.cx, 0, -f.cz]}>
+    <group>
       {list.map((x, i) => (
         <Animal key={x.key} id={x.key} kind={x.a.kind} name={x.a.name} word={x.a.kind} area="farm" item={x.a.kind} path={x.path} offset={i * 7.3} speed={x.a.kind === 'chicken' ? 0.9 : 0.55} pause={7} />
       ))}
