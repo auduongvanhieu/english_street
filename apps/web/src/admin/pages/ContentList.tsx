@@ -14,6 +14,8 @@ export interface ListRow {
   deleted: boolean;
   data?: Record<string, unknown>;
 }
+/** The quest's reward from its content (quests and pair quests: `reward: { xp, coins }`). */
+const reward = (r: ListRow) => (r.data?.reward ?? {}) as { xp?: number; coins?: number };
 export const KIND_TITLE: Record<string, [string, string]> = {
   npc: ['NPC', 'NPCs'],
   quest: ['Nhiệm vụ', 'Quests'],
@@ -50,6 +52,14 @@ export function ContentList({ kind }: { kind: 'npc' | 'quest' | 'pair' | 'placem
                   </>
                 ) : null}
               </div>
+              {kind === 'quest' || kind === 'pair' ? (
+                <p className="mb-2 text-xs text-gray-500">
+                  {L(
+                    'XP và coin khi hoàn thành đủ mục tiêu. Chưa đủ thì nhận một nửa theo số mục tiêu đã xong. Nhiệm vụ đơn nằm trong danh sách hằng ngày được thêm 30 XP lần đầu mỗi ngày.',
+                    'XP and coins for finishing every goal. Unfinished: half, in proportion to the goals done. A single quest on the daily list gives +30 XP the first time each day.',
+                  )}
+                </p>
+              ) : null}
               <Table
                 rows={shown}
                 rowKey={(r) => r.id}
@@ -58,6 +68,12 @@ export function ContentList({ kind }: { kind: 'npc' | 'quest' | 'pair' | 'placem
                   { key: 't', label: L('Tên', 'Title'), render: (r) => <b className={r.deleted ? 'line-through opacity-60' : ''}>{r.title}</b> },
                   { key: 's', label: '', render: (r) => <span className="text-gray-600">{r.sub}</span> },
                   { key: 'id', label: 'ID', render: (r) => <span className="font-mono text-xs text-gray-500">{r.id}</span>, wide: true },
+                  ...(kind === 'quest' || kind === 'pair'
+                    ? [
+                        { key: 'xp', label: 'XP', render: (r: ListRow) => <span className="tabular-nums font-semibold text-emerald-700">{reward(r).xp ?? '—'}</span> },
+                        { key: 'coins', label: L('Coin', 'Coins'), render: (r: ListRow) => <span className="tabular-nums font-semibold text-amber-600">{reward(r).coins ?? '—'}</span> },
+                      ]
+                    : []),
                   {
                     key: 'b',
                     label: '',
