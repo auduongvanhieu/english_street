@@ -66,3 +66,9 @@ export const hotelCorridorRect = (floor: number): Rect => {
   return { minX: HOTEL_CORRIDOR_X[0], maxX: HOTEL_CORRIDOR_X[1], minZ: zc - HOTEL_CORRIDOR_HALF_W, maxZ: zc + HOTEL_CORRIDOR_HALF_W };
 };
 export const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'}`;
+
+/* ------------------------------------------------------------------------------------------- train */
+
+/** The carriage riders sit in (one coach, off the map; everybody on the same train shares it). Runs along x. */
+export const TRAIN_CAR = { x: 70, z: -260, halfLen: 7, halfW: 1.3 } as const;
+export const trainCarRect = (m = 0): Rect => ({ minX: TRAIN_CAR.x - TRAIN_CAR.halfLen - m, maxX: TRAIN_CAR.x + TRAIN_CAR.halfLen + m, minZ: TRAIN_CAR.z - TRAIN_CAR.halfW - m, maxZ: TRAIN_CAR.z + TRAIN_CAR.halfW + m });

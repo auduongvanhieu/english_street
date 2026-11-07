@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { serverNow } from '../../../net/client';
-import { CARTOON_H, CARTOON_W, drawCartoon } from './cartoon';
+import { CARTOON_H, CARTOON_W, drawCartoon, drawShow, showPhase } from './cartoon';
+import { useMovie, watchTick } from '../../../store/movie';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { insideBuilding } from '../../../world/buildings';
@@ -436,6 +437,23 @@ function BookDisplay() {
   );
 }
 
+/** Screen 1 shows and the snack bar: who is watching (4×/s), and the "Buy a snack" spot at the counter. */
+function ShowWatcher({ inScreen }: { inScreen: boolean }) {
+  const acc = useRef(0);
+  const holding = useMovie((s) => s.holding);
+  useEffect(() => () => useMovie.setState({ inRoom: false, sub: '' }), []);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.25) return;
+    const p = showPhase(serverNow());
+    watchTick(inScreen, p.show, p.phase, p.sub, acc.current);
+    acc.current = 0;
+  });
+  const [x, z] = FRAME.toWorld((SNACK_BAR.minX + SNACK_BAR.maxX) / 2, SNACK_BAR.maxZ + 0.85);
+  useUsable({ id: 'cinema-snacks', x, z, r: 1.8, icon: '🍿', label: holding ? tr('Buy another snack') : tr('Buy a snack'), priority: true, use: () => useMovie.getState().openSnacks() });
+  return null;
+}
+
 export default function Cinema() {
   // same test as BuildingShell: outside props in front of the door hide with the front wall
   const [inside, setInside] = useState(false);
@@ -501,6 +519,7 @@ export default function Cinema() {
         <BookDisplay />
         {/* the screen plays a short cartoon while you are in the building; click = buy tickets */}
         <CartoonScreen playing={inside} onClick={tickets} />
+        {inside ? <ShowWatcher inScreen={inScreen} /> : null}
         {POSTERS.map((f, i) =>
           inScreen && !f.rot ? null : (
             <PosterTitle
@@ -626,7 +645,7 @@ function CartoonScreen({ playing, onClick }: { playing: boolean; onClick: (e: { 
     acc.current += dt;
     if (acc.current < 1 / 15) return;
     acc.current = 0;
-    drawCartoon(ctx, serverNow() / 1000);
+    drawShow(ctx, serverNow());
     tex.needsUpdate = true;
   });
   return (

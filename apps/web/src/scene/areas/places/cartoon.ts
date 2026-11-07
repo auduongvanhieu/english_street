@@ -366,3 +366,46 @@ function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number,
   c.arcTo(x, y, x + w, y, r);
   c.fill();
 }
+
+/* ------------------------------------------------------------------------------------------------ show times
+ * Screen 1 runs one show every SHOW_MS on the server clock, so everyone in the room watches together:
+ *   0 … FILM_AT s        lights down, countdown card ("The film starts in 5…")
+ *   FILM_AT … FILM_END   the cartoon, from its first frame
+ *   FILM_END … SHOW_MS   break card with the next show time (the after-film quiz runs then)
+ */
+export const SHOW_MS = 120_000;
+export const FILM_AT = 8;
+export const FILM_END = FILM_AT + CARTOON_LOOP;
+
+export interface ShowPhase {
+  /** show number (server clock / SHOW_MS) */
+  show: number;
+  /** seconds into the show */
+  t: number;
+  phase: 'countdown' | 'film' | 'break';
+  /** seconds into the film (film phase) */
+  filmT: number;
+  /** subtitle on screen now ('' = none) */
+  sub: string;
+  /** ms until the next show starts */
+  nextIn: number;
+}
+export function showPhase(nowMs: number): ShowPhase {
+  const show = Math.floor(nowMs / SHOW_MS);
+  const t = (nowMs - show * SHOW_MS) / 1000;
+  const phase = t < FILM_AT ? 'countdown' : t < FILM_END ? 'film' : 'break';
+  const filmT = phase === 'film' ? t - FILM_AT : 0;
+  const sub = phase === 'film' ? (SCENES.find((s) => filmT >= s.from && filmT < s.to)?.sub ?? '') : '';
+  return { show, t, phase, filmT, sub, nextIn: (show + 1) * SHOW_MS - nowMs };
+}
+
+/** What Screen 1 shows at this moment of the shared clock. */
+export function drawShow(c: CanvasRenderingContext2D, nowMs: number) {
+  const p = showPhase(nowMs);
+  if (p.phase === 'film') return drawCartoon(c, p.filmT);
+  c.save();
+  c.clearRect(0, 0, W, H);
+  if (p.phase === 'countdown') title(c, p.t, `${Math.max(1, Math.ceil(FILM_AT - p.t))}`, "The Dragon Who Couldn't Fly · starting now");
+  else title(c, p.t, 'Thanks for watching!', `Next show in ${Math.ceil(p.nextIn / 1000)} s · Take a seat and enjoy the film`);
+  c.restore();
+}

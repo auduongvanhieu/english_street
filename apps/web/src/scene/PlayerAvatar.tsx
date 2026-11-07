@@ -3,6 +3,8 @@ import type { AvatarLook } from '@es/shared';
 import { Chibi } from './chibi/Chibi';
 import { HeldCritter } from './Critters';
 import { Dish } from './areas/Dish';
+import { Trolley } from './areas/Trolley';
+import { Snack } from './areas/Snack';
 
 /** Chair seat height: a seated character is lifted onto it. */
 const SEAT_Y = 0.3;
@@ -20,6 +22,8 @@ export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '
       </group>
       {holding ? <HeldCritter id={holding} /> : null}
       {prop.startsWith('dish:') ? <Dish item={prop.slice(5)} /> : null}
+      {prop.startsWith('cart:') && !sit ? <Trolley n={Number(prop.slice(5)) || 0} /> : null}
+      {prop.startsWith('snack:') ? <Snack kind={prop.slice(6)} sit={sit} /> : null}
     </>
   );
 });

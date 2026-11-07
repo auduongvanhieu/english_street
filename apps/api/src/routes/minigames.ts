@@ -27,7 +27,7 @@ function addToBoard(day: string, game: MinigameId, e: Entry) {
 }
 
 const Body = z.object({
-  game: z.enum(['football', 'hoops', 'race', 'coach', 'fishing', 'cooking']),
+  game: z.enum(['football', 'hoops', 'race', 'coach', 'fishing', 'cooking', 'checkout', 'movie', 'train']),
   /** football: 'win' | 'draw' | 'lose' */
   result: z.enum(['win', 'draw', 'lose']).optional(),
   /** hoops: baskets (0-10); race: time in ms; coach: correct moves (0-8) */
@@ -78,6 +78,11 @@ export function minigameRoutes(repo: AttemptRepo) {
         // score = steps done right first time (0-6)
         const s = Math.min(6, Math.max(0, Math.round(score ?? 0)));
         xp = Math.min(MINIGAMES.cooking.max, s * MINIGAMES.cooking.perPoint);
+        record = prevBest === undefined || s > prevBest;
+      } else if (game === 'checkout' || game === 'movie' || game === 'train') {
+        const g = MINIGAMES[game];
+        const s = Math.min(g.max / g.perPoint, Math.max(0, Math.round(score ?? 0)));
+        xp = s * g.perPoint;
         record = prevBest === undefined || s > prevBest;
       } else if (game === 'fishing') {
         // score = how rare the catch was (1-5)

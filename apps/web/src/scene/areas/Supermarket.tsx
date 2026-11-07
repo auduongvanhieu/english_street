@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { CHECKOUTS, SHELVES, SUPERMARKET, type Shelf } from '../../world/buildings';
@@ -8,6 +8,9 @@ import { useShopping } from '../../store/shopping';
 import { BuildingShell } from './Building';
 import { Ground, InstancedProp, Merged, NearArea, box, cyl } from './kit';
 import { PRODUCTS_BY_CATEGORY, productShape } from './products';
+import { useUsable, type Usable } from '../../world/usables';
+import { useT } from '../../i18n';
+import { Scanner } from './Trolley';
 
 const CATEGORY_LABEL: Record<string, string> = {
   'fruit-veg': 'FRUIT & VEG',
@@ -73,6 +76,84 @@ function Shelves() {
   );
 }
 
+/** Where you stand to take each product: the aisle in front of its stretch of shelf (both faces of a gondola). */
+export const PICK_SPOTS = SHELVES.flatMap((s) => {
+  const ids = PRODUCTS_BY_CATEGORY[s.category] ?? [];
+  const len = s.x1 - s.x0;
+  const half = s.type === 'fridge' ? 0.5 : 0.55;
+  const faces = s.type === 'fridge' ? [1] : [-1, 1];
+  return ids.flatMap((id, i) =>
+    faces.map((f) => ({ id, x: s.x0 + (len * (i + 0.5)) / ids.length, z: s.z + f * (half + 0.55), r: Math.max(1.0, Math.min(1.6, len / ids.length / 2)) })),
+  );
+});
+/** Trolley bay by the door and the customer side of each checkout. */
+export const TROLLEY_BAY = { x: -82.2, z: -10.9 };
+export const TILLS = CHECKOUTS.map((c) => ({ x: (c.minX + c.maxX) / 2, z: c.maxZ + 0.9 }));
+
+function PickSpot({ spot }: { spot: (typeof PICK_SPOTS)[number] }) {
+  const t = useT();
+  const item = useArea((s) => s.content.supermarket?.items.find((i) => i.id === spot.id));
+  const hasList = useShopping((s) => s.list.length > 0);
+  const u: Usable = {
+    id: `market-pick-${spot.id}-${spot.z}`,
+    x: spot.x,
+    z: spot.z,
+    r: spot.r,
+    icon: item?.icon ?? '🛒',
+    label: hasList ? `${t('Take')}: ${item?.en ?? spot.id}` : `${t('Look')}: ${item?.en ?? spot.id}`,
+    use: () => {
+      if (hasList) useShopping.getState().pick(spot.id);
+      else useArea.getState().openCard({ area: 'supermarket', item: spot.id });
+    },
+  };
+  useUsable(u);
+  return null;
+}
+
+function MarketUsables() {
+  const t = useT();
+  const trolley = useShopping((s) => s.trolley);
+  const items = useShopping((s) => Object.keys(s.cart).length);
+  useEffect(() => {
+    void useArea.getState().load('supermarket');
+  }, []);
+  useUsable({
+    id: 'market-trolley',
+    ...TROLLEY_BAY,
+    r: 1.6,
+    icon: '🛒',
+    label: trolley ? t('Return the trolley') : t('Take a trolley'),
+    use: () => (trolley ? useShopping.getState().returnTrolley() : useShopping.getState().takeTrolley()),
+  });
+  useUsable({
+    id: 'market-till-0',
+    ...TILLS[0]!,
+    r: 1.7,
+    icon: '💳',
+    label: t('Pay at the checkout'),
+    priority: true,
+    disabled: items ? undefined : t('Your trolley is empty'),
+    use: () => useShopping.getState().openTill(),
+  });
+  useUsable({
+    id: 'market-till-1',
+    ...TILLS[1]!,
+    r: 1.7,
+    icon: '💳',
+    label: t('Pay at the checkout'),
+    priority: true,
+    disabled: items ? undefined : t('Your trolley is empty'),
+    use: () => useShopping.getState().openTill(),
+  });
+  return (
+    <>
+      {PICK_SPOTS.map((sp) => (
+        <PickSpot key={`${sp.id}${sp.z}`} spot={sp} />
+      ))}
+    </>
+  );
+}
+
 export function Supermarket() {
   const area = areaById('supermarket');
   const openCard = useArea((s) => s.openCard);
@@ -112,6 +193,13 @@ export function Supermarket() {
           <Text position={[-91, 1.9, -11.7]} fontSize={0.3} color="#2a9d8f" anchorX="center">
             CHECKOUT
           </Text>
+          {CHECKOUTS.map((c) => (
+            <Scanner key={c.minX} position={[(c.minX + c.maxX) / 2 + 0.6, 0.94, (c.minZ + c.maxZ) / 2]} />
+          ))}
+          <Text position={[TROLLEY_BAY.x, 1.35, -10.2]} fontSize={0.22} color="#2a9d8f" anchorX="center">
+            TROLLEYS
+          </Text>
+          <MarketUsables />
         </BuildingShell>
       </group>
     </NearArea>

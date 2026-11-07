@@ -41,6 +41,11 @@ import { Icon } from './ui/icons';
 import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
 import type { PlayerSettings } from '@es/shared';
 import { KitchenHud } from './ui/KitchenHud';
+import { CheckoutHud } from './ui/CheckoutHud';
+import { MovieHud } from './ui/MovieHud';
+import { TrainHud } from './ui/TrainHud';
+import { useTrain } from './store/train';
+import { useMovie } from './store/movie';
 import { useKitchen } from './store/kitchen';
 import { TUTORIAL_KEY, tutorialPending, useTutorial } from './store/tutorial';
 import { useBooks } from './store/books';
@@ -66,7 +71,7 @@ import { livePos } from './world/avoid';
 import { ballState, freezeClock, serverNow } from './net/client';
 import { InteractPrompt } from './ui/InteractPrompt';
 import { UseButton, UsePrompt } from './ui/UseButton';
-import { useNearest } from './world/usables';
+import { useNearest, useNearUsable, usables } from './world/usables';
 import { HugButton } from './ui/HugButton';
 import { toggleHug } from './world/hold';
 import { NpcPanel } from './ui/NpcPanel';
@@ -90,7 +95,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables };
 }
 
 export default function App() {
@@ -443,6 +448,9 @@ export default function App() {
       <FishingHud />
       <Library />
       <KitchenHud />
+      <CheckoutHud />
+      <MovieHud />
+      <TrainHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

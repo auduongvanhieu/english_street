@@ -217,3 +217,41 @@ export function roarSound(volume = 0.5) {
   o.stop(t + 1.25);
   lfo.stop(t + 1.25);
 }
+
+/** Till scanner beep (supermarket checkout). */
+export function beepSound(volume = 0.5) {
+  if (!ensure() || volume <= 0) return;
+  void ctx!.resume();
+  const t = ctx!.currentTime;
+  const o = ctx!.createOscillator();
+  const g = ctx!.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(1850, t);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.06 * volume, t + 0.005);
+  g.gain.setValueAtTime(0.06 * volume, t + 0.1);
+  g.gain.linearRampToValueAtTime(0, t + 0.12);
+  o.connect(g).connect(ctx!.destination);
+  o.start(t);
+  o.stop(t + 0.13);
+}
+
+/** Two-tone station chime before an announcement ("ding-dong"). */
+export function chimeSound(volume = 0.5) {
+  if (!ensure() || volume <= 0) return;
+  void ctx!.resume();
+  const t = ctx!.currentTime;
+  [784, 622].forEach((f, i) => {
+    const s = t + i * 0.45;
+    const o = ctx!.createOscillator();
+    const g = ctx!.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(f, s);
+    g.gain.setValueAtTime(0, s);
+    g.gain.linearRampToValueAtTime(0.16 * volume, s + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, s + 0.9);
+    o.connect(g).connect(ctx!.destination);
+    o.start(s);
+    o.stop(s + 0.95);
+  });
+}

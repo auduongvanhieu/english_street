@@ -37,5 +37,11 @@ export const MINIGAMES = {
   coach: { perPoint: 2, max: 16, perDay: 3 },
   fishing: { perPoint: 2, max: 10, perDay: 6 },
   cooking: { perPoint: 3, max: 18, perDay: 3 },
+  /** supermarket checkout: list lines right + the right change (0-6) */
+  checkout: { perPoint: 3, max: 18, perDay: 3 },
+  /** cinema: questions right after the film (0-3) */
+  movie: { perPoint: 4, max: 12, perDay: 3 },
+  /** train ride: right destination + right ticket type (0-2) */
+  train: { perPoint: 6, max: 12, perDay: 3 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

@@ -5,6 +5,9 @@ import * as THREE from 'three';
 import { vnHour } from '@es/shared';
 import { serverNow } from '../../../net/client';
 import { useArea } from '../../../store/area';
+import { useTrain } from '../../../store/train';
+import { useUsable } from '../../../world/usables';
+import { useT } from '../../../i18n';
 import { chibiMaterial } from '../../chibi/buildChibi';
 import {
   AREA,
@@ -21,6 +24,7 @@ import {
   TUNNEL_X,
   boardRows,
   currentSlots,
+  service,
   trainPose,
 } from '../../../world/places/station';
 import { BuildingShell } from '../Building';
@@ -315,6 +319,39 @@ function Interior() {
   );
 }
 
+/** Ticket machine and the doors of a train standing at the platform (open doors = "Board the train"). */
+function TrainUsables() {
+  const t = useT();
+  const riding = useTrain((s) => !!s.ride);
+  const ticket = useTrain((s) => s.ticket);
+  const [open, setOpen] = useState<number | null>(null);
+  const acc = useRef(0);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.25) return;
+    acc.current = 0;
+    const now = serverNow();
+    const slot = currentSlots(now).find((sl) => {
+      const p = trainPose(sl, now);
+      return p.visible && p.door > 0.4;
+    });
+    const v = slot ?? null;
+    if (v !== open) setOpen(v);
+  });
+  const [mx, mz] = FRAME.toWorld(TICKET_MACHINE.x, TICKET_MACHINE.z + 0.9);
+  useUsable({ id: 'station-ticket-machine', x: mx, z: mz, r: 1.5, icon: '🎫', label: ticket ? `${t('Ticket')}: ${ticket.dest} (${ticket.type})` : t('Buy a ticket'), use: () => useTrain.getState().openMachine() });
+  const s = open !== null ? service(open) : null;
+  const doors = [-5.8, 0, 5.8].map((x) => FRAME.toWorld(x, PLATFORM1.z0 + 0.7));
+  for (const [i, [x, z]] of doors.entries())
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useUsable(
+      s && open !== null && !riding
+        ? { id: `station-board-${i}`, x, z, r: 2.4, icon: '🚆', label: `${t('Board the train')} → ${s.dest}`, priority: true, use: () => useTrain.getState().board(open) }
+        : null,
+    );
+  return null;
+}
+
 export default function Station() {
   return (
     <AreaGroup area={AREA}>
@@ -330,7 +367,8 @@ export default function Station() {
       <Train />
       <DeparturesBoard />
       <StationClock />
-      <mesh position={[TICKET_MACHINE.x, 0.85, TICKET_MACHINE.z]} onClick={openActivity} visible={false}>
+      <TrainUsables />
+      <mesh position={[TICKET_MACHINE.x, 0.85, TICKET_MACHINE.z]} onClick={(e) => (e.stopPropagation(), useTrain.getState().openMachine())} visible={false}>
         <boxGeometry args={[0.9, 1.8, 0.7]} />
         <meshBasicMaterial />
       </mesh>

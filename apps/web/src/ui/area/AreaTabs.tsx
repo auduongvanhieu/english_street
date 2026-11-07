@@ -338,7 +338,7 @@ export function ShoppingTab({ content }: { content: AreaContentDto }) {
             </p>
           </div>
         ) : (
-          <p className="mb-3 text-sm text-gray-600">{t('Get a shopping list, find each product on the shelves and tap it to put it in your trolley.')}</p>
+          <p className="mb-3 text-sm text-gray-600">{t('Take a trolley by the door, walk to the shelves and take each product on your list, then pay at the checkout.')}</p>
         )}
         <button type="button" onClick={() => void start()} className="min-h-11 rounded-lg bg-teal-600 px-6 text-sm font-semibold text-white">
           📝 {t('Get a shopping list')}
@@ -385,7 +385,16 @@ export function ShoppingTab({ content }: { content: AreaContentDto }) {
           ))}
         </div>
       </section>
-      <button type="button" onClick={() => void checkout()} className="min-h-11 w-full rounded-lg bg-teal-600 text-sm font-semibold text-white">
+      <p className="text-xs text-gray-500">{t('Push your trolley to the checkout and talk to Sam to pay.')}</p>
+      <button
+        type="button"
+        onClick={() => {
+          if (!Object.keys(cart).length) return void checkout();
+          useArea.getState().setPanel(false);
+          useShopping.getState().openTill();
+        }}
+        className="min-h-11 w-full rounded-lg bg-teal-600 text-sm font-semibold text-white"
+      >
         💳 {t('Pay at the checkout')}
       </button>
     </div>
@@ -397,18 +406,33 @@ export function ShoppingMini() {
   const t = useT();
   const list = useShopping((s) => s.list);
   const cart = useShopping((s) => s.cart);
+  const note = useShopping((s) => s.note);
+  const till = useShopping((s) => s.till);
   const current = useArea((s) => s.current);
   const panel = useArea((s) => s.panel);
   const setPanel = useArea((s) => s.setPanel);
-  if (!list.length || panel || current !== 'supermarket') return null;
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!note) return;
+    const id = window.setTimeout(() => tick((n) => n + 1), 3100);
+    return () => window.clearTimeout(id);
+  }, [note]);
+  if (!list.length || panel || till || current !== 'supermarket') return null;
+  const done = list.every((l) => (cart[l.item] ?? 0) === l.qty);
   return (
-    <button type="button" data-ui onClick={() => setPanel(true, 'shop')} className="absolute left-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+6.5rem)] z-10 max-w-[60vw] rounded-xl bg-yellow-50/95 p-2 text-left text-xs shadow-lg">
+    <button type="button" data-ui onClick={() => setPanel(true, 'shop')} className="absolute left-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+9.5rem)] z-10 max-w-[60vw] rounded-xl bg-yellow-50/95 p-2 text-left text-xs shadow-lg">
       <b>📝 {t('Shopping list')}</b>
       {list.map((l) => (
         <div key={l.item} className={(cart[l.item] ?? 0) === l.qty ? 'text-green-700 line-through' : ''} dir="ltr">
           {l.text} <span className="text-gray-500">({cart[l.item] ?? 0}/{l.qty})</span>
         </div>
       ))}
+      {note && Date.now() - note.at < 3000 ? (
+        <div className={`mt-1 rounded px-1 ${note.ok ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-900'}`}>
+          {note.text === 'added' ? t('In the trolley!') : note.text === 'too_many' ? t('Too many! Check the list.') : note.text === 'sold_out' ? t('Sorry, that is sold out today.') : t("That's not on your list.")}
+        </div>
+      ) : null}
+      {done ? <div className="mt-1 font-semibold text-teal-700">💳 {t('All done! Go to the checkout.')}</div> : null}
     </button>
   );
 }
