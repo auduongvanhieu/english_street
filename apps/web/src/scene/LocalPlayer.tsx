@@ -16,6 +16,7 @@ import { useSettings } from '../store/settings';
 import { joystick, jumpInput } from '../input/joystick';
 import { hopSound } from '../audio/ambient';
 import { cameraOrbit } from '../input/camera';
+import { useFitting } from '../store/fitting';
 import { moveTarget } from '../input/clickMove';
 import { buildBlockers, buildLampPosts, resolveMove, type Circle } from '../world/layout';
 import { CRITTERS, poseAt } from '../world/critters';
@@ -114,7 +115,10 @@ export function LocalPlayer({ name }: { name: string }) {
   const avatar = useProfile((s) => s.profile?.avatar);
   const holding = useGame((s) => (s.sessionId && s.players[s.sessionId]?.holding) || '');
   const prop = useGame((s) => (s.sessionId && s.players[s.sessionId]?.prop) || '');
-  const look = useMemo(() => avatarLook(avatar ?? AvatarSchema.parse({})), [avatar]);
+  const trying = useFitting((s) => s.look);
+  const saved = useMemo(() => avatarLook(avatar ?? AvatarSchema.parse({})), [avatar]);
+  // in a fitting room you wear what you are trying on
+  const look = trying ?? saved;
   const vy = useRef(0);
   const airborne = useRef(false);
 

@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { AvatarSchema, CLOTH_COLORS, avatarLook, itemPrice, missingItems, type AreaContentDto, type AreaItemDto, type AvatarLook } from '@es/shared';
@@ -410,7 +410,11 @@ function Game({ content, onExit }: { content: AreaContentDto; onExit: () => void
 const COMPLIMENTS = ['That colour really suits you!', 'You look great!', 'It fits perfectly!', 'I love your new look!'];
 const ERR: Record<string, string> = { not_enough_coins: tk('Not enough coins.'), unauthorized: tk('Sign in to buy clothes.') };
 
-function Wardrobe({ content, onExit }: { content: AreaContentDto; onExit: () => void }) {
+/**
+ * Try on & buy. `compact` (the 3D fitting room): no little preview (the mirror shows you) and every change is passed
+ * to `onLook` so the character in the street wears it while you try.
+ */
+export function Wardrobe({ content, onExit, compact, onLook }: { content: AreaContentDto; onExit: () => void; compact?: boolean; onLook?: (l: AvatarLook) => void }) {
   const t = useT();
   const noTr = useLang((s) => s.lang === 'en');
   const gone = useWorld((s) => s.cfg?.soldOut.clothes ?? NONE);
@@ -429,6 +433,7 @@ function Wardrobe({ content, onExit }: { content: AreaContentDto; onExit: () => 
     setMsg(null);
     setLook((l) => ({ ...l, ...p }));
   };
+  useEffect(() => onLook?.(look), [look, onLook]);
   const sentence = describeLook(look);
   const outfit = OUTFITS.find((o) => o.body === look.body);
   const lowerId = LOWER[look.body];
@@ -472,8 +477,8 @@ function Wardrobe({ content, onExit }: { content: AreaContentDto; onExit: () => 
         </button>
         <span>🪙 {profile?.coins ?? 0}</span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-[11rem_1fr]">
-        <Preview look={look} className="h-44 sm:h-60" />
+      <div className={compact ? '' : 'grid gap-3 sm:grid-cols-[11rem_1fr]'}>
+        {compact ? null : <Preview look={look} className="h-44 sm:h-60" />}
         <div>
           <div className="rounded-xl bg-violet-50 p-2.5">
             <p className="text-sm font-medium" dir="ltr">

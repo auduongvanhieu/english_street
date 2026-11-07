@@ -1,4 +1,12 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import * as THREE from 'three';
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
+import { localPos, teleportTo } from '../../LocalPlayer';
+import { useFitting } from '../../../store/fitting';
+import { useUsable } from '../../../world/usables';
+import { useT } from '../../../i18n';
 import type { Part } from '../../chibi/buildChibi';
 import { useArea } from '../../../store/area';
 import { useWorld } from '../../../store/world';
@@ -185,6 +193,86 @@ function Furniture() {
   );
 }
 
+/* ------------------------------------------------------------------------------------------ fitting rooms */
+const CUBICLES = [
+  [FITTING.x0, FITTING.split],
+  [FITTING.split, FITTING.x1],
+].map(([a, b]) => ({ a: a!, b: b!, cx: (a! + b!) / 2 }));
+
+/**
+ * A real mirror (three's Reflector: the scene drawn again from the mirrored camera), only while you stand near it,
+ * so the extra render costs nothing elsewhere. Position in the shop's local frame; `rot` turns it about y.
+ */
+function Mirror({ x, y, z, w, h, rot, near }: { x: number; y: number; z: number; w: number; h: number; rot: number; near: number }) {
+  const [on, setOn] = useState(false);
+  const acc = useRef(0);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.3) return;
+    acc.current = 0;
+    const [lx, lz] = FRAME.toLocal(localPos.x, localPos.z);
+    const n = Math.hypot(lx - x, lz - z) < near;
+    if (n !== on) setOn(n);
+  });
+  const mirror = useMemo(() => {
+    if (!on) return null;
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    const m = new Reflector(new THREE.PlaneGeometry(w, h), { textureWidth: Math.round(512 * dpr * (w / h)), textureHeight: Math.round(512 * dpr), color: new THREE.Color('#d9e6ec'), clipBias: 0.003 });
+    return m;
+  }, [on, w, h]);
+  useEffect(() => () => mirror?.dispose(), [mirror]);
+  return (
+    <group position={[x, y, z]} rotation-y={rot}>
+      {mirror ? (
+        <primitive object={mirror} />
+      ) : (
+        <mesh>
+          <planeGeometry args={[w, h]} />
+          <meshStandardMaterial color="#cfe6f2" roughness={0.15} metalness={0.3} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/** "Try clothes on" at each curtain: step in, face the mirror, the wardrobe card opens (ui/FittingHud.tsx). */
+function FittingUsables() {
+  const t = useT();
+  const room = useFitting((s) => s.room);
+  const acc = useRef(0);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.3 || room === null) return;
+    acc.current = 0;
+    // walked out of the cubicle: done trying
+    const [lx, lz] = FRAME.toLocal(localPos.x, localPos.z);
+    const c = CUBICLES[room]!;
+    if (lx < c.a - 0.3 || lx > c.b + 0.3 || lz < FITTING.z0 - 0.3 || lz > FITTING.z1 + 0.6) useFitting.getState().leave();
+  });
+  for (const [i, c] of CUBICLES.entries()) {
+    const [x, z] = FRAME.toWorld(c.cx, FITTING.z1 + 0.9);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useUsable(
+      room === null
+        ? {
+            id: `fitting-${i}`,
+            x,
+            z,
+            r: 1.4,
+            icon: '🪞',
+            label: t('Try clothes on'),
+            use: () => {
+              const [ix, iz] = FRAME.toWorld(c.cx + 0.35, FITTING.z0 + 2.4);
+              teleportTo(ix, iz, FRAME.yaw(Math.PI));
+              useFitting.getState().enter(i, FRAME.rot);
+            },
+          }
+        : null,
+    );
+  }
+  return null;
+}
+
 /** Fitting rooms with curtains and the big mirror: tapping them opens the fitting-room activity. */
 function FittingRooms() {
   const h = 2.4;
@@ -205,14 +293,18 @@ function FittingRooms() {
             const w = b - a;
             for (let i = 0; i < 5; i++) p.add(cyl(0.12, 0.12, h - 0.15, 8), i % 2 ? '#b0508a' : '#c25a98', { p: [a + 0.2 + i * 0.22, (h - 0.15) / 2, FITTING.z1 - 0.05] });
             p.add(cyl(0.25, 0.25, 0.45, 12), '#f7d6e6', { p: [a + w * 0.7, 0.23, FITTING.z0 + 1.2] });
-            p.add(box(0.8, 1.7, 0.04), '#c9e6f2', { p: [a + w / 2, 1.2, FITTING.z0 + 0.2] });
+            p.add(box(1.1, 1.95, 0.04), '#f2c41d', { p: [a + w / 2, 1.2, FITTING.z0 + 0.18] }); // mirror frame (glass: Mirror)
           }
           // the big mirror on the right wall
           p.add(box(0.12, 2.5, MIRROR.w + 0.2), '#f2c41d', { p: [MIRROR.x, 1.35, MIRROR.z] });
-          p.add(box(0.06, 2.3, MIRROR.w), '#d6eef8', { p: [MIRROR.x - 0.07, 1.35, MIRROR.z] });
-          p.add(box(0.03, 1.6, 0.25), '#ffffff', { p: [MIRROR.x - 0.11, 1.5, MIRROR.z - 0.4], r: [0, 0, 0.3] }); // shine
+
         }}
       />
+      {CUBICLES.map((c, i) => (
+        <Mirror key={i} x={c.cx} y={1.2} z={FITTING.z0 + 0.21} w={0.95} h={1.8} rot={0} near={4} />
+      ))}
+      <Mirror x={MIRROR.x - 0.07} y={1.35} z={MIRROR.z} w={MIRROR.w} h={2.3} rot={-Math.PI / 2} near={7} />
+      <FittingUsables />
       <Text position={[(FITTING.x0 + FITTING.x1) / 2, h + 0.35, FITTING.z1 + 0.05]} fontSize={0.32} color="#b0508a" anchorX="center" outlineWidth={0.02} outlineColor="#fff">
         FITTING ROOMS
       </Text>
