@@ -43,7 +43,12 @@ export const MSG = {
   BOAT: 'boat',
   SETTINGS: 'settings',
   JOURNEY: 'journey',
+  /** both ways: "My farm" - client asks where a farm is in this zone ({ op: 'slot', owner }), server answers
+   * { op: 'slot', owner, slot } (slots are shared out per zone so two farms never overlap) */
+  FARM: 'farm',
 } as const;
+export type FarmSend = { op: 'slot'; owner: string };
+export type FarmEvent = { op: 'slot'; owner: string; slot: number };
 
 /** Close codes the server uses when it removes a player (client shows why). */
 export const CLOSE_KICKED = 4105;

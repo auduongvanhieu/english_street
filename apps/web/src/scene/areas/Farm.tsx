@@ -1,4 +1,7 @@
 import { FarmJobs } from './AnimalJobs';
+import { useMyFarm } from '../../store/myFarm';
+import { useUsable } from '../../world/usables';
+import { useT } from '../../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -138,13 +141,13 @@ function Garden() {
 }
 
 /** The plants of one plot as one merged mesh, rebuilt only when the stage or a growth step changes. */
-function Plants({ crop, stage, progress }: { crop: Crop; stage: string; progress: number }) {
+export function Plants({ crop, stage, progress }: { crop: Crop; stage: string; progress: number }) {
   const step = stage === 'growing' ? Math.min(5, Math.floor(progress * 6)) / 5 : 0;
   return <Merged build={(p) => buildPlot(p, crop, stage, step)} deps={[crop, stage, step]} />;
 }
 
 /** Floating hint over a plot: a blue water drop (needs watering) or a golden star (ready to harvest). */
-function Marker({ kind, y }: { kind: 'water' | 'ready'; y: number }) {
+export function Marker({ kind, y }: { kind: 'water' | 'ready'; y: number }) {
   const ref = useRef<THREE.Group>(null);
   const geo = useMemo(() => {
     if (kind === 'water') {
@@ -176,6 +179,13 @@ function Marker({ kind, y }: { kind: 'water' | 'ready'; y: number }) {
       </mesh>
     </group>
   );
+}
+
+/** The way into "My farm" (your own farm off the map). */
+function MyFarmGate() {
+  const t = useT();
+  useUsable({ id: 'myfarm-enter', x: 131.4, z: -8.6, r: 1.8, icon: '🌾', label: t('Go to my farm'), priority: true, use: () => useMyFarm.getState().enter() });
+  return null;
 }
 
 export function Farm() {
@@ -210,6 +220,8 @@ export function Farm() {
           <Sign key={p.id} x={(p.x0 + p.x1) / 2 + 2} z={p.z1 + 0.45} text={p.animals.map((a) => a.item.toUpperCase()).filter((v, i, l) => l.indexOf(v) === i).join(' · ')} color="#7a4a2a" y={1.1} />
         ))}
         <Sign x={124} z={14.9} text="MY GARDEN" color="#7a4a2a" y={1.1} />
+        <Sign x={132.6} z={-8.2} text="MY FARM" sub="seeds · animals · friends" color="#2f6b3a" y={1.4} />
+        <MyFarmGate />
         <Sign x={STALL.x} z={STALL.z + 0.9} text="FARM MARKET" color="#c0392b" y={2.9} w={3.2} />
         {animals.map((x) => (
           <Animal key={x.key} id={x.key} kind={x.a.kind} name={x.a.name} word={x.a.item} area="farm" item={x.a.item} path={x.path} offset={x.offset} speed={x.a.kind === 'chicken' ? 0.9 : 0.6} pause={8} />

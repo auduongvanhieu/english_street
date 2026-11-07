@@ -1,6 +1,6 @@
 import { Icon } from './icons';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { AREA_INFO, DM_MAX, INTERIOR_BOUNDS, MAPLE_HILL, OLD_TOWN, RIVERSIDE, SUNNY_BAY, clinicRoomAt, hotelRoomAt, inRect, myRoomAt, trainCarRect } from '@es/shared';
+import { AREA_INFO, DM_MAX, INTERIOR_BOUNDS, MAPLE_HILL, myFarmAt, OLD_TOWN, RIVERSIDE, SUNNY_BAY, clinicRoomAt, hotelRoomAt, inRect, myRoomAt, trainCarRect } from '@es/shared';
 import { Sheet, SheetHeader } from './Sheet';
 import { HudButton } from './Hud';
 import { useGame, type RemotePlayer } from '../store/game';
@@ -20,6 +20,7 @@ export function placeOf(x: number, z: number, bus = ''): { icon: string; name: s
   if (bus) return { icon: '🚌', name: tr('On the bus') };
   if (inRect(SUNNY_BAY, x, z, 5)) return { icon: '🏖️', name: 'Sunny Bay' };
   if (inRect(MAPLE_HILL, x, z, 5)) return { icon: '🍁', name: 'Maple Hill' };
+  if (myFarmAt(x, z) >= 0) return { icon: '🌾', name: tr('On a farm') };
   if (inRect(RIVERSIDE, x, z, 5)) return { icon: '🌊', name: 'Riverside' };
   if (inRect(OLD_TOWN, x, z, 5)) return { icon: '🏰', name: 'Old Town' };
   if (inRect(trainCarRect(1), x, z)) return { icon: '🚆', name: tr('On the train') };

@@ -22,6 +22,10 @@ import {
   DM_MAX,
   FRIENDS_MAX,
   INTERIOR_BOUNDS,
+  MY_FARM_SLOTS,
+  myFarmAt,
+  type FarmEvent,
+  type FarmSend,
   MAPLE_HILL,
   MAPLE_HILL_TOP,
   hotelRoomAt,
@@ -234,6 +238,12 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof prop !== 'string') return;
       p.prop = prop === '' || PROP_RE.test(prop) ? prop : p.prop;
+    });
+
+    // "My farm": a slot in the farm grid per farm owner, for as long as somebody is there
+    this.onMessage<FarmSend>(MSG.FARM, (client, msg) => {
+      if (!msg || msg.op !== 'slot' || typeof msg.owner !== 'string' || msg.owner.length > 64) return;
+      client.send(MSG.FARM, { op: 'slot', owner: msg.owner, slot: this.farmSlot(msg.owner) } satisfies FarmEvent);
     });
 
     this.onMessage<string>(MSG.GARDEN, (client, garden) => {
@@ -729,6 +739,29 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       if (p.bubble && now - p.bubbleAt > BUBBLE_TTL_MS) p.bubble = '';
     });
   }
+
+  /** Farm owner per slot, and when the slot was last seen in use. */
+  private farmSlots = new Map<number, { owner: string; seen: number }>();
+  private farmSlot(owner: string): number {
+    const now = Date.now();
+    // keep slots that somebody is standing in
+    for (const p of this.state.players.values()) {
+      const s = myFarmAt(p.x, p.z);
+      const row = s >= 0 ? this.farmSlots.get(s) : undefined;
+      if (row) row.seen = now;
+    }
+    for (const [s, row] of this.farmSlots) if (row.owner === owner) return (row.seen = now), s;
+    for (let s = 0; s < MY_FARM_SLOTS; s++)
+      if (!this.farmSlots.has(s)) {
+        this.farmSlots.set(s, { owner, seen: now });
+        return s;
+      }
+    // all taken: reuse the one idle longest
+    let best = 0;
+    for (const [s, row] of this.farmSlots) if (row.seen < this.farmSlots.get(best)!.seen) best = s;
+    this.farmSlots.set(best, { owner, seen: now });
+    return best;
+  }
 }
 
 /** "203.0.113.x" / "2001:db8:…" — enough to spot many guests from one network, not a full address. */
@@ -736,6 +769,7 @@ function shortIp(ip: string) {
   const v4 = ip.replace(/^::ffff:/, '');
   if (/^\d+\.\d+\.\d+\.\d+$/.test(v4)) return v4.replace(/\.\d+$/, '.x');
   return ip.split(':').slice(0, 3).join(':') + (ip.includes(':') ? ':…' : '');
+
 }
 
 function clamp(v: number, lo: number, hi: number) {

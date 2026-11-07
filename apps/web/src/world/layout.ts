@@ -157,6 +157,12 @@ export const BOUNDS: Aabb = { ...WORLD_BOUNDS };
 
 /** Solid things registered by the area scenes (enclosures, shelves, walls, tables). Read once by LocalPlayer. */
 const extraBlockers: Aabb[] = [];
+/** Blockers of the place you are in right now (a farm slot…), swapped by its scene; checked with the others. */
+export const dynamicBlockers: Aabb[] = [];
+export function setDynamicBlockers(list: Aabb[]) {
+  dynamicBlockers.length = 0;
+  dynamicBlockers.push(...list);
+}
 export function registerBlockers(list: Aabb[]) {
   extraBlockers.push(...list);
   blockersVersion.n++;
@@ -244,6 +250,9 @@ function hitsCircle(nx: number, nz: number, ox: number, oz: number, circles: Cir
 function collides(x: number, z: number, blockers: Aabb[]) {
   const r = PLAYER_RADIUS;
   for (const b of blockers) {
+    if (x + r > b.minX && x - r < b.maxX && z + r > b.minZ && z - r < b.maxZ) return true;
+  }
+  for (const b of dynamicBlockers) {
     if (x + r > b.minX && x - r < b.maxX && z + r > b.minZ && z - r < b.maxZ) return true;
   }
   return false;

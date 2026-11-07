@@ -9,7 +9,7 @@ export interface Rect {
   minZ: number;
   maxZ: number;
 }
-export const INTERIOR_BOUNDS: Rect = { minX: -160, maxX: 260, minZ: -920, maxZ: -100 };
+export const INTERIOR_BOUNDS: Rect = { minX: -165, maxX: 260, minZ: -1360, maxZ: -100 };
 /** Sunny Bay, the seaside reached by train (scene/areas/places/SunnyBay.tsx): far south of the interiors. */
 export const SUNNY_BAY: Rect = { minX: -55, maxX: 55, minZ: -560, maxZ: -450 };
 /** Maple Hill, the hills reached by train (scene/areas/places/MapleHill.tsx): east of Sunny Bay. The ground rises to

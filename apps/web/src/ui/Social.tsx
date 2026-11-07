@@ -1,4 +1,5 @@
 import { useMyRoom } from '../store/myRoom';
+import { useMyFarm } from '../store/myFarm';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { GROUP_CHAT_MAX, GROUP_MAX, GROUP_NAME_MAX } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
@@ -180,6 +181,18 @@ export function FriendsTab() {
                   className="min-h-9 rounded-lg border px-2 text-sm"
                 >
                   🏠
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    useMyFarm.getState().enter(f.pid, f.name);
+                    useGame.getState().setUiPanel(null);
+                  }}
+                  title={t('Visit their farm')}
+                  aria-label={t('Visit their farm')}
+                  className="min-h-9 rounded-lg border px-2 text-sm"
+                >
+                  🌾
                 </button>
                 {sameZone ? (
                   <button

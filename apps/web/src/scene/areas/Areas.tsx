@@ -28,6 +28,7 @@ const SunnyBay = lazy(() => import('./places/SunnyBay'));
 const MapleHill = lazy(() => import('./places/MapleHill'));
 const Riverside = lazy(() => import('./places/Riverside'));
 const OldTown = lazy(() => import('./places/OldTown'));
+const MyFarm = lazy(() => import('./places/MyFarm'));
 /** Both faces of the shelter's advert light box (poster faces at x = 1.245 / 1.115, centre y 1.15, z -0.04). */
 const AD_GLOW = mergeGeometries([
   new THREE.PlaneGeometry(0.7, 1.3).rotateY(Math.PI / 2).translate(1.247, 1.15, -0.04),
@@ -82,6 +83,9 @@ export function Areas() {
       </Suspense>
       <Suspense fallback={null}>
         <OldTown />
+      </Suspense>
+      <Suspense fallback={null}>
+        <MyFarm />
       </Suspense>
       <StreetGate x={-46} label={gateLabel(['supermarket', 'restaurant'], -1)} />
       <StreetGate x={46} label={gateLabel(['zoo', 'farm'], 1)} />
