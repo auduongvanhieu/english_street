@@ -72,7 +72,7 @@ import { SEA_SWIM } from '../world/sunnyBay';
 import { HILL, groundAt } from '../world/mapleHill';
 
 /** Height of the ground under (x, z): 0 everywhere but on Maple Hill. */
-const floorAt = (x: number, z: number) => (x > HILL.minX - 2 && x < HILL.maxX + 2 && z > HILL.minZ - 2 && z < HILL.maxZ + 2 ? groundAt(x, z) : 0);
+export const floorAt = (x: number, z: number) => (x > HILL.minX - 2 && x < HILL.maxX + 2 && z > HILL.minZ - 2 && z < HILL.maxZ + 2 ? groundAt(x, z) : 0);
 
 export type { Controls } from '../input/keys';
 
