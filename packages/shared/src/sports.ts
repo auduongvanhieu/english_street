@@ -59,5 +59,7 @@ export const MINIGAMES = {
   riverside: { perPoint: 3, max: 12, perDay: 4 },
   /** Old Town: telling the time (0-5), the museum questions (0-5) */
   oldtown: { perPoint: 3, max: 15, perDay: 4 },
+  /** Word Relay (team game): a win 5, a loss 2, a draw 3 */
+  relay: { perPoint: 3, max: 15, perDay: 6 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

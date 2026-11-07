@@ -46,6 +46,8 @@ export const MSG = {
   /** both ways: "My farm" - client asks where a farm is in this zone ({ op: 'slot', owner }), server answers
    * { op: 'slot', owner, slot } (slots are shared out per zone so two farms never overlap) */
   FARM: 'farm',
+  /** both ways: team games (Word Relay) - TeamSend / TeamEvent (@es/shared teamGames.ts) */
+  TEAM: 'team',
 } as const;
 export type FarmSend = { op: 'slot'; owner: string } | { op: 'chase'; ticket: string };
 export type FarmEvent =

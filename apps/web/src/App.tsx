@@ -39,6 +39,8 @@ import { GuideChip, JourneyToasts, NextStepChip } from './ui/journey/JourneyHud'
 import { initJourney, useJourney } from './store/journey';
 import { initMyFarm, useMyFarm } from './store/myFarm';
 import { MyFarmHud } from './ui/MyFarmHud';
+import { TeamGameButton, TeamGameHud } from './ui/TeamGameHud';
+import { initTeamGame, useTeamGame } from './store/teamGame';
 import { Icon } from './ui/icons';
 import { applyPlayerSettings, currentPlayerSettings, watchPlayerSettings } from './store/playerSettings';
 import type { PlayerSettings } from '@es/shared';
@@ -114,7 +116,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile, useTeamGame };
 }
 
 export default function App() {
@@ -169,6 +171,7 @@ export default function App() {
     const offSettings = watchPlayerSettings();
     const offJourney = initJourney();
     const offMyFarm = initMyFarm();
+    const offTeam = initTeamGame();
     const offWatch = initVoiceWatch();
     return () => {
       off();
@@ -180,6 +183,7 @@ export default function App() {
       offSports();
       offBoats();
       offSettings();
+      offTeam();
       offMyFarm();
       offJourney();
       offWatch();
@@ -395,6 +399,7 @@ export default function App() {
           <div data-ui className="hud-top absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col items-end gap-2">
             <WeatherChip compact />
             <PlayersButton compact />
+            <TeamGameButton />
             <Collapsible id="top" icon="menu" title={t('More buttons')} row>
               <VoiceChatButton compact />
               <HudButton onClick={() => useGame.getState().setUiPanel('map')} title={t('Map')}>
@@ -438,6 +443,7 @@ export default function App() {
               <Icon name="map" />
             </HudButton>
             <PlayersButton compact />
+            <TeamGameButton />
             <SettingsButton compact />
             <FeedbackButton compact />
             <HudButton onClick={() => setConfirmExit(true)} title={t('Exit to zone list')}>
@@ -483,6 +489,7 @@ export default function App() {
       <HillHud />
       <TripHud />
       <MyFarmHud />
+      <TeamGameHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

@@ -26,6 +26,7 @@ import {
   myFarmAt,
   type FarmEvent,
   type FarmSend,
+  type TeamSend,
   MAPLE_HILL,
   MAPLE_HILL_TOP,
   hotelRoomAt,
@@ -58,6 +59,7 @@ import {
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { FarmChases, type ChaseClient } from './farmChase';
+import { WordRelay } from './teamGames';
 import { Group, Player, StreetState } from './schema/StreetState';
 import { Football } from './football';
 import { Boats } from './boats';
@@ -239,6 +241,14 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       const p = this.state.players.get(client.sessionId);
       if (!p || typeof prop !== 'string') return;
       p.prop = prop === '' || PROP_RE.test(prop) ? prop : p.prop;
+    });
+
+    // team games: Word Relay
+    this.onMessage<TeamSend>(MSG.TEAM, (client, msg) => {
+      const p = this.state.players.get(client.sessionId);
+      if (!p || !msg || typeof msg !== 'object') return;
+      if (msg.op === 'hello') return this.relay.hello((m) => client.send(MSG.TEAM, m));
+      this.relay.onMessage(client.sessionId, p.name, msg);
     });
 
     // "My farm": a slot in the farm grid per farm owner, for as long as somebody is there
@@ -464,6 +474,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       }
       lastSecond = now;
       this.expireBubbles();
+      this.relay.tick(now);
       this.boatsSim?.tick(now);
       if (now - lastHeat >= HEAT_EVERY_MS) {
         lastHeat = now;
@@ -655,6 +666,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
 
   onLeave(client: Client) {
+    this.relay.onMessage(client.sessionId, '', { op: 'leave' });
     const ip = this.countedGuests.get(client.sessionId);
     if (ip !== undefined) {
       this.countedGuests.delete(client.sessionId);
@@ -755,6 +767,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     });
   }
 
+  /** Word Relay (rooms/teamGames.ts). */
+  private relay = new WordRelay((type, msg) => this.broadcast(type, msg));
   /** Guard-dog chases on the farms (rooms/farmChase.ts). */
   private chases = new FarmChases(
     (session) => {

@@ -23,3 +23,4 @@ export * from './books';
 export * from './playerSettings';
 export * from './journey';
 export * from './myfarm';
+export * from './teamGames';
