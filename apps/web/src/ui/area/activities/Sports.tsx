@@ -1,3 +1,4 @@
+import { useMini } from '../../../store/minigames';
 import { useEffect, useRef, useState } from 'react';
 import type { AreaContentDto } from '@es/shared';
 import { sendAreaQuiz } from '../../../net/api';
@@ -382,6 +383,20 @@ export default function SportsActivity({ content }: { content: AreaContentDto })
           <span>
             <b className="block text-sm">{t('Coach says!')}</b>
             <span className="text-xs text-gray-600">{t('Listen to Coach Max and tap the right action before time runs out. It gets faster!')}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            useArea.getState().setPanel(false);
+            useMini.getState().start('pingpong');
+          }}
+          className={`flex min-h-16 w-full items-center gap-3 rounded-xl border-2 px-3 py-2 text-start ${rainy ? 'border-sky-400 bg-sky-50' : 'border-sky-200 bg-white'}`}
+        >
+          <span className="text-3xl">🏓</span>
+          <span>
+            <b className="block text-sm">{t('Table tennis in the sports hall')}</b>
+            <span className="text-xs text-gray-600">{rainy ? t('It is raining: play inside! Listen to the coach and hit the ball the right way.') : t('Listen to the coach: left, right, short or long. First to 7 wins.')}</span>
           </span>
         </button>
         <button type="button" onClick={() => start('sport')} className="flex min-h-16 w-full items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-start">

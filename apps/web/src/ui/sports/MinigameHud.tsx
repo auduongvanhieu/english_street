@@ -68,8 +68,10 @@ export function MinigameHud() {
   const correct = useMini((s) => s.correct);
   const result = useMini((s) => s.result);
   const board = useMini((s) => s.board);
+  const hoopsQ = useMini((s) => s.hoopsQ);
+  const pp = useMini((s) => s.pp);
   if (!game) return null;
-  const title = game === 'hoops' ? t('Hoops') : game === 'race' ? t('Race') : t('Coach says');
+  const title = game === 'hoops' ? t('Hoops') : game === 'race' ? t('Race') : game === 'pingpong' ? `🏓 ${t('Table tennis · sports hall')}` : t('Coach says');
   return (
     <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2">
       <div className="pointer-events-auto rounded-2xl bg-white/95 p-3 text-center shadow-2xl">
@@ -83,7 +85,44 @@ export function MinigameHud() {
           </button>
         </div>
         {phase === 'countdown' ? <div className="py-2 text-lg font-semibold">{game === 'race' ? t('On your marks…') : t('Get ready…')}</div> : null}
-        {phase === 'play' && game === 'hoops' ? (
+        {phase === 'play' && game === 'hoops' && hoopsQ ? (
+          <div className="mt-1">
+            <p className="text-sm">
+              {t('Get the ball! Which picture is')} <b dir="ltr">“{hoopsQ.word}”</b>?
+            </p>
+            <div className="mt-1 grid grid-cols-4 gap-1.5">
+              {hoopsQ.options.map((o, i) => (
+                <button key={o} type="button" onClick={() => useMini.getState().answerHoops(i)} className="min-h-14 rounded-xl border border-orange-200 bg-orange-50 text-3xl">
+                  {o}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {phase === 'play' && game === 'pingpong' && pp ? (
+          <div className="mt-1">
+            <p className="text-3xl font-black tabular-nums">
+              {pp.me} <span className="text-gray-400">–</span> {pp.coach}
+            </p>
+            <p className="text-xs text-gray-500">{t('You – Coach · first to 7 · listen and hit!')}</p>
+            <div className="mx-auto mt-2 grid w-48 grid-cols-3 grid-rows-3 gap-1" dir="ltr">
+              {(
+                [
+                  ['long', '⬆️ Long', 'col-start-2 row-start-1'],
+                  ['left', '⬅️ Left', 'col-start-1 row-start-2'],
+                  ['right', 'Right ➡️', 'col-start-3 row-start-2'],
+                  ['short', '⬇️ Short', 'col-start-2 row-start-3'],
+                ] as const
+              ).map(([k, label, pos]) => (
+                <button key={k} type="button" onClick={() => useMini.getState().hitPP(k)} className={`min-h-12 rounded-xl text-xs font-bold ${pos} ${pp.call ? 'bg-sky-500 text-white active:bg-sky-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {label}
+                </button>
+              ))}
+              <div className="col-start-2 row-start-2 flex items-center justify-center text-2xl">🏓</div>
+            </div>
+          </div>
+        ) : null}
+        {phase === 'play' && game === 'hoops' && !hoopsQ ? (
           <>
             <Meter />
             <button type="button" disabled={!!shot} onClick={() => useMini.getState().throwBall()} className="mt-2 min-h-11 w-full rounded-xl bg-orange-500 text-base font-bold text-white disabled:opacity-50">
@@ -101,7 +140,7 @@ export function MinigameHud() {
         {phase === 'done' ? (
           <div className="mt-1 space-y-2">
             <div className="text-lg font-bold">
-              {game === 'hoops' ? `🏀 ${made} / 10` : game === 'race' ? (raceMs ? `⏱️ ${(raceMs / 1000).toFixed(2)} s` : '') : `✔ ${correct} / 8`}
+              {game === 'hoops' ? `🏀 ${made} / 10` : game === 'pingpong' ? `🏓 ${pp?.me ?? 0} – ${pp?.coach ?? 0}` : game === 'race' ? (raceMs ? `⏱️ ${(raceMs / 1000).toFixed(2)} s` : '') : `✔ ${correct} / 8`}
             </div>
             {result ? (
               <div className="text-sm">

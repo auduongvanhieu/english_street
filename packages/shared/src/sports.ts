@@ -61,6 +61,10 @@ export const MINIGAMES = {
   oldtown: { perPoint: 3, max: 15, perDay: 4 },
   /** Word Relay (team game): a win 5, a loss 2, a draw 3 */
   relay: { perPoint: 3, max: 15, perDay: 6 },
+  /** table tennis in the sports hall: your points (0-7) */
+  pingpong: { perPoint: 2, max: 14, perDay: 4 },
+  /** taking passengers across the river: 1 per trip */
+  ferryman: { perPoint: 4, max: 4, perDay: 6 },
   /** the other team games: the same scoring as Word Relay */
   hunt: { perPoint: 3, max: 15, perDay: 6 },
   rush: { perPoint: 3, max: 15, perDay: 6 },

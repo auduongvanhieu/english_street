@@ -15,7 +15,33 @@ import { coachSay } from './sports';
  *  - coach: "Coach says" for real: jump, wave, dance, run to a coloured cone… but only when Coach says so!
  * Results go to /me/minigame (XP and coins, capped per day, best scores kept on the server).
  */
-export type MiniGame = 'hoops' | 'race' | 'coach';
+export type MiniGame = 'hoops' | 'race' | 'coach' | 'pingpong';
+/** Hoops: a sports word before each throw (right = you get the ball). */
+export const SPORT_WORDS: [string, string][] = [
+  ['basketball', '🏀'], ['football', '⚽'], ['tennis', '🎾'], ['swimming', '🏊'], ['cycling', '🚴'], ['skiing', '⛷️'],
+  ['boxing', '🥊'], ['golf', '⛳'], ['volleyball', '🏐'], ['baseball', '⚾'], ['table tennis', '🏓'], ['running', '🏃'],
+  ['surfing', '🏄'], ['climbing', '🧗'], ['skating', '⛸️'], ['bowling', '🎳'],
+];
+export interface HoopsQuestion {
+  word: string;
+  options: string[];
+  answer: number;
+}
+const hoopsQuestion = (): HoopsQuestion => {
+  const pool = [...SPORT_WORDS].sort(() => Math.random() - 0.5).slice(0, 4);
+  const answer = Math.floor(Math.random() * 4);
+  return { word: pool[answer]![0], options: pool.map((p) => p[1]), answer };
+};
+/** Table tennis in the sports hall: where the ball goes (the call) and the button for it. */
+export const PP_CALLS = [
+  { call: 'Left!', key: 'left' },
+  { call: 'Right!', key: 'right' },
+  { call: 'Short!', key: 'short' },
+  { call: 'Long!', key: 'long' },
+] as const;
+export type PPKey = (typeof PP_CALLS)[number]['key'];
+export const PP_TO = 7;
+const NUMBER = ['love', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 export type ConeColor = 'red' | 'blue' | 'yellow';
 
 const ccz = (COURT.z0 + COURT.z1) / 2;
@@ -72,6 +98,9 @@ interface MiniStore {
   round: number;
   correct: number;
   coachRound: CoachRound | null;
+  hoopsQ: HoopsQuestion | null;
+  // table tennis
+  pp: { me: number; coach: number; call: PPKey | null; callAt: number; window: number; hits: number } | null;
   // results
   note: string | null;
   result: MinigameResult | null;
@@ -79,6 +108,8 @@ interface MiniStore {
   start: (g: MiniGame) => void;
   stop: () => void;
   throwBall: () => void;
+  answerHoops: (i: number) => void;
+  hitPP: (k: PPKey) => void;
 }
 
 let timers: number[] = [];
@@ -107,7 +138,7 @@ async function finish(game: MiniGame, score: number) {
   } catch {
     /* offline: no reward */
   }
-  if (game !== 'coach') {
+  if (game !== 'coach' && game !== 'pingpong') {
     try {
       const b = await fetchMinigameBoard(game);
       useMini.setState({ board: b.board.slice(0, 5) });
@@ -129,26 +160,29 @@ export const useMini = create<MiniStore>((set, get) => ({
   round: 0,
   correct: 0,
   coachRound: null,
+  hoopsQ: null,
+  pp: null,
   note: null,
   result: null,
   board: [],
   start(game) {
     clearTimers();
     stopPoll();
-    set({ game, phase: 'countdown', throws: 0, made: 0, shot: null, raceT0: 0, raceMs: 0, round: 0, correct: 0, coachRound: null, note: null, result: null, board: [] });
+    set({ game, phase: 'countdown', throws: 0, made: 0, shot: null, raceT0: 0, raceMs: 0, round: 0, correct: 0, coachRound: null, hoopsQ: null, pp: null, note: null, result: null, board: [] });
     track('minigame_start', { game });
     if (game === 'hoops') startHoops();
     else if (game === 'race') startRace();
+    else if (game === 'pingpong') startPingpong();
     else startCoach();
   },
   stop() {
     clearTimers();
     stopPoll();
-    set({ game: null, shot: null, coachRound: null, note: null });
+    set({ game: null, shot: null, coachRound: null, hoopsQ: null, pp: null, note: null });
   },
   throwBall() {
     const s = get();
-    if (s.game !== 'hoops' || s.phase !== 'play' || s.shot) return;
+    if (s.game !== 'hoops' || s.phase !== 'play' || s.shot || s.hoopsQ) return;
     const m = meterAt(s.meterT0);
     const off = Math.abs(m - 0.5);
     const made = off < METER_GOOD;
@@ -167,7 +201,7 @@ export const useMini = create<MiniStore>((set, get) => ({
       coachSay(made ? (madeN % 3 === 0 ? `Great! That's ${madeN} baskets.` : 'Nice shot!') : off < 0.25 ? 'So close!' : 'Try again!');
       if (made) haptic('light');
       later(900, () => {
-        set({ shot: null, meterT0: performance.now() });
+        set({ shot: null, meterT0: performance.now(), hoopsQ: throws < HOOPS_THROWS ? hoopsQuestion() : null });
         if (throws >= HOOPS_THROWS) {
           set({ phase: 'done' });
           coachSay(`Well done! You scored ${madeN} out of ${HOOPS_THROWS}.`);
@@ -176,14 +210,86 @@ export const useMini = create<MiniStore>((set, get) => ({
       });
     });
   },
+  answerHoops(i) {
+    const s = get();
+    const q = s.hoopsQ;
+    if (s.game !== 'hoops' || s.phase !== 'play' || !q) return;
+    if (i === q.answer) {
+      coachSay(`Yes, ${q.word}! Here's the ball.`);
+      set({ hoopsQ: null, meterT0: performance.now(), note: null });
+      return;
+    }
+    // a wrong word: no ball this time (the throw counts as a miss)
+    const throws = s.throws + 1;
+    coachSay(`No, that's not ${q.word}. No ball this time!`);
+    set({ throws, note: `✗ ${q.word} = ${SPORT_WORDS.find((w) => w[0] === q.word)?.[1] ?? ''}`, hoopsQ: throws < HOOPS_THROWS ? hoopsQuestion() : null });
+    if (throws >= HOOPS_THROWS) {
+      set({ phase: 'done' });
+      coachSay(`Well done! You scored ${s.made} out of ${HOOPS_THROWS}.`);
+      void finish('hoops', s.made);
+    }
+  },
+  hitPP(k) {
+    const s = get();
+    const p = s.pp;
+    if (s.game !== 'pingpong' || s.phase !== 'play' || !p || !p.call) return;
+    const inTime = performance.now() - p.callAt <= p.window;
+    if (k === p.call && inTime) {
+      const hits = p.hits + 1;
+      if (hits >= 3) return ppPoint(true);
+      set({ pp: { ...p, call: null, hits } });
+      later(450, ppCall);
+      return;
+    }
+    ppPoint(false);
+  },
 }));
+
+function startPingpong() {
+  coachSay("Welcome to the sports hall! Listen: left, right, short or long. Hit the right button. First to seven wins!");
+  useMini.setState({ pp: { me: 0, coach: 0, call: null, callAt: 0, window: 1800, hits: 0 } });
+  later(3200, () => {
+    useMini.setState({ phase: 'play' });
+    ppCall();
+  });
+}
+function ppCall() {
+  const s = useMini.getState();
+  if (s.game !== 'pingpong' || !s.pp) return;
+  const c = PP_CALLS[Math.floor(Math.random() * PP_CALLS.length)]!;
+  const window = Math.max(1000, 1900 - 70 * (s.pp.me + s.pp.coach));
+  useMini.setState({ pp: { ...s.pp, call: c.key, callAt: performance.now(), window } });
+  coachSay(c.call);
+  // too slow: the coach wins the point
+  const at = useMini.getState().pp!.callAt;
+  later(window + 50, () => {
+    const p = useMini.getState().pp;
+    if (p && p.call && p.callAt === at) ppPoint(false);
+  });
+}
+function ppPoint(won: boolean) {
+  const s = useMini.getState();
+  if (!s.pp) return;
+  const me = s.pp.me + (won ? 1 : 0);
+  const coach = s.pp.coach + (won ? 0 : 1);
+  useMini.setState({ pp: { ...s.pp, me, coach, call: null, hits: 0 }, note: won ? 'Your point!' : 'Coach scores.' });
+  if (won) haptic('light');
+  if (me >= PP_TO || coach >= PP_TO) {
+    useMini.setState({ phase: 'done' });
+    coachSay(me > coach ? `Game! You win ${NUMBER[me]} – ${NUMBER[coach]}. Great table tennis!` : `Game to me, ${NUMBER[coach]} – ${NUMBER[me]}. Good try!`);
+    void finish('pingpong', me);
+    return;
+  }
+  coachSay(`${NUMBER[me]} – ${NUMBER[coach]}.`);
+  later(1600, ppCall);
+}
 
 function startHoops() {
   const [x, z] = w(HOOP_SPOT_LOCAL);
   const [hx, hz] = w(HOOPS_LOCAL[0]!);
   teleportTo(x, z, Math.atan2(hx - x, hz - z));
   coachSay('Ten throws. Press throw when the marker is in the green!');
-  later(1800, () => useMini.setState({ phase: 'play', meterT0: performance.now() }));
+  later(1800, () => useMini.setState({ phase: 'play', meterT0: performance.now(), hoopsQ: hoopsQuestion() }));
 }
 
 function startRace() {

@@ -1,6 +1,7 @@
 import { useJourney } from '../store/journey';
 import { AREA_INFO } from '@es/shared';
 import { JourneyPanel } from './journey/JourneyPanel';
+import { BagPanel } from './BagPanel';
 import { Icon, type IconName } from './icons';
 import { useEffect, useState } from 'react';
 import { AREAS } from '../world/areas';
@@ -77,12 +78,13 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         <span className="flex items-center gap-1"><Icon name="star" size={14} className="text-amber-300" />{p.badges.length}</span>
         {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={14} />{p.quota.turnsLeftToday}</span>}
       </div>
-      <div className="mt-2 flex gap-1">
+      <div className="mt-2 grid grid-cols-2 gap-1">
         {(
           [
             ['daily', 'book', t('Daily')],
             ['notebook', 'feedback', t('Notebook')],
             ['avatar', 'smile', t('Character')],
+            ['bag', 'bag', t('Bag')],
           ] as const
         ).map(([to, icon, label]) => (
           <button key={to} type="button" onClick={() => open(to)} className="flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-1 py-1.5 text-[11px] hover:bg-white/30">
@@ -109,7 +111,7 @@ function ProfilePanel() {
   if (!p) return null;
   const prevLevelXp = 50 * (p.level - 1) * (p.level - 1);
   const pct = Math.min(100, Math.round(((p.xp - prevLevelXp) / Math.max(1, p.nextLevelXp - prevLevelXp)) * 100));
-  const Item = ({ to, children }: { to: 'daily' | 'notebook' | 'avatar' | 'placement'; children: React.ReactNode }) => (
+  const Item = ({ to, children }: { to: 'daily' | 'notebook' | 'avatar' | 'placement' | 'bag'; children: React.ReactNode }) => (
     <button type="button" onClick={() => open(to)} className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-base">
       {children}
     </button>
@@ -140,6 +142,7 @@ function ProfilePanel() {
         <Item to="daily"><Icon name="book" className="me-3 text-slate-600" />{t('My journey: quests, passport, today')}</Item>
         <Item to="notebook"><Icon name="feedback" className="me-3 text-slate-600" />{t('Notebook')}</Item>
         <Item to="avatar"><Icon name="smile" className="me-3 text-slate-600" />{t('Character & shop')}</Item>
+        <Item to="bag"><Icon name="bag" className="me-3 text-slate-600" />{t('My bag: everything I own')}</Item>
       </div>
     </Panel>
   );
@@ -172,6 +175,7 @@ export function UiPanels() {
   if (which === 'placement') return <PlacementPanel />;
   if (which === 'profile') return <ProfilePanel />;
   if (which === 'settings') return <SettingsPanel />;
+  if (which === 'bag') return <BagPanel />;
   return null;
 }
 

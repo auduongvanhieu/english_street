@@ -1,4 +1,5 @@
 import { useTeamGame } from '../../store/teamGame';
+import { FerryPassenger } from './FerryPassenger';
 import { useUsable } from '../../world/usables';
 import { useT } from '../../i18n';
 
@@ -101,6 +102,7 @@ export function Areas() {
         <MyFarm />
       </Suspense>
       <TeamBoard />
+      <FerryPassenger />
       <StreetGate x={-46} label={gateLabel(['supermarket', 'restaurant'], -1)} />
       <StreetGate x={46} label={gateLabel(['zoo', 'farm'], 1)} />
       <StreetGate x={-170} label={gateLabel(['clothes', 'cinema'], -1)} />

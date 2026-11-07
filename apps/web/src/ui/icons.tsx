@@ -6,7 +6,7 @@ export type IconName =
   | 'menu' | 'close' | 'more' | 'users' | 'map' | 'settings' | 'feedback' | 'exit' | 'mic' | 'micOff' | 'voice'
   | 'chat' | 'talk' | 'jump' | 'smile' | 'megaphone' | 'chair' | 'stand' | 'hand' | 'heart' | 'drop'
   | 'sun' | 'moon' | 'cloud' | 'rain' | 'storm' | 'fog' | 'target' | 'pin' | 'graphics' | 'bolt'
-  | 'check' | 'star' | 'circle' | 'book' | 'sunrise' | 'passport' | 'calendar' | 'speaker' | 'coin' | 'lock' | 'gift' | 'bus' | 'walk' | 'smileHi' | 'thumb' | 'no' | 'dance' | 'trophy';
+  | 'check' | 'star' | 'circle' | 'book' | 'sunrise' | 'passport' | 'calendar' | 'speaker' | 'coin' | 'lock' | 'gift' | 'bus' | 'walk' | 'smileHi' | 'thumb' | 'no' | 'dance' | 'trophy' | 'bag';
 
 const P: Record<IconName, React.ReactNode> = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -234,6 +234,12 @@ const P: Record<IconName, React.ReactNode> = {
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M8.5 8.5l7 7M15.5 8.5l-7 7" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M6 8h12l-1 12.5H7z" />
+      <path d="M9 8V6.5a3 3 0 0 1 6 0V8" />
     </>
   ),
   trophy: (
