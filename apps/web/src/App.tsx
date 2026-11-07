@@ -44,6 +44,8 @@ import { KitchenHud } from './ui/KitchenHud';
 import { CheckoutHud } from './ui/CheckoutHud';
 import { MovieHud } from './ui/MovieHud';
 import { TrainHud } from './ui/TrainHud';
+import { ClassHud } from './ui/ClassHud';
+import { useClassroom } from './store/classroom';
 import { useTrain } from './store/train';
 import { useMovie } from './store/movie';
 import { useKitchen } from './store/kitchen';
@@ -95,7 +97,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom };
 }
 
 export default function App() {
@@ -451,6 +453,7 @@ export default function App() {
       <CheckoutHud />
       <MovieHud />
       <TrainHud />
+      <ClassHud />
       <HotelPanels />
       {!hudHidden && <TalkBar />}
       <FollowChip />

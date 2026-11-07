@@ -34,6 +34,7 @@ const DAILY: Record<string, Text> = {
   'd-chat': { title: tk('Say 3 things in the chat'), how: tk('Write 3 messages in English to players near you.') },
   'd-till': { title: tk('Pay at the supermarket checkout'), how: tk('Fill a trolley with your shopping list, pay Sam and check your change.') },
   'd-movie': { title: tk('Watch a film'), how: tk('Sit in Screen 1 at Star Cinema, watch the film and answer the questions.') },
+  'd-class': { title: tk('Go to a class'), how: tk('Sit in the classroom at Maple School when the bell rings and answer the questions.') },
   'd-train': { title: tk('Take the train'), how: tk('Buy the right ticket at the station machine and ride the train.') },
   'd-sport': { title: tk('Play a sports game'), how: tk('Football, hoops, a race or "Coach says" at the sports park.') },
   'd-hug': { title: tk('Hug a pet'), how: tk('Walk up to a cat or a dog and give it a hug.') },

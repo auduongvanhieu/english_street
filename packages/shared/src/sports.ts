@@ -43,5 +43,7 @@ export const MINIGAMES = {
   movie: { perPoint: 4, max: 12, perDay: 3 },
   /** train ride: right destination + right ticket type (0-2) */
   train: { perPoint: 6, max: 12, perDay: 3 },
+  /** Maple School: questions right at the end of a timed class (0-3) */
+  class: { perPoint: 5, max: 15, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

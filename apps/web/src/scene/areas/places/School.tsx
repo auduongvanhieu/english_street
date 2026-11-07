@@ -1,5 +1,10 @@
-import { useMemo } from 'react';
-import type { ThreeEvent } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import * as THREE from 'three';
+import { serverNow } from '../../../net/client';
+import { localPos } from '../../LocalPlayer';
+import { classTick } from '../../../store/classroom';
+import { classPhase, nextLesson } from '../../../world/lessons';
 import { Text } from '@react-three/drei';
 import { AREA, BENCHES, BIKE_RACK, BOARD, BOOKCASES, COURT, DESK_COLS, DESK_ROWS, FLAG, FRAME, HOOP, HOPSCOTCH, LIB_X, PARTITION, READING_TABLE, SCHOOL, SPOTS, SWINGS, TEACHER_DESK, TREES } from '../../../world/places/school';
 import { useArea } from '../../../store/area';
@@ -174,6 +179,84 @@ function onTap(e: ThreeEvent<MouseEvent>) {
   else useArea.getState().openCard({ area: 'school', item: best.item });
 }
 
+/* ------------------------------------------------------------------------------------------ the timed class */
+const BW = 1024;
+const BH = Math.round((BW * BOARD.h) / BOARD.w);
+
+function drawBoard(c: CanvasRenderingContext2D, now: number, day: string) {
+  const p = classPhase(now);
+  c.fillStyle = '#2f6b4f';
+  c.fillRect(0, 0, BW, BH);
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  const chalk = (t: string, x: number, y: number, size: number, color = '#f6f1d8', weight = 'bold') => {
+    c.font = `${weight} ${size}px "Comic Sans MS", "Trebuchet MS", sans-serif`;
+    c.fillStyle = color;
+    c.fillText(t, x, y, BW - 60);
+  };
+  const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+  c.font = '22px sans-serif';
+  c.fillStyle = 'rgba(246,241,216,0.6)';
+  c.textAlign = 'left';
+  c.fillText(day, 24, 26);
+  c.textAlign = 'right';
+  c.fillText(p.phase === 'break' ? `Next lesson in ${clock(p.left)}` : `Lesson: ${p.lesson.title}`, BW - 24, 26);
+  c.textAlign = 'center';
+  if (p.phase === 'bell') {
+    chalk('🔔 Good morning, class!', BW / 2, BH * 0.4, 64);
+    chalk(`Today: ${p.lesson.title}`, BW / 2, BH * 0.68, 50, '#ffe27a');
+  } else if (p.phase === 'slide') {
+    const sl = p.lesson.slides[p.slide]!;
+    c.font = '120px serif';
+    c.fillText(sl.pic, BW * 0.17, BH * 0.52);
+    c.textAlign = 'left';
+    chalk(sl.word, BW * 0.32, BH * 0.38, 70, '#ffe27a');
+    chalk(sl.say, BW * 0.32, BH * 0.66, 38, '#f6f1d8', 'normal');
+    c.textAlign = 'center';
+    chalk(`${p.slide + 1} / ${p.lesson.slides.length}`, BW / 2, BH - 22, 22, 'rgba(246,241,216,0.6)', 'normal');
+  } else if (p.phase === 'quiz') {
+    const q = p.lesson.quiz[p.q]!;
+    chalk(`Question ${p.q + 1}: ${q.q}`, BW / 2, BH * 0.26, 46);
+    q.options.forEach((o, i) => chalk(`${'ABC'[i]}. ${o}`, BW / 2, BH * (0.5 + i * 0.16), 38, '#ffe27a', 'normal'));
+    chalk(`✋ Put up your hand! (${Math.ceil(p.left)})`, BW / 2, BH - 22, 22, 'rgba(246,241,216,0.7)', 'normal');
+  } else {
+    chalk('Break time! 🍎', BW / 2, BH * 0.38, 62);
+    chalk(`Next lesson: ${nextLesson(p.n).title} in ${clock(p.left)}`, BW / 2, BH * 0.66, 40, '#ffe27a', 'normal');
+  }
+}
+
+/** The green board runs the timed class (world/lessons.ts) and the classroom watcher (store/classroom.ts). */
+function ClassBoard({ day }: { day: string }) {
+  const { tex, ctx } = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = BW;
+    canvas.height = BH;
+    const ctx = canvas.getContext('2d')!;
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return { tex, ctx };
+  }, []);
+  useEffect(() => () => tex.dispose(), [tex]);
+  const acc = useRef(1);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.25) return;
+    acc.current = 0;
+    const now = serverNow();
+    drawBoard(ctx, now, day);
+    tex.needsUpdate = true;
+    const [x, z] = FRAME.toLocal(localPos.x, localPos.z);
+    classTick(x > S.x0 && x < LIB_X && z > S.z0 && z < S.z1, now);
+  });
+  useEffect(() => () => classTick(false, serverNow()), []);
+  return (
+    <mesh position={[BOARD.x, BOARD.y, S.z0 + 0.235]}>
+      <planeGeometry args={[BOARD.w, BOARD.h]} />
+      <meshBasicMaterial map={tex} toneMapped={false} />
+    </mesh>
+  );
+}
+
 export default function School() {
   const day = useMemo(() => new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' }), []);
   return (
@@ -185,12 +268,7 @@ export default function School() {
       <Ground x0={LIB_X} x1={S.x1} z0={S.z0} z1={S.z1} color="#c9dcef" y={0.024} />
       <BuildingShell b={S} name="Maple School" frame={FRAME}>
         <Merged build={interior} onClick={onTap as never} />
-        <Text position={[BOARD.x, BOARD.y + 0.45, S.z0 + 0.24]} fontSize={0.36} color="#ffffff" anchorX="center" anchorY="middle">
-          {`Today is ${day}.`}
-        </Text>
-        <Text position={[BOARD.x, BOARD.y - 0.25, S.z0 + 0.24]} fontSize={0.3} color="#f6f1d8" anchorX="center" anchorY="middle" maxWidth={BOARD.w - 0.4} textAlign="center">
-          {'Open your books, please.\nPut up your hand!'}
-        </Text>
+        <ClassBoard day={`Today is ${day}.`} />
         <Text position={[(LIB_X + S.x1) / 2, 2.55, S.z0 + 0.4]} fontSize={0.4} color="#5b8def" anchorX="center">
           LIBRARY
         </Text>
