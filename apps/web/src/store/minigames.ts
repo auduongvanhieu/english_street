@@ -1,3 +1,4 @@
+import { requestJump } from '../input/joystick';
 import { create } from 'zustand';
 import { fetchMinigameBoard, reportMinigame, type MinigameResult } from '../net/api';
 import { track } from '../net/analytics';
@@ -15,7 +16,7 @@ import { coachSay } from './sports';
  *  - coach: "Coach says" for real: jump, wave, dance, run to a coloured cone… but only when Coach says so!
  * Results go to /me/minigame (XP and coins, capped per day, best scores kept on the server).
  */
-export type MiniGame = 'hoops' | 'race' | 'coach' | 'pingpong';
+export type MiniGame = 'hoops' | 'race' | 'coach' | 'pingpong' | 'jumprope';
 /** Hoops: a sports word before each throw (right = you get the ball). */
 export const SPORT_WORDS: [string, string][] = [
   ['basketball', '🏀'], ['football', '⚽'], ['tennis', '🎾'], ['swimming', '🏊'], ['cycling', '🚴'], ['skiing', '⛷️'],
@@ -99,6 +100,8 @@ interface MiniStore {
   correct: number;
   coachRound: CoachRound | null;
   hoopsQ: HoopsQuestion | null;
+  // skipping rope: jumps so far, the rope's phase start and its period (ms)
+  rope: { jumps: number; t0: number; period: number; jumped: number } | null;
   // table tennis
   pp: { me: number; coach: number; call: PPKey | null; callAt: number; window: number; hits: number } | null;
   // results
@@ -110,6 +113,7 @@ interface MiniStore {
   throwBall: () => void;
   answerHoops: (i: number) => void;
   hitPP: (k: PPKey) => void;
+  jumpRope: () => void;
 }
 
 let timers: number[] = [];
@@ -138,7 +142,7 @@ async function finish(game: MiniGame, score: number) {
   } catch {
     /* offline: no reward */
   }
-  if (game !== 'coach' && game !== 'pingpong') {
+  if (game !== 'coach' && game !== 'pingpong' && game !== 'jumprope') {
     try {
       const b = await fetchMinigameBoard(game);
       useMini.setState({ board: b.board.slice(0, 5) });
@@ -162,6 +166,7 @@ export const useMini = create<MiniStore>((set, get) => ({
   coachRound: null,
   hoopsQ: null,
   pp: null,
+  rope: null,
   note: null,
   result: null,
   board: [],
@@ -173,12 +178,13 @@ export const useMini = create<MiniStore>((set, get) => ({
     if (game === 'hoops') startHoops();
     else if (game === 'race') startRace();
     else if (game === 'pingpong') startPingpong();
+    else if (game === 'jumprope') startRope();
     else startCoach();
   },
   stop() {
     clearTimers();
     stopPoll();
-    set({ game: null, shot: null, coachRound: null, hoopsQ: null, pp: null, note: null });
+    set({ game: null, shot: null, coachRound: null, hoopsQ: null, pp: null, rope: null, note: null });
   },
   throwBall() {
     const s = get();
@@ -229,6 +235,32 @@ export const useMini = create<MiniStore>((set, get) => ({
       void finish('hoops', s.made);
     }
   },
+  jumpRope() {
+    const s = get();
+    const r = s.rope;
+    if (s.game !== 'jumprope' || s.phase !== 'play' || !r) return;
+    const now = performance.now();
+    if (now - r.jumped < r.period * 0.5) return; // one jump per turn of the rope
+    const ph = ropePhase(r, now);
+    requestJump();
+    // the rope is at the bottom when the phase is near 0 / 1
+    const ok = ph < 0.18 || ph > 0.82;
+    if (!ok) {
+      set({ phase: 'done', note: ph < 0.5 ? 'Too late!' : 'Too early!' });
+      coachSay(`Oops! You did ${NUM_WORD(r.jumps)} jumps. Well done!`);
+      void finish('jumprope', Math.min(30, r.jumps));
+      return;
+    }
+    const jumps = r.jumps + 1;
+    coachSay(NUM_WORD(jumps));
+    // a little faster every five jumps
+    set({ rope: { ...r, jumps, jumped: now, period: jumps % 5 === 0 ? Math.max(700, r.period - 80) : r.period, t0: jumps % 5 === 0 ? now - (r.period - 80) * ph : r.t0 }, note: null });
+    if (jumps >= 30) {
+      set({ phase: 'done' });
+      coachSay('Thirty jumps! Amazing!');
+      void finish('jumprope', 30);
+    }
+  },
   hitPP(k) {
     const s = get();
     const p = s.pp;
@@ -244,6 +276,32 @@ export const useMini = create<MiniStore>((set, get) => ({
     ppPoint(false);
   },
 }));
+
+/** Where the rope is: 0 = at the bottom (jump!), 0.5 = over your head. */
+export const ropePhase = (r: { t0: number; period: number }, now = performance.now()) => (((now - r.t0) / r.period) % 1 + 1) % 1;
+const WORDS20 = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+const NUM_WORD = (n: number) => (n <= 20 ? WORDS20[n]! : n < 30 ? `twenty-${WORDS20[n - 20]}` : 'thirty');
+function startRope() {
+  coachSay('Skipping rope! Jump when the rope touches the ground. Ready?');
+  later(2600, () => {
+    const now = performance.now();
+    useMini.setState({ phase: 'play', rope: { jumps: 0, t0: now - 300, period: 1300, jumped: 0 } });
+  });
+  // missing a turn of the rope also ends it
+  const check = () => {
+    const s = useMini.getState();
+    if (s.game !== 'jumprope' || s.phase === 'done') return;
+    const r = s.rope;
+    if (s.phase === 'play' && r && performance.now() - Math.max(r.jumped, r.t0 + 300) > r.period * 1.25 + 400) {
+      useMini.setState({ phase: 'done', note: 'The rope caught your feet!' });
+      coachSay(`You did ${NUM_WORD(r.jumps)} jumps. Good try!`);
+      void finish('jumprope', Math.min(30, r.jumps));
+      return;
+    }
+    later(200, check);
+  };
+  later(3400, check);
+}
 
 function startPingpong() {
   coachSay("Welcome to the sports hall! Listen: left, right, short or long. Hit the right button. First to seven wins!");

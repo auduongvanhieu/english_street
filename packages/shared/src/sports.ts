@@ -70,5 +70,12 @@ export const MINIGAMES = {
   rush: { perPoint: 3, max: 15, perDay: 6 },
   harvest: { perPoint: 3, max: 15, perDay: 6 },
   draw: { perPoint: 3, max: 15, perDay: 6 },
+  spell: { perPoint: 3, max: 15, perDay: 6 },
+  /** skipping rope: jumps (0-30) */
+  jumprope: { perPoint: 1, max: 20, perDay: 4 },
+  /** zoo: sorting rubbish into the right bins (0-6) */
+  cleaner: { perPoint: 2, max: 12, perDay: 4 },
+  /** farm: driving the tractor to the barn (0-3 good drives) */
+  tractor: { perPoint: 4, max: 12, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

@@ -81,6 +81,8 @@ export function TeamGameHud() {
               <RushView st={st} team={mine} />
             ) : st.game === 'harvest' ? (
               <HarvestView st={st} team={mine} />
+            ) : st.game === 'spell' ? (
+              <SpellView st={st} team={mine} />
             ) : (
               <DrawView st={st} team={mine} />
             )}
@@ -107,7 +109,7 @@ function Lobby({ st, mine }: { st: TeamState; mine: TeamId | null }) {
   const g = useTeamGame.getState();
   return (
     <>
-      <div className="mb-2 grid grid-cols-5 gap-1">
+      <div className="mb-2 grid grid-cols-6 gap-1">
         {TEAM_GAME_IDS.map((id) => (
           <button key={id} type="button" disabled={!mine} onClick={() => g.pick(id)} title={t(TEAM_GAMES[id].name)} className={`flex min-h-14 flex-col items-center justify-center rounded-xl p-1 text-[10px] font-semibold leading-tight ${st.game === id ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-slate-700'} disabled:opacity-70`}>
             <span className="text-xl">{TEAM_GAMES[id].icon}</span>
@@ -340,6 +342,48 @@ function RushView({ st, team }: { st: TeamState; team: TeamId }) {
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------------------- spell */
+function SpellView({ st, team }: { st: TeamState; team: TeamId }) {
+  const t = useT();
+  const me = useGame((s) => s.sessionId);
+  const q = st.spell?.[team];
+  const [text, setText] = useState('');
+  const mine = st.turn[team] === me;
+  const n = q?.n;
+  useEffect(() => {
+    setText('');
+    if (q && mine) say(q.word);
+  }, [n, mine]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!q) return null;
+  if (!mine) return <Waiting text={t('{name} is spelling…', { name: turnName(st, team) })} prompt={q.emoji} />;
+  const locked = lockedNow(st, team);
+  return (
+    <div className={`mt-2 rounded-xl p-3 ring-2 ${locked ? 'bg-red-50 ring-red-300' : 'bg-amber-50 ring-amber-300'}`}>
+      <p className="text-center text-xs font-semibold text-amber-700">{locked ? t('Wrong! Wait a moment…') : t('Your turn! Listen and spell the word.')}</p>
+      <div className="my-1 flex items-center justify-center gap-3">
+        <span className="text-5xl">{q.emoji}</span>
+        <button type="button" onClick={() => say(q.word)} className="flex h-12 w-12 items-center justify-center rounded-full bg-white ring-1 ring-black/10" aria-label={t('Listen')}>
+          <Icon name="speaker" size={22} />
+        </button>
+      </div>
+      <form
+        className="flex gap-1.5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!text.trim() || locked) return;
+          useTeamGame.getState().send({ op: 'spell', n: q.n, text });
+          setText('');
+        }}
+      >
+        <input value={text} onChange={(e) => setText(e.target.value)} disabled={locked} placeholder={t('Type the word')} className="min-h-11 min-w-0 flex-1 rounded-xl border px-3 text-lg tracking-widest" dir="ltr" autoComplete="off" autoCapitalize="off" spellCheck={false} />
+        <button type="submit" disabled={locked} className="min-h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white disabled:opacity-40">
+          {t('Spell it')}
+        </button>
+      </form>
     </div>
   );
 }

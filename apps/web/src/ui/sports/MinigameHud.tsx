@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../../i18n';
-import { METER_GOOD, meterAt, useMini } from '../../store/minigames';
+import { METER_GOOD, meterAt, ropePhase, useMini } from '../../store/minigames';
 
 /** Re-render every animation frame while `on` (for the meter and the race clock). */
 function useTicker(on: boolean) {
@@ -70,8 +70,9 @@ export function MinigameHud() {
   const board = useMini((s) => s.board);
   const hoopsQ = useMini((s) => s.hoopsQ);
   const pp = useMini((s) => s.pp);
+  const rope = useMini((s) => s.rope);
   if (!game) return null;
-  const title = game === 'hoops' ? t('Hoops') : game === 'race' ? t('Race') : game === 'pingpong' ? `🏓 ${t('Table tennis · sports hall')}` : t('Coach says');
+  const title = game === 'hoops' ? t('Hoops') : game === 'race' ? t('Race') : game === 'pingpong' ? `🏓 ${t('Table tennis · sports hall')}` : game === 'jumprope' ? `🪢 ${t('Skipping rope')}` : t('Coach says');
   return (
     <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[92vw] max-w-sm -translate-x-1/2">
       <div className="pointer-events-auto rounded-2xl bg-white/95 p-3 text-center shadow-2xl">
@@ -122,6 +123,7 @@ export function MinigameHud() {
             </div>
           </div>
         ) : null}
+        {phase === 'play' && game === 'jumprope' && rope ? <RopeView /> : null}
         {phase === 'play' && game === 'hoops' && !hoopsQ ? (
           <>
             <Meter />
@@ -140,7 +142,7 @@ export function MinigameHud() {
         {phase === 'done' ? (
           <div className="mt-1 space-y-2">
             <div className="text-lg font-bold">
-              {game === 'hoops' ? `🏀 ${made} / 10` : game === 'pingpong' ? `🏓 ${pp?.me ?? 0} – ${pp?.coach ?? 0}` : game === 'race' ? (raceMs ? `⏱️ ${(raceMs / 1000).toFixed(2)} s` : '') : `✔ ${correct} / 8`}
+              {game === 'hoops' ? `🏀 ${made} / 10` : game === 'jumprope' ? `🪢 ${rope?.jumps ?? 0}` : game === 'pingpong' ? `🏓 ${pp?.me ?? 0} – ${pp?.coach ?? 0}` : game === 'race' ? (raceMs ? `⏱️ ${(raceMs / 1000).toFixed(2)} s` : '') : `✔ ${correct} / 8`}
             </div>
             {result ? (
               <div className="text-sm">
@@ -167,6 +169,47 @@ export function MinigameHud() {
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** Skipping rope: the rope going round (bottom = jump now), the count, a big jump button (or Space). */
+function RopeView() {
+  const t = useT();
+  const rope = useMini((s) => s.rope);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    let id = 0;
+    const loop = () => {
+      tick((n) => n + 1);
+      id = requestAnimationFrame(loop);
+    };
+    id = requestAnimationFrame(loop);
+    const key = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') useMini.getState().jumpRope();
+    };
+    window.addEventListener('keydown', key);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('keydown', key);
+    };
+  }, []);
+  if (!rope) return null;
+  const ph = ropePhase(rope);
+  // the rope as an arc: low at phase 0, over the top at 0.5
+  const y = 50 - Math.cos(ph * Math.PI * 2) * 38;
+  const near = ph < 0.18 || ph > 0.82;
+  return (
+    <div className="mt-1">
+      <p className="text-4xl font-black tabular-nums">{rope.jumps}</p>
+      <svg viewBox="0 0 120 100" className="mx-auto h-24 w-32">
+        <path d={`M10 50 Q60 ${y * 2 - 50} 110 50`} fill="none" stroke={near ? '#16a34a' : '#db2777'} strokeWidth="4" strokeLinecap="round" />
+        <rect x="0" y="88" width="120" height="4" fill="#cbd5e1" />
+        <text x="60" y="80" textAnchor="middle" fontSize="22">🧒</text>
+      </svg>
+      <button type="button" onPointerDown={() => useMini.getState().jumpRope()} className={`min-h-12 w-full rounded-xl text-base font-bold text-white ${near ? 'bg-green-600' : 'bg-pink-500'}`}>
+        ⬆️ {t('Jump!')} <span className="text-xs font-normal opacity-80">({t('or Space')})</span>
+      </button>
     </div>
   );
 }

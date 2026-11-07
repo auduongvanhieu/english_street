@@ -15,6 +15,12 @@ export interface Seat {
 }
 export const SEATS: Seat[] = [];
 
+/** Seats of the place you are in right now (the furniture in a room…), swapped by its scene. */
+export const DYN_SEATS: Seat[] = [];
+export function setDynamicSeats(list: Seat[]) {
+  DYN_SEATS.length = 0;
+  DYN_SEATS.push(...list);
+}
 export function registerSeats(list: Seat[]) {
   SEATS.push(...list);
 }
@@ -37,7 +43,7 @@ export const benchPair = (x: number, z: number, rot: number, half = 0.55): [numb
 export function nearestSeat(x: number, z: number, free: (s: Seat) => boolean, max = 1.6): Seat | null {
   let best: Seat | null = null;
   let bestD = max;
-  for (const s of SEATS) {
+  for (const s of [...SEATS, ...DYN_SEATS]) {
     const d = Math.hypot(s.x - x, s.z - z);
     if (d < bestD && free(s)) {
       bestD = d;

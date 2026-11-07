@@ -1,3 +1,5 @@
+import { useMini } from '../../../store/minigames';
+import { useTeamGame } from '../../../store/teamGame';
 import { useMemo, useRef, useState } from 'react';
 import type { AreaContentDto, AreaItemDto } from '@es/shared';
 import { sendAreaQuiz } from '../../../net/api';
@@ -463,21 +465,60 @@ function Timetable({ content }: { content: AreaContentDto }) {
 /** School: spelling bee (listen and type school words) and timetable questions. */
 export default function SchoolActivity({ content }: { content: AreaContentDto }) {
   const t = useT();
-  const [mode, setMode] = useState<'bee' | 'timetable'>('bee');
+  const [mode, setMode] = useState<'bee' | 'timetable' | 'play'>('bee');
   const modes = [
     ['bee', `🐝 ${t('Spelling bee')}`],
     ['timetable', `🗓️ ${t('Timetable')}`],
+    ['play', `🪢 ${t('Playtime')}`],
   ] as const;
   return (
     <div>
-      <div className="mb-2 grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1" role="tablist">
+      <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1" role="tablist">
         {modes.map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => setMode(id)} className={`min-h-10 rounded-lg text-sm font-semibold ${mode === id ? 'bg-white text-blue-700 shadow' : 'text-gray-600'}`}>
             {label}
           </button>
         ))}
       </div>
-      {mode === 'bee' ? <Spelling content={content} /> : <Timetable content={content} />}
+      {mode === 'bee' ? <Spelling content={content} /> : mode === 'timetable' ? <Timetable content={content} /> : <Playtime />}
+    </div>
+  );
+}
+
+/** Playtime in the school yard: skipping rope (count in English), and a spelling bee against another team. */
+function Playtime() {
+  const t = useT();
+  return (
+    <div className="space-y-2 py-1">
+      <button
+        type="button"
+        onClick={() => {
+          useArea.getState().setPanel(false);
+          useMini.getState().start('jumprope');
+        }}
+        className="flex min-h-16 w-full items-center gap-3 rounded-xl border-2 border-pink-300 bg-pink-50 px-3 py-2 text-start"
+      >
+        <span className="text-3xl">🪢</span>
+        <span>
+          <b className="block text-sm">{t('Skipping rope')}</b>
+          <span className="text-xs text-gray-600">{t('Jump when the rope touches the ground. Count your jumps in English! It gets faster.')}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          useArea.getState().setPanel(false);
+          useTeamGame.getState().setOpen(true);
+          useTeamGame.getState().pick('spell');
+        }}
+        className="flex min-h-16 w-full items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-start"
+      >
+        <span className="text-3xl">🐝</span>
+        <span>
+          <b className="block text-sm">{t('Spelling bee: team against team')}</b>
+          <span className="text-xs text-gray-600">{t('Play with other players (or robots) in 🏆 Team games.')}</span>
+        </span>
+      </button>
     </div>
   );
 }

@@ -2,13 +2,18 @@ import { ENCLOSURES } from '../../world/zooLayout';
 import { useAnimalJobs } from '../../store/animalJobs';
 import { useUsable } from '../../world/usables';
 import { useT } from '../../i18n';
+import { Text } from '@react-three/drei';
+import { Sign } from './kit';
+
+/** Where the tractor game starts (the farm yard, by the path). */
+const TRACTOR = { x: 134, z: -10.5 };
 
 /** Zoo: the feeding-time board by the zookeeper's hut, and "Feed …" at the front fence of each enclosure. */
 export function ZooJobs() {
   const t = useT();
   const feed = useAnimalJobs((s) => s.feed);
   const active = !!feed && Object.keys(feed.done).length < feed.targets.length;
-  useUsable({ id: 'zoo-feeding-board', x: 80.7, z: -21.6, r: 1.3, icon: '🪣', label: active ? t('Feeding time (on your list)') : t('Feeding time'), use: () => useAnimalJobs.getState().startFeeding() });
+  useUsable({ id: 'zoo-feeding-board', x: 80.7, z: -21.6, r: 1.3, icon: '🪣', label: active ? t('Feeding time (on your list)') : t('Zoo jobs: feeding, cleaning'), use: () => (active ? useAnimalJobs.getState().startFeeding() : useAnimalJobs.getState().setMenu(true)) });
   for (const e of ENCLOSURES) {
     // the walkway in front of the fence (row A fronts at z -9.5, row B at z -19.5)
     const z = e.z1 + 0.95;
@@ -24,5 +29,13 @@ export function FarmJobs() {
   const t = useT();
   useUsable({ id: 'farm-milk', x: 126, z: -15.7, r: 1.8, icon: '🥛', label: t('Milk the cow'), use: () => useAnimalJobs.getState().startFarm('milk') });
   useUsable({ id: 'farm-eggs', x: 151.5, z: -15.4, r: 1.8, icon: '🥚', label: t('Collect the eggs'), use: () => useAnimalJobs.getState().startFarm('eggs') });
-  return null;
+  useUsable({ id: 'farm-tractor', x: TRACTOR.x, z: TRACTOR.z + 1.4, r: 1.8, icon: '🚜', label: t('Drive the tractor'), use: () => useAnimalJobs.getState().startTractor() });
+  return (
+    <group position={[TRACTOR.x, 0, TRACTOR.z]}>
+      <Sign x={0} z={0} text="TRACTOR" sub="drive it to the barn" color="#2f6b3a" y={1.3} />
+      <Text position={[1.4, 0.7, 0.3]} fontSize={1.1} anchorX="center" anchorY="middle">
+        🚜
+      </Text>
+    </group>
+  );
 }

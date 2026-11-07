@@ -17,6 +17,8 @@ import {
   normGuess,
   relayQuestion,
   rng,
+  normSpelling,
+  spellWord,
   rushOrder,
   sameTicket,
   BOT_NAMES,
@@ -143,6 +145,8 @@ export class TeamGames {
         return this.harvest(id, msg.n, msg.index);
       case 'guess':
         return this.guess(id, String(msg.text ?? '').slice(0, 40));
+      case 'spell':
+        return this.spell(id, msg.n, String(msg.text ?? '').slice(0, 40));
       case 'stroke':
         return this.stroke(id, msg.pts, msg.color);
       case 'clear':
@@ -175,6 +179,7 @@ export class TeamGames {
     delete s.rush;
     delete s.harvest;
     delete s.draw;
+    delete s.spell;
     this.send();
   }
 
@@ -185,6 +190,7 @@ export class TeamGames {
     if (s.game === 'hunt') s.hunt = { red: null, blue: null };
     if (s.game === 'rush') s.rush = { red: null, blue: null };
     if (s.game === 'harvest') s.harvest = { red: null, blue: null };
+    if (s.game === 'spell') s.spell = { red: null, blue: null };
     if (s.game === 'draw') return this.drawRound(0);
     for (const t of TEAM_IDS) this.next(t);
     this.send();
@@ -204,6 +210,8 @@ export class TeamGames {
       s.hunt[t] = place ? { n, clue: place.clue, last: s.hunt[t]?.last ?? '' } : null;
     } else if (s.game === 'rush' && s.rush) {
       s.rush[t] = { n, step: 'order', order: rushOrder(this.seed, n), ticket: null };
+    } else if (s.game === 'spell' && s.spell) {
+      s.spell[t] = { n, ...spellWord(this.seed, n) };
     } else if (s.game === 'harvest' && s.harvest) {
       const task = harvestTask(this.seed, n);
       s.harvest[t] = { n, text: task.text, grid: task.grid, picked: [], need: task.need };
@@ -247,6 +255,21 @@ export class TeamGames {
     const full = relayQuestion(this.seed, n);
     const ok = choice === full.answer;
     this.feed(t, this.nameOf(id), ok, full.kind === 'pic' ? full.prompt : full.options[full.answer]!);
+    if (ok) {
+      if (this.point(t)) return;
+      this.pass(t);
+    } else this.wrong(t);
+    this.next(t);
+    this.send();
+  }
+
+  private spell(id: string, n: number, text: string) {
+    const s = this.state;
+    const t = this.canAct(id);
+    const q = t && s.spell?.[t];
+    if (!t || !q || s.game !== 'spell' || s.turn[t] !== id || q.n !== n || !text.trim()) return;
+    const ok = normSpelling(text) === normSpelling(q.word);
+    this.feed(t, this.nameOf(id), ok, ok ? q.word : `${text.trim()} ✗ → ${q.word}`);
     if (ok) {
       if (this.point(t)) return;
       this.pass(t);
@@ -436,6 +459,10 @@ export class TeamGames {
         const a = relayQuestion(this.seed, q.n).answer;
         this.botAt[t] = now;
         this.relay(turnBot.id, q.n, right ? a : (a + 1) % 4);
+      } else if (s.game === 'spell' && turnBot && s.spell?.[t] && now - this.askedAt[t] > 4000) {
+        const q = s.spell[t]!;
+        this.botAt[t] = now;
+        this.spell(turnBot.id, q.n, right ? q.word : q.word.slice(0, -1) + 'x');
       } else if (s.game === 'rush' && turnBot && s.rush?.[t] && now - this.askedAt[t] > 3500) {
         const r = s.rush[t]!;
         this.botAt[t] = now;

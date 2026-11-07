@@ -1,4 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { setDynamicSeats } from '../../../world/seats';
+import { useGame } from '../../../store/game';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -46,6 +48,30 @@ function Piece({ p, cx, cz, ghost }: { p: Placed; cx: number; cz: number; ghost?
   const geo = kit[f.mesh];
   if (!geo) return null;
   return <mesh geometry={geo} material={ghost === 'ok' ? ghostOk : ghost === 'bad' ? ghostBad : chibiMaterial()} position={[cx + p.x, f.wallY ? f.wallY - (f.id === 'picture' ? 0.3 : 0) : 0.002, cz + p.z]} rotation-y={(p.r * Math.PI) / 2} castShadow={!ghost} />;
+}
+
+/** Places to sit on the furniture in the room (sofa, armchair, chairs, the end of the bed). */
+const SIT: Record<string, [number, number][]> = { sofa: [[-0.42, 0.05], [0.42, 0.05]], armchair: [[0, 0.05]], chair: [[0, 0.02]], bed: [[0, 0.7]] };
+function RoomSeats({ items, cx, cz }: { items: Placed[]; cx: number; cz: number }) {
+  useEffect(() => {
+    const seats = items.flatMap((p) =>
+      (SIT[p.id] ?? []).map(([lx, lz]) => {
+        const a = (p.r * Math.PI) / 2;
+        return { x: cx + p.x + lx * Math.cos(a) + lz * Math.sin(a), z: cz + p.z - lx * Math.sin(a) + lz * Math.cos(a), rot: a };
+      }),
+    );
+    setDynamicSeats(seats);
+    return () => setDynamicSeats([]);
+  }, [items, cx, cz]);
+  return null;
+}
+
+/** Your wardrobe: change clothes (the character screen). */
+function WardrobeUsable({ p, cx, cz }: { p: Placed; cx: number; cz: number }) {
+  const t = useT();
+  const a = (p.r * Math.PI) / 2;
+  useUsable({ id: 'myroom-wardrobe', x: cx + p.x + Math.sin(a) * 0.9, z: cz + p.z + Math.cos(a) * 0.9, r: 0.9, icon: '👕', label: t('Open my wardrobe'), priority: true, use: () => useGame.getState().setUiPanel('avatar') });
+  return null;
 }
 
 function PieceUsable({ i, p, cx, cz }: { i: number; p: Placed; cx: number; cz: number }) {
@@ -113,6 +139,8 @@ function Room({ slot }: { slot: number }) {
         <Piece key={`${i}-${p.id}`} p={p} cx={r.cx} cz={r.cz} />
       ))}
       {mine && !ghost ? items.map((p, i) => <PieceUsable key={`u${i}-${p.id}`} i={i} p={p} cx={r.cx} cz={r.cz} />) : null}
+      {mine && !ghost ? items.map((p, i) => (p.id === 'wardrobe' ? <WardrobeUsable key={`w${i}`} p={p} cx={r.cx} cz={r.cz} /> : null)) : null}
+      <RoomSeats items={items} cx={r.cx} cz={r.cz} />
       {ghost ? <Piece p={{ id: ghost.id, x: ghost.x, z: ghost.z, r: ghost.r }} cx={r.cx} cz={r.cz} ghost={ghost.ok ? 'ok' : 'bad'} /> : null}
       <pointLight position={[r.cx, 2.4, r.cz]} intensity={6} distance={12} color="#fff1dc" />
     </group>

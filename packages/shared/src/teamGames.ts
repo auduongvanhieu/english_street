@@ -19,6 +19,7 @@ export const TEAM_GAMES = {
   rush: { icon: '🍔', name: 'Restaurant Rush', target: 5, maxS: 300, about: 'Take the order, cook the right food, serve the right table. Your team takes turns.' },
   harvest: { icon: '🌽', name: 'Harvest Festival', target: 6, maxS: 240, about: 'Everybody picks together: follow the English instructions.' },
   draw: { icon: '🎨', name: 'Draw & Guess', target: 4, maxS: 330, about: 'One player draws a word, the team types what it is. Faster = more points.' },
+  spell: { icon: '🐝', name: 'Spelling Bee', target: 8, maxS: 240, about: 'Listen to the word and spell it. Take turns; a wrong spelling stops your team for a moment.' },
 } as const;
 export type TeamGameId = keyof typeof TEAM_GAMES;
 export const TEAM_GAME_IDS = Object.keys(TEAM_GAMES) as TeamGameId[];
@@ -209,6 +210,16 @@ export const normGuess = (s: string) =>
 /** Points for a right guess after `s` seconds. */
 export const drawPoints = (s: number) => (s < 20 ? 3 : s < 40 ? 2 : 1);
 
+/* ------------------------------------------------------------------------------------------- spell */
+/** Word n of a spelling bee (the same for both teams): the word and its picture. */
+export function spellWord(seed: number, n: number): { word: string; emoji: string } {
+  const r = rng(seed * 3571 + n * 199 + 29);
+  const list = RELAY_WORDS.filter(([w]) => !/-/.test(w));
+  const [w, emoji] = list[Math.floor(r() * list.length)]!;
+  return { word: w.replace(/^(a|an|the) /, ''), emoji };
+}
+export const normSpelling = (s: string) => s.toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+
 /* ------------------------------------------------------------------------------------------- state */
 export type TeamPhase = 'lobby' | 'countdown' | 'playing' | 'done';
 export interface TeamPlayer {
@@ -236,6 +247,8 @@ export interface TeamState {
   harvest?: Record<TeamId, { n: number; text: string; grid: string[]; picked: number[]; need: number } | null>;
   /** draw: the round, the drawing team and player, when the round ends, who guessed it */
   draw?: { round: number; team: TeamId; drawer: string; endsAt: number; guessed: string; word: string; strokes: number };
+  /** spell: the word to say (the client speaks it, never shows it) and its picture */
+  spell?: Record<TeamId, { n: number; word: string; emoji: string } | null>;
 }
 export type TeamSend =
   | { op: 'hello' }
@@ -252,6 +265,7 @@ export type TeamSend =
   | { op: 'rush'; n: number; step: RushStep; ticket?: RushTicket; table?: number }
   | { op: 'harvest'; n: number; index: number }
   | { op: 'guess'; text: string }
+  | { op: 'spell'; n: number; text: string }
   /** a stroke of the drawing: x, y pairs 0…1000 (the drawer only) */
   | { op: 'stroke'; pts: number[]; color: string }
   | { op: 'clear' };
