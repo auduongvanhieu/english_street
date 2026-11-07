@@ -66,7 +66,7 @@ import { Boats } from './boats';
 
 /** Minimum gap between two private messages from one player. */
 const DM_COOLDOWN_MS = 600;
-import { accountStatus, addPlay, isMuted, live, mutes, reportChase, sampleHeat } from '../admin';
+import { accountStatus, addPlay, flushPlay, isMuted, live, mutes, reportChase, sampleHeat } from '../admin';
 
 /** Every open room (for the admin site: online list, kicks, notices). */
 export const ROOMS = new Set<StreetRoom>();
@@ -537,7 +537,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   private tallyPlay(now: number, only?: string) {
     for (const [sid, t] of this.playSince) {
       if (only && sid !== only) continue;
-      addPlay(t.pid, (now - t.at) / 1000, !t.started);
+      const p = this.state.players.get(sid);
+      addPlay(t.pid, (now - t.at) / 1000, !t.started, p && Number.isFinite(p.x) && Number.isFinite(p.z) ? { x: p.x, z: p.z, rot: p.rot } : undefined);
       t.at = now;
       t.started = true;
     }
@@ -680,6 +681,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.who.delete(client.sessionId);
     this.tallyPlay(Date.now(), client.sessionId);
     this.playSince.delete(client.sessionId);
+    // their last place goes to the API at once (they may come back in a few seconds)
+    void flushPlay();
     const p = this.state.players.get(client.sessionId);
     this.endTalk(client.sessionId, 'left');
     this.talkRequests.delete(client.sessionId);

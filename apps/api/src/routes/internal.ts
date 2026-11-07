@@ -29,22 +29,26 @@ export function internalRoutes(dbOn: boolean) {
      * the last report (start = a new session). Added to User.playSeconds and to PlayDay for today (Vietnam day).
      */
     app.post('/internal/playtime', async (req, reply) => {
-      const body = z.object({ items: z.array(z.object({ id: z.string().min(1).max(64), sec: z.number().int().min(0).max(3600), start: z.boolean().optional() })).max(5000) }).safeParse(req.body);
+      const Pos = z.object({ x: z.number().finite(), z: z.number().finite(), rot: z.number().finite() });
+      const body = z.object({ items: z.array(z.object({ id: z.string().min(1).max(64), sec: z.number().int().min(0).max(3600), start: z.boolean().optional(), pos: Pos.optional() })).max(5000) }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       if (!dbOn) return { ok: true };
       const day = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-      const merged = new Map<string, { sec: number; start: number }>();
+      const merged = new Map<string, { sec: number; start: number; pos?: z.infer<typeof Pos> }>();
       for (const it of body.data.items) {
         const m = merged.get(it.id) ?? { sec: 0, start: 0 };
         m.sec += it.sec;
         if (it.start) m.start += 1;
+        if (it.pos) m.pos = it.pos; // the latest place wins
         merged.set(it.id, m);
       }
       const known = new Set((await prisma.user.findMany({ where: { id: { in: [...merged.keys()] } }, select: { id: true } })).map((u) => u.id));
       for (const [id, m] of merged) {
-        if (!known.has(id) || (!m.sec && !m.start)) continue;
+        if (!known.has(id) || (!m.sec && !m.start && !m.pos)) continue;
+        // where they are now (the game puts them back there next time: GET /me lastPos)
+        const lastPos = m.pos ? { x: Math.round(m.pos.x * 100) / 100, z: Math.round(m.pos.z * 100) / 100, rot: Math.round(m.pos.rot * 100) / 100, at: Date.now() } : undefined;
         await prisma.$transaction([
-          prisma.user.update({ where: { id }, data: { playSeconds: { increment: m.sec } } }),
+          prisma.user.update({ where: { id }, data: { playSeconds: { increment: m.sec }, ...(lastPos ? { lastPos } : {}) } }),
           prisma.playDay.upsert({ where: { userId_day: { userId: id, day } }, create: { userId: id, day, seconds: m.sec, sessions: m.start }, update: { seconds: { increment: m.sec }, sessions: { increment: m.start } } }),
         ]);
       }

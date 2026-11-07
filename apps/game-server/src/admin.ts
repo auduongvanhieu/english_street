@@ -87,10 +87,11 @@ export async function stopAdminLink() {
 
 // ---------------------------------------------------------------- play time
 /** Seconds online per player since the last report; sent to the API with the next flush (about once a minute). */
-const playQueue: { id: string; sec: number; start?: boolean }[] = [];
-export function addPlay(id: string, sec: number, start = false) {
-  if (!id || (sec <= 0 && !start)) return;
-  playQueue.push({ id, sec: Math.max(0, Math.min(3600, Math.round(sec))), ...(start ? { start } : {}) });
+const playQueue: { id: string; sec: number; start?: boolean; pos?: { x: number; z: number; rot: number } }[] = [];
+/** `pos`: where the player is now (saved as their last place, the game puts them back there on the next visit). */
+export function addPlay(id: string, sec: number, start = false, pos?: { x: number; z: number; rot: number }) {
+  if (!id || (sec <= 0 && !start && !pos)) return;
+  playQueue.push({ id, sec: Math.max(0, Math.min(3600, Math.round(sec))), ...(start ? { start } : {}), ...(pos ? { pos } : {}) });
 }
 export async function flushPlay() {
   if (!playQueue.length) return;

@@ -347,6 +347,8 @@ export function accountRoutes(repo: AttemptRepo) {
         const isNew = !!me && !jd.includes(INVITE_PAY_STEP) && me.xp < 200;
         if (isNew && !mgs.invitedBy && (await repo.getUser(inviter))) await repo.updateUser(id, { gameState: { ...mgs, invitedBy: inviter } });
       }
+      // where they left the street last time (game server, /internal/playtime): the game puts them back there
+      const lastPos = repo.name === 'postgres' ? ((await prisma.user.findUnique({ where: { id }, select: { lastPos: true } }).catch(() => null))?.lastPos ?? undefined) : undefined;
       // settings an admin changed while the player was away: applied by the game now, then forgotten
       const u = await repo.getUser(id);
       const gs = (u?.gameState ?? {}) as Record<string, unknown> & { adminSettings?: unknown };
@@ -355,9 +357,9 @@ export function accountRoutes(repo: AttemptRepo) {
         const rest = { ...gs };
         delete rest.adminSettings;
         await repo.updateUser(id, { gameState: rest });
-        if (pending.success) return { ok: true, settings: pending.data };
+        if (pending.success) return { ok: true, settings: pending.data, lastPos };
       }
-      return { ok: true };
+      return { ok: true, lastPos };
     });
 
     // Graphics settings and measured FPS (sent after joining and whenever the player switches quality).

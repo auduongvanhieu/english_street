@@ -63,6 +63,8 @@ model User {
   lastIp       String   @default("")
   /// Total time in the street (seconds), counted by the game server; per day in PlayDay.
   playSeconds  Int      @default(0)
+  /// where the player was when they last left the street: { x, z, rot, at } (the game puts them back there)
+  lastPos      Json?
 
   attempts QuestAttempt[]
   vocab    VocabEntry[]
