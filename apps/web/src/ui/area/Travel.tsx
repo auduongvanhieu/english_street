@@ -19,6 +19,9 @@ import { sendHold } from '../../net/client';
 import { myHolding } from '../../world/hold';
 import { track } from '../../net/analytics';
 import { useT } from '../../i18n';
+import { TAXI_PRICE } from '@es/shared';
+import { post } from '../../net/api';
+import { getPlayerId } from '../../net/player';
 import { Sheet, SheetHeader } from '../Sheet';
 import { say } from './common';
 
@@ -45,6 +48,30 @@ export function rideTo(id: StopId) {
   if (myHolding()) sendHold('');
   const r = startRide(id, { x: localPos.x, z: localPos.z });
   if (r.teleport) teleportTo(r.teleport.x, r.teleport.z, Math.PI);
+}
+
+/** A taxi (premium): pay, a short fade, and you are at the area's gate. */
+export async function taxiTo(id: StopId) {
+  useRestaurant.getState().stand();
+  useGame.getState().setUiPanel(null);
+  if (useBus.getState().ride) return;
+  try {
+    await post<{ coins: number }>('/me/taxi', { playerId: getPlayerId() });
+  } catch (e) {
+    say((e as Error).message);
+    return;
+  }
+  if (myHolding()) sendHold('');
+  const s = BUS_STOPS.find((b) => b.id === id)!;
+  say(`Take me to ${STOP_NAME(id)}, please.`);
+  useBus.setState({ fade: 1 });
+  window.setTimeout(() => {
+    teleportTo(s.x + 1.5, s.z - 1.6, Math.PI);
+    useBus.setState({ fade: 0 });
+    say(`Here we are: ${STOP_NAME(id)}. That's ${TAXI_PRICE} coins, please. Thank you!`);
+    void useProfile.getState().refresh();
+  }, 900);
+  track('taxi_ride', { to: id });
 }
 
 export function BusPanel() {
@@ -131,6 +158,7 @@ export function MapPanel() {
     return () => clearInterval(iv);
   }, []);
   const myPos = { x: localPos.x, z: localPos.z };
+  const [taxi, setTaxi] = useState(false);
   // far from the street map (train trip, Sunny Bay, a room inside…): say where I am instead of a marker
   const away = !onMap(myPos.x, myPos.z);
   const where = away ? placeOf(myPos.x, myPos.z) : null;
@@ -145,6 +173,15 @@ export function MapPanel() {
         </button>
       </SheetHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3 pt-2.5 sm:px-5 sm:pb-4">
+        {/* how to get there: the bus (free) or a taxi (premium) */}
+        <div className="flex gap-1.5 text-xs font-semibold">
+          <button type="button" onClick={() => setTaxi(false)} className={`flex-1 rounded-full py-1.5 ${!taxi ? 'bg-blue-600 text-white' : 'bg-gray-100 text-slate-700'}`}>
+            🚌 {t('Bus · free')}
+          </button>
+          <button type="button" onClick={() => setTaxi(true)} className={`flex-1 rounded-full py-1.5 ${taxi ? 'bg-amber-500 text-white' : 'bg-gray-100 text-slate-700'}`}>
+            🚕 {t('Taxi · {n} coins, no waiting', { n: TAXI_PRICE })}
+          </button>
+        </div>
         <MapView
           me={away ? null : myPos}
           players={Object.values(players).filter((p) => p.id !== me)}
@@ -152,7 +189,7 @@ export function MapPanel() {
           journeyAreas={journeyAreas}
           journeyStamps={journeyStamps}
           labels={{ shops: t('Main Street shops'), river: t('River'), you: t('You') }}
-          onArea={(id) => rideTo(id)}
+          onArea={(id) => (taxi ? void taxiTo(id) : rideTo(id))}
           onPlayer={openThread}
           overlay={
             where ? (
@@ -178,7 +215,7 @@ export function MapPanel() {
             ))}
           </div>
           <p className="text-center text-[11px] leading-snug text-slate-500">
-            {t('Tap a place to take the bus there.')} {t('Tap a player to message them.')}
+            {taxi ? t('Tap a place to go there by taxi.') : t('Tap a place to take the bus there.')} {t('Tap a player to message them.')}
           </p>
         </div>
         <div className="shrink-0 space-y-1.5">

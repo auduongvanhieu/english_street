@@ -74,7 +74,7 @@ function Remote({ p }: { p: RemotePlayer }) {
       }}
     >
       {near ? <PlayerAvatar anim={p.anim} look={look} holding={p.holding} prop={p.prop} /> : null}
-      {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} /> : null}
+      {tag ? <NameTag name={p.name} bubble={p.bubble} badge={badge} tag={look.tag} /> : null}
       {selected ? (
         <mesh position={[0, 0.02, 0]} rotation-x={-Math.PI / 2}>
           <ringGeometry args={[0.6, 0.75, 32]} />

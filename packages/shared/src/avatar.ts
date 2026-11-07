@@ -69,6 +69,15 @@ export const GLASSES_ITEMS: Record<AvatarGlasses, ShopItem> = {
   round: { id: 'glasses:round', label: 'Glasses', price: 0 },
   sun: { id: 'glasses:sun', label: 'Sunglasses', price: 40 },
 };
+/** Name tag styles (premium: bought with coins, everybody sees them over your head). */
+export const NAME_TAGS = ['plain', 'gold', 'ocean', 'rainbow'] as const;
+export type NameTagStyle = (typeof NAME_TAGS)[number];
+export const TAG_ITEMS: Record<NameTagStyle, ShopItem> = {
+  plain: { id: 'tag:plain', label: 'Plain', price: 0 },
+  gold: { id: 'tag:gold', label: 'Gold', price: 150 },
+  ocean: { id: 'tag:ocean', label: 'Ocean', price: 200 },
+  rainbow: { id: 'tag:rainbow', label: 'Rainbow', price: 300 },
+};
 export const BAG_ITEMS: Record<AvatarBag, ShopItem> = {
   none: { id: 'bag:none', label: 'None', price: 0 },
   backpack: { id: 'bag:backpack', label: 'Backpack', price: 30 },
@@ -87,6 +96,7 @@ const AvatarBase = z.object({
   hatColor: hex.catch('#c8443a').default('#c8443a'),
   glasses: z.enum(AVATAR_GLASSES).catch('none').default('none'),
   bag: z.enum(AVATAR_BAGS).catch('none').default('none'),
+  tag: z.enum(NAME_TAGS).catch('plain').default('plain'),
   /** Bought item / colour ids. */
   owned: z.array(z.string()).catch([]).default([]),
 });
@@ -121,7 +131,7 @@ export function itemPrice(id: string): number | null {
     const c = list.find((x) => x.id === id);
     if (c) return c.price;
   }
-  for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS] as Record<string, ShopItem>[]) {
+  for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS, TAG_ITEMS] as Record<string, ShopItem>[]) {
     const it = Object.values(rec).find((x) => x.id === id);
     if (it) return it.price;
   }
@@ -144,7 +154,7 @@ export function missingItems(look: AvatarLook, owned: string[]): string[] | null
     if (!c) return null;
     if (c.price > 0 && !owned.includes(c.id)) out.add(c.id);
   }
-  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag]]) if (it.price > 0 && !owned.includes(it.id)) out.add(it.id);
+  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag], TAG_ITEMS[look.tag]]) if (it.price > 0 && !owned.includes(it.id)) out.add(it.id);
   return [...out];
 }
 

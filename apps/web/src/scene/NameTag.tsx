@@ -1,4 +1,27 @@
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Billboard, Text } from '@react-three/drei';
+import type { NameTagStyle } from '@es/shared';
+
+/** Premium name tags (bought in the character shop): colour and outline. */
+const TAG_STYLE: Record<NameTagStyle, { color: string; outline: string; size: number }> = {
+  plain: { color: '#111', outline: '#fff', size: 0.3 },
+  gold: { color: '#f5c518', outline: '#6b4a00', size: 0.33 },
+  ocean: { color: '#38bdf8', outline: '#0c3a5c', size: 0.33 },
+  rainbow: { color: '#ff4d4d', outline: '#2a1a40', size: 0.34 },
+};
+/** The rainbow tag cycles through the colours. */
+function RainbowText({ children }: { children: string }) {
+  const ref = useRef<{ color: string | number } | null>(null);
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.color = `hsl(${Math.round((clock.elapsedTime * 90) % 360)}, 90%, 60%)`;
+  });
+  return (
+    <Text ref={ref as never} fontSize={TAG_STYLE.rainbow.size} color={TAG_STYLE.rainbow.color} anchorX="center" outlineWidth={0.025} outlineColor={TAG_STYLE.rainbow.outline}>
+      {children}
+    </Text>
+  );
+}
 
 /** Animal labels: English word in blue, the pet's own name in orange. */
 const WORD_COLOR = '#1d4ed8';
@@ -10,8 +33,11 @@ export function NameTag({
   sub,
   bubble,
   badge,
+  tag = 'plain',
   y = 2.0,
 }: {
+  /** premium name tag style */
+  tag?: NameTagStyle;
   name: string;
   /** Animals: the English word, drawn in its own colour before the name ("dog · Luna"). */
   word?: string;
@@ -44,8 +70,10 @@ export function NameTag({
             {name}
           </Text>
         </>
+      ) : tag === 'rainbow' ? (
+        <RainbowText>{name}</RainbowText>
       ) : (
-        <Text fontSize={0.3} color="#111" anchorX="center" outlineWidth={0.02} outlineColor="#fff">
+        <Text fontSize={TAG_STYLE[tag].size} color={TAG_STYLE[tag].color} anchorX="center" outlineWidth={tag === 'plain' ? 0.02 : 0.025} outlineColor={TAG_STYLE[tag].outline}>
           {name}
         </Text>
       )}

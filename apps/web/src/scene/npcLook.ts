@@ -40,7 +40,7 @@ export const HUMAN_MODEL_URL = (model: NpcLook['model']) => `/models/characters/
 
 // ------------------------------------------------------------------------------------------------ chibi NPCs
 
-const base: ChibiSpec = { body: 'tee', skin: '#e0ac80', hair: '#3a2618', hairStyle: 'short', top: '#4a90e2', bottom: '#24365c', shoes: '#2f3437', hat: 'none', hatColor: '#c8443a', glasses: 'none', bag: 'none' };
+const base: ChibiSpec = { body: 'tee', skin: '#e0ac80', hair: '#3a2618', hairStyle: 'short', top: '#4a90e2', bottom: '#24365c', shoes: '#2f3437', hat: 'none', hatColor: '#c8443a', glasses: 'none', bag: 'none', tag: 'plain' };
 const npc = (s: Partial<ChibiSpec>): ChibiSpec => ({ ...base, ...s });
 
 /** Shopkeepers as chibi characters in their work uniforms (same builder as the players). */

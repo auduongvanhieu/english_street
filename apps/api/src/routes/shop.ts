@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
+import { TAXI_PRICE, FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
 import type { AttemptRepo } from '../npc/attempts';
 import { playerIdFrom } from '../auth';
 import { limiter } from '../npc/ratelimit';
@@ -30,6 +30,19 @@ export function shopRoutes(repo: AttemptRepo) {
       return { u, gs };
     };
     const save = (id: string, gs: Record<string, unknown>) => repo.updateUser(id, { gameState: gs });
+
+    // A taxi ride: pay and go straight there (the game moves you)
+    app.post('/me/taxi', async (req, reply) => {
+      const id = who(req);
+      if (!id) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`taxi:${id}`, 20))) return reply.code(429).send({ error: 'rate_limited' });
+      const { u } = await load(id);
+      if (u.coins < TAXI_PRICE) return reply.code(402).send({ error: 'not_enough_coins' });
+      await repo.updateUser(id, { coins: u.coins - TAXI_PRICE });
+      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'taxi', coins: TAXI_PRICE } });
+      await repo.logEvent({ name: 'taxi_ride', playerId: id, props: {} });
+      return { coins: u.coins - TAXI_PRICE };
+    });
 
     // River boat hire at the north pier: a hire lasts BOAT_HIRE.minutes; the first one is free.
     app.get('/me/boat', async (req, reply) => {

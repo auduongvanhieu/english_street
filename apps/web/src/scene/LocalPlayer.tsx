@@ -447,7 +447,7 @@ export function LocalPlayer({ name }: { name: string }) {
   return (
     <group ref={ref} position={SPAWN}>
       <PlayerAvatar anim={animState} look={look} holding={holding} prop={prop} />
-      <NameTag name={name} />
+      <NameTag name={name} tag={look.tag} />
     </group>
   );
 }

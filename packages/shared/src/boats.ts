@@ -52,6 +52,8 @@ export const BOAT_SEATS: Record<BoatKind, Record<BoatSeat, { x: number; z: numbe
 };
 /** Hiring: coins per hire and how long it lasts (the first hire is free). */
 export const BOAT_HIRE = { coins: 3, minutes: 10 } as const;
+/** A taxi: straight to an area, no waiting for the bus (premium, coins). */
+export const TAXI_PRICE = 5;
 
 export type BoatSend = { op: 'board'; id: string; seat: BoatSeat } | { op: 'move'; x: number; z: number; rot: number } | { op: 'leave' };
 export type BoatEvent = { op: 'denied'; reason: 'taken' | 'far' | 'busy' };
