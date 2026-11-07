@@ -15,6 +15,8 @@ import { useFarm } from '../../store/farm';
 import { useArea } from '../../store/area';
 import { Animal } from './Animal';
 import { Ground, Merged, NearArea, Sign, box, cyl, fenceRect, sphere, tree } from './kit';
+import { Text } from '@react-three/drei';
+import { registerBlockers } from '../../world/layout';
 import { buildPlot } from './crops';
 import { preloadLpm, useLpmParts } from '../LpmModel';
 
@@ -182,10 +184,72 @@ export function Marker({ kind, y }: { kind: 'water' | 'ready'; y: number }) {
 }
 
 /** The way into "My farm" (your own farm off the map). */
+/** The "MY FARM" gate: a wooden arch with a big banner, west of the yard path, turned to face both the path and the farm entrance. */
+const MYFARM_GATE = { x: 124.6, z: -11 };
+const GATE_ROT = Math.PI / 4;
+const gateAt = (lx: number, lz: number) => ({ x: MYFARM_GATE.x + lx * Math.cos(GATE_ROT) + lz * Math.sin(GATE_ROT), z: MYFARM_GATE.z - lx * Math.sin(GATE_ROT) + lz * Math.cos(GATE_ROT) });
+registerBlockers([-1, 1].map((s) => gateAt(s * 1.25, 0)).map((p) => ({ minX: p.x - 0.2, maxX: p.x + 0.2, minZ: p.z - 0.2, maxZ: p.z + 0.2 })));
+
 function MyFarmGate() {
   const t = useT();
-  useUsable({ id: 'myfarm-enter', x: 131.4, z: -8.6, r: 1.8, icon: '🌾', label: t('Go to my farm'), priority: true, use: () => useMyFarm.getState().enter() });
-  return null;
+  useUsable({ id: 'myfarm-enter', ...gateAt(0, 1.2), r: 2.2, icon: '🌾', label: t('Go to my farm'), priority: true, use: () => useMyFarm.getState().enter() });
+  const arrow = useRef<THREE.Group>(null);
+  const ring = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    const k = clock.elapsedTime;
+    if (arrow.current) {
+      arrow.current.position.y = 3.75 + Math.sin(k * 3) * 0.15;
+      arrow.current.rotation.y = k * 1.5;
+    }
+    if (ring.current) (ring.current.material as THREE.MeshBasicMaterial).opacity = 0.45 + Math.sin(k * 3) * 0.2;
+  });
+  return (
+    <group position={[MYFARM_GATE.x, 0, MYFARM_GATE.z]} rotation-y={GATE_ROT}>
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[s * 1.25, 1.45, 0]}>
+          <boxGeometry args={[0.28, 2.9, 0.28]} />
+          <meshStandardMaterial color="#7a4a2a" />
+        </mesh>
+      ))}
+      <mesh position={[0, 2.95, 0]}>
+        <boxGeometry args={[3.0, 0.2, 0.3]} />
+        <meshStandardMaterial color="#7a4a2a" />
+      </mesh>
+      {/* banner */}
+      <mesh position={[0, 2.45, 0.05]}>
+        <boxGeometry args={[2.3, 0.75, 0.08]} />
+        <meshStandardMaterial color="#f2c41d" emissive="#f2c41d" emissiveIntensity={0.25} />
+      </mesh>
+      <Text position={[0, 2.53, 0.1]} fontSize={0.42} color="#4a2c14" anchorX="center" anchorY="middle">
+        MY FARM
+      </Text>
+      <Text position={[0, 2.22, 0.1]} fontSize={0.15} color="#4a2c14" anchorX="center" anchorY="middle">
+        {'seeds · animals · friends'}
+      </Text>
+      {/* the closed farm gate between the posts */}
+      {[0.35, 0.75, 1.15].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <boxGeometry args={[2.2, 0.12, 0.08]} />
+          <meshStandardMaterial color="#c99a5b" />
+        </mesh>
+      ))}
+      <mesh position={[0, 0.75, 0]} rotation-z={Math.atan2(0.8, 2.2)}>
+        <boxGeometry args={[2.34, 0.1, 0.07]} />
+        <meshStandardMaterial color="#c99a5b" />
+      </mesh>
+      {/* bobbing arrow over the arch and a glowing ring where you stand */}
+      <group ref={arrow} position={[0, 3.75, 0]}>
+        <mesh rotation-x={Math.PI}>
+          <coneGeometry args={[0.3, 0.55, 4]} />
+          <meshStandardMaterial color="#ffd23f" emissive="#ffb000" emissiveIntensity={0.6} />
+        </mesh>
+      </group>
+      <mesh ref={ring} position={[0, 0.04, 1.2]} rotation-x={-Math.PI / 2}>
+        <ringGeometry args={[0.75, 1.0, 32]} />
+        <meshBasicMaterial color="#ffd23f" transparent opacity={0.5} depthWrite={false} />
+      </mesh>
+    </group>
+  );
 }
 
 export function Farm() {
@@ -220,7 +284,6 @@ export function Farm() {
           <Sign key={p.id} x={(p.x0 + p.x1) / 2 + 2} z={p.z1 + 0.45} text={p.animals.map((a) => a.item.toUpperCase()).filter((v, i, l) => l.indexOf(v) === i).join(' · ')} color="#7a4a2a" y={1.1} />
         ))}
         <Sign x={124} z={14.9} text="MY GARDEN" color="#7a4a2a" y={1.1} />
-        <Sign x={132.6} z={-8.2} text="MY FARM" sub="seeds · animals · friends" color="#2f6b3a" y={1.4} />
         <MyFarmGate />
         <Sign x={STALL.x} z={STALL.z + 0.9} text="FARM MARKET" color="#c0392b" y={2.9} w={3.2} />
         {animals.map((x) => (

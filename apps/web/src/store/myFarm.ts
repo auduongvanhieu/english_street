@@ -126,10 +126,10 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
         });
   },
   leave() {
-    // back at the farm area, by the "My farm" sign
+    // back at the farm area, on the path by the "MY FARM" gate (scene/areas/Farm.tsx)
     const a = areaById('farm');
     set({ at: null, view: null, panel: null });
-    teleportTo(a.doorX + 2, frontZ(a) + (a.side === 'north' ? -3 : 3), a.side === 'north' ? 0 : Math.PI);
+    teleportTo(a.doorX - 0.5, frontZ(a) + (a.side === 'north' ? -5 : 5), a.side === 'north' ? 0 : Math.PI);
   },
   async load() {
     try {
