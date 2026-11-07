@@ -5,6 +5,7 @@ import { useMyFarm } from '../store/myFarm';
 import { Icon } from './icons';
 import { useT } from '../i18n';
 import { useVoice } from '../store/voice';
+import { useExpire } from './useExpire';
 
 const CROP_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
 const ERRORS: Record<string, string> = {
@@ -49,6 +50,7 @@ export function MyFarmHud() {
   const panel = useMyFarm((s) => s.panel);
   const last = useMyFarm((s) => s.last);
   const day = useMyFarm((s) => s.day);
+  const fresh = useExpire(last?.at, 5000);
   const s = useMyFarm.getState();
   const wrap = 'pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-md -translate-x-1/2';
   const card = 'pointer-events-auto max-h-[70dvh] overflow-y-auto rounded-2xl bg-white/95 p-3 shadow-2xl';
@@ -63,7 +65,7 @@ export function MyFarmHud() {
       </button>
     </div>
   );
-  const toast = last && Date.now() - last.at < 5000 ? last : null;
+  const toast = last && fresh ? last : null;
   const earned = mine.earned[0] === day ? mine.earned[1] : 0;
   const coin = <Icon name="coin" size={13} className="inline align-[-2px] text-amber-500" />;
   return (

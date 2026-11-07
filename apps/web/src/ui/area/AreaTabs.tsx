@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useWorld } from '../../store/world';
+import { useExpire } from '../useExpire';
 /** Stable empty list for selectors. */
 const NONE: string[] = [];
 import { CROPS, CROP_PRICE, FARM, GROW_MS, plotStage, type AreaContentDto, type Crop } from '@es/shared';
@@ -327,6 +328,7 @@ export function MenuTab({ content }: { content: AreaContentDto }) {
 export function ShoppingTab({ content }: { content: AreaContentDto }) {
   const t = useT();
   const { list, cart, note, result, start, remove, checkout } = useShopping();
+  const noteOn = useExpire(note?.at, 5000);
   const label = (id: string) => content.items.find((i) => i.id === id);
   if (!list.length)
     return (
@@ -372,7 +374,7 @@ export function ShoppingTab({ content }: { content: AreaContentDto }) {
           );
         })}
       </section>
-      {note && Date.now() - note.at < 5000 ? (
+      {note && noteOn ? (
         <div className={`rounded-lg px-3 py-1.5 text-sm ${note.ok ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`}>
           {note.text === 'added' ? t('In the trolley!') : note.text === 'too_many' ? t('Too many! Check the list.') : note.text === 'sold_out' ? t('Sorry, that is sold out today.') : t("That's not on your list.")}
         </div>
