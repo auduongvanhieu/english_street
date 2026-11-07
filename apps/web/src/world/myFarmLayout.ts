@@ -33,6 +33,56 @@ export const SHOP = { x: 5, z: 16.4 };
 export const LOG_BOARD = { x: -5, z: 16.4 };
 export const DOG_HOUSE = { x: 1, z: 9 };
 
+/** Garden decoration (LPM assets-src/lpm/recipes/farm_garden.py): flower boxes, bushes, sunflowers, apple trees outside the fence, flower clumps. */
+export type DecorKind = 'planter' | 'clump' | 'bush' | 'sunflowers' | 'tree';
+export interface Decor {
+  kind: DecorKind;
+  x: number;
+  z: number;
+  /** turn (radians) and size */
+  r: number;
+  s: number;
+}
+const rnd = (() => {
+  let k = 11;
+  return () => ((k = (k * 16807) % 2147483647) - 1) / 2147483646;
+})();
+export const DECOR: Decor[] = (() => {
+  const out: Decor[] = [];
+  const put = (kind: DecorKind, x: number, z: number, r = 0, s = 1) => out.push({ kind, x, z, r, s });
+  // flower boxes along the north fence, both sides of the gate, and in front of the barn
+  for (const x of [-15.5, -10.5, 11, 16]) put('planter', x, 16.9, 0);
+  for (const x of [-14.5, -8]) put('planter', x, -3.6, 0);
+  // sunflowers by the barn, bushes behind the pens and in the corners
+  for (const x of [-18.3, -4]) put('sunflowers', x, -6.4, 0);
+  for (const [x, z] of [[5, -16.7], [11, -16.8], [17.5, -16.6], [-19, 16.9], [19, 16.9], [19, -2.5], [-19, -2.6], [-11.5, -3.6]] as const) put('bush', x, z, rnd() * 6, 0.85 + rnd() * 0.3);
+  // flower clumps along the path and the fences
+  for (const z of [15.5, 13, 6.5, 4, -3.5, -6, -12, -14.5]) {
+    if (z < 1.8 || z > 13.5) put('clump', -1.5, z, rnd() * 6, 0.9 + rnd() * 0.3);
+    if (z < 8 || z > 14) put('clump', 2.5, z + 0.8, rnd() * 6, 0.9 + rnd() * 0.3);
+  }
+  for (const x of [-17, -12, -6.5, 7, 14, 18.5]) put('clump', x, 17.4, rnd() * 6, 1);
+  for (const z of [10, 5, -9, -13]) put('clump', 19.4, z, rnd() * 6, 1);
+  // outside the fence: an orchard ring and wild flowers (the gate side stays open)
+  const W = MY_FARM.w / 2;
+  const D = MY_FARM.d / 2;
+  const ring: [number, number][] = [];
+  for (let z = -D + 2; z <= D - 2; z += 6.5) ring.push([-W - 4, z], [W + 4, z]);
+  for (let x = -W + 1; x <= W - 1; x += 7) ring.push([x, -D - 4]);
+  for (const x of [-W + 1, -W + 8, W - 8, W - 1]) ring.push([x, D + 4.5]);
+  for (const [x, z] of ring) put('tree', x + (rnd() - 0.5) * 1.5, z + (rnd() - 0.5) * 1.5, rnd() * 6, 0.85 + rnd() * 0.35);
+  for (const [x, z] of [[-W - 2, -10], [W + 2, 6], [-8, -D - 2], [9, -D - 2], [-W - 2, 12], [W + 2, -12], [-12, D + 2], [12, D + 2]] as const) put('bush', x, z, rnd() * 6, 1 + rnd() * 0.3);
+  for (let i = 0; i < 40; i++) {
+    const a = rnd() * Math.PI * 2;
+    const x = Math.cos(a) * (W + 1.5 + rnd() * 8);
+    const z = Math.sin(a) * (D + 1.5 + rnd() * 8);
+    if (z > D && Math.abs(x) < 5) continue;
+    put('clump', x, z, rnd() * 6, 0.9 + rnd() * 0.5);
+  }
+  return out;
+})();
+const DECOR_HALF: Partial<Record<DecorKind, [number, number]>> = { planter: [1.25, 0.4], bush: [0.55, 0.5], sunflowers: [0.5, 0.2], tree: [0.25, 0.25] };
+
 /** World position of a farm-local point in slot `slot`. */
 export const toWorld = (slot: number, x: number, z: number) => {
   const f = myFarm(slot);
@@ -58,6 +108,10 @@ export const LOCAL_BLOCKERS: Aabb[] = (() => {
     box(LOG_BOARD.x, LOG_BOARD.z, 1.1, 0.15),
   ];
   for (const p of PENS) out.push(box((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, (p.z1 - p.z0) / 2));
+  for (const d of DECOR) {
+    const h = DECOR_HALF[d.kind];
+    if (h) out.push(box(d.x, d.z, h[0] * d.s, h[1] * d.s));
+  }
   return out;
 })();
 export const blockersFor = (slot: number): Aabb[] => {

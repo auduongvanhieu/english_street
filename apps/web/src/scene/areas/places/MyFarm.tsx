@@ -11,7 +11,7 @@ import { Merged, Sign, box, fenceRect } from '../kit';
 import { Animal } from '../Animal';
 import { Marker, Plants } from '../Farm';
 import { enclosurePath } from '../../../world/zooLayout';
-import { BARN, BIN, DOG_HOUSE, GATE_W, LOG_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
+import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, LOG_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
 import { setDynamicBlockers } from '../../../world/layout';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
@@ -22,15 +22,22 @@ import { useT } from '../../../i18n';
  * interactive (plots, pens, the shipping bin, the shop board); a friend's farm is to look at. Props: farm_kit.
  */
 preloadLpm('farm_kit');
+preloadLpm('farm_garden');
+const DECOR_PART = { planter: 'SM_FG_Planter', clump: 'SM_FG_Clump', bush: 'SM_FG_Bush', sunflowers: 'SM_FG_Sunflowers', tree: 'SM_FG_AppleTree' } as const;
 
 function Static({ fields }: { fields: number }) {
   const kit = useLpmParts('farm_kit');
+  const garden = useLpmParts('farm_garden');
   const W = MY_FARM.w / 2;
   const D = MY_FARM.d / 2;
   return (
     <Merged
-      deps={[kit, fields]}
+      deps={[kit, garden, fields]}
       build={(p) => {
+        for (const d of DECOR) {
+          const g = garden[DECOR_PART[d.kind]];
+          if (g) p.addColored(g, { p: [d.x, 0, d.z], r: [0, d.r, 0], s: [d.s, d.s, d.s] });
+        }
         // fence all round, the gate gap in the north side
         fenceRect(p, -W, W, -D, D, '#8a6a44', 1.05, [], [[-GATE_W / 2, GATE_W / 2]]);
         for (const x of [-GATE_W / 2, GATE_W / 2]) p.add(box(0.3, 2.2, 0.3), '#6e4a26', { p: [x, 1.1, D] });
