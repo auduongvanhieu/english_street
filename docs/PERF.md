@@ -19,6 +19,7 @@ triangles are). Measured via `window.__esPerf` after joining and dismissing the 
 | 2026-11-06 | + LPM birds, sailboats, willows — Main Street / river bank | 1400×900 | high | 388 / 442 | 1.465M / 1.517M (willow ~3k → 1.1k tris) |
 | 2026-11-06 | + LPM grass tufts, farm & zoo kits — Main Street / river bank / zoo / farm | 1400×900 | high | 362 / 408 / 435 / 236 | 1.307M / 1.352M / 1.207M / 1.014M |
 | 2026-11-07 | + trip sports (volleyball, surf, cable car, boat trip), VIP row, queue shoppers | 900×640 | default | Sunny Bay court 135 · Maple Hill cable car 45 · Riverside jetty 71 · Screen 1 167 | Maple Hill 0.19M · Riverside 0.17M · cinema 0.94M |
+| 2026-11-07 | + My farm v2: country around the farm (farm_land, one merged mesh), garden props, timers, order board | 900×640 | default | My farm (wide view, whole country) 51 | 0.22M |
 
 Budgets (see the Step 2 plan): ≤ 450 draw calls on high, ≤ 250 on low, ≥ 30 FPS on a mid-range phone.
 Real-device FPS should be checked with the ⚡/✨ quality toggle; the `perf` analytics event records it per session

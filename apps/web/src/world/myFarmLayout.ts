@@ -85,6 +85,62 @@ export const DECOR: Decor[] = (() => {
 })();
 const DECOR_HALF: Partial<Record<DecorKind, [number, number]>> = { planter: [1.25, 0.4], bush: [0.55, 0.5], sunflowers: [0.5, 0.2], tree: [0.25, 0.25] };
 
+/**
+ * The country around the farm (LPM farm_land, scene MyFarmLand): a dirt road from the gate to a lane with stone
+ * walls and a mailbox, a pond, wheat fields, a neighbour's house with a meadow, woods and a ring of hills.
+ * Farm-local metres; nothing here is walked on (the gate opens onto a small porch, see LOCAL_BLOCKERS).
+ */
+export type LandKind = 'hill' | 'pine' | 'oak' | 'pond' | 'wheat' | 'house' | 'mailbox' | 'wall';
+export interface LandPiece {
+  kind: LandKind;
+  x: number;
+  z: number;
+  r: number;
+  s: number;
+}
+export const LAND_HALF = 95;
+export const POND = { x: -36, z: 4 };
+export const MEADOW = { x0: 34, x1: 58, z0: 40, z1: 60 };
+export const LAND: LandPiece[] = (() => {
+  let k = 23;
+  const rnd = () => ((k = (k * 16807) % 2147483647) - 1) / 2147483646;
+  const out: LandPiece[] = [];
+  const put = (kind: LandKind, x: number, z: number, r = 0, s = 1) => out.push({ kind, x, z, r, s });
+  // the lane north of the farm with stone walls, the mailbox by the farm road
+  put('mailbox', 2.6, 22, Math.PI);
+  for (let x = -62; x <= 62; x += 4) if (Math.abs(x) > 4) put('wall', x, 31.6, 0);
+  // pond west, wheat fields east and south-west, the neighbour's house north-east
+  put('pond', POND.x, POND.z, 0.3);
+  for (const z of [-12, -5, 2]) put('wheat', 36, z, Math.PI / 2);
+  for (const x of [-30, -23]) put('wheat', x, -27, 0);
+  put('house', 46, 66, Math.PI);
+  put('house', -58, -44, -Math.PI / 2, 0.9);
+  // woods: pines and oaks between the farm and the hills, away from the road, pond, fields and meadow
+  const free = (x: number, z: number) =>
+    Math.hypot(x - POND.x, z - POND.z) > 9 &&
+    !(Math.abs(x) < 6 && z > 15) &&
+    !(z > 27 && z < 40) &&
+    !(x > 29 && x < 43 && z > -17 && z < 7) &&
+    !(x > -36 && x < -17 && z > -32 && z < -22) &&
+    !(x > MEADOW.x0 - 4 && x < MEADOW.x1 + 4 && z > MEADOW.z0 - 4 && z < 74) &&
+    !(x > -66 && x < -50 && z > -52 && z < -36) &&
+    Math.abs(x) + Math.abs(z) > 0 && (Math.abs(x) > 30 || Math.abs(z) > 28);
+  for (let i = 0; i < 260 && out.filter((p) => p.kind === 'pine' || p.kind === 'oak').length < 70; i++) {
+    const a = rnd() * Math.PI * 2;
+    const d = 36 + rnd() * 30;
+    const x = Math.cos(a) * d * 1.1;
+    const z = Math.sin(a) * d;
+    if (!free(x, z)) continue;
+    put(rnd() < 0.5 ? 'pine' : 'oak', x, z, rnd() * 6, 0.85 + rnd() * 0.5);
+  }
+  // hills all round (backdrop)
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + rnd() * 0.2;
+    put('hill', Math.cos(a) * 82, Math.sin(a) * 76, rnd() * 6, 1.1 + rnd() * 0.8);
+  }
+  return out;
+})();
+
 /** World position of a farm-local point in slot `slot`. */
 export const toWorld = (slot: number, x: number, z: number) => {
   const f = myFarm(slot);
@@ -104,6 +160,10 @@ export const LOCAL_BLOCKERS: Aabb[] = (() => {
     // north fence with the gate gap in the middle
     { minX: -W, maxX: -GATE_W / 2, minZ: D, maxZ: D + t },
     { minX: GATE_W / 2, maxX: W, minZ: D, maxZ: D + t },
+    // a small porch outside the gate (a thief out of the gate got away; nobody wanders off into the country)
+    { minX: -GATE_W / 2 - 1.2, maxX: GATE_W / 2 + 1.2, minZ: D + 2.2, maxZ: D + 2.5 },
+    { minX: -GATE_W / 2 - 1.5, maxX: -GATE_W / 2 - 1.2, minZ: D, maxZ: D + 2.5 },
+    { minX: GATE_W / 2 + 1.2, maxX: GATE_W / 2 + 1.5, minZ: D, maxZ: D + 2.5 },
     box(BARN.x, BARN.z, BARN.w / 2, BARN.d / 2),
     box(BIN.x, BIN.z, 0.7, 0.5),
     box(SHOP.x, SHOP.z, 1.1, 0.15),

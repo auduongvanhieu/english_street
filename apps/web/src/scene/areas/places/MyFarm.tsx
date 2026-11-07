@@ -17,6 +17,7 @@ import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 import { TimerBar, timeLeft } from './TimerBar';
+import { MyFarmLand } from './MyFarmLand';
 import { MY_GROW_MS } from '@es/shared';
 
 /** The farm clock (server time). */
@@ -343,7 +344,9 @@ export default function MyFarm() {
     acc.current += dt;
     if (acc.current < 0.4) return;
     acc.current = 0;
-    const s = inRect(MY_FARMS_AREA, localPos.x, localPos.z, 30) ? myFarmAt(localPos.x, localPos.z) : -1;
+    // still on this farm in the porch outside the gate (4 m past the fence); otherwise the farm you are on
+    const keep = slot >= 0 && inRect(myFarm(slot).rect, localPos.x, localPos.z, 4);
+    const s = keep ? slot : inRect(MY_FARMS_AREA, localPos.x, localPos.z, 30) ? myFarmAt(localPos.x, localPos.z) : -1;
     if (s !== slot) setSlot(s);
   });
   useEffect(() => {
@@ -374,7 +377,7 @@ export default function MyFarm() {
     <group>
       <group position={[f.cx, 0, f.cz]}>
         <mesh position={[0, -0.01, 0]} rotation-x={-Math.PI / 2} receiveShadow>
-          <planeGeometry args={[MY_FARM.w + 30, MY_FARM.d + 30]} />
+          <planeGeometry args={[MY_FARM.w + 2, MY_FARM.d + 2]} />
           <meshStandardMaterial color="#a8d27a" roughness={1} />
         </mesh>
         <Static fields={fields} />
@@ -389,6 +392,7 @@ export default function MyFarm() {
         ) : null}
         <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />
       </group>
+      <MyFarmLand slot={slot} />
       <Animals slot={slot} animals={animals} now={now} />
       {(own ? mine.dog : view.dog) ? <FarmDog slot={slot} awake={own ? mine.dog!.fedDay === useMyFarm.getState().day : view.dog!.awake} name={(own ? mine.dog!.name : view.dog!.name) ?? 'Rex'} /> : null}
       <Usables slot={slot} mine={own} />
