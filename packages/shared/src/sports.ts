@@ -55,5 +55,9 @@ export const MINIGAMES = {
   beach: { perPoint: 3, max: 15, perDay: 4 },
   /** Maple Hill: the hike (1-5), packing the backpack (0-4), animal riddles (0-4) */
   hill: { perPoint: 3, max: 15, perDay: 4 },
+  /** Riverside: the market list (1-4), helping Lily find her things (1-4) */
+  riverside: { perPoint: 3, max: 12, perDay: 4 },
+  /** Old Town: telling the time (0-5), the museum questions (0-5) */
+  oldtown: { perPoint: 3, max: 15, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

@@ -235,7 +235,7 @@ export class Journey {
       paid.push({ id: 'story-bonus', ...STORY_BONUS });
       await this.repo.logEvent({ name: 'journey_story', playerId: pid, props: {} });
     }
-    // invited by a friend: when I finish chapter 2, we both get something
+    // invited by a friend: when I finish the invite chapter (INVITE_PAY_STEP), we both get something
     const inv = gs as { invitedBy?: string; invitePaid?: boolean };
     if (inv.invitedBy && !inv.invitePaid && r.done.some((s) => s.id === INVITE_PAY_STEP)) {
       await this.repo.updateUser(pid, { gameState: { ...gs, journey: st, invitePaid: true } });

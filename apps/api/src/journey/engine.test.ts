@@ -8,13 +8,13 @@ const fresh = (daily: string[] = []): JourneyState => ({ done: [], prog: {}, day
 test('main chapters go in order, only the current one counts', () => {
   const st = fresh();
   // chapter 2's event first: nothing (chapter 1 is current)
-  assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.length, 0);
+  assert.equal(applyEvent(st, 'avatar_save', {}).done.length, 0);
   assert.deepEqual(applyEvent(st, 'npc_open', { npc: 'guide' }).done.map((s) => s.id), ['m01-hello']);
   assert.equal(chapterOf(st), 1);
-  assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'failed' }).done.length, 0);
-  assert.deepEqual(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.map((s) => s.id), ['m02-coffee']);
-  // the same event again pays nothing
   assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.length, 0);
+  assert.deepEqual(applyEvent(st, 'avatar_save', {}).done.map((s) => s.id), ['m03-look']);
+  // the same event again pays nothing
+  assert.equal(applyEvent(st, 'avatar_save', {}).done.length, 0);
 });
 
 test('counts, lists of values, area stamps', () => {

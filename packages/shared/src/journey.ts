@@ -33,17 +33,18 @@ const R = (xp: number, coins: number) => ({ xp, coins });
 const PLAY = ['football', 'hoops', 'race', 'coach'];
 
 export const MAIN_STEPS: JourneyStep[] = [
+  // easiest first (2026-11-07): ids keep their old numbers, the order of this list is the order of the chapters
   { id: 'm01-hello', kind: 'main', goal: { event: 'npc_open', where: { npc: 'guide' } }, reward: R(20, 5), guide: { npc: 'guide' } },
-  { id: 'm02-coffee', kind: 'main', goal: { event: 'quest_end', where: { npc: 'barista', status: 'completed' } }, reward: R(30, 8), guide: { npc: 'barista' } },
   { id: 'm03-look', kind: 'main', goal: { event: ['avatar_save', 'clothes_wardrobe_save'] }, reward: R(20, 10), guide: { area: 'clothes' } },
-  { id: 'm04-shopping', kind: 'main', goal: { event: 'shopping_done' }, reward: R(30, 10), guide: { area: 'supermarket' } },
-  { id: 'm05-dinner', kind: 'main', goal: { event: 'restaurant_pay' }, reward: R(30, 10), guide: { area: 'restaurant' } },
-  { id: 'm06-chef', kind: 'main', goal: { event: 'minigame_done', where: { game: 'cooking' } }, reward: R(30, 10), guide: { place: 'kitchen' } },
   { id: 'm07-friend', kind: 'main', goal: { event: ['chat_send', 'friend_request'] }, reward: R(20, 10) },
-  { id: 'm08-river', kind: 'main', goal: { event: ['ferry_board', 'boat_board'] }, reward: R(30, 10), guide: { place: 'ferry' } },
-  { id: 'm09-hotel', kind: 'main', goal: { event: 'hotel_checkout' }, reward: R(40, 15), guide: { area: 'hotel' } },
   { id: 'm10-sports', kind: 'main', goal: { event: 'minigame_done', where: { game: PLAY } }, reward: R(30, 10), guide: { area: 'sports' } },
+  { id: 'm08-river', kind: 'main', goal: { event: ['ferry_board', 'boat_board'] }, reward: R(30, 10), guide: { place: 'ferry' } },
+  { id: 'm04-shopping', kind: 'main', goal: { event: 'shopping_done' }, reward: R(30, 10), guide: { area: 'supermarket' } },
+  { id: 'm06-chef', kind: 'main', goal: { event: 'minigame_done', where: { game: 'cooking' } }, reward: R(30, 10), guide: { place: 'kitchen' } },
   { id: 'm11-book', kind: 'main', goal: { event: 'book_quiz' }, reward: R(30, 10), guide: { place: 'library' } },
+  { id: 'm05-dinner', kind: 'main', goal: { event: 'restaurant_pay' }, reward: R(30, 10), guide: { area: 'restaurant' } },
+  { id: 'm09-hotel', kind: 'main', goal: { event: 'hotel_checkout' }, reward: R(40, 15), guide: { area: 'hotel' } },
+  { id: 'm02-coffee', kind: 'main', goal: { event: 'quest_end', where: { npc: 'barista', status: 'completed' } }, reward: R(30, 8), guide: { npc: 'barista' } },
   { id: 'm12-citizen', kind: 'main', goal: { event: 'stamp', stamps: 6 }, reward: R(100, 50) },
 ];
 
@@ -160,10 +161,12 @@ export interface WeeklyView {
   mine: number;
   done: boolean;
 }
-/** Inviting a friend (link with ?invite=<playerId>): paid when the friend finishes chapter 2. */
+/** Inviting a friend (link with ?invite=<playerId>): paid when the friend finishes the shopping chapter (chapter 6). */
 export const INVITE_REWARD = R(40, 20);
 export const INVITEE_BONUS = R(20, 10);
-export const INVITE_PAY_STEP = 'm02-coffee';
+export const INVITE_PAY_STEP = 'm04-shopping';
+/** The chapter number (1-based) that pays an invite. */
+export const INVITE_PAY_CHAPTER = MAIN_STEPS.findIndex((s) => s.id === INVITE_PAY_STEP) + 1;
 
 export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL, ...STORY_STEPS];
 export const stepById = (id: string) => ALL_STEPS.find((s) => s.id === id);
@@ -182,7 +185,7 @@ export interface JourneyState {
   dailyBonus: boolean;
   /** tracked side steps (shown on the HUD under the main one) */
   tracked: string[];
-  /** friends who joined with my invite link and finished chapter 2 */
+  /** friends who joined with my invite link and finished the invite chapter (INVITE_PAY_STEP) */
   invited?: number;
   /** "A day in English Street": steps done today (index of the next one) and whether today's bonus was paid */
   story?: number;

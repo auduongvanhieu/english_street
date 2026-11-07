@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
+import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_PAY_CHAPTER, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
 import { getPlayerId } from '../../net/player';
 import { Panel, DailyContent } from '../ProfilePanels';
 import { useJourney } from '../../store/journey';
@@ -199,7 +199,7 @@ function InviteCard({ invited }: { invited: number }) {
   return (
     <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-3">
       <div className="text-xs font-semibold uppercase text-sky-700">👋 {t('Invite a friend')}</div>
-      <p className="text-sm">{t('Send your link. When your friend finishes chapter 2 of the journey, you get +{xp} XP and +{coins} coins.', INVITE_REWARD)}</p>
+      <p className="text-sm">{t('Send your link. When your friend finishes chapter {n} of the journey, you get +{xp} XP and +{coins} coins.', { ...INVITE_REWARD, n: INVITE_PAY_CHAPTER })}</p>
       <div className="mt-2 flex gap-2">
         <input readOnly value={link} className="min-w-0 flex-1 rounded-lg border bg-white px-2 text-xs" onFocus={(e) => e.currentTarget.select()} aria-label={t('Invite link')} />
         <button type="button" onClick={() => void share()} className="min-h-9 rounded-lg bg-sky-600 px-3 text-sm font-semibold text-white">

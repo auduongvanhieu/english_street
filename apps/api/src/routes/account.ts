@@ -6,6 +6,7 @@ import {
   CLOTH_COLORS,
   DeviceInfoSchema, GfxInfoSchema, PlayerSettingsSchema,
   maskProfanity,
+  INVITE_PAY_STEP,
   avatarLook,
   checkLook,
   itemPrice,
@@ -315,14 +316,14 @@ export function accountRoutes(repo: AttemptRepo) {
         const { kind, os, osVersion, model, form, browser, network, radio, deviceId } = d.data;
         await repo.logEvent({ name: 'device', playerId: id, props: Object.fromEntries(Object.entries({ kind, os, osVersion, model, form, browser, network, radio, deviceId, country: dev.country }).filter(([, v]) => v !== undefined)) });
       }
-      // came with a friend's invite link: remember it once, for a new player only (paid when they finish chapter 2)
+      // came with a friend's invite link: remember it once, for a new player only (paid when they finish INVITE_PAY_STEP)
       const inviter = body.data.invitedBy;
       if (inviter && inviter !== id) {
         const me = await repo.getUser(id);
         const mgs = (me?.gameState ?? {}) as Record<string, unknown>;
-        // "new" = has not reached chapter 3 of the journey yet (the invite pays at chapter 2)
+        // "new" = has not finished the invite chapter yet
         const jd = ((mgs.journey as { done?: string[] } | undefined)?.done ?? []) as string[];
-        const isNew = !!me && !jd.includes('m02-coffee') && me.xp < 200;
+        const isNew = !!me && !jd.includes(INVITE_PAY_STEP) && me.xp < 200;
         if (isNew && !mgs.invitedBy && (await repo.getUser(inviter))) await repo.updateUser(id, { gameState: { ...mgs, invitedBy: inviter } });
       }
       // settings an admin changed while the player was away: applied by the game now, then forgotten

@@ -16,16 +16,16 @@ interface JourneyStats {
 }
 const CHAPTER: Record<string, string> = {
   'm01-hello': '1 · Chào Priya',
-  'm02-coffee': '2 · Ly cà phê',
-  'm03-look': '3 · Đổi trang phục',
-  'm04-shopping': '4 · Đi siêu thị',
-  'm05-dinner': '5 · Ăn nhà hàng',
-  'm06-chef': '6 · Nấu ăn',
-  'm07-friend': '7 · Bạn mới',
-  'm08-river': '8 · Qua sông',
-  'm09-hotel': '9 · Khách sạn',
-  'm10-sports': '10 · Thể thao',
-  'm11-book': '11 · Đọc sách',
+  'm03-look': '2 · Đổi trang phục',
+  'm07-friend': '3 · Bạn mới',
+  'm10-sports': '4 · Thể thao',
+  'm08-river': '5 · Qua sông',
+  'm04-shopping': '6 · Đi siêu thị',
+  'm06-chef': '7 · Nấu ăn',
+  'm11-book': '8 · Đọc sách',
+  'm05-dinner': '9 · Ăn nhà hàng',
+  'm09-hotel': '10 · Khách sạn',
+  'm02-coffee': '11 · Ly cà phê',
   'm12-citizen': '12 · Công dân',
 };
 
