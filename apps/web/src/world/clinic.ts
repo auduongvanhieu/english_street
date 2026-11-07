@@ -24,7 +24,11 @@ export interface ClinicCase {
   /** the right medicine and two others offered at the pharmacy */
   med: string;
   others: [string, string];
+  /** an X-ray first: the radiographer's instructions (in order) and what the picture shows (+ two wrong readings) */
+  xray?: { orders: string[]; finding: string; wrong: [string, string] };
 }
+/** Things the radiographer may ask; the X-ray card shows the case's orders plus one of these as a decoy. */
+export const XRAY_DECOYS = ['Open your mouth and say "Ahh".', 'Hold your breath.', 'Lie on your stomach.'];
 
 export const CLINIC_CASES: ClinicCase[] = [
   {
@@ -100,10 +104,25 @@ export const CLINIC_CASES: ClinicCase[] = [
     reason: 'I hurt my ankle.',
     part: 'foot',
     check: 'Can you move your foot? Let me see… We should take an X-ray to be sure.',
+    xray: { orders: ['Put your foot on the table, please.', 'Keep very still.', "Don't move your foot. Click! All done."], finding: 'The bones are fine. Nothing is broken.', wrong: ['The ankle bone is broken in two places.', 'There is something in the stomach.'] },
     diagnosis: "Good news: it isn't broken. It is a sprained ankle.",
     advice: 'Put ice on it for twenty minutes, keep your foot up and wear this bandage.',
     med: 'an ice pack',
     others: ['throat lozenges', 'eye drops'],
+  },
+  {
+    id: 'wrist',
+    face: '🚲',
+    says: 'I fell off my bike and my wrist hurts a lot.',
+    wrong: ['I have a cough.', 'My ear hurts at night.'],
+    reason: 'I hurt my wrist.',
+    part: 'hand',
+    check: "Can you move your fingers? Hmm, it's very swollen. Let's take an X-ray.",
+    xray: { orders: ['Put your arm on the table, please.', 'Keep very still.', 'Now turn your hand over. Click! Thank you.'], finding: 'There is a small crack in the wrist bone.', wrong: ['The bones are fine.', 'There is a problem with the ear.'] },
+    diagnosis: 'There is a small crack in the bone. Your wrist is broken.',
+    advice: "You need a cast for four weeks. Don't play sports and keep your arm in this sling.",
+    med: 'a sling',
+    others: ['cough syrup', 'eye drops'],
   },
   {
     id: 'rash',

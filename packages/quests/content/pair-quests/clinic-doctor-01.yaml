@@ -1,0 +1,44 @@
+id: clinic-doctor-01
+npc: doctor
+level: A2
+title: In the Consulting Room (pair)
+intro: One of you is the doctor, the other is the patient. Dr. Chen watches and gives each of you feedback.
+roles:
+  - id: patient
+    label: Patient
+    brief: >
+      You don't feel well. Choose a problem (a headache, a sore throat, a stomach ache, a cough or a hurt
+      ankle). Tell the doctor what is wrong and since when, answer the doctor's questions, and ask what
+      you should do and how often to take the medicine.
+    goals:
+      - id: say_problem
+        desc: Say what is wrong
+      - id: since_when
+        desc: Say how long you have had the problem
+      - id: answer_questions
+        desc: Answer the doctor's questions
+      - id: ask_advice
+        desc: Ask what to do or how often to take the medicine
+  - id: doctor
+    label: Doctor
+    brief: >
+      You are the doctor at City Hospital. Ask what the problem is, ask two questions about it (since when?
+      where does it hurt? do you have a temperature?), give a diagnosis and clear advice with the medicine
+      and how often to take it.
+    facts: |
+      Common advice — Headache: rest, drink water, painkillers every six hours. Sore throat: lozenges every
+      three hours, warm water with honey. Stomach ache: plain food, medicine after meals. Cough: syrup three
+      times a day, rest. Hurt ankle: ice for twenty minutes, keep the foot up, a bandage, maybe an X-ray.
+    goals:
+      - id: ask_problem
+        desc: Ask what the problem is
+      - id: ask_more
+        desc: Ask two questions about the problem
+      - id: diagnose
+        desc: Say what you think it is
+      - id: advise
+        desc: Give advice with the medicine and how often to take it
+target_vocab: [symptom, temperature, painkillers, prescription, twice a day, rest]
+target_phrases: ["What seems to be the problem?", "How long have you had it?", "It hurts when…", "You should…", "Take it twice a day."]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

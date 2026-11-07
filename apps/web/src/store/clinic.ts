@@ -5,7 +5,7 @@ import { track } from '../net/analytics';
 import { getPlayerId } from '../net/player';
 import { chimeSound } from '../audio/ambient';
 import { localPos, teleportTo } from '../scene/LocalPlayer';
-import { AFTER_DOCTOR, CLINIC_CASES, type ClinicCase } from '../world/clinic';
+import { AFTER_DOCTOR, CLINIC_CASES, XRAY_DECOYS, type ClinicCase } from '../world/clinic';
 import { useArea } from './area';
 import { useProfile } from './profile';
 import { useSeat } from './seat';
@@ -16,7 +16,7 @@ import { useVoice } from './voice';
  * A visit to the doctor (world/clinic.ts): reception → waiting room → consulting room → pharmacy.
  * Score (0-3): the right sentence for the doctor, the right body part, the right medicine — each first time.
  */
-export type ClinicStage = 'checkin' | 'waiting' | 'called' | 'talk' | 'where' | 'check' | 'advice' | 'pharmacy' | 'done';
+export type ClinicStage = 'checkin' | 'waiting' | 'called' | 'talk' | 'where' | 'check' | 'xray' | 'xraylook' | 'advice' | 'pharmacy' | 'done';
 interface ClinicStore {
   stage: ClinicStage | null;
   c: ClinicCase | null;
@@ -39,12 +39,17 @@ interface ClinicStore {
   leaveRoom: () => void;
   openPharmacy: () => void;
   pickMed: (med: string) => void;
+  /** the X-ray room: which instruction we are at, the actions to choose from; then reading the picture */
+  xrayStep: number;
+  xrayAct: (order: string) => void;
+  xrayRead: (line: string) => void;
   close: () => void;
 }
 
 const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
 const nurse = (t: string) => useVoice.getState().speakAs('nurse', t, 'en-GB');
 const doctor = (t: string) => useVoice.getState().speakAs('doctor', t, 'en-US');
+const radiographer = (t: string) => useVoice.getState().speakAs('radiographer', t, 'en-GB');
 const pharmacist = (t: string) => useVoice.getState().speakAs('pharmacist', t, 'en-GB');
 const ROOM_NAME = (r: number) => `Consulting Room ${r + 1}`;
 
@@ -58,6 +63,7 @@ export const useClinic = create<ClinicStore>((set, get) => ({
   miss: null,
   score: { talk: false, where: false, med: false },
   firstTry: true,
+  xrayStep: 0,
   result: null,
   start() {
     const st = get().stage;
@@ -115,10 +121,46 @@ export const useClinic = create<ClinicStore>((set, get) => ({
   next() {
     const { c, stage } = get();
     if (!c) return;
+    if (stage === 'check' && c.xray) {
+      // to the X-ray room first
+      set({ stage: 'xray', xrayStep: 0, options: shuffle([...c.xray.orders, XRAY_DECOYS[Math.floor(Math.random() * XRAY_DECOYS.length)]!]), miss: null });
+      window.setTimeout(() => radiographer(`Hello, I'm Sam, the radiographer. ${c.xray!.orders[0]}`), 600);
+      return;
+    }
     if (stage === 'check') {
       set({ stage: 'advice' });
       doctor(`${c.diagnosis} ${c.advice} Take this prescription to the pharmacy.`);
     }
+  },
+  xrayAct(order) {
+    const { c, stage, xrayStep } = get();
+    if (!c?.xray || stage !== 'xray') return;
+    const want = c.xray.orders[xrayStep];
+    if (order !== want) {
+      set({ miss: order });
+      radiographer(`No, listen again: ${want}`);
+      return;
+    }
+    const step = xrayStep + 1;
+    if (step < c.xray.orders.length) {
+      set({ xrayStep: step, miss: null });
+      radiographer(c.xray.orders[step]!);
+      return;
+    }
+    set({ stage: 'xraylook', options: shuffle([c.xray.finding, ...c.xray.wrong]), miss: null });
+    window.setTimeout(() => doctor("Here's your X-ray. What can you see?"), 1800);
+  },
+  xrayRead(line) {
+    const { c, stage } = get();
+    if (!c?.xray || stage !== 'xraylook') return;
+    if (line !== c.xray.finding) {
+      set({ miss: line });
+      doctor('Look again, carefully.');
+      return;
+    }
+    useVoice.getState().speakAs('me', line, 'en-US');
+    set({ stage: 'advice', miss: null });
+    window.setTimeout(() => doctor(`That's right. ${c.diagnosis} ${c.advice} Take this prescription to the pharmacy.`), 1600);
   },
   leaveRoom() {
     const { stage, c } = get();

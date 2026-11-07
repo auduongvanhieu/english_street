@@ -1,0 +1,39 @@
+id: school-teacher-01
+npc: teacher
+level: A2
+title: Be the Teacher (pair)
+intro: One of you is the teacher, the other is the student. Ms Green watches and gives each of you feedback.
+roles:
+  - id: teacher
+    label: Teacher
+    brief: >
+      You are the teacher today. Greet the student, teach three words about one topic (animals, food,
+      weather or the classroom) with an example sentence each, ask the student a question to check, and
+      give homework at the end.
+    goals:
+      - id: greet
+        desc: Greet the student and say today's topic
+      - id: teach_words
+        desc: Teach three words with an example sentence
+      - id: check
+        desc: Ask a question to check the student understands
+      - id: homework
+        desc: Give homework and say goodbye
+  - id: student
+    label: Student
+    brief: >
+      You are the student. Listen to the teacher, ask what a word means or how to spell it, answer the
+      teacher's question with a full sentence, and ask a question about the homework.
+    goals:
+      - id: ask_meaning
+        desc: Ask what a word means or how to spell it
+      - id: answer
+        desc: Answer the teacher's question with a full sentence
+      - id: use_word
+        desc: Make your own sentence with a new word
+      - id: ask_homework
+        desc: Ask a question about the homework
+target_vocab: [topic, example, spell, homework, understand]
+target_phrases: ["Today we are going to learn…", "What does … mean?", "How do you spell…?", "For homework, please…", "Can you give me an example?"]
+max_turns: 8
+reward: { xp: 90, coins: 25 }

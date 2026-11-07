@@ -1,3 +1,4 @@
+import { useVoice } from '../store/voice';
 import { roomName, useClinic } from '../store/clinic';
 import { Figure } from './area/activities/Hospital';
 import { useT } from '../i18n';
@@ -9,6 +10,7 @@ export function ClinicHud() {
   const c = useClinic((s) => s.c);
   const options = useClinic((s) => s.options);
   const miss = useClinic((s) => s.miss);
+  const xrayStep = useClinic((s) => s.xrayStep);
   const number = useClinic((s) => s.number);
   const room = useClinic((s) => s.room);
   const score = useClinic((s) => s.score);
@@ -102,6 +104,39 @@ export function ClinicHud() {
             <button type="button" onClick={() => k.next()} className="min-h-10 w-full rounded-xl bg-teal-600 text-sm font-semibold text-white">
               {t('Continue')}
             </button>
+          </>
+        ) : stage === 'xray' && c.xray ? (
+          <>
+            {head(`🩻 ${t('The X-ray room')}`)}
+            <p className="mb-1 text-sm" dir="ltr">
+              🧑‍⚕️ “{c.xray.orders[xrayStep]}”{' '}
+              <button type="button" onClick={() => useVoice.getState().speakAs('radiographer', c.xray!.orders[xrayStep]!, 'en-GB')} className="align-middle text-base" aria-label={t('Listen')}>
+                🔊
+              </button>
+            </p>
+            <p className="mb-1 text-xs text-gray-500">{t('Do what the radiographer says ({n}/{total}).', { n: xrayStep + 1, total: c.xray.orders.length })}</p>
+            <div className="flex flex-col gap-1.5" dir="ltr">
+              {options.map((o) => (
+                <button key={o} type="button" onClick={() => k.xrayAct(o)} className={`min-h-10 rounded-xl border px-3 text-left text-sm ${miss === o ? 'border-red-300 bg-red-50 line-through' : 'border-gray-200 bg-white'}`}>
+                  ✋ {o.replace(/ Click!.*$/, '')}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : stage === 'xraylook' && c.xray ? (
+          <>
+            {head(`🩻 ${t('Your X-ray')}`)}
+            <div className="mb-2 flex h-28 items-center justify-center rounded-xl bg-slate-900 text-6xl">{c.id === 'wrist' ? '🦴' : '🦶'}</div>
+            <p className="mb-1 text-sm" dir="ltr">
+              🩺 “What can you see?”
+            </p>
+            <div className="flex flex-col gap-1.5" dir="ltr">
+              {options.map((o) => (
+                <button key={o} type="button" onClick={() => k.xrayRead(o)} className={`min-h-10 rounded-xl border px-3 text-left text-sm ${miss === o ? 'border-red-300 bg-red-50 line-through' : 'border-gray-200 bg-white'}`}>
+                  {o}
+                </button>
+              ))}
+            </div>
           </>
         ) : stage === 'advice' ? (
           <>
