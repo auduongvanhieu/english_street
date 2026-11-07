@@ -7,6 +7,7 @@ import { INTERIOR_BOUNDS, MAPLE_HILL, inRect } from '@es/shared';
 import { walkable } from '../world/areas';
 import { floorAt, localPos } from './LocalPlayer';
 import { useGame } from '../store/game';
+import { decorTap, useMyFarm } from '../store/myFarm';
 
 /**
  * An invisible ground plane (following the player) that turns a mouse click on the ground into "walk there" (players, animals, shop
@@ -16,6 +17,11 @@ export function GroundClick() {
   const ring = useRef<THREE.Mesh>(null);
   const hitMat = useMemo(() => new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }), []);
   const onClick = (e: ThreeEvent<MouseEvent>) => {
+    // decorating your farm: a tap (any pointer) puts the item down or takes one away
+    if (useMyFarm.getState().decorating !== null && e.delta <= 6) {
+      decorTap(e.point.x, e.point.z);
+      return;
+    }
     if (lastPointer.type !== 'mouse' || e.delta > 6 || e.button !== 0) return; // a drag that turned the camera
     if (useGame.getState().panelNpc) return;
     // on hills the ground mesh is above this plane: use the first thing the ray hit (the hillside under the cursor)

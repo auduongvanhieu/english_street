@@ -147,3 +147,23 @@ test('my farm v2: the workshop and the farm goals', async () => {
   assert.equal(done.coins, g.coins);
   assert.equal(applyMyFarm(done.farm, { action: 'claimGoal', goal: g.id }, 0, 0, day).error, 'nothing');
 });
+
+test('my farm v2: decorating', async () => {
+  const { DECOR_ITEMS, decorFits } = await import('@es/shared');
+  const day = '2026-11-08';
+  const f = normalizeMyFarm(emptyMyFarm());
+  // not on a field, a path or a pen; inside the fence
+  assert.ok(!decorFits(f, 'bush', -10, 8));
+  assert.ok(!decorFits(f, 'bush', 0.5, -10));
+  assert.ok(!decorFits(f, 'bush', 25, 0));
+  assert.ok(decorFits(f, 'bush', -17, -4.5));
+  assert.equal(applyMyFarm(f, { action: 'place', kind: 'bush', x: -17, z: -4.5, r: 1 }, 0, 0, day).error, 'coins');
+  const r = applyMyFarm(f, { action: 'place', kind: 'bush', x: -17.2, z: -4.4, r: 1 }, 0, 100, day);
+  assert.equal(r.coins, -DECOR_ITEMS.bush!.price);
+  assert.deepEqual(r.farm.decor[0], { k: 'bush', x: -17, z: -4.5, r: 1 });
+  // not on top of another one; taking it away gives half back
+  assert.equal(applyMyFarm(r.farm, { action: 'place', kind: 'bush', x: -16.5, z: -4.5, r: 0 }, 0, 100, day).error, 'no_room');
+  const back = applyMyFarm(r.farm, { action: 'unplace', index: 0 }, 0, 0, day);
+  assert.equal(back.coins, Math.floor(DECOR_ITEMS.bush!.price / 2));
+  assert.equal(back.farm.decor.length, 0);
+});

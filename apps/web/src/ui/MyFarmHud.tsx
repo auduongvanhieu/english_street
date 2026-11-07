@@ -6,7 +6,7 @@ import { Icon } from './icons';
 import { useT } from '../i18n';
 import { useVoice } from '../store/voice';
 import { useExpire } from './useExpire';
-import { FarmBook, FarmTopBar, LevelUpCard, RipeNotice } from './myfarm/FarmBook';
+import { DecorateBar, DecoratePanel, FarmBook, FarmTopBar, LevelUpCard, RipeNotice } from './myfarm/FarmBook';
 
 /** Whole minutes (at least 1) of a duration. */
 const mins = (ms: number) => Math.max(1, Math.round(ms / 60000));
@@ -48,6 +48,7 @@ const ERRORS: Record<string, string> = {
   no_machine: 'Buy that machine in the farm shop first.',
   machine_busy: 'That machine is busy. Wait until it is ready.',
   not_done: 'You have not finished that goal yet.',
+  no_room: 'There is no room there. Try a free place (not on a field, a path or a pen).',
   closed: 'This farm is closed to visitors.',
   friends_only: 'Only friends can visit this farm.',
 };
@@ -85,6 +86,8 @@ export function MyFarmHud() {
 
       <FarmTopBar />
       <FarmBook />
+      <DecoratePanel />
+      <DecorateBar />
       <LevelUpCard />
       <RipeNotice />
       <ChaseBanner />

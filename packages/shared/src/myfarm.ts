@@ -165,6 +165,42 @@ export const RECIPES: Record<string, { machine: MachineId; needs: Record<string,
 export const CRAFTED = Object.keys(RECIPES);
 for (const r of Object.values(RECIPES)) PRODUCT_SELL[r.makes] = r.sell;
 
+/* ----------------------------------------------------------------------------------------- decorating */
+/** Things you can put anywhere free on your farm (bought and placed in one go; taking one away gives half back). */
+export const DECOR_ITEMS: Record<string, { price: number; en: string; icon: string; r: number }> = {
+  flowerbox: { price: 15, en: 'a flower box', icon: '🌷', r: 1.3 },
+  bush: { price: 10, en: 'a flowering bush', icon: '🌳', r: 0.7 },
+  sunflowers: { price: 12, en: 'some sunflowers', icon: '🌻', r: 0.6 },
+  flowers: { price: 5, en: 'some wild flowers', icon: '🌼', r: 0.4 },
+  appletree: { price: 30, en: 'an apple tree', icon: '🍎', r: 0.9 },
+  bench: { price: 25, en: 'a bench', icon: '🪑', r: 1.0 },
+};
+export const DECOR_MAX = 40;
+/** Places inside the fence (farm-local metres) that stay free: fields, paths, pens and their walkways, the barn,
+ * the gate and the boards. (Same layout as apps/web world/myFarmLayout.ts.) */
+export const FARM_RESERVED: Rect[] = [
+  { minX: -18.4, maxX: -0.6, minZ: 1.4, maxZ: 14 },
+  { minX: -1.2, maxX: 2.2, minZ: -18, maxZ: 18 },
+  { minX: -20, maxX: 20, minZ: -2, maxZ: 1 },
+  { minX: 2.6, maxX: 19.4, minZ: 4.6, maxZ: 14.4 },
+  { minX: 2.6, maxX: 19.4, minZ: -15.4, maxZ: -5.6 },
+  { minX: 2.6, maxX: 19.4, minZ: 2.6, maxZ: 4.6 },
+  { minX: 2.6, maxX: 19.4, minZ: -5.6, maxZ: -3.6 },
+  { minX: -19.6, maxX: -2.4, minZ: -17.2, maxZ: -6.6 },
+  { minX: -12.6, maxX: -9.4, minZ: -6.6, maxZ: -4.8 },
+  { minX: -7.5, maxX: 9.5, minZ: 14.8, maxZ: 18 },
+  { minX: -2.8, maxX: -0.2, minZ: -10.2, maxZ: -7.8 },
+];
+/** Can `kind` stand at (x, z) on this farm? (inside the fence, off the reserved places, not on other decorations) */
+export function decorFits(f: { decor: { k: string; x: number; z: number }[] }, kind: string, x: number, z: number): boolean {
+  const item = DECOR_ITEMS[kind];
+  if (!item) return false;
+  const r = item.r;
+  if (x - r < -19.4 || x + r > 19.4 || z - r < -17.4 || z + r > 17.4) return false;
+  if (FARM_RESERVED.some((b) => x + r > b.minX && x - r < b.maxX && z + r > b.minZ && z - r < b.maxZ)) return false;
+  return !f.decor.some((d) => Math.hypot(d.x - x, d.z - z) < r + (DECOR_ITEMS[d.k]?.r ?? 0.5));
+}
+
 /* ----------------------------------------------------------------------------------------- goals */
 /** Farm goals: counted from what you do; claim the reward when done (once each). */
 export const FARM_GOALS: { id: string; stat: string; n: number; coins: number; fertilizer: number; en: string }[] = [
@@ -247,6 +283,8 @@ export const MyFarmStateSchema = z.object({
   orderSeq: z.number().int().min(0).default(0),
   /** workshop machines you own and what each is making */
   machines: z.record(z.string(), z.object({ job: z.object({ recipe: z.string(), at: z.number() }).nullable() })).default({}),
+  /** decorations you placed (farm-local metres on a half-metre grid; r = quarter turns) */
+  decor: z.array(z.object({ k: z.string().max(16), x: z.number(), z: z.number(), r: z.number().int().min(0).max(3) })).max(DECOR_MAX).default([]),
   /** counters for the farm goals, and the goals already claimed */
   stats: z.record(z.string(), z.number().int().min(0)).default({}),
   goals: z.array(z.string()).default([]),
@@ -341,9 +379,11 @@ export const MyFarmActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('craft'), recipe: z.string().max(16) }),
   z.object({ action: z.literal('takeCraft'), machine: z.enum(MACHINES) }),
   z.object({ action: z.literal('claimGoal'), goal: z.string().max(24) }),
+  z.object({ action: z.literal('place'), kind: z.string().max(16), x: z.number().min(-20).max(20), z: z.number().min(-18).max(18), r: z.number().int().min(0).max(3) }),
+  z.object({ action: z.literal('unplace'), index: z.number().int().min(0).max(DECOR_MAX) }),
 ]);
 export type MyFarmAction = z.infer<typeof MyFarmActionSchema>;
-export type MyFarmError = 'no_dog' | 'dog_fed' | 'trained' | 'busy' | 'empty' | 'no_seed' | 'no_plot' | 'needs_water' | 'not_ready' | 'already_watered' | 'no_feed' | 'not_hungry' | 'no_animal' | 'too_many' | 'coins' | 'bad_item' | 'nothing_to_sell' | 'day_cap' | 'locked' | 'barn_full' | 'no_fertilizer' | 'no_order' | 'missing' | 'nothing' | 'no_machine' | 'machine_busy' | 'not_done';
+export type MyFarmError = 'no_dog' | 'dog_fed' | 'trained' | 'busy' | 'empty' | 'no_seed' | 'no_plot' | 'needs_water' | 'not_ready' | 'already_watered' | 'no_feed' | 'not_hungry' | 'no_animal' | 'too_many' | 'coins' | 'bad_item' | 'nothing_to_sell' | 'day_cap' | 'locked' | 'barn_full' | 'no_fertilizer' | 'no_order' | 'missing' | 'nothing' | 'no_machine' | 'machine_busy' | 'not_done' | 'no_room';
 export interface MyFarmResult {
   farm: MyFarmState;
   /** coins to add (selling) or take (buying, negative) */
@@ -538,6 +578,24 @@ function applyRule(state: MyFarmState, a: MyFarmAction, now: number, coins: numb
       f.fertilizer += g.fertilizer;
       return { farm: f, coins: g.coins, xp: 10, said: `Goal done: ${g.en}! I got ${g.coins} coins and ${g.fertilizer} fertilizer.` };
     }
+    case 'place': {
+      const item = DECOR_ITEMS[a.kind];
+      if (!item) return fail('bad_item');
+      if (f.decor.length >= DECOR_MAX) return fail('too_many');
+      const x = Math.round(a.x * 2) / 2;
+      const z = Math.round(a.z * 2) / 2;
+      if (!decorFits(f, a.kind, x, z)) return fail('no_room');
+      if (coins < item.price) return fail('coins');
+      f.decor.push({ k: a.kind, x, z, r: a.r });
+      return { farm: f, coins: -item.price, xp: 2, said: `I put ${item.en} on my farm. It looks lovely!` };
+    }
+    case 'unplace': {
+      const d = f.decor[a.index];
+      if (!d) return fail('nothing');
+      f.decor.splice(a.index, 1);
+      const back = Math.floor((DECOR_ITEMS[d.k]?.price ?? 0) / 2);
+      return { farm: f, coins: back, xp: 0, said: `I took away ${DECOR_ITEMS[d.k]?.en ?? 'that'}.` };
+    }
     case 'skipOrder': {
       const o = f.orders.find((x) => x.id === a.order);
       if (!o) return fail('no_order');
@@ -660,4 +718,6 @@ export interface FarmView {
   visits: VisitMode;
   dog: { name: string; level: number; awake: boolean } | null;
   notes: { t: number; name: string; text: string }[];
+  /** what the owner placed (decorating) */
+  decor?: { k: string; x: number; z: number; r: number }[];
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { THIEF_BREATH_S, applyMyFarm, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
+import { DECOR_ITEMS, THIEF_BREATH_S, applyMyFarm, myFarmAt, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
 import { get, post } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { onFarm, sendFarm } from '../net/client';
@@ -8,6 +8,7 @@ import { track } from '../net/analytics';
 import { breath, localHeading, localPos, teleportTo } from '../scene/LocalPlayer';
 import { sendProp } from '../net/client';
 import { areaById, frontZ } from '../world/areas';
+import { DECOR } from '../world/myFarmLayout';
 import { useProfile } from './profile';
 import { useGame } from './game';
 import { useVoice } from './voice';
@@ -16,7 +17,7 @@ import { useVoice } from './voice';
  * "My farm" in the game: going in (the game server gives the farm a slot in this zone), your farm's state from
  * the API, actions (run locally first, then confirmed by the API), and visiting a friend's farm (read-only).
  */
-export type FarmPanel = 'shop' | 'barn' | 'orders' | 'workshop' | 'goals' | 'settings' | 'train' | { plot: number } | null;
+export type FarmPanel = 'shop' | 'barn' | 'orders' | 'workshop' | 'goals' | 'decorate' | 'settings' | 'train' | { plot: number } | null;
 export type StealError = 'steal_guest' | 'steal_level' | 'friends_only' | 'steal_busy' | 'steal_limit' | 'steal_not_ready' | 'steal_taken' | 'steal_limit' | 'closed';
 interface MyFarmStore {
   /** the farm you are in (or going to): owner id, name, slot (-1 = waiting for the server) */
@@ -31,6 +32,8 @@ interface MyFarmStore {
   panel: FarmPanel;
   /** the farm just reached this level (the level-up card) */
   levelUp: number | null;
+  /** decorating: the item to put down where you tap the ground ('' = tap a decoration to take it away) */
+  decorating: string | null;
   last: { said: string; xp: number; coins: number; error?: MyFarmError | StealError; note?: string; at: number } | null;
   /** you are running from a farm dog */
   chase: { dog: string; crop: string; at: number } | null;
@@ -76,6 +79,7 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   loaded: false,
   panel: null,
   levelUp: null,
+  decorating: null,
   last: null,
   chase: null,
   dogAt: null,
@@ -146,6 +150,7 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
         });
   },
   leave() {
+    set({ decorating: null });
     // back at the farm area, on the path by the "MY FARM" gate (scene/areas/Farm.tsx)
     const a = areaById('farm');
     set({ at: null, view: null, panel: null });
@@ -219,4 +224,23 @@ export function initMyFarm() {
     off();
     window.clearInterval(iv);
   };
+}
+
+/** Decorating: a tap on the ground of your farm puts the chosen item there, or takes away the one you tapped. */
+export function decorTap(x: number, z: number) {
+  const st = useMyFarm.getState();
+  if (!st.at || st.view || st.at.slot < 0 || myFarmAt(x, z) !== st.at.slot) return;
+  const f = myFarm(st.at.slot);
+  const lx = x - f.cx;
+  const lz = z - f.cz;
+  const hit = st.mine.decor.findIndex((d) => Math.hypot(d.x - lx, d.z - lz) < Math.max(0.6, DECOR_ITEMS[d.k]?.r ?? 0.6));
+  if (hit >= 0) return void st.act({ action: 'unplace', index: hit });
+  if (!st.decorating) return;
+  // the farm's own flower boxes and bushes are not in the rules: keep off them here
+  const r = DECOR_ITEMS[st.decorating]?.r ?? 0.6;
+  if (DECOR.some((d) => d.kind !== 'clump' && d.kind !== 'tree' && Math.hypot(d.x - lx, d.z - lz) < r + (d.kind === 'planter' ? 1.3 : 0.7))) {
+    useMyFarm.setState({ last: { said: '', xp: 0, coins: 0, error: 'no_room', at: Date.now() } });
+    return;
+  }
+  void st.act({ action: 'place', kind: st.decorating, x: lx, z: lz, r: Math.floor(Math.random() * 4) });
 }

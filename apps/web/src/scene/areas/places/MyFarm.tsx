@@ -18,7 +18,9 @@ import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 import { TimerBar, timeLeft } from './TimerBar';
 import { MyFarmLand } from './MyFarmLand';
-import { MY_GROW_MS, RECIPES } from '@es/shared';
+import { DECOR_ITEMS, MY_GROW_MS, RECIPES } from '@es/shared';
+
+const NO_DECOR: { k: string; x: number; z: number; r: number }[] = [];
 
 /** The farm clock (server time). */
 const farmNow = () => Date.now() + useMyFarm.getState().skew;
@@ -31,15 +33,24 @@ preloadLpm('farm_kit');
 preloadLpm('farm_garden');
 const DECOR_PART = { planter: 'SM_FG_Planter', clump: 'SM_FG_Clump', bush: 'SM_FG_Bush', sunflowers: 'SM_FG_Sunflowers', tree: 'SM_FG_AppleTree' } as const;
 
-function Static({ fields }: { fields: number }) {
+type Placed = { k: string; x: number; z: number; r: number };
+const PLACED_PART: Record<string, string> = { flowerbox: 'SM_FG_Planter', bush: 'SM_FG_Bush', sunflowers: 'SM_FG_Sunflowers', flowers: 'SM_FG_Clump', appletree: 'SM_FG_AppleTree' };
+preloadLpm('zoo_kit');
+function Static({ fields, placed }: { fields: number; placed: Placed[] }) {
   const kit = useLpmParts('farm_kit');
   const garden = useLpmParts('farm_garden');
+  const zoo = useLpmParts('zoo_kit');
   const W = MY_FARM.w / 2;
   const D = MY_FARM.d / 2;
   return (
     <Merged
-      deps={[kit, garden, fields]}
+      deps={[kit, garden, zoo, fields, placed]}
       build={(p) => {
+        // what the owner placed (decorating)
+        for (const d of placed) {
+          const g = d.k === 'bench' ? zoo.SM_Bench : garden[PLACED_PART[d.k] ?? ''];
+          if (g) p.addColored(g, { p: [d.x, 0, d.z], r: [0, (d.r * Math.PI) / 2, 0] });
+        }
         for (const d of DECOR) {
           const g = garden[DECOR_PART[d.kind]];
           if (g) p.addColored(g, { p: [d.x, 0, d.z], r: [0, d.r, 0], s: [d.s, d.s, d.s] });
@@ -350,9 +361,17 @@ export default function MyFarm() {
     const s = keep ? slot : inRect(MY_FARMS_AREA, localPos.x, localPos.z, 30) ? myFarmAt(localPos.x, localPos.z) : -1;
     if (s !== slot) setSlot(s);
   });
+  const placed = (view ? view.decor : mine.decor) ?? NO_DECOR;
   useEffect(() => {
-    if (slot >= 0) setDynamicBlockers(blockersFor(slot));
-    else setDynamicBlockers([]);
+    if (slot >= 0) {
+      // the farm, and the decorations its owner placed
+      const f = myFarm(slot);
+      const extra = placed.map((d) => {
+        const r = Math.min(0.9, (DECOR_ITEMS[d.k]?.r ?? 0.5) * 0.8);
+        return { minX: f.cx + d.x - r, maxX: f.cx + d.x + r, minZ: f.cz + d.z - r, maxZ: f.cz + d.z + r };
+      });
+      setDynamicBlockers([...blockersFor(slot), ...extra]);
+    } else setDynamicBlockers([]);
     // in a farm without knowing whose (a reload): back to the farm area
     if (slot >= 0 && (!at || at.slot !== slot)) {
       const id = window.setTimeout(() => {
@@ -361,7 +380,7 @@ export default function MyFarm() {
       }, 3000);
       return () => window.clearTimeout(id);
     }
-  }, [slot, at]);
+  }, [slot, at, placed]);
   useEffect(() => {
     if (slot < 0) return;
     const id = window.setInterval(() => tick((n) => n + 1), 2000);
@@ -381,7 +400,7 @@ export default function MyFarm() {
           <planeGeometry args={[MY_FARM.w + 2, MY_FARM.d + 2]} />
           <meshStandardMaterial color="#a8d27a" roughness={1} />
         </mesh>
-        <Static fields={fields} />
+        <Static fields={fields} placed={placed} />
         <Plots plots={plots} now={now} fields={fields} />
         <Sign x={0} z={MY_FARM.d / 2 + 0.6} text={`${at.name.toUpperCase()}'S FARM`} color="#7a4a2a" y={2.6} />
         {own ? (

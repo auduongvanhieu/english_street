@@ -245,7 +245,7 @@ export function myFarmRoutes(repo: AttemptRepo) {
       }
       // journey: "visit a friend's farm"
       if (me && me !== owner.id) await repo.logEvent({ name: 'myfarm_visit', playerId: me, props: { owner: owner.id } });
-      const view: FarmView = { owner: owner.id, name: owner.name, fields: farm.fields, plots: farm.plots, animals: farm.animals, visits: farm.visits, notes: farm.notes, dog: farm.dog ? { name: farm.dog.name, level: dogLevel(farm.dog.train), awake: dogAwake(farm, today()) } : null };
+      const view: FarmView = { owner: owner.id, name: owner.name, fields: farm.fields, plots: farm.plots, animals: farm.animals, visits: farm.visits, notes: farm.notes, decor: farm.decor, dog: farm.dog ? { name: farm.dog.name, level: dogLevel(farm.dog.train), awake: dogAwake(farm, today()) } : null };
       return { farm: view, now: Date.now() };
     });
   };

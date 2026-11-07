@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   ANIMALS,
+  DECOR_ITEMS,
+  DECOR_MAX,
   FARM_GOALS,
   MACHINES,
   MACHINE_INFO,
@@ -75,7 +77,7 @@ export function FarmTopBar() {
   const crafted = Object.values(mine.machines).filter((m) => m.job && now - m.job.at >= (RECIPES[m.job.recipe]?.ms ?? Infinity)).length;
   const claimable = FARM_GOALS.filter((g) => !mine.goals.includes(g.id) && (mine.stats[g.stat] ?? 0) >= g.n).length;
   const canDeliver = mine.orders.filter((o) => Object.entries(o.items).every(([k, n]) => (mine.barn[k] ?? 0) >= n)).length;
-  const quick = 'pointer-events-auto flex h-9 items-center gap-1 rounded-full bg-white/95 px-3 text-xs font-semibold text-slate-800 shadow-md ring-1 ring-black/5 disabled:opacity-40';
+  const quick = 'pointer-events-auto flex h-9 items-center gap-1 rounded-full bg-white/95 px-2.5 text-xs sm:px-3 font-semibold text-slate-800 shadow-md ring-1 ring-black/5 disabled:opacity-40';
   return (
     <div data-ui className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.4rem)] z-20 flex max-w-[calc(100vw-6rem)] flex-col items-start gap-1.5 sm:top-[9.4rem]">
       <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-white/95 py-1.5 pe-1.5 ps-3 text-xs text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md">
@@ -110,29 +112,32 @@ export function FarmTopBar() {
       {!view ? (
         <div className="flex flex-wrap gap-1.5">
           <button type="button" disabled={!toWater} onClick={() => void s.act({ action: 'waterAll' })} className={quick}>
-            💧 {t('Water all')}
+            💧 <span className="hidden sm:inline">{t('Water all')}</span>
             {toWater ? <span className="rounded-full bg-sky-100 px-1.5 text-sky-800">{toWater}</span> : null}
           </button>
           <button type="button" disabled={!ripe} onClick={() => void s.act({ action: 'harvestAll' })} className={quick}>
-            🧺 {t('Harvest all')}
+            🧺 <span className="hidden sm:inline">{t('Harvest all')}</span>
             {ripe ? <span className="rounded-full bg-amber-100 px-1.5 text-amber-800">{ripe}</span> : null}
           </button>
           <button type="button" onClick={() => s.setPanel('orders')} className={quick}>
-            📋 {t('Orders')}
+            📋 <span className="hidden sm:inline">{t('Orders')}</span>
             {canDeliver ? <span className="rounded-full bg-emerald-500 px-1.5 text-white">{canDeliver}</span> : null}
           </button>
           <button type="button" onClick={() => s.setPanel('shop')} className={quick}>
-            🛒 {t('Shop')}
+            🛒 <span className="hidden sm:inline">{t('Shop')}</span>
           </button>
           <button type="button" onClick={() => s.setPanel('barn')} className={quick}>
-            🏠 {t('Barn')}
+            🏠 <span className="hidden sm:inline">{t('Barn')}</span>
           </button>
           <button type="button" onClick={() => s.setPanel('workshop')} className={quick}>
-            🍞 {t('Workshop')}
+            🍞 <span className="hidden sm:inline">{t('Workshop')}</span>
             {crafted ? <span className="rounded-full bg-orange-500 px-1.5 text-white">{crafted}</span> : null}
           </button>
+          <button type="button" onClick={() => s.setPanel('decorate')} className={quick}>
+            🌷 <span className="hidden sm:inline">{t('Decorate')}</span>
+          </button>
           <button type="button" onClick={() => s.setPanel('goals')} className={quick}>
-            🏅 {t('Goals')}
+            🏅 <span className="hidden sm:inline">{t('Goals')}</span>
             {claimable ? <span className="rounded-full bg-emerald-500 px-1.5 text-white">{claimable}</span> : null}
           </button>
         </div>
@@ -572,6 +577,69 @@ function Goals() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** Pick a decoration (then tap the ground to put it down). */
+export function DecoratePanel() {
+  const t = useT();
+  const panel = useMyFarm((s) => s.panel);
+  const at = useMyFarm((s) => s.at);
+  const view = useMyFarm((s) => s.view);
+  const coins = useMyFarm((s) => s.coins);
+  const count = useMyFarm((s) => s.mine.decor.length);
+  if (!at || view || panel !== 'decorate') return null;
+  const pick = (k: string) => useMyFarm.setState({ decorating: k, panel: null });
+  return (
+    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-md -translate-x-1/2">
+      <div className="pointer-events-auto rounded-2xl bg-white/97 p-3 shadow-2xl ring-1 ring-black/5">
+        <div className="mb-2 flex items-center justify-between">
+          <b className="text-gray-800">🌷 {t('Decorate my farm')}</b>
+          <button type="button" onClick={() => useMyFarm.getState().setPanel(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+        <p className="mb-2 text-xs text-gray-500">
+          {t('Choose something, then tap a free place on your farm. Tap a decoration again to take it away (you get half back).')} · {count}/{DECOR_MAX}
+        </p>
+        <div className="grid grid-cols-3 gap-1.5" dir="ltr">
+          {Object.entries(DECOR_ITEMS).map(([k, it]) => (
+            <button key={k} type="button" disabled={coins < it.price} onClick={() => pick(k)} className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-pink-200 bg-pink-50 p-1 text-xs disabled:opacity-50">
+              <span className="text-xl">{it.icon}</span>
+              <span>{it.en.replace(/^(a|an|some) /, '')}</span>
+              <span className="text-gray-600">
+                {it.price} <Coin size={10} />
+              </span>
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => pick('')} className="mt-2 w-full rounded-xl bg-slate-100 py-2 text-sm text-slate-700">
+          🧹 {t('Take decorations away')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** While decorating: what a tap does, and Done. */
+export function DecorateBar() {
+  const t = useT();
+  const k = useMyFarm((s) => s.decorating);
+  const at = useMyFarm((s) => s.at);
+  if (k === null || !at) return null;
+  const it = k ? DECOR_ITEMS[k] : null;
+  return (
+    <div data-ui className="pointer-events-none absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+8.5rem)] left-1/2 z-30 -translate-x-1/2">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-pink-600 py-1.5 pe-1.5 ps-4 text-sm font-semibold text-white shadow-xl">
+        <span>{it ? `${it.icon} ${t('Tap the ground to put it there')}` : `🧹 ${t('Tap a decoration to take it away')}`}</span>
+        <button type="button" onClick={() => useMyFarm.getState().setPanel('decorate')} className="rounded-full bg-white/20 px-3 py-1 text-xs">
+          {t('Change')}
+        </button>
+        <button type="button" onClick={() => useMyFarm.setState({ decorating: null })} className="rounded-full bg-white px-3 py-1 text-xs text-pink-700">
+          {t('Done')}
+        </button>
+      </div>
     </div>
   );
 }
