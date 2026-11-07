@@ -37,7 +37,7 @@ const CASES: Case[] = [
 const shuffle = <T,>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
 
 /** Tap targets on the body figure (viewBox 0 0 200 320), each an item id of the "body" category. */
-const PARTS: { id: string; x: number; y: number; r: number }[] = [
+export const PARTS: { id: string; x: number; y: number; r: number }[] = [
   { id: 'head', x: 100, y: 22, r: 18 },
   { id: 'eye', x: 88, y: 48, r: 11 },
   { id: 'ear', x: 64, y: 54, r: 11 },
@@ -52,7 +52,7 @@ const PARTS: { id: string; x: number; y: number; r: number }[] = [
   { id: 'foot', x: 122, y: 305, r: 14 },
 ];
 
-function Figure({ onTap, flash }: { onTap: (id: string) => void; flash: { id: string; ok: boolean } | null }) {
+export function Figure({ onTap, flash }: { onTap: (id: string) => void; flash: { id: string; ok: boolean } | null }) {
   return (
     <svg viewBox="0 0 200 320" className="mx-auto block h-[300px] w-auto touch-manipulation select-none" role="img" aria-label="body">
       {/* simple friendly figure */}

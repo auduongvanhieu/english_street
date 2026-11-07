@@ -1,4 +1,10 @@
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import { clinicTick, roomName, useClinic } from '../../../store/clinic';
+import { CONSULT_DOOR, PHARMACY_SPOT, RECEPTION_SPOT } from '../../../world/clinic';
+import { useUsable } from '../../../world/usables';
+import { useT } from '../../../i18n';
 import { useArea } from '../../../store/area';
 import { AMBULANCE, AREA, CHAIR_ROWS, FRAME, GARDEN_BENCHES, GARDEN_TREES, HOSPITAL, PHARMACY_COUNTER, RECEPTION, SHELF } from '../../../world/places/hospital';
 import { BuildingShell } from '../Building';
@@ -156,6 +162,33 @@ function Grounds() {
   );
 }
 
+/** A visit to the doctor: check in at reception, the consulting-room door when your number is called, the pharmacy. */
+function VisitUsables() {
+  const t = useT();
+  const stage = useClinic((s) => s.stage);
+  const room = useClinic((s) => s.room);
+  const acc = useRef(0);
+  useFrame((_, dt) => {
+    acc.current += dt;
+    if (acc.current < 0.25) return;
+    acc.current = 0;
+    clinicTick();
+  });
+  useUsable({ id: 'hospital-reception', x: RECEPTION_SPOT[0], z: RECEPTION_SPOT[1], r: 1.8, icon: '🩺', label: t('See a doctor'), priority: true, disabled: stage && stage !== 'done' ? t('You are already checked in') : undefined, use: () => useClinic.getState().start() });
+  useUsable({
+    id: 'hospital-consult',
+    x: CONSULT_DOOR.world[0],
+    z: CONSULT_DOOR.world[1],
+    r: 1.6,
+    icon: '🚪',
+    label: stage === 'called' ? `${t('Go in')}: ${roomName(room)}` : roomName(room),
+    disabled: stage === 'called' ? undefined : stage === 'waiting' ? t('Wait for your number') : t('Check in at reception first'),
+    use: () => useClinic.getState().enterRoom(),
+  });
+  useUsable(stage === 'pharmacy' ? { id: 'hospital-pharmacy', x: PHARMACY_SPOT[0], z: PHARMACY_SPOT[1], r: 1.8, icon: '💊', label: t('Pick up your medicine'), priority: true, use: () => useClinic.getState().openPharmacy() } : null);
+  return null;
+}
+
 export default function Hospital() {
   const pc = (PHARMACY_COUNTER.minX + PHARMACY_COUNTER.maxX) / 2;
   const rc = (RECEPTION.minX + RECEPTION.maxX) / 2;
@@ -176,6 +209,15 @@ export default function Hospital() {
         <Text position={[-4, 2.45, HOSPITAL.z0 + 0.22]} fontSize={0.24} color="#455a64" anchorX="center" anchorY="middle">
           X-RAY
         </Text>
+        {/* door to the consulting rooms (they are off the map: scene/areas/places/Clinic.tsx) */}
+        <mesh position={[CONSULT_DOOR.local.x, 1.05, HOSPITAL.z0 + 0.2]}>
+          <boxGeometry args={[1.2, 2.1, 0.08]} />
+          <meshStandardMaterial color="#80cbc4" />
+        </mesh>
+        <Text position={[CONSULT_DOOR.local.x, 2.35, HOSPITAL.z0 + 0.25]} fontSize={0.2} color="#00897b" anchorX="center" anchorY="middle">
+          CONSULTING ROOMS
+        </Text>
+        <VisitUsables />
         <Text position={[pc + 0.6, 2.75, HOSPITAL.z0 + 0.22]} fontSize={0.42} color="#2e9e4f" anchorX="center" anchorY="middle">
           PHARMACY
         </Text>

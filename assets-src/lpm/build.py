@@ -43,8 +43,9 @@ GATES = {
     "market_kit": ("static-prop", 600),
     "cinema_kit": ("static-prop", 700),
     "train_interior": ("environment-module", 3000),
+    "clinic_kit": ("environment-module", 1200),
 }
-FLOATING = {"bird", "boat", "farm_kit", "bus_interior", "river_kit", "kitchen_kit", "train_interior"}  # farm_kit: the windmill sails pivot on their axle
+FLOATING = {"bird", "boat", "farm_kit", "bus_interior", "river_kit", "kitchen_kit", "train_interior", "clinic_kit"}  # farm_kit: the windmill sails pivot on their axle
 
 
 def blender_env() -> dict:

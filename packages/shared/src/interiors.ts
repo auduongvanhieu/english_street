@@ -72,3 +72,23 @@ export const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? 's
 /** The carriage riders sit in (one coach, off the map; everybody on the same train shares it). Runs along x. */
 export const TRAIN_CAR = { x: 70, z: -260, halfLen: 7, halfW: 1.3 } as const;
 export const trainCarRect = (m = 0): Rect => ({ minX: TRAIN_CAR.x - TRAIN_CAR.halfLen - m, maxX: TRAIN_CAR.x + TRAIN_CAR.halfLen + m, minZ: TRAIN_CAR.z - TRAIN_CAR.halfW - m, maxZ: TRAIN_CAR.z + TRAIN_CAR.halfW + m });
+
+/* ------------------------------------------------------------------------------------------ clinic */
+
+/** Consulting rooms off the map (one per patient slot), 7 x 6 m; the door side is +z, the doctor's desk at the back. */
+export const CLINIC_ROOMS = 8;
+export function clinicRoom(i: number) {
+  const cx = -140 + (i % 4) * 12;
+  const cz = -240 - Math.floor(i / 4) * 12;
+  const rect: Rect = { minX: cx - 3.5, maxX: cx + 3.5, minZ: cz - 3, maxZ: cz + 3 };
+  return { cx, cz, rect, entry: { x: cx, z: cz + 2.2 } };
+}
+export function clinicRoomFor(playerId: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < playerId.length; i++) h = Math.imul(h ^ playerId.charCodeAt(i), 16777619) >>> 0;
+  return h % CLINIC_ROOMS;
+}
+export function clinicRoomAt(x: number, z: number): number {
+  for (let i = 0; i < CLINIC_ROOMS; i++) if (inRect(clinicRoom(i).rect, x, z, 0.3)) return i;
+  return -1;
+}
