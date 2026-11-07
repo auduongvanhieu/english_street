@@ -64,7 +64,7 @@ export const CLOSE_BANNED = 4106;
 
 /** Critters that can be picked up and hugged (ids from apps/web/src/world/critters.ts). */
 /** Synced props: a dish on the table, a shopping trolley with n things in it, cinema snacks in hand. */
-export const PROP_RE = /^(dish:[a-z-]{2,24}|cart:\d{1,2}|snack:(popcorn|nachos|drink|icecream)|book:[a-z0-9-]{3,40}:\d:\d{1,2}|ride:(rowboat|surf))$/;
+export const PROP_RE = /^(dish:[a-z-]{2,24}|cart:\d{1,2}|snack:(popcorn|nachos|drink|icecream)|book:[a-z0-9-]{3,40}:\d:\d{1,2}|ride:(rowboat|surf)|tool:(can|feed))$/;
 /** Garden summary: 6 plots "crop:wateredAt" (wateredAt 0 = seeded, not watered yet), empty plots "", joined by "|". */
 /** Bus ride: boarding (d) or arriving (a) at a stop in a shared bus slot (see apps/web/src/world/bus.ts). */
 /** "d:<stop>:<slot>[:<to>]" boarding (with where the bus takes them, so followers can hop on), "a:<stop>:<slot>" arriving. */

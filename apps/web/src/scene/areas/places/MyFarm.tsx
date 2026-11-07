@@ -16,6 +16,11 @@ import { setDynamicBlockers } from '../../../world/layout';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
+import { TimerBar, timeLeft } from './TimerBar';
+import { GROW_MS } from '@es/shared';
+
+/** The farm clock (server time). */
+const farmNow = () => Date.now() + useMyFarm.getState().skew;
 
 /**
  * "My farm" (store/myFarm.ts, world/myFarmLayout.ts): the farm you are in, drawn at its slot. Your own farm is
@@ -83,6 +88,7 @@ function Plots({ plots, now, fields }: { plots: MyPlot[]; now: number; fields: n
           <group key={i} position={[x, 0, z]}>
             {pl.crop ? <Plants crop={pl.crop} stage={st.stage} progress={st.progress} /> : null}
             {st.stage === 'seed' ? <Marker kind="water" y={0.9} /> : null}
+            {st.stage === 'growing' && pl.crop ? <TimerBar from={pl.wateredAt} ms={GROW_MS[pl.crop]} now={farmNow} y={pl.crop === 'corn' ? 2.4 : 1.5} /> : null}
             {st.stage === 'ready' ? <Marker kind="ready" y={pl.crop === 'corn' ? 2.3 : 1.3} /> : null}
           </group>
         );
@@ -115,6 +121,15 @@ function Animals({ slot, animals, now }: { slot: number; animals: MyAnimal[]; no
         const hungry = mine.filter((a) => animalStage(a, now).stage === 'hungry').length;
         const ready = mine.filter((a) => animalStage(a, now).stage === 'ready').length;
         const icon = ready ? `${ready} × ${ANIMAL_INFO[pen.kind].product === 'egg' ? '🥚' : ANIMAL_INFO[pen.kind].product === 'milk' ? '🥛' : ANIMAL_INFO[pen.kind].product === 'wool' ? '🧶' : '🍄'}` : hungry ? `🍽️ ${hungry}` : '😊';
+        // the animal that will be ready first: a timer over the pen
+        const busy = mine.filter((a) => animalStage(a, now).stage === 'busy').sort((a, b) => a.fedAt - b.fedAt)[0];
+        const at = [f.cx + (pen.x0 + pen.x1) / 2, 0, f.cz + (pen.kind === 'chicken' || pen.kind === 'cow' ? pen.z0 : pen.z1)] as const;
+        if (busy && !ready && !hungry)
+          return (
+            <group key={pen.kind} position={at as unknown as [number, number, number]}>
+              <TimerBar from={busy.fedAt} ms={ANIMAL_INFO[pen.kind].everyMs} now={farmNow} y={2.2} color="#f2b33d" />
+            </group>
+          );
         return (
           <Text key={pen.kind} position={[f.cx + (pen.x0 + pen.x1) / 2, 2.2, f.cz + (pen.kind === 'chicken' || pen.kind === 'cow' ? pen.z0 : pen.z1)]} fontSize={0.45} anchorX="center" anchorY="middle" outlineWidth={0.02} outlineColor="#ffffff">
             {icon}
@@ -142,7 +157,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     const owned = i < farm.fields * FIELD_PLOTS;
     const p = farm.plots[i];
     const st = myPlotStage(p, now).stage;
-    const label = !owned ? t('Buy more fields') : st === 'empty' ? t('Plant seeds') : st === 'seed' ? t('Water the plants') : st === 'ready' ? t('Harvest') : t('Growing…');
+    const label = !owned ? t('Buy more fields') : st === 'empty' ? t('Plant seeds') : st === 'seed' ? t('Water the plants') : st === 'ready' ? t('Harvest') : p?.crop && p.wateredAt ? t('Growing… ready in {time}', { time: timeLeft(p.wateredAt + GROW_MS[p.crop] - now) }) : t('Growing…');
     const icon = !owned ? '🪧' : st === 'empty' ? '🌱' : st === 'seed' ? '💧' : st === 'ready' ? '🧺' : '⏳';
     // a friend's ripe plot: take one piece (secretly…)
     const vp = view?.plots[i];
@@ -199,7 +214,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     const idx = farm.animals.map((a, i) => ({ a, i })).filter((x) => x.a.kind === pen.kind);
     const ready = idx.filter((x) => animalStage(x.a, now).stage === 'ready');
     const hungry = idx.filter((x) => animalStage(x.a, now).stage === 'hungry');
-    const label = !idx.length ? t('Buy animals in the farm shop') : ready.length ? t('Collect {n}', { n: ready.length }) : hungry.length ? t('Feed the animals ({n})', { n: hungry.length }) : t('The animals are happy');
+    const label = !idx.length ? t('Buy animals in the farm shop') : ready.length ? t('Collect {n}', { n: ready.length }) : hungry.length ? t('Feed the animals ({n})', { n: hungry.length }) : t('The animals are happy. Next one ready in {time}', { time: timeLeft(Math.min(...idx.map((x) => x.a.fedAt + ANIMAL_INFO[pen.kind].everyMs)) - now) });
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useUsable(
       mine
@@ -270,6 +285,48 @@ function FarmDog({ slot, awake, name }: { slot: number; awake: boolean; name: st
   );
 }
 
+/** Water drops from the can's spout, or grain thrown ahead, for ~2 s after watering / feeding (store fx). */
+const FX_N = 36;
+const FX_MS = 2200;
+function FarmFx() {
+  const fx = useMyFarm((s) => s.fx);
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const seeds = useMemo(() => Array.from({ length: FX_N }, (_, i) => ({ d: (i / FX_N) * 0.9, a: Math.random() * Math.PI * 2, r: Math.random(), v: 0.6 + Math.random() * 0.6 })), []);
+  const m = useMemo(() => new THREE.Matrix4(), []);
+  useFrame(() => {
+    const im = mesh.current;
+    if (!im || !fx) return;
+    const age = (Date.now() - fx.at) / 1000;
+    im.visible = age * 1000 < FX_MS;
+    if (!im.visible) return;
+    for (let i = 0; i < FX_N; i++) {
+      const p = seeds[i]!;
+      // each particle starts p.d seconds in and lives 0.55 s, repeating while the effect lasts
+      const k = ((age - p.d) % 0.55) / 0.55;
+      if (age < p.d || age > FX_MS / 1000 - 0.1) {
+        m.makeScale(0, 0, 0);
+      } else if (fx.kind === 'water') {
+        const y = 0.55 - k * 0.55;
+        const sp = 0.05 + k * 0.18 * p.r;
+        m.makeScale(1, 1.8, 1).setPosition(fx.x + Math.cos(p.a) * sp, Math.max(0.02, y), fx.z + Math.sin(p.a) * sp);
+      } else {
+        const out = k * (0.4 + p.r * 0.6) * p.v;
+        const y = 0.85 + k * 0.35 - k * k * 1.2;
+        m.makeScale(0.8, 0.8, 0.8).setPosition(fx.x + Math.cos(p.a) * out, Math.max(0.02, y), fx.z + Math.sin(p.a) * out);
+      }
+      im.setMatrixAt(i, m);
+    }
+    im.instanceMatrix.needsUpdate = true;
+  });
+  if (!fx) return null;
+  return (
+    <instancedMesh key={fx.kind} ref={mesh} args={[undefined, undefined, FX_N]} frustumCulled={false}>
+      <sphereGeometry args={[0.05, 6, 4]} />
+      <meshBasicMaterial color={fx.kind === 'water' ? '#5fb4ff' : '#e8c35a'} transparent opacity={0.9} />
+    </instancedMesh>
+  );
+}
+
 export default function MyFarm() {
   const at = useMyFarm((s) => s.at);
   const mine = useMyFarm((s) => s.mine);
@@ -330,6 +387,7 @@ export default function MyFarm() {
       <Animals slot={slot} animals={animals} now={now} />
       {(own ? mine.dog : view.dog) ? <FarmDog slot={slot} awake={own ? mine.dog!.fedDay === useMyFarm.getState().day : view.dog!.awake} name={(own ? mine.dog!.name : view.dog!.name) ?? 'Rex'} /> : null}
       <Usables slot={slot} mine={own} />
+      <FarmFx />
     </group>
   );
 }

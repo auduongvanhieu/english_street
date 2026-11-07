@@ -5,7 +5,8 @@ import { getPlayerId } from '../net/player';
 import { onFarm, sendFarm } from '../net/client';
 import { t as tr } from '../i18n';
 import { track } from '../net/analytics';
-import { breath, teleportTo } from '../scene/LocalPlayer';
+import { breath, localHeading, localPos, teleportTo } from '../scene/LocalPlayer';
+import { sendProp } from '../net/client';
 import { areaById, frontZ } from '../world/areas';
 import { useProfile } from './profile';
 import { useGame } from './game';
@@ -31,6 +32,8 @@ interface MyFarmStore {
   last: { said: string; xp: number; coins: number; error?: MyFarmError | StealError; note?: string; at: number } | null;
   /** you are running from a farm dog */
   chase: { dog: string; crop: string; at: number } | null;
+  /** the watering / feeding effect in front of you (scene: MyFarm FarmFx) */
+  fx: { kind: 'water' | 'feed'; x: number; z: number; at: number } | null;
   /** the dog's place during a chase on this farm (from the game server) */
   dogAt: { slot: number; x: number; z: number; run: boolean; at: number } | null;
   /** take one piece from a friend's ripe plot */
@@ -43,6 +46,18 @@ interface MyFarmStore {
   load: () => Promise<void>;
   act: (a: MyFarmAction) => Promise<void>;
   setPanel: (p: FarmPanel) => void;
+}
+
+/** Water or feed: the tool in hand (everybody sees it), the matching move and drops / grain falling in front. */
+let toolTimer = 0;
+function farmFx(kind: 'water' | 'feed') {
+  const x = localPos.x + Math.sin(localHeading.y) * 0.75;
+  const z = localPos.z + Math.cos(localHeading.y) * 0.75;
+  useMyFarm.setState({ fx: { kind, x, z, at: Date.now() } });
+  sendProp(kind === 'water' ? 'tool:can' : 'tool:feed');
+  useGame.getState().playEmote(kind);
+  window.clearTimeout(toolTimer);
+  toolTimer = window.setTimeout(() => sendProp(''), 2400);
 }
 
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
@@ -61,6 +76,7 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   last: null,
   chase: null,
   dogAt: null,
+  fx: null,
   async help(plot) {
     const at = getS().at;
     if (!at) return;
@@ -68,6 +84,7 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
       const r = await post<{ plot: FarmView['plots'][number]; said: string }>(`/farms/${encodeURIComponent(at.owner)}/help${q()}`, { plot, playerId: getPlayerId() });
       const v = getS().view;
       if (v) set({ view: { ...v, plots: v.plots.map((p, i) => (i === plot ? r.plot : p)) } });
+      farmFx('water');
       set({ last: { said: r.said, xp: 3, coins: 0, at: Date.now() } });
       say(r.said);
       void useProfile.getState().refresh();
@@ -149,6 +166,8 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
     }
     set({ mine: local.farm, coins: s.coins + local.coins, last: { said: local.said, xp: local.xp, coins: local.coins, at: Date.now() } });
     if (local.said) say(local.said);
+    if (a.action === 'water') farmFx('water');
+    else if (a.action === 'feed' || a.action === 'dogfeed') farmFx('feed');
     try {
       const r = await post<Reply>(`/me/myfarm${q()}`, { ...a, playerId: getPlayerId() });
       set({ mine: r.farm, coins: r.coins });

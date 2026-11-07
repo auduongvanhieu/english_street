@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, DOG_COMMANDS, DOG_PRICE, DOG_TRAIN_PER_DAY, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, dogLevel, shopPrice, type VisitMode } from '@es/shared';
+import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, GROW_MS, HARVEST_QTY, DOG_COMMANDS, DOG_PRICE, DOG_TRAIN_PER_DAY, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, dogLevel, shopPrice, type VisitMode } from '@es/shared';
 import { breath } from '../scene/LocalPlayer';
 import { useMyFarm } from '../store/myFarm';
 import { Icon } from './icons';
@@ -7,6 +7,8 @@ import { useT } from '../i18n';
 import { useVoice } from '../store/voice';
 import { useExpire } from './useExpire';
 
+/** Whole minutes (at least 1) of a duration. */
+const mins = (ms: number) => Math.max(1, Math.round(ms / 60000));
 const CROP_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
 const ERRORS: Record<string, string> = {
   no_dog: 'You have no dog yet. Buy one in the farm shop.',
@@ -122,6 +124,7 @@ export function MyFarmHud() {
                   <span className="text-gray-500">
                     {SEED_PRICE[c]} {coin} · {t('have {n}', { n: mine.seeds[c] ?? 0 })}
                   </span>
+                  <CropFacts crop={c} />
                 </button>
               ))}
             </div>
@@ -139,6 +142,9 @@ export function MyFarmHud() {
                       </b>
                       <span className="text-gray-500">
                         {info.productEn} · {have}/{info.max}
+                      </span>
+                      <span className="block text-[11px] text-emerald-800">
+                        ⏱ {t('every {m} min', { m: mins(info.everyMs) })} · {t('sells for {n}', { n: info.sell })} {coin}
                       </span>
                     </span>
                   </button>
@@ -194,6 +200,7 @@ export function MyFarmHud() {
                   >
                     <span className="text-xl">{CROP_ICON[c]}</span>
                     {c} × {n}
+                    <CropFacts crop={c} />
                   </button>
                 );
               })}
@@ -429,5 +436,16 @@ function VisitorBoard() {
         )}
       </div>
     </div>
+  );
+}
+
+/** "⏱ 3 min · 3 × 2 coins": how long a crop grows after watering and what its harvest sells for. */
+function CropFacts({ crop }: { crop: (typeof CROPS)[number] }) {
+  const t = useT();
+  return (
+    <span className="mt-0.5 block text-[11px] leading-tight text-emerald-800">
+      ⏱ {t('{m} min', { m: mins(GROW_MS[crop]) })} · {HARVEST_QTY} × {CROP_SELL[crop]}
+      <Icon name="coin" size={11} className="ms-0.5 inline align-[-1px] text-amber-500" />
+    </span>
   );
 }

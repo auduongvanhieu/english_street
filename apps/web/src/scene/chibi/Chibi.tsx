@@ -140,6 +140,27 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
       p.armRZ = -0.5;
       break;
     }
+    case 'water': {
+      // tipping a watering can forward (right hand), looking down at the plants
+      p.armRX = -1.05 + Math.sin(t * 2.5) * 0.08;
+      p.armRZ = -0.1;
+      p.armLZ = 0.3;
+      p.lean = 0.14;
+      p.headX = 0.28;
+      p.hipY = Math.abs(Math.sin(t * 2.5)) * 0.01;
+      break;
+    }
+    case 'feed': {
+      // a feed sack in the left hand, the right hand scattering grain
+      p.armLX = -0.7;
+      p.armLZ = 0.15;
+      p.armRX = -0.5 - Math.max(0, Math.sin(t * 6)) * 0.9;
+      p.armRZ = -0.3;
+      p.lean = 0.1;
+      p.headX = 0.22;
+      p.twist = Math.sin(t * 6) * 0.08;
+      break;
+    }
     case 'thumbsup': {
       p.armRX = -1.45;
       p.armRZ = -0.15;
