@@ -20,7 +20,7 @@ import { connect, leaveRoom } from './net/client';
 import { ZoneChip, ZoneScreen } from './ui/ZoneScreen';
 import type { ZoneSelection } from '@es/shared';
 import { fetchNpcs } from './net/api';
-import { getBetaPass, getHumanPass, getPlayerId, getToken, setHumanPass } from './net/player';
+import { adoptGuestId, getBetaPass, getHumanPass, getPlayerId, getToken, setHumanPass } from './net/player';
 import { initAnalytics, track } from './net/analytics';
 import { useProfile } from './store/profile';
 import { AuthScreen } from './ui/AuthScreen';
@@ -341,9 +341,15 @@ export default function App() {
     track('join', { loggedIn: !!getToken(), level: useProfile.getState().profile?.cefrLevel ?? '', touch, app: isNativeApp(), zone: zone.mode });
     // the name a guest typed + the device (admin site: player list, device stats)
     void deviceInfo()
-      .then((device) => post<{ ok: boolean; settings?: PlayerSettings }>(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, invitedBy: localStorage.getItem('es:invitedBy') ?? undefined, device: { ...device, gfx: { quality: useSettings.getState().quality }, settings: currentPlayerSettings() } }))
+      .then((device) => post<{ ok: boolean; settings?: PlayerSettings; sameAs?: string }>(`/me/hello?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name, invitedBy: localStorage.getItem('es:invitedBy') ?? undefined, device: { ...device, gfx: { quality: useSettings.getState().quality }, settings: currentPlayerSettings() } }))
       // settings an admin changed while I was away
       .then((r) => {
+        // this device already has a guest: carry on as that player
+        if (r?.sameAs && !getToken() && r.sameAs !== getPlayerId()) {
+          adoptGuestId(r.sameAs);
+          location.reload();
+          return;
+        }
         if (r?.settings) applyPlayerSettings(r.settings);
         // the journey needs the player to exist on the server first
         void useJourney.getState().load();

@@ -114,6 +114,15 @@ export function accountRoutes(repo: AttemptRepo) {
     due: v.nextReviewAt.getTime() <= Date.now(),
   });
 
+  /** Delete an empty guest row that turned out to be a second row of the same device (see /me/hello). */
+  const dropGuest = async (gid: string) => {
+    await prisma.$transaction([
+      prisma.event.deleteMany({ where: { playerId: gid } }),
+      prisma.friendship.deleteMany({ where: { OR: [{ aId: gid }, { bId: gid }] } }),
+      prisma.user.delete({ where: { id: gid } }),
+    ]);
+  };
+
   return async function routes(app: FastifyInstance) {
     // ---- auth ----
     // Image captcha for sign-in / sign-up (one check per challenge, 5 minutes).
@@ -304,6 +313,18 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const clean = maskProfanity((body.data.name ?? '').normalize('NFC').replace(/[^\p{L}\p{M}\p{N}\- ]/gu, '').trim().slice(0, 20));
       const prev = await repo.getUser(id);
+      // one guest per device: another guest row with this device id is the same person (keep the one with more
+      // progress, drop an empty one); the page switches to the kept id and reloads
+      const did = DeviceInfoSchema.safeParse(body.data.device ?? {}).data?.deviceId;
+      if (did && !prev?.email && repo.name === 'postgres') {
+        const same = await prisma.user.findMany({ where: { id: { not: id }, email: null, OR: [{ id: did }, { device: { path: ['deviceId'], equals: did } }] }, select: { id: true, xp: true, createdAt: true } });
+        if (same.length) {
+          const all = [...same, ...(prev ? [{ id, xp: prev.xp, createdAt: new Date() }] : [])].sort((a, b) => b.xp - a.xp || a.createdAt.getTime() - b.createdAt.getTime());
+          const keep = all[0]!.id;
+          for (const u of all.slice(1)) if (u.xp === 0) await dropGuest(u.id).catch(() => undefined);
+          if (keep !== id) return { ok: true, sameAs: keep };
+        }
+      }
       // guests are known by the name they type; accounts keep their own name
       await repo.ensureUser(id, !prev?.email && clean.length >= 2 ? clean : (prev?.name ?? 'Guest'));
       // the IP they play from (admin site: players list); behind nginx req.ip is the client (TRUST_PROXY)

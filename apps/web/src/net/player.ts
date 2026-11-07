@@ -1,11 +1,17 @@
+import { deviceId } from './device';
 /** Identity: a logged-in user id when a token is present, otherwise a stable anonymous guest id. */
 export function getGuestId(): string {
   let id = localStorage.getItem('es:pid');
   if (!id) {
-    id = crypto.randomUUID();
+    // one guest per device: a new guest takes the device id (net/device.ts)
+    id = deviceId();
     localStorage.setItem('es:pid', id);
   }
   return id;
+}
+/** The server found an older guest row of this device (/me/hello): play as that one from now on. */
+export function adoptGuestId(id: string) {
+  localStorage.setItem('es:pid', id);
 }
 export function getToken(): string | null {
   return localStorage.getItem('es:token');
