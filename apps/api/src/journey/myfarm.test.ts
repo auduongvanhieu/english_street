@@ -124,3 +124,26 @@ test('my farm v2: levels, regrowing crops, fertilizer, the barn, orders, water /
   assert.ok(!d.farm.orders.some((x) => x.id === o.id));
   assert.ok(d.farm.earned[1] <= FARM_DAY_CAP);
 });
+
+test('my farm v2: the workshop and the farm goals', async () => {
+  const { RECIPES, MACHINE_INFO, FARM_GOALS } = await import('@es/shared');
+  const day = '2026-11-08';
+  let f = { ...normalizeMyFarm(emptyMyFarm()), farmXp: FARM_LEVELS[2]!, barn: { wheat: 6 } };
+  assert.equal(applyMyFarm(f, { action: 'craft', recipe: 'bread' }, 1000, 0, day).error, 'no_machine');
+  const bought = applyMyFarm(f, { action: 'buy', item: 'machine:bakery', qty: 1 }, 1000, 500, day);
+  assert.equal(bought.coins, -MACHINE_INFO.bakery.price);
+  f = bought.farm;
+  f = applyMyFarm(f, { action: 'craft', recipe: 'bread' }, 1000, 0, day).farm;
+  assert.equal(f.barn.wheat, 3);
+  assert.equal(applyMyFarm(f, { action: 'craft', recipe: 'bread' }, 1000, 0, day).error, 'machine_busy');
+  assert.equal(applyMyFarm(f, { action: 'takeCraft', machine: 'bakery' }, 2000, 0, day).error, 'not_ready');
+  f = applyMyFarm(f, { action: 'takeCraft', machine: 'bakery' }, 1000 + RECIPES.bread!.ms, 0, day).farm;
+  assert.equal(f.barn.bread, 1);
+  assert.equal(f.stats.craft, 1);
+  // a goal: counted, claimed once
+  const g = FARM_GOALS.find((x) => x.id === 'harvest-10')!;
+  assert.equal(applyMyFarm(f, { action: 'claimGoal', goal: g.id }, 0, 0, day).error, 'not_done');
+  const done = applyMyFarm({ ...f, stats: { harvest: 10 } }, { action: 'claimGoal', goal: g.id }, 0, 0, day);
+  assert.equal(done.coins, g.coins);
+  assert.equal(applyMyFarm(done.farm, { action: 'claimGoal', goal: g.id }, 0, 0, day).error, 'nothing');
+});

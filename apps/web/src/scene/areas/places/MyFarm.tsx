@@ -18,7 +18,7 @@ import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 import { TimerBar, timeLeft } from './TimerBar';
 import { MyFarmLand } from './MyFarmLand';
-import { MY_GROW_MS } from '@es/shared';
+import { MY_GROW_MS, RECIPES } from '@es/shared';
 
 /** The farm clock (server time). */
 const farmNow = () => Date.now() + useMyFarm.getState().skew;
@@ -152,6 +152,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
   useUsable({ id: 'myfarm-gate', ...W(0, MY_FARM.d / 2 - 0.9), r: 1.8, icon: '🚪', label: t('Leave the farm'), priority: true, use: () => useMyFarm.getState().leave() });
   useUsable(mine ? { id: 'myfarm-shop', ...W(SHOP.x, SHOP.z - 1.1), r: 1.6, icon: '🛒', label: t('Farm shop'), priority: true, use: () => useMyFarm.getState().setPanel('shop') } : null);
   useUsable({ id: 'myfarm-log', ...W(LOG_BOARD.x, LOG_BOARD.z - 1.1), r: 1.6, icon: '📋', label: mine ? t('Farm notice board') : t('Leave a note for your friend'), priority: true, use: () => useMyFarm.getState().setPanel('settings') });
+  useUsable(mine ? { id: 'myfarm-workshop', ...W(BARN.x, BARN.z + BARN.d / 2 + 0.9), r: 1.6, icon: '🍞', label: t('The workshop (in the barn)'), priority: true, use: () => useMyFarm.getState().setPanel('workshop') } : null);
   useUsable(mine ? { id: 'myfarm-orders', ...W(ORDER_BOARD.x, ORDER_BOARD.z - 1.1), r: 1.5, icon: '📋', label: t('Farm orders'), priority: true, use: () => useMyFarm.getState().setPanel('orders') } : null);
   useUsable(mine ? { id: 'myfarm-bin', ...W(BIN.x + 1.3, BIN.z), r: 1.6, icon: '💰', label: t('Sell my produce'), priority: true, use: () => useMyFarm.getState().setPanel('barn') } : null);
   for (let i = 0; i < MAX_FIELDS * FIELD_PLOTS; i++) {
@@ -391,6 +392,7 @@ export default function MyFarm() {
           </>
         ) : null}
         <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />
+        {own ? <WorkshopTimer /> : null}
       </group>
       <MyFarmLand slot={slot} />
       <Animals slot={slot} animals={animals} now={now} />
@@ -401,3 +403,19 @@ export default function MyFarm() {
   );
 }
 
+
+/** Over the barn door: the workshop job that ends first (bar + time left). */
+function WorkshopTimer() {
+  const machines = useMyFarm((s) => s.mine.machines);
+  const jobs = Object.values(machines)
+    .map((m) => (m.job ? { at: m.job.at, ms: RECIPES[m.job.recipe]?.ms ?? 0 } : null))
+    .filter((j): j is { at: number; ms: number } => !!j && j.ms > 0)
+    .sort((a, b) => a.at + a.ms - (b.at + b.ms));
+  const j = jobs[0];
+  if (!j) return null;
+  return (
+    <group position={[BARN.x, 0, BARN.z + BARN.d / 2 + 0.4]}>
+      <TimerBar from={j.at} ms={j.ms} now={farmNow} y={5.2} color="#f08a3c" />
+    </group>
+  );
+}

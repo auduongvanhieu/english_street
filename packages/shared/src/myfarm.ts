@@ -119,16 +119,17 @@ const rngOf = (seed: number) => {
 };
 const goodName = (k: string, n: number) => {
   if ((CROPS as readonly string[]).includes(k)) return n === 1 ? (k === 'wheat' || k === 'corn' ? k : `a ${k}`) : `${n} ${PLURAL_C[k as Crop]}`;
-  const p: Record<string, [string, string]> = { egg: ['an egg', 'eggs'], milk: ['a bottle of milk', 'bottles of milk'], wool: ['a bag of wool', 'bags of wool'], truffle: ['a truffle', 'truffles'] };
+  const p: Record<string, [string, string]> = { egg: ['an egg', 'eggs'], milk: ['a bottle of milk', 'bottles of milk'], wool: ['a bag of wool', 'bags of wool'], truffle: ['a truffle', 'truffles'], bread: ['a loaf of bread', 'loaves of bread'], cake: ['a strawberry cake', 'strawberry cakes'], cheese: ['a piece of cheese', 'pieces of cheese'], scarf: ['a woolly scarf', 'woolly scarves'] };
   const w = p[k] ?? [k, k];
   return n === 1 ? w[0] : `${n} ${w[1]}`;
 };
 const PLURAL_C: Record<Crop, string> = { carrot: 'carrots', corn: 'corn cobs', tomato: 'tomatoes', potato: 'potatoes', pumpkin: 'pumpkins', strawberry: 'strawberries', wheat: 'bags of wheat' };
 /** Order number `seq` for a farm at `level` (deterministic: the server and the page make the same one). */
-export function makeOrder(seq: number, level: number, animals: AnimalKind[]): FarmOrder {
+export function makeOrder(seq: number, level: number, animals: AnimalKind[], machines: string[] = []): FarmOrder {
   const r = rngOf(seq + 7);
   const goods: string[] = [...CROPS.filter((c) => CROP_LEVEL[c] <= level)];
   for (const a of new Set(animals)) goods.push(ANIMAL_INFO[a].product);
+  for (const [id, r] of Object.entries(RECIPES)) if (machines.includes(r.machine)) goods.push(id);
   const kinds = Math.min(goods.length, 1 + Math.floor(r() * Math.min(3, 1 + level / 2)));
   const items: Record<string, number> = {};
   const pool = [...goods];
@@ -145,6 +146,36 @@ export function makeOrder(seq: number, level: number, animals: AnimalKind[]): Fa
   return { id: seq, who: person.who, items, coins: Math.round(value * 1.5) + 3, xp: 6 + 3 * kinds, text: `Hello! Could you bring me ${listText}, please? It's for ${dish}.` };
 }
 export const ORDER_SLOTS = 3;
+
+/* ----------------------------------------------------------------------------------------- workshop */
+/** Machines in the barn: turn farm goods into goods worth more. One job at a time per machine. */
+export const MACHINES = ['bakery', 'dairy', 'loom'] as const;
+export type MachineId = (typeof MACHINES)[number];
+export const MACHINE_INFO: Record<MachineId, { name: string; icon: string; price: number; level: number }> = {
+  bakery: { name: 'bakery oven', icon: '🍞', price: 80, level: 3 },
+  dairy: { name: 'cheese maker', icon: '🧀', price: 120, level: 4 },
+  loom: { name: 'loom', icon: '🧣', price: 150, level: 5 },
+};
+export const RECIPES: Record<string, { machine: MachineId; needs: Record<string, number>; makes: string; ms: number; sell: number; en: string }> = {
+  bread: { machine: 'bakery', needs: { wheat: 3 }, makes: 'bread', ms: 20 * 60_000, sell: 18, en: 'a loaf of bread' },
+  cake: { machine: 'bakery', needs: { wheat: 2, egg: 2, strawberry: 1 }, makes: 'cake', ms: 40 * 60_000, sell: 40, en: 'a strawberry cake' },
+  cheese: { machine: 'dairy', needs: { milk: 2 }, makes: 'cheese', ms: 30 * 60_000, sell: 30, en: 'a piece of cheese' },
+  scarf: { machine: 'loom', needs: { wool: 2 }, makes: 'scarf', ms: 45 * 60_000, sell: 45, en: 'a woolly scarf' },
+};
+export const CRAFTED = Object.keys(RECIPES);
+for (const r of Object.values(RECIPES)) PRODUCT_SELL[r.makes] = r.sell;
+
+/* ----------------------------------------------------------------------------------------- goals */
+/** Farm goals: counted from what you do; claim the reward when done (once each). */
+export const FARM_GOALS: { id: string; stat: string; n: number; coins: number; fertilizer: number; en: string }[] = [
+  { id: 'harvest-10', stat: 'harvest', n: 10, coins: 15, fertilizer: 1, en: 'Harvest 10 plots' },
+  { id: 'harvest-50', stat: 'harvest', n: 50, coins: 50, fertilizer: 3, en: 'Harvest 50 plots' },
+  { id: 'orders-3', stat: 'orders', n: 3, coins: 20, fertilizer: 1, en: 'Deliver 3 orders' },
+  { id: 'orders-20', stat: 'orders', n: 20, coins: 80, fertilizer: 4, en: 'Deliver 20 orders' },
+  { id: 'feed-20', stat: 'feed', n: 20, coins: 20, fertilizer: 1, en: 'Feed your animals 20 times' },
+  { id: 'craft-5', stat: 'craft', n: 5, coins: 40, fertilizer: 2, en: 'Make 5 things in the workshop' },
+  { id: 'sell-300', stat: 'sold', n: 300, coins: 40, fertilizer: 2, en: 'Earn 300 coins on the farm' },
+];
 
 /* ----------------------------------------------------------------------------------------- the dog, stealing */
 export const DOG_PRICE = 80;
@@ -214,6 +245,11 @@ export const MyFarmStateSchema = z.object({
   barnLevel: z.number().int().min(0).max(BARN_PRICES.length).default(0),
   orders: z.array(z.object({ id: z.number().int(), who: z.string(), items: z.record(z.string(), z.number().int().min(1)), coins: z.number().int(), xp: z.number().int(), text: z.string() })).default([]),
   orderSeq: z.number().int().min(0).default(0),
+  /** workshop machines you own and what each is making */
+  machines: z.record(z.string(), z.object({ job: z.object({ recipe: z.string(), at: z.number() }).nullable() })).default({}),
+  /** counters for the farm goals, and the goals already claimed */
+  stats: z.record(z.string(), z.number().int().min(0)).default({}),
+  goals: z.array(z.string()).default([]),
   /** rules version the farm was last brought up to (normalizeMyFarm) */
   v: z.number().int().default(1),
 });
@@ -244,7 +280,7 @@ export function normalizeMyFarm(state: MyFarmState): MyFarmState {
   const lv = farmLevel(f.farmXp);
   while (f.orders.length < ORDER_SLOTS) {
     f.orderSeq += 1;
-    f.orders.push(makeOrder(f.orderSeq, lv, f.animals.map((a) => a.kind)));
+    f.orders.push(makeOrder(f.orderSeq, lv, f.animals.map((a) => a.kind), Object.keys(f.machines)));
   }
   return f;
 }
@@ -302,9 +338,12 @@ export const MyFarmActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('harvestAll') }),
   z.object({ action: z.literal('deliver'), order: z.number().int().min(0) }),
   z.object({ action: z.literal('skipOrder'), order: z.number().int().min(0) }),
+  z.object({ action: z.literal('craft'), recipe: z.string().max(16) }),
+  z.object({ action: z.literal('takeCraft'), machine: z.enum(MACHINES) }),
+  z.object({ action: z.literal('claimGoal'), goal: z.string().max(24) }),
 ]);
 export type MyFarmAction = z.infer<typeof MyFarmActionSchema>;
-export type MyFarmError = 'no_dog' | 'dog_fed' | 'trained' | 'busy' | 'empty' | 'no_seed' | 'no_plot' | 'needs_water' | 'not_ready' | 'already_watered' | 'no_feed' | 'not_hungry' | 'no_animal' | 'too_many' | 'coins' | 'bad_item' | 'nothing_to_sell' | 'day_cap' | 'locked' | 'barn_full' | 'no_fertilizer' | 'no_order' | 'missing' | 'nothing';
+export type MyFarmError = 'no_dog' | 'dog_fed' | 'trained' | 'busy' | 'empty' | 'no_seed' | 'no_plot' | 'needs_water' | 'not_ready' | 'already_watered' | 'no_feed' | 'not_hungry' | 'no_animal' | 'too_many' | 'coins' | 'bad_item' | 'nothing_to_sell' | 'day_cap' | 'locked' | 'barn_full' | 'no_fertilizer' | 'no_order' | 'missing' | 'nothing' | 'no_machine' | 'machine_busy' | 'not_done';
 export interface MyFarmResult {
   farm: MyFarmState;
   /** coins to add (selling) or take (buying, negative) */
@@ -330,6 +369,7 @@ export function shopPrice(f: MyFarmState, item: string): number | null {
   if (item === 'field') return f.fields < MAX_FIELDS ? FIELD_PRICES[f.fields]! : null;
   if (item === 'barn') return f.barnLevel < BARN_PRICES.length ? BARN_PRICES[f.barnLevel]! : null;
   if (item === 'dog') return f.dog ? null : DOG_PRICE;
+  if (kind === 'machine' && (MACHINES as readonly string[]).includes(what!)) return f.machines[what!] ? null : MACHINE_INFO[what as MachineId].price;
   return null;
 }
 /** Farm level a shop item needs (1 = from the start). */
@@ -339,6 +379,7 @@ export function itemLevel(f: MyFarmState, item: string): number {
   if (kind === 'animal') return ANIMAL_INFO[what as AnimalKind]?.level ?? 1;
   if (item === 'field') return FIELD_LEVEL[f.fields] ?? 99;
   if (item === 'dog') return 2;
+  if (kind === 'machine') return MACHINE_INFO[what as MachineId]?.level ?? 99;
   return 1;
 }
 const plotCount = (f: MyFarmState) => f.fields * FIELD_PLOTS;
@@ -353,6 +394,15 @@ export function applyMyFarm(state: MyFarmState, a: MyFarmAction, now: number, co
   const base = normalizeMyFarm(state);
   const r = applyRule(base, a, now, coins, day);
   if (r.error) return { ...r, farm: state };
+  // the farm goals' counters
+  const st = r.farm.stats;
+  const bump = (k: string, n: number) => n > 0 && (st[k] = (st[k] ?? 0) + n);
+  if (a.action === 'harvest') bump('harvest', 1);
+  if (a.action === 'harvestAll') bump('harvest', r.xp / 4);
+  if (a.action === 'deliver') bump('orders', 1);
+  if (a.action === 'feed') bump('feed', 1);
+  if (a.action === 'takeCraft') bump('craft', 1);
+  if ((a.action === 'sell' || a.action === 'deliver') && r.coins > 0) bump('sold', r.coins);
   const before = farmLevel(r.farm.farmXp);
   r.farm.farmXp += r.xp;
   const after = farmLevel(r.farm.farmXp);
@@ -454,15 +504,46 @@ function applyRule(state: MyFarmState, a: MyFarmAction, now: number, coins: numb
       if (bonus) f.fertilizer += 1;
       const lv = farmLevel(f.farmXp);
       f.orderSeq += 1;
-      f.orders.push(makeOrder(f.orderSeq, lv, f.animals.map((x) => x.kind)));
+      f.orders.push(makeOrder(f.orderSeq, lv, f.animals.map((x) => x.kind), Object.keys(f.machines)));
       return { farm: f, coins: o.coins, xp: o.xp, said: `Here you are, ${o.who.replace(/^The /, 'the ')}! That's ${o.coins} coins, thank you.${bonus ? ' And a bag of fertilizer!' : ''}` };
+    }
+    case 'craft': {
+      const rec = RECIPES[a.recipe];
+      if (!rec) return fail('bad_item');
+      const m = f.machines[rec.machine];
+      if (!m) return fail('no_machine');
+      if (m.job) return fail('machine_busy');
+      if (Object.entries(rec.needs).some(([k, n]) => (f.barn[k] ?? 0) < n)) return fail('missing');
+      for (const [k, n] of Object.entries(rec.needs)) f.barn[k] = f.barn[k]! - n;
+      m.job = { recipe: a.recipe, at: now };
+      return { farm: f, coins: 0, xp: 3, said: `I'm making ${rec.en} in my ${MACHINE_INFO[rec.machine].name}.` };
+    }
+    case 'takeCraft': {
+      const m = f.machines[a.machine];
+      if (!m) return fail('no_machine');
+      if (!m.job) return fail('nothing');
+      const rec = RECIPES[m.job.recipe]!;
+      if (now - m.job.at < rec.ms) return fail('not_ready');
+      if (barnCount(f) + 1 > barnCap(f)) return fail('barn_full');
+      f.barn[rec.makes] = (f.barn[rec.makes] ?? 0) + 1;
+      m.job = null;
+      return { farm: f, coins: 0, xp: 6, said: `${rec.en[0]!.toUpperCase()}${rec.en.slice(1)} is ready. It smells great!` };
+    }
+    case 'claimGoal': {
+      const g = FARM_GOALS.find((x) => x.id === a.goal);
+      if (!g) return fail('bad_item');
+      if (f.goals.includes(g.id)) return fail('nothing');
+      if ((f.stats[g.stat] ?? 0) < g.n) return fail('not_done');
+      f.goals.push(g.id);
+      f.fertilizer += g.fertilizer;
+      return { farm: f, coins: g.coins, xp: 10, said: `Goal done: ${g.en}! I got ${g.coins} coins and ${g.fertilizer} fertilizer.` };
     }
     case 'skipOrder': {
       const o = f.orders.find((x) => x.id === a.order);
       if (!o) return fail('no_order');
       f.orders = f.orders.filter((x) => x.id !== o.id);
       f.orderSeq += 1;
-      f.orders.push(makeOrder(f.orderSeq, farmLevel(f.farmXp), f.animals.map((x) => x.kind)));
+      f.orders.push(makeOrder(f.orderSeq, farmLevel(f.farmXp), f.animals.map((x) => x.kind), Object.keys(f.machines)));
       return { farm: f, coins: 0, xp: 0, said: `Sorry, I can't do this order today.` };
     }
     case 'feed': {
@@ -489,7 +570,7 @@ function applyRule(state: MyFarmState, a: MyFarmAction, now: number, coins: numb
       if (unit == null) return fail('bad_item');
       if (farmLevel(f.farmXp) < itemLevel(f, a.item)) return fail('locked');
       const [kind, what] = a.item.split(':');
-      const qty = kind === 'animal' || a.item === 'field' || a.item === 'barn' || a.item === 'dog' ? 1 : a.qty;
+      const qty = kind === 'animal' || kind === 'machine' || a.item === 'field' || a.item === 'barn' || a.item === 'dog' ? 1 : a.qty;
       const cost = unit * qty;
       if (coins < cost) return fail('coins');
       let said: string;
@@ -505,6 +586,9 @@ function applyRule(state: MyFarmState, a: MyFarmAction, now: number, coins: numb
       } else if (a.item === 'dog') {
         f.dog = { name: 'Rex', train: 0, fedDay: '', trainDay: '', trainCount: 0 };
         said = "I'd like a dog to guard my farm, please.";
+      } else if (kind === 'machine') {
+        f.machines[what!] = { job: null };
+        said = `I bought a ${MACHINE_INFO[what as MachineId].name} for my barn!`;
       } else if (a.item === 'fertilizer') {
         f.fertilizer += qty;
         said = qty === 1 ? 'A bag of fertilizer, please.' : `${qty} bags of fertilizer, please.`;

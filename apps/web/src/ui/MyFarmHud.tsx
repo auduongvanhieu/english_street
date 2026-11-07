@@ -45,6 +45,9 @@ const ERRORS: Record<string, string> = {
   no_order: 'That order is gone.',
   missing: 'You do not have everything for this order yet.',
   nothing: 'There is nothing to do there right now.',
+  no_machine: 'Buy that machine in the farm shop first.',
+  machine_busy: 'That machine is busy. Wait until it is ready.',
+  not_done: 'You have not finished that goal yet.',
   closed: 'This farm is closed to visitors.',
   friends_only: 'Only friends can visit this farm.',
 };

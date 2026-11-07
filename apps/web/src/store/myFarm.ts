@@ -16,7 +16,7 @@ import { useVoice } from './voice';
  * "My farm" in the game: going in (the game server gives the farm a slot in this zone), your farm's state from
  * the API, actions (run locally first, then confirmed by the API), and visiting a friend's farm (read-only).
  */
-export type FarmPanel = 'shop' | 'barn' | 'orders' | 'settings' | 'train' | { plot: number } | null;
+export type FarmPanel = 'shop' | 'barn' | 'orders' | 'workshop' | 'goals' | 'settings' | 'train' | { plot: number } | null;
 export type StealError = 'steal_guest' | 'steal_level' | 'friends_only' | 'steal_busy' | 'steal_limit' | 'steal_not_ready' | 'steal_taken' | 'steal_limit' | 'closed';
 interface MyFarmStore {
   /** the farm you are in (or going to): owner id, name, slot (-1 = waiting for the server) */

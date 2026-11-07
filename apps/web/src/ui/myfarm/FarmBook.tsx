@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   ANIMALS,
+  FARM_GOALS,
+  MACHINES,
+  MACHINE_INFO,
+  RECIPES,
   ANIMAL_INFO,
   BARN_PRICES,
   CROPS,
@@ -38,7 +42,7 @@ import { useT } from '../../i18n';
  * barn), the farm book (Orders · Shop · Barn tabs), the level-up card and "your crops are ready" outside the farm.
  * Rules: @es/shared myfarm.ts.
  */
-export const GOOD_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', wheat: '🌾', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
+export const GOOD_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', wheat: '🌾', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄', bread: '🍞', cake: '🍰', cheese: '🧀', scarf: '🧣' };
 const mins = (ms: number) => (ms >= 3600_000 ? `${Math.round((ms / 3600_000) * 10) / 10} h` : `${Math.max(1, Math.round(ms / 60000))} min`);
 const piece = (k: string) => CROP_SELL[k as Crop] ?? PRODUCT_SELL[k] ?? 0;
 const Coin = ({ size = 13 }: { size?: number }) => <Icon name="coin" size={size} className="inline align-[-2px] text-amber-500" />;
@@ -68,6 +72,8 @@ export function FarmTopBar() {
   const plots = mine.fields * FIELD_PLOTS;
   const toWater = mine.plots.slice(0, plots).filter((p) => p.crop && !p.wateredAt).length;
   const ripe = mine.plots.slice(0, plots).filter((p) => myPlotStage(p, now).stage === 'ready').length;
+  const crafted = Object.values(mine.machines).filter((m) => m.job && now - m.job.at >= (RECIPES[m.job.recipe]?.ms ?? Infinity)).length;
+  const claimable = FARM_GOALS.filter((g) => !mine.goals.includes(g.id) && (mine.stats[g.stat] ?? 0) >= g.n).length;
   const canDeliver = mine.orders.filter((o) => Object.entries(o.items).every(([k, n]) => (mine.barn[k] ?? 0) >= n)).length;
   const quick = 'pointer-events-auto flex h-9 items-center gap-1 rounded-full bg-white/95 px-3 text-xs font-semibold text-slate-800 shadow-md ring-1 ring-black/5 disabled:opacity-40';
   return (
@@ -121,6 +127,14 @@ export function FarmTopBar() {
           <button type="button" onClick={() => s.setPanel('barn')} className={quick}>
             🏠 {t('Barn')}
           </button>
+          <button type="button" onClick={() => s.setPanel('workshop')} className={quick}>
+            🍞 {t('Workshop')}
+            {crafted ? <span className="rounded-full bg-orange-500 px-1.5 text-white">{crafted}</span> : null}
+          </button>
+          <button type="button" onClick={() => s.setPanel('goals')} className={quick}>
+            🏅 {t('Goals')}
+            {claimable ? <span className="rounded-full bg-emerald-500 px-1.5 text-white">{claimable}</span> : null}
+          </button>
         </div>
       ) : null}
     </div>
@@ -134,18 +148,20 @@ export function FarmBook() {
   const view = useMyFarm((s) => s.view);
   const at = useMyFarm((s) => s.at);
   const s = useMyFarm.getState();
-  if (!at || view || (panel !== 'orders' && panel !== 'shop' && panel !== 'barn')) return null;
+  if (!at || view || (panel !== 'orders' && panel !== 'shop' && panel !== 'barn' && panel !== 'workshop' && panel !== 'goals')) return null;
   const tabs: [typeof panel, string][] = [
     ['orders', `📋 ${t('Orders')}`],
     ['shop', `🛒 ${t('Shop')}`],
     ['barn', `🏠 ${t('Barn')}`],
+    ['workshop', `🍞 ${t('Workshop')}`],
+    ['goals', `🏅 ${t('Goals')}`],
   ];
   return (
     <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-lg -translate-x-1/2">
       <div className="pointer-events-auto flex max-h-[74dvh] flex-col overflow-hidden rounded-2xl bg-white/97 shadow-2xl ring-1 ring-black/5">
-        <div className="flex items-center gap-1 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-amber-50 px-2 pt-2">
+        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-amber-50 px-2 pt-2">
           {tabs.map(([id, label]) => (
-            <button key={id} type="button" onClick={() => s.setPanel(id)} className={`rounded-t-xl px-3 py-2 text-sm font-semibold ${panel === id ? 'bg-white text-emerald-800 shadow-[0_-1px_0_rgba(0,0,0,0.04)]' : 'text-slate-500'}`}>
+            <button key={id} type="button" onClick={() => s.setPanel(id)} className={`shrink-0 rounded-t-xl px-2.5 py-2 text-sm font-semibold ${panel === id ? 'bg-white text-emerald-800 shadow-[0_-1px_0_rgba(0,0,0,0.04)]' : 'text-slate-500'}`}>
               {label}
             </button>
           ))}
@@ -153,7 +169,7 @@ export function FarmBook() {
             <Icon name="close" size={18} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">{panel === 'orders' ? <Orders /> : panel === 'shop' ? <Shop /> : <Barn />}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">{panel === 'orders' ? <Orders /> : panel === 'shop' ? <Shop /> : panel === 'workshop' ? <Workshop /> : panel === 'goals' ? <Goals /> : <Barn />}</div>
       </div>
     </div>
   );
@@ -276,6 +292,21 @@ function Shop() {
                   </span>
                 )}
               </span>
+            </button>
+          );
+        })}
+      </div>
+      <h3 className={h3}>{t('Workshop machines (in the barn)')}</h3>
+      <div className="grid grid-cols-3 gap-1.5" dir="ltr">
+        {MACHINES.map((m) => {
+          const info = MACHINE_INFO[m];
+          const l = lock(`machine:${m}`);
+          const have = !!mine.machines[m];
+          return (
+            <button key={m} type="button" disabled={!!l || have} onClick={() => buy(`machine:${m}`)} className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-orange-200 bg-orange-50 p-1 text-xs disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400">
+              <span className="text-xl">{l ? '🔒' : info.icon}</span>
+              <b>{info.name}</b>
+              <span>{have ? `✓ ${t('You have it')}` : l ? t('Level {n}', { n: l }) : <>{info.price} <Coin size={10} /></>}</span>
             </button>
           );
         })}
@@ -426,3 +457,121 @@ export function RipeNotice() {
   );
 }
 
+
+const timeLeftText = (ms: number) => {
+  const sec = Math.max(0, Math.ceil(ms / 1000));
+  return sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec}s`;
+};
+
+function Workshop() {
+  const t = useT();
+  const mine = useMyFarm((s) => s.mine);
+  const s = useMyFarm.getState();
+  const now = useNow(1000);
+  const owned = MACHINES.filter((m) => mine.machines[m]);
+  if (!owned.length)
+    return (
+      <div className="py-4 text-center text-sm text-gray-600">
+        <div className="text-4xl">🍞🧀🧣</div>
+        <p className="mt-2">{t('Buy a machine in the shop to make bread, cheese and scarves. They sell for much more!')}</p>
+        <button type="button" onClick={() => s.setPanel('shop')} className="mt-3 rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white">
+          {t('Open the shop')}
+        </button>
+      </div>
+    );
+  return (
+    <div className="space-y-2.5">
+      {owned.map((m) => {
+        const info = MACHINE_INFO[m];
+        const job = mine.machines[m]!.job;
+        const rec = job ? RECIPES[job.recipe] : null;
+        const left = rec && job ? job.at + rec.ms - now : 0;
+        return (
+          <div key={m} className="rounded-xl border border-orange-200 bg-orange-50/60 p-2.5">
+            <b className="text-sm">
+              {info.icon} {info.name}
+            </b>
+            {rec && job ? (
+              <div className="mt-1.5">
+                <div className="mb-1 flex justify-between text-xs text-gray-600" dir="ltr">
+                  <span>
+                    {GOOD_ICON[rec.makes]} {rec.en}
+                  </span>
+                  <span>{left > 0 ? timeLeftText(left) : t('Ready!')}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white">
+                  <div className="h-full rounded-full bg-orange-400" style={{ width: `${Math.min(100, Math.round(((now - job.at) / rec.ms) * 100))}%` }} />
+                </div>
+                <button type="button" disabled={left > 0} onClick={() => void s.act({ action: 'takeCraft', machine: m })} className="mt-2 w-full rounded-lg bg-emerald-600 py-1.5 text-sm font-semibold text-white disabled:opacity-40">
+                  {t('Take it out')}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-1.5 grid gap-1.5" dir="ltr">
+                {Object.entries(RECIPES)
+                  .filter(([, r]) => r.machine === m)
+                  .map(([id, r]) => {
+                    const ok = Object.entries(r.needs).every(([k, n]) => (mine.barn[k] ?? 0) >= n);
+                    return (
+                      <button key={id} type="button" disabled={!ok} onClick={() => void s.act({ action: 'craft', recipe: id })} className="flex items-center justify-between gap-2 rounded-lg bg-white px-2 py-1.5 text-left text-xs ring-1 ring-orange-200 disabled:opacity-50">
+                        <span>
+                          <b>
+                            {GOOD_ICON[r.makes]} {r.en}
+                          </b>
+                          <span className="block text-gray-500">
+                            {Object.entries(r.needs)
+                              .map(([k, n]) => `${GOOD_ICON[k] ?? ''} ${Math.min(mine.barn[k] ?? 0, n)}/${n}`)
+                              .join(' · ')}{' '}
+                            · ⏱ {mins(r.ms)}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-semibold text-amber-700">
+                          {r.sell} <Coin size={11} />
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Goals() {
+  const t = useT();
+  const mine = useMyFarm((s) => s.mine);
+  const s = useMyFarm.getState();
+  return (
+    <div className="space-y-1.5">
+      {FARM_GOALS.map((g) => {
+        const have = Math.min(g.n, mine.stats[g.stat] ?? 0);
+        const claimed = mine.goals.includes(g.id);
+        const done = have >= g.n;
+        return (
+          <div key={g.id} className={`flex items-center gap-2 rounded-xl p-2.5 ring-1 ${claimed ? 'bg-slate-50 ring-slate-200' : done ? 'bg-emerald-50 ring-emerald-300' : 'bg-white ring-slate-200'}`}>
+            <span className="text-xl">{claimed ? '✅' : done ? '🎁' : '🏅'}</span>
+            <div className="min-w-0 flex-1">
+              <b className="block text-sm" dir="ltr">
+                {g.en}
+              </b>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.round((have / g.n) * 100)}%` }} />
+              </div>
+              <span className="text-[11px] text-gray-500">
+                {have}/{g.n} · +{g.coins} <Coin size={10} /> · +{g.fertilizer} 🧪
+              </span>
+            </div>
+            {!claimed ? (
+              <button type="button" disabled={!done} onClick={() => void s.act({ action: 'claimGoal', goal: g.id })} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40">
+                {t('Claim')}
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
