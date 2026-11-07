@@ -1,5 +1,5 @@
 import { get, useSession } from '../api';
-import { StatTile } from '../charts';
+import { ChartCard, DailyColumns, StatTile } from '../charts';
 import { ago, fmtNum, useL } from '../i18n';
 import { Badge, Card, Loaded, Page, useLoad } from '../ui';
 
@@ -32,6 +32,7 @@ export function Overview() {
                 sub={`${L('ngân sách', 'budget')} $${d.spend.budgetUsd} · ${fmtNum(d.spend.turnsToday)} ${L('lượt NPC', 'NPC turns')}`}
               />
             </div>
+            <Trends />
             <div className="grid gap-4 md:grid-cols-2">
               <Card title={L('Cần chú ý', 'Needs attention')}>
                 <ul className="flex flex-col gap-2 text-sm">
@@ -81,5 +82,35 @@ export function Overview() {
         )}
       </Loaded>
     </Page>
+  );
+}
+
+type Row = readonly [day: string, metric: string, key: string, value: number];
+/** The last 14 days at a glance: players, new players, coins earned and spent (one measure per chart). */
+function Trends() {
+  const L = useL();
+  const s = useLoad(() => get<{ days: string[]; rows: Row[] }>('/admin/stats/daily?days=14'));
+  if (!s.data) return null;
+  const d = s.data;
+  const per = (metric: string, key?: string) => {
+    const m = new Map<string, number>();
+    for (const [day, mt, k, v] of d.rows) if (mt === metric && (key === undefined || k === key)) m.set(day, (m.get(day) ?? 0) + v);
+    return d.days.map((x) => m.get(x) ?? 0);
+  };
+  const short = d.days.map((x) => x.slice(5));
+  const charts: { title: string; values: number[] }[] = [
+    { title: L('Người chơi mỗi ngày', 'Players per day'), values: per('dau', '') },
+    { title: L('Người chơi mới', 'New players'), values: per('new_users', '') },
+    { title: L('Xu người chơi kiếm được', 'Coins earned'), values: per('coins_earned') },
+    { title: L('Xu người chơi đã tiêu', 'Coins spent'), values: per('coins_spent') },
+  ];
+  return (
+    <div className="grid gap-x-4 md:grid-cols-2">
+      {charts.map((c) => (
+        <ChartCard key={c.title} title={`${c.title} · ${L('14 ngày', '14 days')}`} table={{ head: [L('Ngày', 'Day'), c.title], rows: d.days.map((x, i) => [x, c.values[i]!]) }}>
+          <DailyColumns days={short} values={c.values} height={130} />
+        </ChartCard>
+      ))}
+    </div>
   );
 }

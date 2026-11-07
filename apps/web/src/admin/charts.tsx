@@ -7,7 +7,7 @@ import { fmtNum, useL } from './i18n';
  * and a table view next to every chart.
  */
 export const C = {
-  surface: '#fcfcfb',
+  surface: '#ffffff',
   ink: '#0b0b0b',
   ink2: '#52514e',
   grid: '#e7e6e2',
@@ -18,10 +18,10 @@ export const C = {
 
 export function StatTile({ label, value, sub }: { label: ReactNode; value: ReactNode; sub?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-[#fcfcfb] p-3">
-      <div className="text-xs text-[#52514e]">{label}</div>
-      <div className="mt-1 text-2xl font-bold text-[#0b0b0b] tabular-nums">{value}</div>
-      {sub ? <div className="mt-0.5 text-xs text-[#52514e]">{sub}</div> : null}
+    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80">
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="mt-1.5 text-[28px] leading-none font-bold tracking-tight text-slate-900 tabular-nums">{value}</div>
+      {sub ? <div className="mt-1.5 text-xs text-slate-500">{sub}</div> : null}
     </div>
   );
 }
@@ -31,7 +31,7 @@ export function ChartCard({ title, children, table, note }: { title: ReactNode; 
   const [asTable, setAsTable] = useState(false);
   const L = useL();
   return (
-    <section className="mb-4 rounded-xl border border-gray-200 bg-[#fcfcfb] p-4">
+    <section className="mb-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80 md:p-5">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-[#0b0b0b]">{title}</h2>
         <button type="button" className="text-xs text-blue-700 underline" onClick={() => setAsTable(!asTable)}>

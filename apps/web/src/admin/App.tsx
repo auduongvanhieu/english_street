@@ -4,6 +4,7 @@ import { useSession } from './api';
 import { useAdminLang, useL } from './i18n';
 import { Login } from './Login';
 import { ConfirmHost, Toasts } from './ui';
+import { AIcon } from './icons';
 import { Overview } from './pages/Overview';
 import { UsersPage } from './pages/Users';
 import { UserDetail } from './pages/UserDetail';
@@ -41,55 +42,55 @@ interface NavItem {
   adminOnly?: boolean;
 }
 const NAV: { vi: string; en: string; items: NavItem[] }[] = [
-  { vi: 'Chung', en: 'General', items: [{ path: '', icon: '📊', vi: 'Tổng quan', en: 'Overview' }, { path: 'stats', icon: '📈', vi: 'Thống kê', en: 'Stats' }] },
+  { vi: 'Chung', en: 'General', items: [{ path: '', icon: 'overview', vi: 'Tổng quan', en: 'Overview' }, { path: 'stats', icon: 'stats', vi: 'Thống kê', en: 'Stats' }] },
   {
     vi: 'Người chơi',
     en: 'Players',
     items: [
-      { path: 'users', icon: '👥', vi: 'Người chơi', en: 'Players', adminOnly: true },
-      { path: 'online', icon: '🟢', vi: 'Đang online', en: 'Online', adminOnly: true },
-      { path: 'reports', icon: '🚩', vi: 'Báo cáo & góp ý', en: 'Reports & feedback', adminOnly: true },
-      { path: 'journey', icon: '⭐', vi: 'Hành trình', en: 'Journey', adminOnly: true },
-      { path: 'passwords', icon: '🔑', vi: 'Quên mật khẩu', en: 'Forgot password', adminOnly: true },
+      { path: 'users', icon: 'users', vi: 'Người chơi', en: 'Players', adminOnly: true },
+      { path: 'online', icon: 'online', vi: 'Đang online', en: 'Online', adminOnly: true },
+      { path: 'reports', icon: 'flag', vi: 'Báo cáo & góp ý', en: 'Reports & feedback', adminOnly: true },
+      { path: 'journey', icon: 'star', vi: 'Hành trình', en: 'Journey', adminOnly: true },
+      { path: 'passwords', icon: 'key', vi: 'Quên mật khẩu', en: 'Forgot password', adminOnly: true },
     ],
   },
   {
     vi: 'NPC & Quest',
     en: 'NPCs & quests',
     items: [
-      { path: 'npc', icon: '🧑‍🍳', vi: 'NPC', en: 'NPCs' },
-      { path: 'quest', icon: '🎯', vi: 'Nhiệm vụ', en: 'Quests' },
-      { path: 'pair', icon: '🤝', vi: 'Nhiệm vụ cặp đôi', en: 'Pair quests' },
-      { path: 'placement', icon: '📝', vi: 'Bài test xếp lớp', en: 'Placement test' },
+      { path: 'npc', icon: 'npc', vi: 'NPC', en: 'NPCs' },
+      { path: 'quest', icon: 'target', vi: 'Nhiệm vụ', en: 'Quests' },
+      { path: 'pair', icon: 'pair', vi: 'Nhiệm vụ cặp đôi', en: 'Pair quests' },
+      { path: 'placement', icon: 'test', vi: 'Bài test xếp lớp', en: 'Placement test' },
     ],
   },
   {
     vi: 'Khu chủ đề',
     en: 'Themed areas',
     items: [
-      { path: 'area/farm', icon: '🐄', vi: 'Nông trại', en: 'Farm' },
-      { path: 'area/zoo', icon: '🦁', vi: 'Sở thú', en: 'Zoo' },
-      { path: 'area/supermarket', icon: '🛒', vi: 'Siêu thị', en: 'Supermarket' },
-      { path: 'area/restaurant', icon: '🍽️', vi: 'Nhà hàng', en: 'Restaurant' },
-      { path: 'area/home', icon: '🏠', vi: 'Ngôi nhà', en: 'Home' },
-      { path: 'area/school', icon: '🏫', vi: 'Trường học', en: 'School' },
-      { path: 'area/clothes', icon: '👕', vi: 'Shop quần áo', en: 'Clothes shop' },
-      { path: 'area/cinema', icon: '🎬', vi: 'Rạp phim & thư viện', en: 'Cinema & library' },
-      { path: 'area/station', icon: '🚉', vi: 'Nhà ga', en: 'Station' },
-      { path: 'area/hospital', icon: '💊', vi: 'Bệnh viện', en: 'Hospital' },
-      { path: 'area/hotel', icon: '🏨', vi: 'Khách sạn', en: 'Hotel' },
-      { path: 'area/sports', icon: '⚽', vi: 'Công viên thể thao', en: 'Sports park' },
-      { path: 'world', icon: '🌍', vi: 'Tên thú, luật nông trại, hết hàng', en: 'Animal names, farm rules, sold out' },
-      { path: 'translations', icon: '🌐', vi: 'Bản dịch', en: 'Translations' },
+      { path: 'area/farm', icon: 'farm', vi: 'Nông trại', en: 'Farm' },
+      { path: 'area/zoo', icon: 'zoo', vi: 'Sở thú', en: 'Zoo' },
+      { path: 'area/supermarket', icon: 'cart', vi: 'Siêu thị', en: 'Supermarket' },
+      { path: 'area/restaurant', icon: 'food', vi: 'Nhà hàng', en: 'Restaurant' },
+      { path: 'area/home', icon: 'home', vi: 'Ngôi nhà', en: 'Home' },
+      { path: 'area/school', icon: 'school', vi: 'Trường học', en: 'School' },
+      { path: 'area/clothes', icon: 'shirt', vi: 'Shop quần áo', en: 'Clothes shop' },
+      { path: 'area/cinema', icon: 'film', vi: 'Rạp phim & thư viện', en: 'Cinema & library' },
+      { path: 'area/station', icon: 'train', vi: 'Nhà ga', en: 'Station' },
+      { path: 'area/hospital', icon: 'pill', vi: 'Bệnh viện', en: 'Hospital' },
+      { path: 'area/hotel', icon: 'hotel', vi: 'Khách sạn', en: 'Hotel' },
+      { path: 'area/sports', icon: 'ball', vi: 'Công viên thể thao', en: 'Sports park' },
+      { path: 'world', icon: 'globe', vi: 'Tên thú, luật nông trại, hết hàng', en: 'Animal names, farm rules, sold out' },
+      { path: 'translations', icon: 'translate', vi: 'Bản dịch', en: 'Translations' },
     ],
   },
   {
     vi: 'Vận hành',
     en: 'Operations',
     items: [
-      { path: 'settings', icon: '⚙️', vi: 'Cài đặt', en: 'Settings', adminOnly: true },
-      { path: 'audit', icon: '🧾', vi: 'Nhật ký', en: 'Audit log', adminOnly: true },
-      { path: 'security', icon: '🔐', vi: 'Bảo mật tài khoản', en: 'Account security' },
+      { path: 'settings', icon: 'settings', vi: 'Cài đặt', en: 'Settings', adminOnly: true },
+      { path: 'audit', icon: 'log', vi: 'Nhật ký', en: 'Audit log', adminOnly: true },
+      { path: 'security', icon: 'shield', vi: 'Bảo mật tài khoản', en: 'Account security' },
     ],
   },
 ];
@@ -102,46 +103,88 @@ function Sidebar({ route, onNavigate }: { route: string[]; onNavigate: () => voi
   const cur = route.join('/');
   const active = (p: string) => (p === '' ? cur === '' : cur === p || cur.startsWith(p + '/'));
   return (
-    <nav className="flex h-full flex-col gap-3 overflow-y-auto p-3 text-sm">
-      <div className="flex items-center gap-2 px-2 py-1">
-        <span className="text-2xl">🏙️</span>
-        <div>
-          <div className="font-bold">English Street</div>
-          <div className="text-xs text-gray-500">Admin</div>
+    <nav className="flex h-full flex-col bg-slate-900 text-sm text-slate-300">
+      <div className="flex items-center gap-2.5 px-4 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-sky-400 text-lg font-black text-white shadow-lg shadow-indigo-900/40">E</span>
+        <div className="leading-tight">
+          <div className="font-bold text-white">English Street</div>
+          <div className="text-xs text-slate-400">{L('Quản trị', 'Admin')}</div>
         </div>
       </div>
-      {NAV.map((g) => {
-        const items = g.items.filter((i) => !i.adminOnly || me?.role === 'admin');
-        if (!items.length) return null;
-        return (
-          <div key={g.en}>
-            <div className="px-2 pb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">{L(g.vi, g.en)}</div>
-            {items.map((i) => (
-              <a key={i.path} href={`#/${i.path}`} onClick={onNavigate} className={`flex items-center gap-2 rounded-lg px-2 py-1.5 ${active(i.path) ? 'bg-blue-100 font-semibold text-blue-900' : 'text-gray-700 hover:bg-gray-100'}`}>
-                <span aria-hidden>{i.icon}</span>
-                {L(i.vi, i.en)}
-              </a>
-            ))}
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2.5 pb-3">
+        {NAV.map((g) => {
+          const items = g.items.filter((i) => !i.adminOnly || me?.role === 'admin');
+          if (!items.length) return null;
+          return (
+            <div key={g.en}>
+              <div className="px-2.5 pb-1 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">{L(g.vi, g.en)}</div>
+              {items.map((i) => (
+                <a
+                  key={i.path}
+                  href={`#/${i.path}`}
+                  onClick={onNavigate}
+                  className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors ${active(i.path) ? 'bg-indigo-500/15 font-semibold text-white ring-1 ring-indigo-400/30' : 'hover:bg-white/5 hover:text-white'}`}
+                >
+                  <AIcon name={i.icon} size={17} className={active(i.path) ? 'text-indigo-300' : 'text-slate-500 group-hover:text-slate-300'} />
+                  <span className="truncate">{L(i.vi, i.en)}</span>
+                </a>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+      <div className="border-t border-white/10 p-3">
+        <div className="flex items-center gap-2.5 rounded-xl bg-white/5 p-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500 text-sm font-bold text-white">{(me?.name ?? '?').slice(0, 1).toUpperCase()}</span>
+          <div className="min-w-0 flex-1 leading-tight">
+            <div className="truncate font-semibold text-white">{me?.name}</div>
+            <div className="text-xs text-slate-400">{me?.role}</div>
           </div>
-        );
-      })}
-      <div className="mt-auto border-t border-gray-200 pt-3">
-        <div className="px-2 text-xs text-gray-600">
-          {me?.name} · <b>{me?.role}</b>
-        </div>
-        <div className="mt-2 flex gap-2 px-2">
-          <button type="button" className="text-xs text-blue-700 underline" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
-            {lang === 'vi' ? 'English' : 'Tiếng Việt'}
+          <button type="button" title={lang === 'vi' ? 'English' : 'Tiếng Việt'} onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')} className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-slate-300 hover:bg-white/10">
+            {lang === 'vi' ? 'EN' : 'VI'}
           </button>
-          <button type="button" className="text-xs text-red-700 underline" onClick={logout}>
-            {L('Đăng xuất', 'Sign out')}
+          <button type="button" title={L('Đăng xuất', 'Sign out')} onClick={logout} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 hover:text-red-300">
+            <AIcon name="logout" size={16} />
           </button>
-          <a href="/" className="text-xs text-gray-600 underline">
-            {L('Vào game', 'Open game')}
-          </a>
         </div>
       </div>
     </nav>
+  );
+}
+
+/** The bar on top of every page: menu (phone), quick player search, open the game. */
+function TopBar({ onMenu }: { onMenu: () => void }) {
+  const L = useL();
+  const me = useSession((s) => s.me);
+  const [q, setQ] = useState('');
+  return (
+    <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-slate-200 bg-white/85 px-3 py-2 backdrop-blur md:px-6">
+      <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 md:hidden" onClick={onMenu} aria-label={L('Mở menu', 'Open menu')}>
+        <AIcon name="menu" />
+      </button>
+      {me?.role === 'admin' ? (
+        <form
+          className="relative max-w-md flex-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!q.trim()) return;
+            sessionStorage.setItem('admin:userq', q.trim());
+            window.dispatchEvent(new Event('admin:userq'));
+            go('users');
+            setQ('');
+          }}
+        >
+          <AIcon name="search" size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L('Tìm người chơi: tên, email, id, IP…', 'Find a player: name, e-mail, id, IP…')} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-3 pl-9 text-sm focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:outline-none" />
+        </form>
+      ) : (
+        <b className="flex-1 md:hidden">English Street</b>
+      )}
+      <a href="/" className="ml-auto flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+        <AIcon name="game" size={16} />
+        <span className="hidden sm:inline">{L('Vào game', 'Open game')}</span>
+      </a>
+    </div>
   );
 }
 
@@ -190,7 +233,6 @@ export function AdminApp() {
   const logout = useSession((s) => s.logout);
   const route = useRoute();
   const [menu, setMenu] = useState(false);
-  const L = useL();
   // session ends after 12 h
   useEffect(() => {
     if (!token) return;
@@ -209,24 +251,19 @@ export function AdminApp() {
       </>
     );
   return (
-    <div className="flex min-h-dvh">
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 border-r border-gray-200 bg-white md:block">
+    <div className="flex min-h-dvh bg-slate-50">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 md:block">
         <Sidebar route={route} onNavigate={() => undefined} />
       </aside>
       {menu ? (
-        <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setMenu(false)}>
-          <aside className="h-full w-64 bg-white" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm md:hidden" onClick={() => setMenu(false)}>
+          <aside className="h-full w-72 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <Sidebar route={route} onNavigate={() => setMenu(false)} />
           </aside>
         </div>
       ) : null}
       <main className="min-w-0 flex-1">
-        <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2 md:hidden">
-          <button type="button" className="rounded px-2 text-xl" onClick={() => setMenu(true)} aria-label={L('Mở menu', 'Open menu')}>
-            ☰
-          </button>
-          <b>English Street Admin</b>
-        </div>
+        <TopBar onMenu={() => setMenu(true)} />
         <Routes route={route} />
       </main>
       <Toasts />

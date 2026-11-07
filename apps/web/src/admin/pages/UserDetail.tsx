@@ -4,7 +4,7 @@ import { SetPasswordButton } from './PasswordRequests';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
 import { ago, fmtDate, fmtNum, useL } from '../i18n';
-import { AsyncBtn, Badge, Btn, Card, Field, Loaded, Modal, Num, Page, Select, Table, Text, confirmDialog, toast, useLoad } from '../ui';
+import { AsyncBtn, Badge, Btn, Card, Field, Loaded, Modal, Num, Page, Select, Table, Tabs, Text, confirmDialog, toast, useLoad } from '../ui';
 import { UserBadges, fmtPlay, type UserRow } from './Users';
 
 interface Detail {
@@ -64,6 +64,7 @@ export function UserDetail({ id }: { id: string }) {
   const s = useLoad(() => get<Detail>(`/admin/users/${encodeURIComponent(id)}`), [id]);
   const [open, setOpen] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const [tab, setTab] = useState<'profile' | 'quests' | 'coins' | 'notes' | 'activity' | 'mod'>('profile');
   const post = (path: string, body: unknown = {}) => api('POST', `/admin/users/${encodeURIComponent(id)}${path}`, body);
 
   return (
@@ -85,6 +86,20 @@ export function UserDetail({ id }: { id: string }) {
           const muted = !!u.mutedUntil && new Date(u.mutedUntil).getTime() > Date.now();
           return (
             <>
+              <Tabs
+                value={tab}
+                onChange={setTab}
+                tabs={[
+                  { id: 'profile', label: L('Hồ sơ', 'Profile') },
+                  { id: 'quests', label: `${L('Nhiệm vụ', 'Quests')} (${d.attempts.length})` },
+                  { id: 'coins', label: `${L('Tiền', 'Coins')} (${d.wallet.length})` },
+                  { id: 'notes', label: L('Từ vựng & báo cáo', 'Words & reports') },
+                  { id: 'activity', label: L('Hoạt động', 'Activity') },
+                  { id: 'mod', label: L('Xử lý', 'Moderation') },
+                ]}
+              />
+              {tab === 'profile' ? (
+              <>
               <div className="grid gap-4 md:grid-cols-3">
                 <Card title={L('Hồ sơ', 'Profile')}>
                   <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
@@ -158,13 +173,18 @@ export function UserDetail({ id }: { id: string }) {
               </div>
 
               <GameSettingsCard id={id} known={u.device?.settings} online={d.online.length > 0} onSaved={s.reload} />
+              </>
+              ) : null}
 
+              {tab === 'mod' ? (
               <Card title={L('Xử lý', 'Moderation')}>
                 <div className="flex flex-wrap gap-2">
                   <ModerationButtons id={id} d={d} self={me?.id === u.id} reload={s.reload} post={post} />
                 </div>
               </Card>
+              ) : null}
 
+              {tab === 'quests' ? (
               <Card title={`${L('Nhiệm vụ đã chơi', 'Quest attempts')} (${d.attempts.length})`}>
                 <Table
                   rows={d.attempts}
@@ -182,7 +202,9 @@ export function UserDetail({ id }: { id: string }) {
                   ]}
                 />
               </Card>
+              ) : null}
 
+              {tab === 'coins' ? (
               <Card title={`${L('Lịch sử tiền', 'Coin history')} (${d.wallet.length})`}>
                 <div className="mb-2 flex flex-wrap gap-4 text-sm">
                   <span>
@@ -196,7 +218,7 @@ export function UserDetail({ id }: { id: string }) {
                   </span>
                   {d.wallet.length >= 300 ? <span className="text-xs text-gray-500">{L('(300 dòng gần nhất)', '(last 300)')}</span> : null}
                 </div>
-                <div className="max-h-96 overflow-auto">
+                <div className="">
                   <Table
                     rows={d.wallet.map((w, k) => ({ ...w, k }))}
                     rowKey={(w) => String(w.k)}
@@ -209,7 +231,9 @@ export function UserDetail({ id }: { id: string }) {
                   />
                 </div>
               </Card>
+              ) : null}
 
+              {tab === 'notes' ? (
               <div className="grid gap-4 md:grid-cols-2">
                 <Card title={`${L('Sổ tay từ vựng', 'Vocabulary notebook')} (${d.vocabCount})`}>
                   <div className="max-h-72 overflow-auto">
@@ -231,7 +255,9 @@ export function UserDetail({ id }: { id: string }) {
                   <ReportList rows={d.reportsBy} />
                 </Card>
               </div>
+              ) : null}
 
+              {tab === 'activity' ? (
               <Card title={L('Hoạt động gần đây', 'Recent activity')}>
                 <ul className="max-h-72 overflow-auto text-xs">
                   {d.events.map((e, i) => (
@@ -241,6 +267,7 @@ export function UserDetail({ id }: { id: string }) {
                   ))}
                 </ul>
               </Card>
+              ) : null}
               {open ? <AttemptModal uid={id} aid={open} onClose={() => setOpen(null)} /> : null}
               {edit ? <EditModal u={u} self={me?.id === u.id} onClose={() => setEdit(false)} onSaved={s.reload} /> : null}
             </>

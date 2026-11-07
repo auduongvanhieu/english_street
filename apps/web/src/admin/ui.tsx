@@ -25,7 +25,7 @@ export function Toasts() {
   return (
     <div className="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2" role="status" aria-live="polite">
       {list.map((t) => (
-        <div key={t.id} className={`rounded-lg px-4 py-2 text-sm whitespace-pre-line shadow-lg ${t.kind === 'ok' ? 'bg-emerald-700 text-white' : 'bg-red-700 text-white'}`}>
+        <div key={t.id} className={`rounded-xl px-4 py-2.5 text-sm whitespace-pre-line shadow-xl ring-1 ${t.kind === 'ok' ? 'bg-slate-900 text-white ring-emerald-400/40' : 'bg-red-600 text-white ring-red-300/40'}`}>
           {t.kind === 'ok' ? '✓ ' : '⚠ '}
           {t.text}
         </div>
@@ -60,8 +60,8 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []) {
 export function Page({ title, actions, children }: { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <div className="mx-auto max-w-7xl p-4 md:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-[#0b0b0b]">{title}</h1>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
         <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
       {children}
@@ -70,10 +70,10 @@ export function Page({ title, actions, children }: { title: ReactNode; actions?:
 }
 export function Card({ title, actions, children, className = '' }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`mb-4 rounded-xl border border-gray-200 bg-[#fcfcfb] p-4 ${className}`}>
+    <section className={`mb-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80 md:p-5 ${className}`}>
       {title || actions ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          {title ? <h2 className="text-sm font-semibold text-[#0b0b0b]">{title}</h2> : <span />}
+          {title ? <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2> : <span />}
           <div className="flex flex-wrap gap-2">{actions}</div>
         </div>
       ) : null}
@@ -84,13 +84,13 @@ export function Card({ title, actions, children, className = '' }: { title?: Rea
 
 type BtnKind = 'primary' | 'default' | 'danger' | 'ghost';
 const BTN: Record<BtnKind, string> = {
-  primary: 'bg-blue-700 text-white hover:bg-blue-800 border-blue-700',
-  default: 'bg-white text-gray-800 hover:bg-gray-50 border-gray-300',
-  danger: 'bg-white text-red-700 hover:bg-red-50 border-red-300',
-  ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 border-transparent',
+  primary: 'bg-indigo-600 text-white hover:bg-indigo-700 border-indigo-600 shadow-sm shadow-indigo-200',
+  default: 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200 shadow-sm',
+  danger: 'bg-white text-red-600 hover:bg-red-50 border-red-200',
+  ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 border-transparent',
 };
 export function Btn({ kind = 'default', small, className = '', ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: BtnKind; small?: boolean }) {
-  return <button type="button" {...p} className={`rounded-lg border font-medium disabled:opacity-50 ${small ? 'px-2 py-1 text-xs' : 'min-h-9 px-3 py-1.5 text-sm'} ${BTN[kind]} ${className}`} />;
+  return <button type="button" {...p} className={`rounded-lg border font-medium transition-colors disabled:opacity-50 ${small ? 'px-2 py-1 text-xs' : 'min-h-9 px-3.5 py-1.5 text-sm'} ${BTN[kind]} ${className}`} />;
 }
 
 /** Button that runs an async action, shows a spinner and reports errors. */
@@ -118,8 +118,8 @@ export function AsyncBtn({ onRun, okText, children, ...p }: Omit<React.Component
 }
 
 export function Badge({ children, tone = 'gray' }: { children: ReactNode; tone?: 'gray' | 'blue' | 'green' | 'amber' | 'red' | 'violet' }) {
-  const c = { gray: 'bg-gray-100 text-gray-700', blue: 'bg-blue-100 text-blue-800', green: 'bg-emerald-100 text-emerald-800', amber: 'bg-amber-100 text-amber-900', red: 'bg-red-100 text-red-800', violet: 'bg-violet-100 text-violet-800' }[tone];
-  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${c}`}>{children}</span>;
+  const c = { gray: 'bg-slate-100 text-slate-600 ring-slate-200', blue: 'bg-sky-50 text-sky-700 ring-sky-200', green: 'bg-emerald-50 text-emerald-700 ring-emerald-200', amber: 'bg-amber-50 text-amber-800 ring-amber-200', red: 'bg-red-50 text-red-700 ring-red-200', violet: 'bg-violet-50 text-violet-700 ring-violet-200' }[tone];
+  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${c}`}>{children}</span>;
 }
 
 export function Spinner() {
@@ -141,7 +141,7 @@ export function Loaded<T>({ s, children }: { s: { data: T | null; error: string 
 }
 
 // ---------------------------------------------------------------- form fields
-const inputCls = 'w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:border-blue-600 focus:outline-none';
+const inputCls = 'w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm shadow-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none';
 export function Field({ label, hint, children, className = '' }: { label: ReactNode; hint?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <label className={`mb-3 block ${className}`}>
@@ -277,27 +277,35 @@ export interface Col<T> {
   wide?: boolean;
 }
 /** Table on desktop; on phones every row becomes a small card. */
-export function Table<T>({ rows, cols, rowKey, onRow, empty }: { rows: T[]; cols: Col<T>[]; rowKey: (r: T) => string; onRow?: (r: T) => void; empty?: ReactNode }) {
+const TABLE_PAGE = 25;
+export function Table<T>({ rows, cols, rowKey, onRow, empty, paged = true }: { rows: T[]; cols: Col<T>[]; rowKey: (r: T) => string; onRow?: (r: T) => void; empty?: ReactNode; /** false: the page pages itself (server pages) */ paged?: boolean }) {
   const L = useL();
-  if (!rows.length) return <div className="p-4 text-center text-sm text-gray-500">{empty ?? L('Không có dữ liệu', 'Nothing here')}</div>;
+  const [page, setPage] = useState(0);
+  const pages = Math.ceil(rows.length / TABLE_PAGE);
+  useEffect(() => {
+    if (page >= pages) setPage(0);
+  }, [page, pages]);
+  if (!rows.length) return <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">{empty ?? L('Không có dữ liệu', 'Nothing here')}</div>;
+  // long lists come in pages of 25
+  const shown = paged && rows.length > TABLE_PAGE + 5 ? rows.slice(page * TABLE_PAGE, (page + 1) * TABLE_PAGE) : rows;
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto rounded-xl ring-1 ring-slate-200 md:block">
         <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-xs text-gray-500">
+          <thead className="sticky top-0 z-[1]">
+            <tr className="bg-slate-50 text-[11px] tracking-wide text-slate-500 uppercase">
               {cols.map((c) => (
-                <th key={c.key} className={`px-2 py-2 font-semibold ${c.className ?? ''}`}>
+                <th key={c.key} className={`border-b border-slate-200 px-3 py-2.5 font-semibold ${c.className ?? ''}`}>
                   {c.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={rowKey(r)} onClick={onRow ? () => onRow(r) : undefined} className={`border-b border-gray-100 ${onRow ? 'cursor-pointer hover:bg-blue-50/50' : ''}`}>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {shown.map((r) => (
+              <tr key={rowKey(r)} onClick={onRow ? () => onRow(r) : undefined} className={`even:bg-slate-50/50 ${onRow ? 'cursor-pointer hover:bg-indigo-50/60' : ''}`}>
                 {cols.map((c) => (
-                  <td key={c.key} className={`px-2 py-2 align-top ${c.className ?? ''}`}>
+                  <td key={c.key} className={`px-3 py-2.5 align-top text-slate-700 ${c.className ?? ''}`}>
                     {c.render(r)}
                   </td>
                 ))}
@@ -307,28 +315,43 @@ export function Table<T>({ rows, cols, rowKey, onRow, empty }: { rows: T[]; cols
         </table>
       </div>
       <div className="flex flex-col gap-2 md:hidden">
-        {rows.map((r) => (
-          <div key={rowKey(r)} onClick={onRow ? () => onRow(r) : undefined} className="rounded-lg border border-gray-200 bg-white p-3 text-sm">
+        {shown.map((r) => (
+          <div key={rowKey(r)} onClick={onRow ? () => onRow(r) : undefined} className="rounded-xl bg-white p-3 text-sm shadow-sm ring-1 ring-slate-200">
             {cols
               .filter((c) => !c.wide)
               .map((c) => (
                 <div key={c.key} className="flex justify-between gap-3 py-0.5">
-                  <span className="text-xs text-gray-500">{c.label}</span>
+                  <span className="text-xs text-slate-500">{c.label}</span>
                   <span className="text-right">{c.render(r)}</span>
                 </div>
               ))}
           </div>
         ))}
       </div>
+      {shown.length < rows.length ? (
+        <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
+          <span>
+            {page * TABLE_PAGE + 1}–{Math.min(rows.length, (page + 1) * TABLE_PAGE)} / {rows.length}
+          </span>
+          <span className="flex gap-1">
+            <Btn small disabled={page === 0} onClick={() => setPage(page - 1)}>
+              ‹ {L('Trước', 'Prev')}
+            </Btn>
+            <Btn small disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>
+              {L('Sau', 'Next')} ›
+            </Btn>
+          </span>
+        </div>
+      ) : null}
     </>
   );
 }
 
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: ReactNode }[]; value: T; onChange: (t: T) => void }) {
   return (
-    <div className="mb-4 flex flex-wrap gap-1 border-b border-gray-200" role="tablist">
+    <div className="mb-4 inline-flex max-w-full flex-wrap gap-1 rounded-xl bg-slate-100 p-1" role="tablist">
       {tabs.map((t) => (
-        <button key={t.id} type="button" role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)} className={`-mb-px border-b-2 px-3 py-2 text-sm ${value === t.id ? 'border-blue-700 font-semibold text-blue-800' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
+        <button key={t.id} type="button" role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)} className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${value === t.id ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
           {t.label}
         </button>
       ))}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LANGS, countryFlag, deviceSummary, type DeviceInfo } from '@es/shared';
 import { api, get, useSession } from '../api';
 import { go } from '../App';
@@ -53,8 +53,24 @@ export function UserBadges({ u }: { u: Pick<UserRow, 'email' | 'role' | 'bannedU
 
 export function UsersPage() {
   const L = useL();
-  const [q, setQ] = useState('');
-  const [query, setQuery] = useState('');
+  // the top bar's player search hands its text over (sessionStorage + an event when this page is open already)
+  const takeQ = () => {
+    const v = sessionStorage.getItem('admin:userq') ?? '';
+    sessionStorage.removeItem('admin:userq');
+    return v;
+  };
+  const [q, setQ] = useState(takeQ);
+  const [query, setQuery] = useState(q);
+  useEffect(() => {
+    const f = () => {
+      const v = takeQ();
+      setQ(v);
+      setQuery(v);
+      setPage(1);
+    };
+    window.addEventListener('admin:userq', f);
+    return () => window.removeEventListener('admin:userq', f);
+  }, []);
   const [kind, setKind] = useState<'all' | 'registered' | 'guest' | 'banned' | 'muted' | 'staff'>('all');
   const [level, setLevel] = useState('');
   const [lang, setLang] = useState('');
@@ -125,7 +141,7 @@ export function UsersPage() {
         <Loaded s={s}>
           {(d) => (
             <>
-              <Table
+              <Table paged={false}
                 rows={d.rows}
                 rowKey={(u) => u.id}
                 onRow={(u) => go(`users/${encodeURIComponent(u.id)}`)}
