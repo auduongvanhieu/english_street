@@ -1,4 +1,7 @@
 import { waiter } from './world/waiter';
+import { TripSportsHud } from './ui/TripSportsHud';
+import { useBeachSports } from './store/beachSports';
+import { useTripRides } from './store/tripRides';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { deviceInfo } from './net/device';
 import { rideTo } from './ui/area/Travel';
@@ -119,7 +122,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile, useTeamGame, useFerry, waiter };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile, useTeamGame, useFerry, waiter, useBeachSports, useTripRides };
 }
 
 export default function App() {
@@ -491,6 +494,7 @@ export default function App() {
       <BeachHud />
       <HillHud />
       <TripHud />
+      <TripSportsHud />
       <MyFarmHud />
       <FerryChip />
       <TeamGameHud />

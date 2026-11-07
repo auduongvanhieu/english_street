@@ -1,4 +1,6 @@
-import { memo } from 'react';
+import { Suspense, memo } from 'react';
+import { useLpmParts } from './LpmModel';
+import { chibiMaterial } from './chibi/buildChibi';
 import type { AvatarLook } from '@es/shared';
 import { Chibi } from './chibi/Chibi';
 import { HeldCritter, PetBuddy } from './Critters';
@@ -25,6 +27,11 @@ export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '
       {prop.startsWith('dish:') ? <Dish item={prop.slice(5)} /> : null}
       {prop.startsWith('cart:') && !sit ? <Trolley n={Number(prop.slice(5)) || 0} /> : null}
       {prop.startsWith('snack:') ? <Snack kind={prop.slice(6)} sit={sit} /> : null}
+      {prop.startsWith('ride:') ? (
+        <Suspense fallback={null}>
+          <RideProp kind={prop.slice(5)} />
+        </Suspense>
+      ) : null}
       {prop.startsWith('book:') ? (
         // reading in the library: an open book held up in front (others nearby can read along)
         <group position={[0, sit ? 0.86 : 0.76, 0.3]} rotation-x={-0.5}>
@@ -45,3 +52,14 @@ export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '
     </>
   );
 });
+
+/**
+ * What a player rides on (prop "ride:<kind>"): a surfboard under them (LPM beach_sports SM_BS_Board) or the rowing boat
+ * of the Riverside boat trip (river_kit SM_RV_Rowboat, the rider on its passenger seat at z -0.85, seat top 0.24).
+ */
+function RideProp({ kind }: { kind: string }) {
+  const parts = useLpmParts(kind === 'surf' ? 'beach_sports' : 'river_kit');
+  const geo = parts[kind === 'surf' ? 'SM_BS_Board' : 'SM_RV_Rowboat'];
+  if (!geo) return null;
+  return kind === 'surf' ? <mesh geometry={geo} material={chibiMaterial()} position={[0, -0.04, -0.15]} /> : <mesh geometry={geo} material={chibiMaterial()} position={[0, 0.12, 0.85]} />;
+}

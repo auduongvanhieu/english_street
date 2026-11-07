@@ -63,6 +63,7 @@ import { seatTaken, useRestaurant } from '../store/restaurant';
 import { TABLES } from '../world/buildings';
 import { useSeat } from '../store/seat';
 import { boatStep, boatTeleported } from '../store/boats';
+import { carryStep } from '../world/carry';
 import { useFollow } from '../store/follow';
 import { walkTo } from '../input/clickMove';
 import { nearestSeat } from '../world/seats';
@@ -91,12 +92,13 @@ const SPAWN = new THREE.Vector3(0, 0, 4);
 /**
  * Third-person camera behind the player. With tilt (looking at the sky) it drops to head height and looks up.
  */
-function placeCamera(camera: THREE.Camera, p: THREE.Vector3, dt: number, snap: boolean) {
+function placeCamera(camera: THREE.Camera, p: THREE.Vector3, dt: number, snap: boolean, lifted = false) {
   cameraOrbit.tilt += (cameraOrbit.tiltTarget - cameraOrbit.tilt) * (1 - Math.pow(0.02, dt));
   const k = cameraOrbit.tilt;
   const back = cameraOrbit.dist * 0.84 * (1 - 0.35 * k);
-  // on a slope the camera follows the ground (and stays above the ground behind the player)
-  const base = floorAt(p.x, p.z);
+  // on a slope the camera follows the ground (and stays above the ground behind the player); carried up in the air
+  // (the cable car), it follows the player
+  const base = lifted ? p.y : floorAt(p.x, p.z);
   const cx = p.x + Math.sin(cameraOrbit.yaw) * back;
   const cz = p.z + Math.cos(cameraOrbit.yaw) * back;
   const camY = cameraOrbit.dist * 0.55 * (1 - 0.8 * k) + 0.9 * k + base;
@@ -260,7 +262,8 @@ export function LocalPlayer({ name }: { name: string }) {
     if (!g.visible) g.visible = true;
 
     // --- in a rowing boat / pedalo / on the ferry: the boat carries the player (WASD / joystick steer it) ---
-    const boat = boatStep(dt, ix, iz);
+    const carried = carryStep();
+    const boat = carried ?? boatStep(dt, ix, iz);
     if (boat) {
       if (useSeat.getState().seat) useSeat.setState({ seat: null });
       g.position.set(boat.x, boat.y, boat.z);
@@ -272,7 +275,7 @@ export function LocalPlayer({ name }: { name: string }) {
       localPos.copy(g.position);
       localHeading.y = g.rotation.y;
       moveTarget.active = false;
-      placeCamera(camera, g.position, dt, false);
+      placeCamera(camera, g.position, dt, false, !!carried && boat.y > 0.5);
       // usables still work from the boat ("Get out" at a pier)
       interactAcc.current += dt;
       if (interactAcc.current >= 0.1) {

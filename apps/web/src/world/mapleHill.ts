@@ -172,3 +172,64 @@ registerSeats([
   ...[-1, 0, 1].map((k) => ({ x: SHELTER.x + k * 0.9, z: SHELTER.z + 0.55, rot: Math.PI })),
   ...PICNIC.flatMap((p) => [-0.45, 0.45].flatMap((dx) => [{ x: p.x + dx, z: p.z - 0.65, rot: 0 }, { x: p.x + dx, z: p.z + 0.65, rot: Math.PI }])),
 ]);
+
+/* ------------------------------------------------------------------------------------------- the cable car */
+/**
+ * A two-cabin cable car (jig-back) from the meadow up to the summit, on the shared clock: cabin 0 waits at the
+ * bottom, goes up, waits at the top, comes down; cabin 1 does the same half a period later. Stations and pylon:
+ * LPM cablecar_kit (cables at +-1.3 m either side of the line; the station wheel at 4.0 m, the pylon sheaves at 9.0 m;
+ * a cabin hangs 3.4 m under its grip; the pylon is drawn CC_PYLON_SCALE times taller).
+ */
+export const CC_BOTTOM = { x: 237, z: -462 };
+export const CC_TOP = { x: 212, z: -556 };
+const ccDx = CC_TOP.x - CC_BOTTOM.x;
+const ccDz = CC_TOP.z - CC_BOTTOM.z;
+export const CC_LEN = Math.hypot(ccDx, ccDz);
+/** Station / pylon rotation (their -Z towards the top) and the unit vectors along and across the line. */
+export const CC_ROT = Math.atan2(-ccDx, -ccDz);
+const along = { x: ccDx / CC_LEN, z: ccDz / CC_LEN };
+const across = { x: Math.cos(CC_ROT), z: -Math.sin(CC_ROT) };
+export const CC_PYLON = { x: CC_BOTTOM.x + ccDx * 0.5, z: CC_BOTTOM.z + ccDz * 0.5 };
+/** The pylon is drawn 1.5x taller than the model (the cabins ride high over the lake). */
+export const CC_PYLON_SCALE = 1.5;
+/** Stations are sunk so their 0.4 m platform is level with the path. */
+export const CC_SINK = -0.35;
+export const CC_WAIT = 15;
+export const CC_TRAVEL = 35;
+export const CC_PERIOD = 2 * (CC_WAIT + CC_TRAVEL);
+/** Cable height above sea level at s (0 = bottom station, 1 = top). */
+export function cableY(s: number): number {
+  const y0 = groundAt(CC_BOTTOM.x, CC_BOTTOM.z) + CC_SINK + 4.0;
+  const y1 = groundAt(CC_PYLON.x, CC_PYLON.z) + 9.0 * CC_PYLON_SCALE;
+  const y2 = groundAt(CC_TOP.x, CC_TOP.z) + CC_SINK + 4.0;
+  return s < 0.5 ? y0 + (y1 - y0) * (s / 0.5) : y1 + (y2 - y1) * ((s - 0.5) / 0.5);
+}
+/** A point on cable `side` (+1 / -1) at s. */
+export function cablePoint(s: number, side: number) {
+  return { x: CC_BOTTOM.x + ccDx * s + across.x * 1.3 * side, y: cableY(s), z: CC_BOTTOM.z + ccDz * s + across.z * 1.3 * side };
+}
+export type CabinState = { s: number; at: 'bottom' | 'top' | null; going: 'up' | 'down' | null; leftIn: number };
+/** Where cabin 0 / 1 is at time `ms` (server clock). leftIn = seconds until it leaves the station it waits at. */
+export function cabinAt(cabin: number, ms: number): CabinState {
+  const t = (((ms / 1000 + cabin * (CC_PERIOD / 2)) % CC_PERIOD) + CC_PERIOD) % CC_PERIOD;
+  const ease = (k: number) => k * k * (3 - 2 * k);
+  if (t < CC_WAIT) return { s: 0, at: 'bottom', going: null, leftIn: CC_WAIT - t };
+  if (t < CC_WAIT + CC_TRAVEL) return { s: ease((t - CC_WAIT) / CC_TRAVEL), at: null, going: 'up', leftIn: 0 };
+  if (t < 2 * CC_WAIT + CC_TRAVEL) return { s: 1, at: 'top', going: null, leftIn: 2 * CC_WAIT + CC_TRAVEL - t };
+  return { s: 1 - ease((t - 2 * CC_WAIT - CC_TRAVEL) / CC_TRAVEL), at: null, going: 'down', leftIn: 0 };
+}
+/** Cabin floor position (the grip on cable +1 for cabin 0, -1 for cabin 1). */
+export function cabinPose(cabin: number, ms: number) {
+  const c = cabinAt(cabin, ms);
+  const p = cablePoint(c.s, cabin === 0 ? 1 : -1);
+  return { ...c, x: p.x, y: p.y - 3.4 + 0.1, z: p.z };
+}
+/** Where you stand to get on (the station platform, in front of the cabin) and step off. */
+export const ccPlatform = (end: 'bottom' | 'top') => {
+  const b = end === 'bottom' ? CC_BOTTOM : CC_TOP;
+  const k = end === 'bottom' ? -2.2 : 2.2;
+  return { x: b.x + along.x * k, z: b.z + along.z * k };
+};
+registerBlockers([
+  { minX: CC_PYLON.x - 0.8, maxX: CC_PYLON.x + 0.8, minZ: CC_PYLON.z - 0.8, maxZ: CC_PYLON.z + 0.8 },
+]);

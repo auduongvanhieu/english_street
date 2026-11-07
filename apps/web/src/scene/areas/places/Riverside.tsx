@@ -12,6 +12,9 @@ import { useTrain } from '../../../store/train';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
+import { tripBoat, useTripRides } from '../../../store/tripRides';
+import { Chibi } from '../../chibi/Chibi';
+import { SHOPPER_CHIBI } from '../../npcLook';
 
 /**
  * Riverside village, reached by train (world/riverside.ts): the market square with five stalls, the river path,
@@ -89,6 +92,7 @@ function Ducks() {
 function Props() {
   const kit = useLpmParts('riverside_kit');
   const river = useLpmParts('river_kit');
+  const onTrip = useTripRides((s) => s.boat?.stage === 'ride');
   const m = (n: string) => kit[n]!;
   const mat = chibiMaterial();
   const wheel = useRef<THREE.Mesh>(null);
@@ -124,7 +128,7 @@ function Props() {
       {COTTAGES.map((c, i) => (
         <mesh key={i} geometry={m('SM_RS_Cottage')} material={mat} position={[c.x, 0, c.z]} rotation-y={c.rot} castShadow receiveShadow />
       ))}
-      {river['SM_RV_Rowboat'] ? <mesh geometry={river['SM_RV_Rowboat']} material={mat} position={[BOAT.x, 0.05, BOAT.z]} rotation-y={Math.PI / 2} /> : null}
+      {river['SM_RV_Rowboat'] && !onTrip ? <mesh geometry={river['SM_RV_Rowboat']} material={mat} position={[BOAT.x, 0.05, BOAT.z]} rotation-y={Math.PI / 2} /> : null}
       {WILLOWS.map(([x, z], i) => (
         <LpmModel key={i} slug="willow" position={[x, 0, z]} scale={2.2} rotation-y={i} />
       ))}
@@ -168,10 +172,30 @@ function Found() {
   );
 }
 
+/** Sam rowing the trip boat (the boat itself is drawn under the rider: prop "ride:rowboat"). */
+function Boatman() {
+  const g = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const b = tripBoat();
+    if (!g.current) return;
+    g.current.visible = !!b;
+    if (!b) return;
+    g.current.position.set(b.x + Math.sin(b.rot) * 0.95, 0.21, b.z + Math.cos(b.rot) * 0.95);
+    g.current.rotation.y = b.rot + Math.PI;
+  });
+  return (
+    <group ref={g} visible={false}>
+      <Chibi spec={SHOPPER_CHIBI[2]!} anim="sit" />
+    </group>
+  );
+}
+
 function Usables() {
   const t = useT();
   const riding = useTrain((s) => !!s.ride);
   const searching = useRiverside((s) => !!s.lost && !s.lost.done);
+  const boating = useTripRides((s) => !!s.boat);
+  useUsable(boating ? null : { id: 'riv-boattrip', x: BOAT.x, z: RIVER.z1 + 1.3, r: 1.8, icon: '🚣', label: t('Boat trip on the river (Sam)'), priority: true, use: () => useTripRides.getState().startBoat() });
   useUsable(riding ? null : { id: 'riv-train', x: 0, z: PLATFORM.z0 - 0.6, r: 3.5, icon: '🚆', label: t('Train to English Street Central'), priority: true, use: () => useTrain.getState().startReturn('Riverside') });
   useUsable({ id: 'riv-list', x: LIST_BOARD.x, z: LIST_BOARD.z + 1.1, r: 1.6, icon: '📝', label: t('Get a shopping list'), priority: true, use: () => useRiverside.getState().takeList() });
   // the farmers' market: sell what your own farm grew (better prices than the farm's bin)
@@ -220,6 +244,7 @@ export default function Riverside() {
       <Ducks />
       <Found />
       <Usables />
+      <Boatman />
     </group>
   );
 }

@@ -12,6 +12,7 @@ import { flagAt, swimTick, useBeach } from '../../../store/beach';
 import { useTrain } from '../../../store/train';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
+import BeachSports from './BeachSports';
 
 /**
  * Sunny Bay, the seaside reached by train (world/sunnyBay.ts): sand, the sea, the station at the top, the lifeguard
@@ -189,6 +190,7 @@ export default function SunnyBay() {
       <Props />
       <Finds />
       <Usables />
+      <BeachSports />
     </group>
   );
 }

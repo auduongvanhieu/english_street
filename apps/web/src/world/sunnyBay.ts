@@ -75,3 +75,16 @@ registerSeats([
   ...[-1, 0, 1].map((k) => ({ x: SHELTER.x + k * 0.9, z: SHELTER.z + 0.55, rot: Math.PI })),
   ...UMBRELLAS.filter((u) => u.chair).map((u) => ({ x: u.x + 1.2, z: u.z - 0.4, rot: Math.PI })),
 ]);
+
+/** Beach volleyball court: 16 (z) x 8 (x) around COURT, the net along x at COURT.z (poles at x +-4). We play on the
+ * north half (towards the promenade), the other team on the south half. */
+export const COURT = { x: -5, z: -482 };
+export const VOLLEY_SPOT = { x: COURT.x, z: COURT.z + 5 };
+/** The surf school rack on the sand, and where the lesson starts out at sea. */
+export const SURF_RACK = { x: 30, z: -507 };
+export const SURF_START = { x: 30, z: -534 };
+registerBlockers([
+  { minX: COURT.x - 4.15, maxX: COURT.x - 3.85, minZ: COURT.z - 0.15, maxZ: COURT.z + 0.15 },
+  { minX: COURT.x + 3.85, maxX: COURT.x + 4.15, minZ: COURT.z - 0.15, maxZ: COURT.z + 0.15 },
+  { minX: SURF_RACK.x - 1.5, maxX: SURF_RACK.x + 1.5, minZ: SURF_RACK.z - 0.5, maxZ: SURF_RACK.z + 0.5 },
+]);

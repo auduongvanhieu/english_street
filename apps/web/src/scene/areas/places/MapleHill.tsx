@@ -35,6 +35,7 @@ import { FORECAST, hikeTick, useHill } from '../../../store/hill';
 import { useTrain } from '../../../store/train';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
+import CableCar from './CableCar';
 
 /**
  * Maple Hill, the hills reached by train (world/mapleHill.ts): a meadow with the ranger cabin and a lake, a stream
@@ -293,6 +294,7 @@ export default function MapleHill() {
       <Pines />
       <Props />
       <Usables />
+      <CableCar />
     </group>
   );
 }

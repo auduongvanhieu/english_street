@@ -79,5 +79,13 @@ export const MINIGAMES = {
   tractor: { perPoint: 4, max: 12, perDay: 4 },
   /** cinema / train: sitting in the seat on your ticket */
   seatfind: { perPoint: 4, max: 4, perDay: 4 },
+  /** Sunny Bay beach volleyball: our points (0-7) */
+  volley: { perPoint: 2, max: 14, perDay: 4 },
+  /** Sunny Bay surf lesson: the instructor's calls done right (0-6) */
+  surf: { perPoint: 2, max: 12, perDay: 4 },
+  /** Maple Hill cable car: the questions after the ride (0-3) */
+  cablecar: { perPoint: 4, max: 12, perDay: 4 },
+  /** Riverside boat trip: the questions after the trip (0-3) */
+  boattrip: { perPoint: 4, max: 12, perDay: 4 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;
