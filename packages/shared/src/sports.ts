@@ -61,5 +61,10 @@ export const MINIGAMES = {
   oldtown: { perPoint: 3, max: 15, perDay: 4 },
   /** Word Relay (team game): a win 5, a loss 2, a draw 3 */
   relay: { perPoint: 3, max: 15, perDay: 6 },
+  /** the other team games: the same scoring as Word Relay */
+  hunt: { perPoint: 3, max: 15, perDay: 6 },
+  rush: { perPoint: 3, max: 15, perDay: 6 },
+  harvest: { perPoint: 3, max: 15, perDay: 6 },
+  draw: { perPoint: 3, max: 15, perDay: 6 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

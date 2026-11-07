@@ -59,7 +59,7 @@ import {
 } from '@es/shared';
 import { isBetaPass, isHumanPass, verifyToken } from '@es/shared/token';
 import { FarmChases, type ChaseClient } from './farmChase';
-import { WordRelay } from './teamGames';
+import { TeamGames } from './teamGames';
 import { Group, Player, StreetState } from './schema/StreetState';
 import { Football } from './football';
 import { Boats } from './boats';
@@ -247,8 +247,8 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.onMessage<TeamSend>(MSG.TEAM, (client, msg) => {
       const p = this.state.players.get(client.sessionId);
       if (!p || !msg || typeof msg !== 'object') return;
-      if (msg.op === 'hello') return this.relay.hello((m) => client.send(MSG.TEAM, m));
-      this.relay.onMessage(client.sessionId, p.name, msg);
+      if (msg.op === 'hello') return this.teams.hello(client.sessionId);
+      this.teams.onMessage(client.sessionId, p.name, msg);
     });
 
     // "My farm": a slot in the farm grid per farm owner, for as long as somebody is there
@@ -466,6 +466,10 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.setSimulationInterval((dtMs) => {
       if (this.football!.awake()) this.football!.step(Math.min(0.1, dtMs / 1000));
       if (this.chases.awake()) this.chases.step(Math.min(0.1, dtMs / 1000));
+      if (Date.now() - this.teamsTickAt >= 500) {
+        this.teamsTickAt = Date.now();
+        this.teams.tick(this.teamsTickAt);
+      }
       const now = Date.now();
       if (now - lastSecond < 1000) return;
       if (now - lastPlay >= 60_000) {
@@ -474,7 +478,6 @@ export class StreetRoom extends Room<{ state: StreetState }> {
       }
       lastSecond = now;
       this.expireBubbles();
-      this.relay.tick(now);
       this.boatsSim?.tick(now);
       if (now - lastHeat >= HEAT_EVERY_MS) {
         lastHeat = now;
@@ -666,7 +669,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
 
   onLeave(client: Client) {
-    this.relay.onMessage(client.sessionId, '', { op: 'leave' });
+    this.teams.onMessage(client.sessionId, '', { op: 'leave' });
     const ip = this.countedGuests.get(client.sessionId);
     if (ip !== undefined) {
       this.countedGuests.delete(client.sessionId);
@@ -767,8 +770,16 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     });
   }
 
-  /** Word Relay (rooms/teamGames.ts). */
-  private relay = new WordRelay((type, msg) => this.broadcast(type, msg));
+  private teamsTickAt = 0;
+  /** Team games (rooms/teamGames.ts). */
+  private teams = new TeamGames(
+    (type, msg) => this.broadcast(type, msg),
+    (session, msg) => this.clients.find((c) => c.sessionId === session)?.send(MSG.TEAM, msg),
+    (session) => {
+      const p = this.state.players.get(session);
+      return p ? { x: p.x, z: p.z } : null;
+    },
+  );
   /** Guard-dog chases on the farms (rooms/farmChase.ts). */
   private chases = new FarmChases(
     (session) => {

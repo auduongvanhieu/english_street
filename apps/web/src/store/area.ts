@@ -1,3 +1,4 @@
+import { myTeam, useTeamGame } from './teamGame';
 import { create } from 'zustand';
 import type { AreaContentDto, AreaId } from '@es/shared';
 import { fetchArea, fetchAreaLearned, sendAreaLearned } from '../net/api';
@@ -114,7 +115,9 @@ export const useArea = create<AreaStore>((set, get) => ({
     const first = !seen.includes(a);
     if (first) localStorage.setItem(LS_SEEN, JSON.stringify([...seen, a]));
     track('area_enter', { area: a, first });
-    set({ current: a, panel: first, tab: 'items', card: null });
+    // in a team game (a treasure hunt…) the area's welcome panel would cover the game
+    const playing = useTeamGame.getState().state?.phase === 'playing' && !!myTeam(useTeamGame.getState().state);
+    set({ current: a, panel: first && !playing, tab: 'items', card: null });
     void get().load(a);
   },
   setPanel(open, tab) {
