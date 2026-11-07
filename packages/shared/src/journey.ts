@@ -22,7 +22,7 @@ export interface JourneyGoal {
 export type JourneyGuide = { npc: string } | { area: AreaId } | { place: 'river' | 'ferry' | 'fishing' | 'kitchen' | 'kiosk' | 'library' };
 export interface JourneyStep {
   id: string;
-  kind: 'main' | 'area' | 'daily';
+  kind: 'main' | 'area' | 'daily' | 'story';
   area?: AreaId | 'river';
   goal: JourneyGoal;
   reward: { xp: number; coins: number };
@@ -91,6 +91,21 @@ export const DAILY_POOL: JourneyStep[] = [
   { id: 'd-room', kind: 'daily', goal: { event: 'home_place' }, reward: R(10, 3), guide: { area: 'home' } },
   { id: 'd-train', kind: 'daily', goal: { event: 'minigame_done', where: { game: 'train' } }, reward: R(15, 3), guide: { area: 'station' } },
 ];
+/**
+ * "A day in English Street": eight steps from morning to night, one after the other, new every day (Vietnam day).
+ * `hour` is the time of day the step is set at (for the story text and the clock icon).
+ */
+export const STORY_STEPS: (JourneyStep & { hour: number })[] = [
+  { id: 's1-morning', kind: 'story', hour: 7, goal: { event: 'npc_open', where: { npc: 'barista' } }, reward: R(10, 3), guide: { npc: 'barista' } },
+  { id: 's2-bus', kind: 'story', hour: 8, goal: { event: 'bus_ride', where: { to: 'school' } }, reward: R(10, 3) },
+  { id: 's3-class', kind: 'story', hour: 9, goal: { event: 'minigame_done', where: { game: 'class' } }, reward: R(15, 4), guide: { area: 'school' } },
+  { id: 's4-lunch', kind: 'story', hour: 12, goal: { event: 'restaurant_order' }, reward: R(10, 3), guide: { area: 'restaurant' } },
+  { id: 's5-shopping', kind: 'story', hour: 15, goal: { event: 'shopping_done' }, reward: R(10, 3), guide: { area: 'supermarket' } },
+  { id: 's6-play', kind: 'story', hour: 17, goal: { event: 'minigame_done', where: { game: [...PLAY, 'zookeeper', 'farmhand'] } }, reward: R(10, 3), guide: { area: 'sports' } },
+  { id: 's7-film', kind: 'story', hour: 19, goal: { event: 'minigame_done', where: { game: 'movie' } }, reward: R(10, 3), guide: { area: 'cinema' } },
+  { id: 's8-night', kind: 'story', hour: 22, goal: { event: ['home_room_enter', 'hotel_checkin'] }, reward: R(10, 3), guide: { area: 'home' } },
+];
+export const STORY_BONUS = R(50, 20);
 export const DAILY_COUNT = 3;
 export const DAILY_BONUS = R(20, 10);
 
@@ -150,7 +165,7 @@ export const INVITE_REWARD = R(40, 20);
 export const INVITEE_BONUS = R(20, 10);
 export const INVITE_PAY_STEP = 'm02-coffee';
 
-export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL];
+export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL, ...STORY_STEPS];
 export const stepById = (id: string) => ALL_STEPS.find((s) => s.id === id);
 
 /** Saved per player (User.gameState.journey). */
@@ -169,6 +184,9 @@ export interface JourneyState {
   tracked: string[];
   /** friends who joined with my invite link and finished chapter 2 */
   invited?: number;
+  /** "A day in English Street": steps done today (index of the next one) and whether today's bonus was paid */
+  story?: number;
+  storyBonus?: boolean;
 }
 /** What the API sends to the game. */
 export interface JourneyView {

@@ -80,8 +80,20 @@ const AREA: Record<string, Text> = {
   fish: { title: tk('Catch 3 fish'), how: tk('Go fishing at the end of a boat pier.') },
 };
 
+/** "A day in English Street": morning to night. */
+const STORY: Record<string, Text> = {
+  's1-morning': { title: tk('Good morning!'), how: tk('Start your day at the café: say good morning to Maya, the barista.'), say: 'Good morning! A coffee, please.' },
+  's2-bus': { title: tk('The bus to school'), how: tk('Take a bus from any bus stop to Maple School.'), say: 'Does this bus go to the school?' },
+  's3-class': { title: tk('Lesson time'), how: tk('Sit in the classroom when the bell rings, listen and answer the questions.'), say: 'Can I answer, please?' },
+  's4-lunch': { title: tk('Lunch break'), how: tk('Have lunch at the restaurant: sit down and order a meal.'), say: "I'd like the soup of the day, please." },
+  's5-shopping': { title: tk('Afternoon shopping'), how: tk('Buy what is on a shopping list at the supermarket and pay.'), say: 'Where can I find the milk?' },
+  's6-play': { title: tk('Play time'), how: tk('Play a game at the sports park, or help at the zoo or the farm.'), say: "Let's play football!" },
+  's7-film': { title: tk('An evening film'), how: tk('Watch a film in Screen 1 at Star Cinema and answer the questions.'), say: 'Two tickets for the seven o\'clock show, please.' },
+  's8-night': { title: tk('Good night!'), how: tk('Go home to My room (or check in at the hotel) at the end of the day.'), say: 'Good night! See you tomorrow.' },
+};
+
 export function stepText(s: JourneyStep): { title: string; how: string; say?: string } {
-  const pick = s.kind === 'main' ? MAIN[s.id] : s.kind === 'daily' ? DAILY[s.id] : AREA[s.id.split('-').slice(2).join('-')];
+  const pick = s.kind === 'main' ? MAIN[s.id] : s.kind === 'daily' ? DAILY[s.id] : s.kind === 'story' ? STORY[s.id] : AREA[s.id.split('-').slice(2).join('-')];
   return pick ? { title: t(pick.title), how: t(pick.how), say: pick.say } : { title: s.id, how: '' };
 }
 export function areaName(a: AreaId | 'river') {

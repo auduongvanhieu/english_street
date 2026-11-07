@@ -55,7 +55,9 @@ export function JourneyToasts() {
               ? t('Your friend joined English Street!')
               : x.id === 'welcome'
                 ? t('Welcome bonus from your friend')
-                : t('Daily bonus');
+                : x.id === 'story-bonus'
+                  ? t('A whole day in English Street!')
+                  : t('Daily bonus');
         return (
           <button key={x.key} type="button" onClick={() => useJourney.getState().dismiss(x.key)} className="pointer-events-auto animate-[pop_.3s_ease-out] rounded-2xl bg-emerald-600 px-4 py-3 text-left text-white shadow-2xl">
             <div className="text-xs font-semibold uppercase opacity-80">✅ {t('Done!')}</div>

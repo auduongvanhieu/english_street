@@ -1,6 +1,8 @@
 import {
   AREA_STEPS,
   DAILY_BONUS,
+  STORY_BONUS,
+  STORY_STEPS,
   DAILY_POOL,
   INVITEE_BONUS,
   INVITE_PAY_STEP,
@@ -35,7 +37,7 @@ function fresh(playerId: string): JourneyState {
 function rollDay(st: JourneyState, playerId: string) {
   const day = today();
   if (st.day === day) return;
-  Object.assign(st, { day, daily: dailyFor(playerId, day), dailyDone: [], dailyProg: {}, dailyBonus: false });
+  Object.assign(st, { day, daily: dailyFor(playerId, day), dailyDone: [], dailyProg: {}, dailyBonus: false, story: 0, storyBonus: false });
 }
 export const stampsOf = (st: JourneyState) => STAMP_AREAS.filter((a) => AREA_STEPS.filter((s) => s.area === a).every((s) => st.done.includes(s.id)));
 export const chapterOf = (st: JourneyState) => {
@@ -44,7 +46,7 @@ export const chapterOf = (st: JourneyState) => {
 };
 
 /** Apply one event to a state (no saving). Returns the steps it finished and a new stamp, if any. */
-export function applyEvent(st: JourneyState, name: string, props: Record<string, unknown>): { done: JourneyStep[]; stamp?: string; dailyBonus: boolean } {
+export function applyEvent(st: JourneyState, name: string, props: Record<string, unknown>): { done: JourneyStep[]; stamp?: string; dailyBonus: boolean; storyBonus: boolean } {
   const done: JourneyStep[] = [];
   const bump = (s: JourneyStep, prog: Record<string, number>) => {
     if (!goalMatches(s.goal, name, props)) return false;
@@ -77,7 +79,19 @@ export function applyEvent(st: JourneyState, name: string, props: Record<string,
     st.dailyBonus = true;
     dailyBonus = true;
   }
-  return { done, stamp, dailyBonus };
+  // a day in English Street: only the next step counts
+  const si = st.story ?? 0;
+  const next = STORY_STEPS[si];
+  if (next && goalMatches(next.goal, name, props)) {
+    st.story = si + 1;
+    done.push(next);
+  }
+  let storyBonus = false;
+  if ((st.story ?? 0) >= STORY_STEPS.length && !st.storyBonus) {
+    st.storyBonus = true;
+    storyBonus = true;
+  }
+  return { done, stamp, dailyBonus, storyBonus };
 }
 
 type Push = (uid: string, ev: JourneyEvent) => Promise<unknown>;
@@ -119,7 +133,7 @@ export class Journey {
     const rows = await prisma.event.findMany({ where: { playerId }, orderBy: { createdAt: 'asc' }, take: 5000, select: { name: true, props: true } }).catch(() => []);
     for (const r of rows) applyEvent(st, r.name, (r.props ?? {}) as Record<string, unknown>);
     // the backfill must not hand out today's tasks for old events
-    Object.assign(st, { dailyDone: [], dailyProg: {}, dailyBonus: false });
+    Object.assign(st, { dailyDone: [], dailyProg: {}, dailyBonus: false, story: 0, storyBonus: false });
   }
 
   private async week(): Promise<WeekRow> {
@@ -204,7 +218,7 @@ export class Journey {
     const { gs, st, isNew } = await this.load(pid);
     if (isNew) await this.backfill(pid, st);
     const r = applyEvent(st, name, props);
-    if (!r.done.length && !r.dailyBonus && !isNew) return;
+    if (!r.done.length && !r.dailyBonus && !r.storyBonus && !isNew) return;
     await this.save(pid, gs, st);
     const paid: JourneyEvent['done'] = [];
     for (const s of r.done) {
@@ -215,6 +229,11 @@ export class Journey {
     if (r.dailyBonus) {
       await this.repo.reward(pid, DAILY_BONUS.xp, DAILY_BONUS.coins, 'journey');
       paid.push({ id: 'daily-bonus', ...DAILY_BONUS });
+    }
+    if (r.storyBonus) {
+      await this.repo.reward(pid, STORY_BONUS.xp, STORY_BONUS.coins, 'journey');
+      paid.push({ id: 'story-bonus', ...STORY_BONUS });
+      await this.repo.logEvent({ name: 'journey_story', playerId: pid, props: {} });
     }
     // invited by a friend: when I finish chapter 2, we both get something
     const inv = gs as { invitedBy?: string; invitePaid?: boolean };

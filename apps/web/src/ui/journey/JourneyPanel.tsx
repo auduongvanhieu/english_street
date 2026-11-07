@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, type JourneyStep } from '@es/shared';
+import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
 import { getPlayerId } from '../../net/player';
 import { Panel, DailyContent } from '../ProfilePanels';
 import { useJourney } from '../../store/journey';
@@ -11,7 +11,7 @@ import { areaName, stepText } from './journeyText';
  * The Journey book (📋): the main chapters, the area passport with its stamps, today's tasks and the old daily
  * conversation quests. Every unfinished step has "Take me there".
  */
-type Tab = 'journey' | 'passport' | 'today';
+type Tab = 'journey' | 'day' | 'passport' | 'today';
 
 function StepRow({ s, done, progress, current }: { s: JourneyStep; done: boolean; progress?: number; current?: boolean }) {
   const t = useT();
@@ -64,6 +64,7 @@ export function JourneyPanel() {
   const st = view?.state;
   const tabs: [Tab, string][] = [
     ['journey', `⭐ ${t('Journey')}`],
+    ['day', `🌅 ${t('My day')}`],
     ['passport', `🛂 ${t('Passport')}`],
     ['today', `📅 ${t('Today')}`],
   ];
@@ -87,6 +88,21 @@ export function JourneyPanel() {
             {MAIN_STEPS.map((s, i) => (i <= view.chapter + 1 || st.done.includes(s.id) ? <StepRow key={s.id} s={s} done={st.done.includes(s.id)} progress={st.prog[s.id]} current={i === view.chapter} /> : null))}
           </ol>
           {view.chapter + 2 < MAIN_STEPS.length ? <p className="mt-2 text-center text-xs text-gray-400">🔒 {t('{n} more chapters to discover', { n: MAIN_STEPS.length - view.chapter - 2 })}</p> : null}
+        </>
+      ) : tab === 'day' ? (
+        <>
+          <p className="mb-2 text-sm text-gray-600">{t('A day in English Street: from morning to night, one step after another. New every day. All 8: +{xp} XP, +{coins} coins.', STORY_BONUS)}</p>
+          <ol className="space-y-2">
+            {STORY_STEPS.map((s, i) => (
+              <li key={s.id} className="flex items-start gap-2">
+                <span className="w-12 shrink-0 pt-3 text-right font-mono text-xs text-gray-500">{String(s.hour).padStart(2, '0')}:00</span>
+                <div className="min-w-0 flex-1">
+                  <StepRow s={s} done={i < (st.story ?? 0)} current={i === (st.story ?? 0)} />
+                </div>
+              </li>
+            ))}
+          </ol>
+          {st.storyBonus ? <p className="mt-2 rounded-lg bg-green-50 p-2 text-center text-sm text-green-800">🌙 {t('What a day! Come back tomorrow for a new one.')}</p> : null}
         </>
       ) : tab === 'passport' ? (
         <>

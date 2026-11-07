@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AREA_STEPS, MAIN_STEPS, dailyFor, weekKey, weeklyFor, type JourneyState } from '@es/shared';
-import { applyEvent, chapterOf, stampsOf } from './engine';
+import { applyEvent, chapterOf, stampsOf, today } from './engine';
 
 const fresh = (daily: string[] = []): JourneyState => ({ done: [], prog: {}, day: '2026-11-06', daily, dailyDone: [], dailyProg: {}, dailyBonus: false, tracked: [] });
 
@@ -56,4 +56,16 @@ test('daily picks and weekly are stable', () => {
   assert.equal(new Set(dailyFor('player-1', '2026-11-06')).size, 3);
   assert.match(weekKey(Date.UTC(2026, 10, 6)), /^2026-W4[45]$/);
   assert.ok(weeklyFor('2026-W45').id.startsWith('w-'));
+});
+
+test('a day in English Street: steps in order, bonus once, new every day', () => {
+  const st: JourneyState = { done: [], prog: {}, day: today(), daily: [], dailyDone: [], dailyProg: {}, dailyBonus: false, tracked: [] };
+  // out of order: the class does not count before breakfast
+  assert.ok(applyEvent(st, 'minigame_done', { game: 'class' }).done.length === 0);
+  assert.ok(applyEvent(st, 'npc_open', { npc: 'barista' }).done.some((s) => s.id === 's1-morning'));
+  assert.ok(applyEvent(st, 'bus_ride', { to: 'school' }).done.some((s) => s.id === 's2-bus'));
+  for (const [n, p] of [['minigame_done', { game: 'class' }], ['restaurant_order', {}], ['shopping_done', {}], ['minigame_done', { game: 'hoops' }], ['minigame_done', { game: 'movie' }]] as const) applyEvent(st, n, p);
+  const last = applyEvent(st, 'home_room_enter', {});
+  assert.ok(last.storyBonus && st.story === 8);
+  assert.ok(!applyEvent(st, 'home_room_enter', {}).storyBonus);
 });
