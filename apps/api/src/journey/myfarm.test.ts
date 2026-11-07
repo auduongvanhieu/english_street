@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANIMAL_INFO, BARN_BASE, CROP_SELL, FARM_DAY_CAP, FARM_LEVELS, MY_GROW_MS, PRODUCT_SELL, applyMyFarm, emptyMyFarm, farmLevel, makeOrder, normalizeMyFarm } from '@es/shared';
+import { ANIMAL_INFO, BARN_BASE, CROP_SELL, FARM_DAY_CAP, FARM_LEVELS, MY_GROW_MS, PRODUCT_SELL, applyMyFarm, emptyMyFarm, farmLevel, makeOrder, normalizeMyFarm, type MyFarmState } from '@es/shared';
 
 test('my farm: seeds, coins, growing, animals, the daily sale cap', () => {
   const day = '2026-11-07';
@@ -128,7 +128,7 @@ test('my farm v2: levels, regrowing crops, fertilizer, the barn, orders, water /
 test('my farm v2: the workshop and the farm goals', async () => {
   const { RECIPES, MACHINE_INFO, FARM_GOALS } = await import('@es/shared');
   const day = '2026-11-08';
-  let f = { ...normalizeMyFarm(emptyMyFarm()), farmXp: FARM_LEVELS[2]!, barn: { wheat: 6 } };
+  let f: MyFarmState = { ...normalizeMyFarm(emptyMyFarm()), farmXp: FARM_LEVELS[2]!, barn: { wheat: 6 } };
   assert.equal(applyMyFarm(f, { action: 'craft', recipe: 'bread' }, 1000, 0, day).error, 'no_machine');
   const bought = applyMyFarm(f, { action: 'buy', item: 'machine:bakery', qty: 1 }, 1000, 500, day);
   assert.equal(bought.coins, -MACHINE_INFO.bakery.price);
