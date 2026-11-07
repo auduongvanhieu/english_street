@@ -5,16 +5,18 @@ import { applyEvent, chapterOf, stampsOf, today } from './engine';
 
 const fresh = (daily: string[] = []): JourneyState => ({ done: [], prog: {}, day: '2026-11-06', daily, dailyDone: [], dailyProg: {}, dailyBonus: false, tracked: [] });
 
-test('main chapters go in order, only the current one counts', () => {
+test('main chapters count in any order; the current one is the first not done', () => {
   const st = fresh();
-  // chapter 2's event first: nothing (chapter 1 is current)
-  assert.equal(applyEvent(st, 'avatar_save', {}).done.length, 0);
+  // a later chapter first (the coffee): it counts, chapter 1 stays current
+  assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'failed' }).done.length, 0);
+  assert.deepEqual(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.map((s) => s.id), ['m02-coffee']);
+  assert.equal(chapterOf(st), 0);
   assert.deepEqual(applyEvent(st, 'npc_open', { npc: 'guide' }).done.map((s) => s.id), ['m01-hello']);
   assert.equal(chapterOf(st), 1);
-  assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.length, 0);
   assert.deepEqual(applyEvent(st, 'avatar_save', {}).done.map((s) => s.id), ['m03-look']);
-  // the same event again pays nothing
+  // the same events again pay nothing
   assert.equal(applyEvent(st, 'avatar_save', {}).done.length, 0);
+  assert.equal(applyEvent(st, 'quest_end', { npc: 'barista', status: 'completed' }).done.length, 0);
 });
 
 test('counts, lists of values, area stamps', () => {
@@ -26,8 +28,8 @@ test('counts, lists of values, area stamps', () => {
   assert.equal(r.stamp, 'zoo');
   assert.deepEqual(stampsOf(st), ['zoo']);
   // tip must be 10/15/20 and right
-  assert.equal(applyEvent(st, 'restaurant_pay', { tip: 0, ok: true }).done.length, 0);
-  assert.equal(applyEvent(st, 'restaurant_pay', { tip: 15, ok: false }).done.length, 0);
+  assert.ok(!applyEvent(st, 'restaurant_pay', { tip: 0, ok: true }).done.some((s) => s.id === 'a-restaurant-tip'));
+  assert.ok(!applyEvent(st, 'restaurant_pay', { tip: 15, ok: false }).done.some((s) => s.id === 'a-restaurant-tip'));
   assert.ok(applyEvent(st, 'restaurant_pay', { tip: 15, ok: true }).done.some((s) => s.id === 'a-restaurant-tip'));
 });
 

@@ -190,6 +190,8 @@ export interface JourneyState {
   /** "A day in English Street": steps done today (index of the next one) and whether today's bonus was paid */
   story?: number;
   storyBonus?: boolean;
+  /** main chapters count in any order (2026-11-07); set once the old events were looked at again */
+  mainAny?: boolean;
 }
 /** What the API sends to the game. */
 export interface JourneyView {
