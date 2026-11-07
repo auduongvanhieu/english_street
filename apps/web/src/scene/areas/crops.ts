@@ -222,7 +222,23 @@ function strawberry(p: Part, o: V, g: number, ready: boolean, r: () => number) {
   }
 }
 
-const BUILD: Record<Crop, typeof carrot> = { carrot, corn, tomato, potato, pumpkin, strawberry };
+function wheat(p: Part, o: V, g: number, ready: boolean, r: () => number) {
+  // a tuft of stalks; ripe: golden with heavy ears
+  const n = 5;
+  const h = 0.12 + 0.55 * g;
+  const stalk = ready ? '#d9b24c' : g > 0.7 ? '#a9b84a' : '#6fae45';
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + r() * 0.5;
+    const lean = 0.05 + r() * 0.08;
+    const base: V = [o[0] + Math.sin(a) * 0.05, o[1], o[2] + Math.cos(a) * 0.05];
+    const top: V = [base[0] + Math.sin(a) * lean, o[1] + h * (0.85 + r() * 0.3), base[2] + Math.cos(a) * lean];
+    stem(p, stalk, base, top, 0.008, 0.006, 4);
+    if (g > 0.5) ball(p, ready ? '#e8c35a' : '#b9c460', [top[0], top[1] + 0.05, top[2]], 0.025, [1, 2.6, 1], 5);
+    leaf(p, ready ? '#c9a548' : '#5f9e3c', [base[0], o[1] + h * 0.3, base[2]], a + 1.2, 0.5, 0.1 + 0.08 * g, 0.025, 0.01);
+  }
+}
+
+const BUILD: Record<Crop, typeof carrot> = { carrot, corn, tomato, potato, pumpkin, strawberry, wheat };
 
 /** Where the plants of one plot stand (plot-local, metres): big pumpkins get four spots, the rest nine. */
 function spots(crop: Crop): [number, number][] {

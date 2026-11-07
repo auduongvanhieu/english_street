@@ -16,7 +16,7 @@ import { useVoice } from './voice';
  * "My farm" in the game: going in (the game server gives the farm a slot in this zone), your farm's state from
  * the API, actions (run locally first, then confirmed by the API), and visiting a friend's farm (read-only).
  */
-export type FarmPanel = 'shop' | 'barn' | 'settings' | 'train' | { plot: number } | null;
+export type FarmPanel = 'shop' | 'barn' | 'orders' | 'settings' | 'train' | { plot: number } | null;
 export type StealError = 'steal_guest' | 'steal_level' | 'friends_only' | 'steal_busy' | 'steal_limit' | 'steal_not_ready' | 'steal_taken' | 'steal_limit' | 'closed';
 interface MyFarmStore {
   /** the farm you are in (or going to): owner id, name, slot (-1 = waiting for the server) */
@@ -29,6 +29,8 @@ interface MyFarmStore {
   day: string;
   loaded: boolean;
   panel: FarmPanel;
+  /** the farm just reached this level (the level-up card) */
+  levelUp: number | null;
   last: { said: string; xp: number; coins: number; error?: MyFarmError | StealError; note?: string; at: number } | null;
   /** you are running from a farm dog */
   chase: { dog: string; crop: string; at: number } | null;
@@ -73,6 +75,7 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   day: '',
   loaded: false,
   panel: null,
+  levelUp: null,
   last: null,
   chase: null,
   dogAt: null,
@@ -165,8 +168,9 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
       return;
     }
     set({ mine: local.farm, coins: s.coins + local.coins, last: { said: local.said, xp: local.xp, coins: local.coins, at: Date.now() } });
+    if (local.levelUp) set({ levelUp: local.levelUp });
     if (local.said) say(local.said);
-    if (a.action === 'water') farmFx('water');
+    if (a.action === 'water' || a.action === 'waterAll' || a.action === 'fertilize') farmFx('water');
     else if (a.action === 'feed' || a.action === 'dogfeed') farmFx('feed');
     try {
       const r = await post<Reply>(`/me/myfarm${q()}`, { ...a, playerId: getPlayerId() });
@@ -182,7 +186,12 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
 
 /** Messages from the game server: the farm's slot (walk in through the gate), the dog in a chase, the end. */
 export function initMyFarm() {
-  return onFarm((m) => {
+  // the farm is known outside it too ("Your crops are ready!")
+  void useMyFarm.getState().load();
+  const iv = window.setInterval(() => {
+    if (!useMyFarm.getState().at) void useMyFarm.getState().load();
+  }, 120_000);
+  const off = onFarm((m) => {
     const st = useMyFarm.getState();
     if (m.op === 'slot') {
       const at = st.at;
@@ -206,4 +215,8 @@ export function initMyFarm() {
       useMyFarm.setState({ last: { said: '', xp: 0, coins: 0, note: tr('{name} is stealing from your farm! Your dog is running after them.', { name: m.thief }), at: Date.now() } });
     }
   });
+  return () => {
+    off();
+    window.clearInterval(iv);
+  };
 }

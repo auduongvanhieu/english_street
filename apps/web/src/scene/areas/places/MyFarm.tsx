@@ -11,13 +11,13 @@ import { Merged, Sign, box, fenceRect } from '../kit';
 import { Animal } from '../Animal';
 import { Marker, Plants } from '../Farm';
 import { enclosurePath } from '../../../world/zooLayout';
-import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, LOG_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
+import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, LOG_BOARD, ORDER_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
 import { setDynamicBlockers } from '../../../world/layout';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 import { TimerBar, timeLeft } from './TimerBar';
-import { GROW_MS } from '@es/shared';
+import { MY_GROW_MS } from '@es/shared';
 
 /** The farm clock (server time). */
 const farmNow = () => Date.now() + useMyFarm.getState().skew;
@@ -88,7 +88,7 @@ function Plots({ plots, now, fields }: { plots: MyPlot[]; now: number; fields: n
           <group key={i} position={[x, 0, z]}>
             {pl.crop ? <Plants crop={pl.crop} stage={st.stage} progress={st.progress} /> : null}
             {st.stage === 'seed' ? <Marker kind="water" y={0.9} /> : null}
-            {st.stage === 'growing' && pl.crop ? <TimerBar from={pl.wateredAt} ms={GROW_MS[pl.crop]} now={farmNow} y={pl.crop === 'corn' ? 2.4 : 1.5} /> : null}
+            {st.stage === 'growing' && pl.crop ? <TimerBar from={pl.wateredAt} ms={MY_GROW_MS[pl.crop]} now={farmNow} y={pl.crop === 'corn' ? 2.4 : 1.5} /> : null}
             {st.stage === 'ready' ? <Marker kind="ready" y={pl.crop === 'corn' ? 2.3 : 1.3} /> : null}
           </group>
         );
@@ -151,14 +151,17 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
   useUsable({ id: 'myfarm-gate', ...W(0, MY_FARM.d / 2 - 0.9), r: 1.8, icon: '🚪', label: t('Leave the farm'), priority: true, use: () => useMyFarm.getState().leave() });
   useUsable(mine ? { id: 'myfarm-shop', ...W(SHOP.x, SHOP.z - 1.1), r: 1.6, icon: '🛒', label: t('Farm shop'), priority: true, use: () => useMyFarm.getState().setPanel('shop') } : null);
   useUsable({ id: 'myfarm-log', ...W(LOG_BOARD.x, LOG_BOARD.z - 1.1), r: 1.6, icon: '📋', label: mine ? t('Farm notice board') : t('Leave a note for your friend'), priority: true, use: () => useMyFarm.getState().setPanel('settings') });
+  useUsable(mine ? { id: 'myfarm-orders', ...W(ORDER_BOARD.x, ORDER_BOARD.z - 1.1), r: 1.5, icon: '📋', label: t('Farm orders'), priority: true, use: () => useMyFarm.getState().setPanel('orders') } : null);
   useUsable(mine ? { id: 'myfarm-bin', ...W(BIN.x + 1.3, BIN.z), r: 1.6, icon: '💰', label: t('Sell my produce'), priority: true, use: () => useMyFarm.getState().setPanel('barn') } : null);
   for (let i = 0; i < MAX_FIELDS * FIELD_PLOTS; i++) {
     const { x, z } = plotPos(i);
     const owned = i < farm.fields * FIELD_PLOTS;
     const p = farm.plots[i];
     const st = myPlotStage(p, now).stage;
-    const label = !owned ? t('Buy more fields') : st === 'empty' ? t('Plant seeds') : st === 'seed' ? t('Water the plants') : st === 'ready' ? t('Harvest') : p?.crop && p.wateredAt ? t('Growing… ready in {time}', { time: timeLeft(p.wateredAt + GROW_MS[p.crop] - now) }) : t('Growing…');
-    const icon = !owned ? '🪧' : st === 'empty' ? '🌱' : st === 'seed' ? '💧' : st === 'ready' ? '🧺' : '⏳';
+    const label = !owned ? t('Buy more fields') : st === 'empty' ? t('Plant seeds') : st === 'seed' ? t('Water the plants') : st === 'ready' ? t('Harvest') : p?.crop && p.wateredAt ? farm.fertilizer > 0
+          ? t('Ready in {time} · use fertilizer ({n})', { time: timeLeft(p.wateredAt + MY_GROW_MS[p.crop] - now), n: farm.fertilizer })
+          : t('Growing… ready in {time}', { time: timeLeft(p.wateredAt + MY_GROW_MS[p.crop] - now) }) : t('Growing…');
+    const icon = !owned ? '🪧' : st === 'empty' ? '🌱' : st === 'seed' ? '💧' : st === 'ready' ? '🧺' : farm.fertilizer > 0 ? '🧪' : '⏳';
     // a friend's ripe plot: take one piece (secretly…)
     const vp = view?.plots[i];
     const ripe = !mine && view && i < view.fields * FIELD_PLOTS && vp && !vp.stolen && myPlotStage(vp, now).stage === 'ready';
@@ -184,6 +187,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
               if (st === 'empty') return a.setPanel({ plot: i });
               if (st === 'seed') return void a.act({ action: 'water', plot: i });
               if (st === 'ready') return void a.act({ action: 'harvest', plot: i });
+              if (st === 'growing' && a.mine.fertilizer > 0) return void a.act({ action: 'fertilize', plot: i });
             },
           }
         : null,
@@ -380,6 +384,7 @@ export default function MyFarm() {
           <>
             <Sign x={SHOP.x} z={SHOP.z} text="FARM SHOP" sub="seeds · animals · feed" color="#2f6b3a" y={1.2} rot={Math.PI} />
             <Sign x={BIN.x} z={BIN.z - 0.9} text="SELL" color="#c0392b" y={1.2} />
+            <Sign x={ORDER_BOARD.x} z={ORDER_BOARD.z} text="ORDERS" sub="deliver · earn more" color="#b5651d" y={1.2} rot={Math.PI} />
           </>
         ) : null}
         <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />

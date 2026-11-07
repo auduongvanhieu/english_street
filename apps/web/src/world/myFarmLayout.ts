@@ -31,6 +31,8 @@ export const BARN = { x: -11, z: -12, w: 16, d: 9.5 };
 export const BIN = { x: -1.5, z: -9 };
 export const SHOP = { x: 5, z: 16.4 };
 export const LOG_BOARD = { x: -5, z: 16.4 };
+/** The order board (people in the street order farm goods), next to the shop board. */
+export const ORDER_BOARD = { x: 7.6, z: 16.4 };
 export const DOG_HOUSE = { x: 1, z: 9 };
 
 /** Garden decoration (LPM assets-src/lpm/recipes/farm_garden.py): flower boxes, bushes, sunflowers, apple trees outside the fence, flower clumps. */
@@ -106,6 +108,7 @@ export const LOCAL_BLOCKERS: Aabb[] = (() => {
     box(BIN.x, BIN.z, 0.7, 0.5),
     box(SHOP.x, SHOP.z, 1.1, 0.15),
     box(LOG_BOARD.x, LOG_BOARD.z, 1.1, 0.15),
+    box(ORDER_BOARD.x, ORDER_BOARD.z, 0.85, 0.15),
   ];
   for (const p of PENS) out.push(box((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, (p.z1 - p.z0) / 2));
   for (const d of DECOR) {

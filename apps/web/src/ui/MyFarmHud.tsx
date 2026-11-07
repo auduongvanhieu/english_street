@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, GROW_MS, HARVEST_QTY, DOG_COMMANDS, DOG_PRICE, DOG_TRAIN_PER_DAY, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, dogLevel, shopPrice, type VisitMode } from '@es/shared';
+import { ANIMALS, ANIMAL_INFO, CROPS, CROP_SELL, MY_GROW_MS, HARVEST_QTY, DOG_COMMANDS, DOG_PRICE, DOG_TRAIN_PER_DAY, FARM_DAY_CAP, FIELD_PLOTS, MAX_FIELDS, PRODUCT_SELL, SEED_PRICE, barnValue, dogLevel, shopPrice, type VisitMode } from '@es/shared';
 import { breath } from '../scene/LocalPlayer';
 import { useMyFarm } from '../store/myFarm';
 import { Icon } from './icons';
 import { useT } from '../i18n';
 import { useVoice } from '../store/voice';
 import { useExpire } from './useExpire';
+import { FarmBook, FarmTopBar, LevelUpCard, RipeNotice } from './myfarm/FarmBook';
 
 /** Whole minutes (at least 1) of a duration. */
 const mins = (ms: number) => Math.max(1, Math.round(ms / 60000));
-const CROP_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
+const CROP_ICON: Record<string, string> = { carrot: '🥕', corn: '🌽', tomato: '🍅', potato: '🥔', pumpkin: '🎃', strawberry: '🍓', wheat: '🌾', egg: '🥚', milk: '🥛', wool: '🧶', truffle: '🍄' };
 const ERRORS: Record<string, string> = {
   no_dog: 'You have no dog yet. Buy one in the farm shop.',
   dog_fed: 'Your dog has had its dinner today.',
@@ -37,7 +38,13 @@ const ERRORS: Record<string, string> = {
   coins: 'Not enough coins yet.',
   bad_item: 'You cannot buy that.',
   nothing_to_sell: 'There is nothing to sell.',
-  day_cap: 'You sold enough today. Come back tomorrow!',
+  day_cap: 'You earned enough on the farm today. Come back tomorrow!',
+  locked: 'Your farm level is too low for that. Keep farming!',
+  barn_full: 'Your barn is full. Sell something or build a bigger barn.',
+  no_fertilizer: 'You have no fertilizer. Buy some in the farm shop.',
+  no_order: 'That order is gone.',
+  missing: 'You do not have everything for this order yet.',
+  nothing: 'There is nothing to do there right now.',
   closed: 'This farm is closed to visitors.',
   friends_only: 'Only friends can visit this farm.',
 };
@@ -73,22 +80,10 @@ export function MyFarmHud() {
   return (
     <>
 
-      {at && at.slot >= 0 ? (
-        <div data-ui className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.4rem)] z-20 sm:top-[9.4rem]">
-          <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-white/90 py-1 pe-1 ps-3 text-xs text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md">
-            <span className="font-semibold">🌾 {view ? t("{name}'s farm", { name: at.name }) : t('My farm')}</span>
-            {!view ? (
-              <>
-                <span className="flex items-center gap-0.5">{coin}{coins}</span>
-                <span className="hidden sm:inline">· 🌱 {Object.values(mine.seeds).reduce((a, b) => a + b, 0)} · 🌾 {mine.feed}</span>
-              </>
-            ) : null}
-            <button type="button" onClick={() => s.leave()} className="flex h-7 items-center gap-1 rounded-full bg-slate-100 px-2" title={t('Leave the farm')}>
-              <Icon name="exit" size={14} />
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <FarmTopBar />
+      <FarmBook />
+      <LevelUpCard />
+      <RipeNotice />
       <ChaseBanner />
       {at && panel === 'train' ? <TrainPanel /> : null}
       {toast?.note ? (
@@ -104,78 +99,6 @@ export function MyFarmHud() {
                 <span dir="ltr">“{toast.said}”</span> {toast.xp ? <b className="text-emerald-700">+{toast.xp} XP</b> : null} {toast.coins ? <b className={toast.coins > 0 ? 'text-amber-600' : 'text-gray-500'}>{toast.coins > 0 ? '+' : ''}{toast.coins} {coin}</b> : null}
               </>
             )}
-          </div>
-        </div>
-      ) : null}
-
-      {at && panel === 'shop' ? (
-        <div data-ui className={wrap}>
-          <div className={card}>
-            {head('bus', t('Farm shop'))}
-            <p className="mb-2 flex items-center gap-1 text-xs text-gray-500">
-              {t('You have')} {coin} <b>{coins}</b>
-            </p>
-            <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('Seeds (one packet = one plot)')}</h3>
-            <div className="mb-3 grid grid-cols-3 gap-1.5" dir="ltr">
-              {CROPS.map((c) => (
-                <button key={c} type="button" onClick={() => void s.act({ action: 'buy', item: `seed:${c}`, qty: 1 })} className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 p-1 text-xs">
-                  <span className="text-xl">{CROP_ICON[c]}</span>
-                  <span className="font-medium">{c}</span>
-                  <span className="text-gray-500">
-                    {SEED_PRICE[c]} {coin} · {t('have {n}', { n: mine.seeds[c] ?? 0 })}
-                  </span>
-                  <CropFacts crop={c} />
-                </button>
-              ))}
-            </div>
-            <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('Animals')}</h3>
-            <div className="mb-3 grid grid-cols-2 gap-1.5" dir="ltr">
-              {ANIMALS.map((k) => {
-                const have = mine.animals.filter((a) => a.kind === k).length;
-                const info = ANIMAL_INFO[k];
-                return (
-                  <button key={k} type="button" disabled={have >= info.max} onClick={() => void s.act({ action: 'buy', item: `animal:${k}`, qty: 1 })} className="flex min-h-14 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-2 text-left text-xs disabled:opacity-50">
-                    <span className="text-2xl">{info.icon}</span>
-                    <span>
-                      <b className="block">
-                        a {k} · {info.price} {coin}
-                      </b>
-                      <span className="text-gray-500">
-                        {info.productEn} · {have}/{info.max}
-                      </span>
-                      <span className="block text-[11px] text-emerald-800">
-                        ⏱ {t('every {m} min', { m: mins(info.everyMs) })} · {t('sells for {n}', { n: info.sell })} {coin}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('A guard dog')}</h3>
-            <button type="button" disabled={!!mine.dog} onClick={() => void s.act({ action: 'buy', item: 'dog', qty: 1 })} className="mb-3 flex min-h-14 w-full items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-2 text-left text-xs disabled:opacity-50" dir="ltr">
-              <span className="text-2xl">🐕</span>
-              <span>
-                <b className="block">
-                  a dog · {DOG_PRICE} {coin}
-                </b>
-                <span className="text-gray-500">{mine.dog ? t('You have {name}.', { name: mine.dog.name }) : t('Feed it every day and it chases thieves away.')}</span>
-              </span>
-            </button>
-            <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('Feed and fields')}</h3>
-            <div className="grid grid-cols-2 gap-1.5" dir="ltr">
-              {[1, 5].map((n) => (
-                <button key={n} type="button" onClick={() => void s.act({ action: 'buy', item: 'feed', qty: n })} className="min-h-12 rounded-xl border border-gray-200 bg-white px-2 text-xs">
-                  🌾 {n === 1 ? 'a bag of feed' : `${n} bags of feed`} · {n} {coin}
-                  <span className="block text-gray-500">{t('have {n}', { n: mine.feed })}</span>
-                </button>
-              ))}
-              <button type="button" disabled={mine.fields >= MAX_FIELDS} onClick={() => void s.act({ action: 'buy', item: 'field', qty: 1 })} className="col-span-2 min-h-12 rounded-xl border border-orange-200 bg-orange-50 px-2 text-xs disabled:opacity-50">
-                🪧 {mine.fields >= MAX_FIELDS ? t('All fields bought') : `${t('A new field (+{n} plots)', { n: FIELD_PLOTS })} · ${shopPrice(mine, 'field')}`} {mine.fields < MAX_FIELDS ? coin : null}
-                <span className="block text-gray-500">
-                  {mine.fields}/{MAX_FIELDS}
-                </span>
-              </button>
-            </div>
           </div>
         </div>
       ) : null}
@@ -207,36 +130,6 @@ export function MyFarmHud() {
             </div>
             <button type="button" onClick={() => s.setPanel('shop')} className="mt-2 w-full rounded-xl bg-emerald-600 py-2 text-sm font-semibold text-white">
               {t('Buy seeds')}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {at && panel === 'barn' ? (
-        <div data-ui className={wrap}>
-          <div className={card}>
-            {head('coin', t('Sell my produce'))}
-            {Object.entries(mine.barn).filter(([, n]) => n > 0).length ? (
-              <ul className="mb-2 space-y-1 text-sm" dir="ltr">
-                {Object.entries(mine.barn)
-                  .filter(([, n]) => n > 0)
-                  .map(([k, n]) => (
-                    <li key={k} className="flex justify-between rounded-lg bg-amber-50 px-2 py-1">
-                      <span>
-                        {CROP_ICON[k]} {n} × {k}
-                      </span>
-                      <span>
-                        {n * (CROP_SELL[k as keyof typeof CROP_SELL] ?? PRODUCT_SELL[k] ?? 0)} {coin}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            ) : (
-              <p className="mb-2 text-sm text-gray-500">{t('Your barn is empty. Harvest your plants and collect from your animals.')}</p>
-            )}
-            <p className="mb-2 text-xs text-gray-500">{t('Sold today: {n}/{max} coins', { n: earned, max: FARM_DAY_CAP })}</p>
-            <button type="button" disabled={barnValue(mine) <= 0} onClick={() => void s.act({ action: 'sell' })} className="w-full rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white disabled:opacity-40">
-              {t('Sell everything')} · {barnValue(mine)} {coin}
             </button>
           </div>
         </div>
@@ -444,7 +337,7 @@ function CropFacts({ crop }: { crop: (typeof CROPS)[number] }) {
   const t = useT();
   return (
     <span className="mt-0.5 block text-[11px] leading-tight text-emerald-800">
-      ⏱ {t('{m} min', { m: mins(GROW_MS[crop]) })} · {HARVEST_QTY} × {CROP_SELL[crop]}
+      ⏱ {t('{m} min', { m: mins(MY_GROW_MS[crop]) })} · {HARVEST_QTY} × {CROP_SELL[crop]}
       <Icon name="coin" size={11} className="ms-0.5 inline align-[-1px] text-amber-500" />
     </span>
   );

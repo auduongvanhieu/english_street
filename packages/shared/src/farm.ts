@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Garden crops the learner can grow on the farm (item ids in farm.yaml). */
-export const CROPS = ['carrot', 'corn', 'tomato', 'potato', 'pumpkin', 'strawberry'] as const;
+export const CROPS = ['carrot', 'corn', 'tomato', 'potato', 'pumpkin', 'strawberry', 'wheat'] as const;
 export type Crop = (typeof CROPS)[number];
 export const CropSchema = z.enum(CROPS);
 /** Garden plots built in the farm scene (the admin site may use fewer). */
@@ -14,9 +14,9 @@ export type Chore = (typeof CHORES)[number];
  * Farm rules. Defaults below; the admin site changes them (world config → applyFarmConfig on the API and the
  * client). The objects are mutated in place so every importer sees the live values.
  */
-export const GROW_MS: Record<Crop, number> = { carrot: 3 * 60_000, potato: 4 * 60_000, tomato: 5 * 60_000, strawberry: 5 * 60_000, corn: 6 * 60_000, pumpkin: 8 * 60_000 };
+export const GROW_MS: Record<Crop, number> = { carrot: 3 * 60_000, potato: 4 * 60_000, tomato: 5 * 60_000, strawberry: 5 * 60_000, corn: 6 * 60_000, pumpkin: 8 * 60_000, wheat: 4 * 60_000 };
 /** Market price per piece (coins). */
-export const CROP_PRICE: Record<Crop, number> = { carrot: 1, potato: 1, tomato: 2, strawberry: 3, corn: 2, pumpkin: 4 };
+export const CROP_PRICE: Record<Crop, number> = { carrot: 1, potato: 1, tomato: 2, strawberry: 3, corn: 2, pumpkin: 4, wheat: 1 };
 export const FARM = {
   /** Pieces per harvest. */
   harvestQty: 3,
@@ -119,7 +119,7 @@ export interface FarmActionResult {
   error?: 'not_ready' | 'busy' | 'empty' | 'nothing_to_sell' | 'coin_cap' | 'cooldown' | 'needs_water' | 'already_watered' | 'no_plot' | 'crop_disabled';
 }
 
-const plural: Record<Crop, string> = { carrot: 'carrots', corn: 'corn', tomato: 'tomatoes', potato: 'potatoes', pumpkin: 'pumpkins', strawberry: 'strawberries' };
+const plural: Record<Crop, string> = { carrot: 'carrots', corn: 'corn', tomato: 'tomatoes', potato: 'potatoes', pumpkin: 'pumpkins', strawberry: 'strawberries', wheat: 'wheat' };
 
 /** Pure farm rules (server authoritative; the client uses the same function for instant feedback). */
 export function applyFarm(state: FarmState, a: FarmAction, now: number): FarmActionResult {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { HELPS_PER_DAY, NOTES_KEPT, NOTES_PER_DAY, maskProfanity, MyFarmActionSchema, MyFarmStateSchema, STEAL_MIN_LEVEL, applyMyFarm, canSteal, dogAwake, dogLevel, dogSpeed, emptyMyFarm, farmLog, levelForXp, pieceValue, stealFine, stealFrom, type FarmView, type MyFarmState } from '@es/shared';
+import { HELPS_PER_DAY, NOTES_KEPT, NOTES_PER_DAY, maskProfanity, MyFarmActionSchema, MyFarmStateSchema, STEAL_MIN_LEVEL, applyMyFarm, canSteal, dogAwake, dogLevel, dogSpeed, emptyMyFarm, normalizeMyFarm, farmLog, levelForXp, pieceValue, stealFine, stealFrom, type FarmView, type MyFarmState } from '@es/shared';
 import { isInternalKey, signToken } from '@es/shared/token';
 import { randomUUID } from 'node:crypto';
 import { env } from '../env';
@@ -20,7 +20,8 @@ export function myFarmRoutes(repo: AttemptRepo) {
       playerIdFrom(req as never, (req.query as { playerId?: string })?.playerId ?? (req.body as { playerId?: string } | undefined)?.playerId);
     const farmOf = (gs: Record<string, unknown>): MyFarmState => {
       const r = MyFarmStateSchema.safeParse(gs.myfarm);
-      return r.success && r.data.plots.length ? r.data : emptyMyFarm();
+      // brought up to the current rules (levels, the order board…)
+      return normalizeMyFarm(r.success && r.data.plots.length ? r.data : emptyMyFarm());
     };
 
     const saveFarm = (id: string, gs: Record<string, unknown>, farm: MyFarmState) => repo.updateUser(id, { gameState: { ...gs, myfarm: farm } });
@@ -152,8 +153,11 @@ export function myFarmRoutes(repo: AttemptRepo) {
         await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'myfarm', coins: -r.coins, item: body.data.action === 'buy' ? body.data.item : '' } });
       }
       if (r.coins > 0 || r.xp) await repo.reward(id, r.xp, Math.max(0, r.coins), 'myfarm');
-      await repo.logEvent({ name: `myfarm_${body.data.action}`, playerId: id, props: { coins: r.coins, ...(body.data.action === 'buy' ? { item: body.data.item } : {}) } });
-      return { farm: r.farm, said: r.said, xp: r.xp, delta: r.coins, coins: u.coins + r.coins, now: Date.now() };
+      // "water all" / "harvest all" count like one watering / harvest (journey steps)
+      const ev = body.data.action === 'harvestAll' ? 'harvest' : body.data.action === 'waterAll' ? 'water' : body.data.action;
+      await repo.logEvent({ name: `myfarm_${ev}`, playerId: id, props: { coins: r.coins, ...(body.data.action === 'buy' ? { item: body.data.item } : {}) } });
+      if (r.levelUp) await repo.logEvent({ name: 'myfarm_level', playerId: id, props: { level: r.levelUp } });
+      return { farm: r.farm, said: r.said, xp: r.xp, delta: r.coins, coins: u.coins + r.coins, now: Date.now(), levelUp: r.levelUp };
     });
 
     /** May `me` come in? (the owner's choice: friends, everybody, nobody) */
