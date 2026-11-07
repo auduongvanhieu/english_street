@@ -6,6 +6,7 @@ import { useTutorial } from '../store/tutorial';
 import { currentStep, guideTarget, useJourney } from '../store/journey';
 import { MAIN_STEPS, stepById } from '@es/shared';
 import { useBus } from '../store/bus';
+import { useArea } from '../store/area';
 import { localPos } from './LocalPlayer';
 
 /**
@@ -76,6 +77,14 @@ export function GuideTrail() {
       useJourney.getState().stopWalk();
       via.current = null;
       if (w.npc) useGame.getState().openPanel(w.npc);
+      else {
+        // arrived: the arrow's job is done; in an area, its guide opens on the first tab (what to do here)
+        useJourney.setState({ guiding: null });
+        if (w.area)
+          window.setTimeout(() => {
+            if (useArea.getState().current === w.area) useArea.setState({ panel: true, tab: '' });
+          }, 700);
+      }
       return;
     }
     const pts: [number, number][] = [[px, pz], ...(via.current ? [[via.current.x, via.current.z] as [number, number]] : []), [w.x, w.z]];

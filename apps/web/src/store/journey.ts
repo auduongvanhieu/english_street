@@ -36,7 +36,7 @@ interface JourneyStore {
   guiding: string | null;
   /** "Take me there": walk the last part (after the bus) along the dots: to `via` (an area gate) first, then the
    * target; talk to `npc` on arrival */
-  walk: { x: number; z: number; via: { x: number; z: number } | null; npc?: string; label: string } | null;
+  walk: { x: number; z: number; via: { x: number; z: number } | null; npc?: string; area?: string; label: string } | null;
   stopWalk: () => void;
   load: () => Promise<void>;
   track: (id: string, on: boolean) => Promise<void>;
@@ -57,8 +57,9 @@ export function guideTarget(g: JourneyGuide | undefined): { x: number; z: number
     return { x: n.position[0] + Math.sin(f) * 1.8, z: n.position[2] + Math.cos(f) * 1.8, rot: f + Math.PI, npc: n.id };
   }
   if ('area' in g) {
+    // a few steps inside the gate (in the area, so its guide can open on arrival)
     const a = areaById(g.area);
-    const z = frontZ(a) + (a.side === 'north' ? 1.5 : -1.5);
+    const z = frontZ(a) + (a.side === 'north' ? -3 : 3);
     return { x: a.doorX, z, rot: a.side === 'north' ? Math.PI : 0 };
   }
   switch (g.place) {
@@ -118,7 +119,7 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
     });
     const gate = area ? { x: area.doorX, z: frontZ(area) + (area.side === 'north' ? 1.5 : -1.5) } : null;
     const via = gate && Math.hypot(gate.x - t.x, gate.z - t.z) > 2 ? gate : null;
-    set({ walk: { x: t.x, z: t.z, via, npc: t.npc, label: stepText(step).title } });
+    set({ walk: { x: t.x, z: t.z, via, npc: t.npc, area: step.guide && 'area' in step.guide ? step.guide.area : undefined, label: stepText(step).title } });
     // far away: take the bus to the stop nearest to the target first (the dots show after stepping off)
     const stop = nearestStop(t.x, t.z);
     if (Math.hypot(localPos.x - t.x, localPos.z - t.z) > 30 && nearestStop(localPos.x, localPos.z) !== stop && !useBus.getState().ride) {
