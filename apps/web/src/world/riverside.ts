@@ -97,6 +97,7 @@ export const BLOCKERS: Aabb[] = [
   box(BENCH.x, BENCH.z, 0.8, 0.25),
   box(LOST_BOARD.x, LOST_BOARD.z, 0.7, 0.12),
   box(LIST_BOARD.x, LIST_BOARD.z, 0.7, 0.12),
+  box(0, -687.8, 0.7, 0.12),
 ];
 registerBlockers(BLOCKERS);
 registerSeats([

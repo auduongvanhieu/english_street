@@ -384,3 +384,26 @@ export function HeldCritter({ id }: { id: string }) {
     </group>
   );
 }
+
+/** A player's pet (avatar look `pet`, bought in the character shop): trots beside them, wags its tail. */
+export function PetBuddy({ kind, anim }: { kind: CritterKind; anim: string }) {
+  const parts = useMemo(() => buildCritter(kind, coatFor(`pet-${kind}`)), [kind]);
+  useEffect(() => () => void Object.values(parts).forEach((g) => (g as THREE.BufferGeometry | null)?.dispose?.()), [parts]);
+  const rig = useRef<RigRefs>({ legs: [] });
+  const t = useRef(Math.random() * 5);
+  useFrame((_, dt) => {
+    const r = rig.current;
+    t.current += Math.min(dt, 0.1);
+    const moving = anim === 'walk' || anim === 'run';
+    const f = anim === 'run' ? 16 : 10;
+    r.legs.forEach((l, i) => (l.rotation.x = moving ? Math.sin(t.current * f + (i % 2) * Math.PI) * 0.7 : 0));
+    if (r.body) r.body.position.y = moving ? Math.abs(Math.sin(t.current * f)) * 0.05 : 0;
+    if (r.tail) r.tail.rotation.y = Math.sin(t.current * (moving ? 12 : 4)) * 0.5;
+    if (r.head) r.head.rotation.y = moving ? 0 : Math.sin(t.current * 0.7) * 0.4;
+  });
+  return (
+    <group position={[-0.8, 0, -0.45]}>
+      <CritterBody parts={parts} rig={rig} scale={SCALE[kind] * 0.9} />
+    </group>
+  );
+}

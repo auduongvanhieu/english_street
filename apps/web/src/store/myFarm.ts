@@ -35,6 +35,9 @@ interface MyFarmStore {
   dogAt: { slot: number; x: number; z: number; run: boolean; at: number } | null;
   /** take one piece from a friend's ripe plot */
   steal: (plot: number) => Promise<void>;
+  /** water a friend's seeded plot; leave a note on their board */
+  help: (plot: number) => Promise<void>;
+  note: (text: string) => Promise<boolean>;
   enter: (owner?: string, name?: string) => void;
   leave: () => void;
   load: () => Promise<void>;
@@ -58,6 +61,33 @@ export const useMyFarm = create<MyFarmStore>((set, getS) => ({
   last: null,
   chase: null,
   dogAt: null,
+  async help(plot) {
+    const at = getS().at;
+    if (!at) return;
+    try {
+      const r = await post<{ plot: FarmView['plots'][number]; said: string }>(`/farms/${encodeURIComponent(at.owner)}/help${q()}`, { plot, playerId: getPlayerId() });
+      const v = getS().view;
+      if (v) set({ view: { ...v, plots: v.plots.map((p, i) => (i === plot ? r.plot : p)) } });
+      set({ last: { said: r.said, xp: 3, coins: 0, at: Date.now() } });
+      say(r.said);
+      void useProfile.getState().refresh();
+    } catch (e) {
+      set({ last: { said: '', xp: 0, coins: 0, error: (e as Error).message as StealError, at: Date.now() } });
+    }
+  },
+  async note(text) {
+    const at = getS().at;
+    if (!at) return false;
+    try {
+      const r = await post<{ notes: FarmView['notes'] }>(`/farms/${encodeURIComponent(at.owner)}/note${q()}`, { text, playerId: getPlayerId() });
+      const v = getS().view;
+      if (v) set({ view: { ...v, notes: r.notes } });
+      return true;
+    } catch (e) {
+      set({ last: { said: '', xp: 0, coins: 0, error: (e as Error).message as StealError, at: Date.now() } });
+      return false;
+    }
+  },
   async steal(plot) {
     const at = getS().at;
     if (!at || getS().chase) return;

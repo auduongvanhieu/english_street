@@ -19,6 +19,7 @@ import {
   rng,
   rushOrder,
   sameTicket,
+  BOT_NAMES,
   type TeamEvent,
   type TeamId,
   type TeamSend,
@@ -54,6 +55,11 @@ export class TeamGames {
   private word = '';
   private strokes: { pts: number[]; color: string }[] = [];
   private drawStart = 0;
+  /** when a team got its current question / step (bots wait a little) and when a bot acted last */
+  private askedAt: Record<TeamId, number> = { red: 0, blue: 0 };
+  private botAt: Record<TeamId, number> = { red: 0, blue: 0 };
+  /** a bot's hunt: when it "finds" the current place */
+  private botFind: Record<TeamId, number> = { red: 0, blue: 0 };
 
   constructor(
     private broadcast: (type: string, msg: TeamEvent) => void,
@@ -83,7 +89,7 @@ export class TeamGames {
     }
   }
 
-  onMessage(id: string, name: string, msg: TeamSend) {
+  onMessage(id: string, name: string, msg: TeamSend): void {
     const s = this.state;
     switch (msg.op) {
       case 'join': {
@@ -96,7 +102,31 @@ export class TeamGames {
       }
       case 'leave':
         this.remove(id);
+        // nobody real left in the lobby: the bots go too
+        if (!TEAM_IDS.some((t) => this.state.teams[t].some((p) => !p.bot))) for (const t of TEAM_IDS) this.state.teams[t] = this.state.teams[t].filter((p) => !p.bot);
         return this.send();
+      case 'quick': {
+        if (s.phase === 'countdown' || s.phase === 'playing') return;
+        const t: TeamId = s.teams.red.length <= s.teams.blue.length ? 'red' : 'blue';
+        return this.onMessage(id, name, { op: 'join', team: t });
+      }
+      case 'bot': {
+        if ((s.phase !== 'lobby' && s.phase !== 'done') || !this.teamOf(id) || !TEAM_IDS.includes(msg.team)) return;
+        if (s.phase === 'done') this.reset();
+        const list = this.state.teams[msg.team];
+        if (list.length >= TEAM_MAX || list.filter((p) => p.bot).length >= 2) return;
+        const used = new Set([...this.state.teams.red, ...this.state.teams.blue].map((p) => p.name));
+        const botName = BOT_NAMES.find((b) => !used.has(b)) ?? 'Robo';
+        list.push({ id: `bot:${Date.now()}:${Math.floor(Math.random() * 1000)}`, name: botName, bot: true });
+        return this.send();
+      }
+      case 'kickbot': {
+        if ((s.phase !== 'lobby' && s.phase !== 'done') || !this.teamOf(id)) return;
+        const list = this.state.teams[msg.team];
+        const i = list.map((p) => !!p.bot).lastIndexOf(true);
+        if (i >= 0) list.splice(i, 1);
+        return this.send();
+      }
       case 'game':
         if ((s.phase !== 'lobby' && s.phase !== 'done') || !TEAM_GAME_IDS.includes(msg.game) || !this.teamOf(id)) return;
         if (s.phase === 'done') this.reset();
@@ -164,6 +194,8 @@ export class TeamGames {
   private next(t: TeamId) {
     const s = this.state;
     const n = this.n[t]++;
+    this.askedAt[t] = Date.now();
+    this.botFind[t] = Date.now() + 40_000 + Math.random() * 40_000;
     if (s.game === 'relay' && s.relay) {
       const { answer: _a, ...q } = relayQuestion(this.seed, n);
       s.relay[t] = { ...q, n };
@@ -184,6 +216,7 @@ export class TeamGames {
     if (!list.length) return;
     this.idx[t] = (this.idx[t] + 1) % list.length;
     this.state.turn[t] = list[this.idx[t]]!.id;
+    this.askedAt[t] = Date.now();
   }
 
   /** A team scores; at the target it wins. */
@@ -269,15 +302,15 @@ export class TeamGames {
     this.send();
   }
 
-  private drawRound(round: number) {
+  private drawRound(round: number): void {
     const s = this.state;
     if (round >= TEAM_GAMES.draw.target) {
       const w = s.score.red === s.score.blue ? 'draw' : s.score.red > s.score.blue ? 'red' : 'blue';
       return this.finish(w);
     }
     const team: TeamId = round % 2 === 0 ? 'red' : 'blue';
-    const list = s.teams[team];
-    if (!list.length) return this.finish(other(team));
+    const list = s.teams[team].filter((p) => !p.bot);
+    if (!list.length) return this.drawRound(round + 1);
     const drawer = list[Math.floor(round / 2) % list.length]!.id;
     const r = rng(this.seed + round * 97);
     this.word = DRAW_WORDS[Math.floor(r() * DRAW_WORDS.length)]!;
@@ -356,6 +389,7 @@ export class TeamGames {
     if (s.phase === 'playing') {
       if (now >= s.endsAt) return this.finish(s.score.red === s.score.blue ? 'draw' : s.score.red > s.score.blue ? 'red' : 'blue');
       if (s.game === 'hunt' && s.hunt) this.huntCheck();
+      this.bots(now);
       if (s.game === 'draw' && s.draw && now >= s.draw.endsAt) {
         if (!s.draw.word) this.endDrawRound('');
         else this.drawRound(s.draw.round + 1);
@@ -388,4 +422,43 @@ export class TeamGames {
       this.send();
     }
   }
+
+  /** Computer players: a little slower than a quick learner, and not always right. */
+  private bots(now: number) {
+    const s = this.state;
+    for (const t of TEAM_IDS) {
+      const bots = s.teams[t].filter((p) => p.bot);
+      if (!bots.length || now < s.locked[t] || now - this.botAt[t] < 1200) continue;
+      const turnBot = bots.find((b) => b.id === s.turn[t]);
+      const right = Math.random() < 0.78;
+      if (s.game === 'relay' && turnBot && s.relay?.[t] && now - this.askedAt[t] > 2500) {
+        const q = s.relay[t]!;
+        const a = relayQuestion(this.seed, q.n).answer;
+        this.botAt[t] = now;
+        this.relay(turnBot.id, q.n, right ? a : (a + 1) % 4);
+      } else if (s.game === 'rush' && turnBot && s.rush?.[t] && now - this.askedAt[t] > 3500) {
+        const r = s.rush[t]!;
+        this.botAt[t] = now;
+        const wrongTicket = { [Object.keys(r.order.items)[0]!]: 3 };
+        this.rush(turnBot.id, { op: 'rush', n: r.n, step: r.step, ...(r.step === 'serve' ? { table: right ? r.order.table : (r.order.table % 6) + 1 } : { ticket: right ? r.order.items : wrongTicket }) });
+      } else if (s.game === 'harvest' && s.harvest?.[t] && now - this.askedAt[t] > 1500) {
+        const h = s.harvest[t]!;
+        const task = harvestTask(this.seed, h.n);
+        const todo = task.right.filter((i) => !h.picked.includes(i));
+        const wrong = h.grid.map((_, i) => i).filter((i) => !task.right.includes(i));
+        const pick = right || !wrong.length ? todo[0] : wrong[Math.floor(Math.random() * wrong.length)];
+        this.botAt[t] = now + 600;
+        if (pick !== undefined) this.harvest(bots[0]!.id, h.n, pick);
+      } else if (s.game === 'hunt' && s.hunt?.[t] && now >= this.botFind[t]) {
+        const place = HUNT_PLACES[huntPlaces(this.seed, t)[s.hunt[t]!.n]!];
+        this.botAt[t] = now;
+        this.feed(t, bots[0]!.name, true, `found the ${place?.id ?? 'place'}`);
+        if (this.point(t)) return;
+        this.next(t);
+        s.hunt![t]!.last = bots[0]!.name;
+        this.send();
+      }
+    }
+  }
+
 }

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { AvatarLook } from '@es/shared';
 import { Chibi } from './chibi/Chibi';
-import { HeldCritter } from './Critters';
+import { HeldCritter, PetBuddy } from './Critters';
 import { Dish } from './areas/Dish';
 import { Trolley } from './areas/Trolley';
 import { Snack } from './areas/Snack';
@@ -21,6 +21,7 @@ export const PlayerAvatar = memo(function PlayerAvatar({ look, anim, holding = '
         <Chibi spec={look} anim={anim} hug={!!holding} />
       </group>
       {holding ? <HeldCritter id={holding} /> : null}
+      {look.pet && look.pet !== 'none' && !swim ? <PetBuddy kind={look.pet} anim={anim} /> : null}
       {prop.startsWith('dish:') ? <Dish item={prop.slice(5)} /> : null}
       {prop.startsWith('cart:') && !sit ? <Trolley n={Number(prop.slice(5)) || 0} /> : null}
       {prop.startsWith('snack:') ? <Snack kind={prop.slice(6)} sit={sit} /> : null}

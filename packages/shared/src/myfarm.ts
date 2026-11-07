@@ -108,7 +108,18 @@ export const MyFarmStateSchema = z.object({
   stole: z.tuple([z.string(), z.number()]).default(['', 0]),
   /** a steal waiting for the dog chase to end (the game server reports it) */
   pending: z.object({ id: z.string(), owner: z.string(), crop: CropSchema, at: z.number() }).nullable().default(null),
+  /** notes friends left on the notice board (newest last) */
+  notes: z.array(z.object({ t: z.number(), name: z.string().max(20), text: z.string().max(80) })).default([]),
+  /** plots this player watered on friends' farms today / notes left today: [day, count] */
+  helped: z.tuple([z.string(), z.number()]).default(['', 0]),
+  noted: z.tuple([z.string(), z.number()]).default(['', 0]),
 });
+/** Visiting friends: water their seeded plots (a little XP), leave notes (a few a day). */
+export const HELPS_PER_DAY = 10;
+export const NOTES_PER_DAY = 3;
+export const NOTES_KEPT = 12;
+/** Selling at the Riverside farmers' market pays more than the farm's shipping bin. */
+export const MARKET_BONUS = 1.2;
 export type MyFarmState = z.infer<typeof MyFarmStateSchema>;
 /** A new farm: a starter kit (seeds, one hen and a little feed) so it can start without coins. */
 export const emptyMyFarm = (): MyFarmState =>
@@ -157,7 +168,7 @@ export const MyFarmActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('feed'), animal: z.number().int().min(0).max(20) }),
   z.object({ action: z.literal('collect'), animal: z.number().int().min(0).max(20) }),
   z.object({ action: z.literal('buy'), item: z.string().max(24), qty: z.number().int().min(1).max(20) }),
-  z.object({ action: z.literal('sell') }),
+  z.object({ action: z.literal('sell'), market: z.boolean().optional() }),
   z.object({ action: z.literal('visits'), mode: VisitModeSchema }),
   z.object({ action: z.literal('dogfeed') }),
   /** a training session (the command quiz, played in the game): ok = all answers right */
@@ -275,7 +286,7 @@ export function applyMyFarm(state: MyFarmState, a: MyFarmAction, now: number, co
       return { farm: f, coins: -cost, xp: 1, said };
     }
     case 'sell': {
-      const value = sellValue(f);
+      const value = Math.round(sellValue(f) * (a.market ? MARKET_BONUS : 1));
       if (value <= 0) return fail('nothing_to_sell');
       const earned = f.earned[0] === day ? f.earned[1] : 0;
       const room = FARM_DAY_CAP - earned;
@@ -284,7 +295,7 @@ export function applyMyFarm(state: MyFarmState, a: MyFarmAction, now: number, co
       // sell everything up to the cap; what is left over stays in the barn (pieces, cheapest last)
       if (got === value) f.barn = {};
       else {
-        let left = got;
+        let left = Math.floor(got / (a.market ? MARKET_BONUS : 1));
         for (const k of Object.keys(f.barn).sort((x, y) => (CROP_SELL[y as Crop] ?? PRODUCT_SELL[y] ?? 0) - (CROP_SELL[x as Crop] ?? PRODUCT_SELL[x] ?? 0))) {
           const price = CROP_SELL[k as Crop] ?? PRODUCT_SELL[k] ?? 0;
           const n = Math.min(f.barn[k]!, Math.floor(left / price));
@@ -293,7 +304,7 @@ export function applyMyFarm(state: MyFarmState, a: MyFarmAction, now: number, co
         }
       }
       f.earned = [day, earned + got];
-      return { farm: f, coins: got, xp: 3, said: `I sold my farm produce for ${got} coins.` };
+      return { farm: f, coins: got, xp: a.market ? 5 : 3, said: a.market ? `I sold my farm produce at the market for ${got} coins.` : `I sold my farm produce for ${got} coins.` };
     }
     case 'dogfeed': {
       if (!f.dog) return fail('no_dog');
@@ -328,4 +339,5 @@ export interface FarmView {
   animals: MyAnimal[];
   visits: VisitMode;
   dog: { name: string; level: number; awake: boolean } | null;
+  notes: { t: number; name: string; text: string }[];
 }

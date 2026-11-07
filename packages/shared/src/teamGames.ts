@@ -214,7 +214,10 @@ export type TeamPhase = 'lobby' | 'countdown' | 'playing' | 'done';
 export interface TeamPlayer {
   id: string;
   name: string;
+  /** a computer player */
+  bot?: boolean;
 }
+export const BOT_NAMES = ['Robo Ruby', 'Robo Rex', 'Robo Max', 'Robo Mia'];
 export interface TeamState {
   phase: TeamPhase;
   game: TeamGameId;
@@ -237,6 +240,11 @@ export interface TeamState {
 export type TeamSend =
   | { op: 'hello' }
   | { op: 'join'; team: TeamId }
+  /** join the team with fewer players */
+  | { op: 'quick' }
+  /** add / remove a computer player (relay, hunt, rush, harvest) */
+  | { op: 'bot'; team: TeamId }
+  | { op: 'kickbot'; team: TeamId }
   | { op: 'leave' }
   | { op: 'game'; game: TeamGameId }
   | { op: 'start' }

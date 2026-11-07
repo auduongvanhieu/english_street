@@ -9,6 +9,7 @@ import { Part, box, chibiMaterial } from '../../chibi/buildChibi';
 import { BENCH, BOAT, BRIDGE, COTTAGES, LIST_BOARD, LOST_BOARD, MILL, MILL_POND, PARASOLS, PLATFORM, POST_BOX, RIVER, SHELTER, SPOTS, STALLS, VILLAGE, WHEEL, WILLOWS, stallFront } from '../../../world/riverside';
 import { LOST_THINGS, useRiverside } from '../../../store/riverside';
 import { useTrain } from '../../../store/train';
+import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 
@@ -128,6 +129,7 @@ function Props() {
         <LpmModel key={i} slug="willow" position={[x, 0, z]} scale={2.2} rotation-y={i} />
       ))}
       <Board x={LIST_BOARD.x} z={LIST_BOARD.z} text={"RUBY'S MARKET\n📝 Get a shopping list"} />
+      <Board x={0} z={-687.8} text={'FARMERS WELCOME\n🧺 Sell your produce here'} />
       <Board x={LOST_BOARD.x} z={LOST_BOARD.z} text={'LOST! 😢\nCan you help Lily?'} />
     </group>
   );
@@ -172,6 +174,21 @@ function Usables() {
   const searching = useRiverside((s) => !!s.lost && !s.lost.done);
   useUsable(riding ? null : { id: 'riv-train', x: 0, z: PLATFORM.z0 - 0.6, r: 3.5, icon: '🚆', label: t('Train to English Street Central'), priority: true, use: () => useTrain.getState().startReturn('Riverside') });
   useUsable({ id: 'riv-list', x: LIST_BOARD.x, z: LIST_BOARD.z + 1.1, r: 1.6, icon: '📝', label: t('Get a shopping list'), priority: true, use: () => useRiverside.getState().takeList() });
+  // the farmers' market: sell what your own farm grew (better prices than the farm's bin)
+  useUsable({
+    id: 'riv-farmsell',
+    x: 0,
+    z: -686.6,
+    r: 1.8,
+    icon: '🧺',
+    label: t('Sell my farm produce here (+20%)'),
+    priority: true,
+    use: async () => {
+      const f = useMyFarm.getState();
+      await f.load();
+      await f.act({ action: 'sell', market: true });
+    },
+  });
   useUsable({ id: 'riv-lost', x: LOST_BOARD.x, z: LOST_BOARD.z + 1.1, r: 1.6, icon: '🧒', label: t('Help Lily'), priority: true, use: () => useRiverside.getState().startLost() });
   for (const s of STALLS) {
     const f = stallFront(s);

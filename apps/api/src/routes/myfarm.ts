@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { MyFarmActionSchema, MyFarmStateSchema, STEAL_MIN_LEVEL, applyMyFarm, canSteal, dogAwake, dogLevel, dogSpeed, emptyMyFarm, farmLog, levelForXp, pieceValue, stealFine, stealFrom, type FarmView, type MyFarmState } from '@es/shared';
+import { HELPS_PER_DAY, NOTES_KEPT, NOTES_PER_DAY, maskProfanity, MyFarmActionSchema, MyFarmStateSchema, STEAL_MIN_LEVEL, applyMyFarm, canSteal, dogAwake, dogLevel, dogSpeed, emptyMyFarm, farmLog, levelForXp, pieceValue, stealFine, stealFrom, type FarmView, type MyFarmState } from '@es/shared';
 import { isInternalKey, signToken } from '@es/shared/token';
 import { randomUUID } from 'node:crypto';
 import { env } from '../env';
@@ -156,6 +156,75 @@ export function myFarmRoutes(repo: AttemptRepo) {
       return { farm: r.farm, said: r.said, xp: r.xp, delta: r.coins, coins: u.coins + r.coins, now: Date.now() };
     });
 
+    /** May `me` come in? (the owner's choice: friends, everybody, nobody) */
+    const mayVisit = async (me: string | null, ownerId: string, farm: MyFarmState): Promise<'ok' | 'closed' | 'friends_only'> => {
+      if (me === ownerId) return 'ok';
+      if (farm.visits === 'closed') return 'closed';
+      if (farm.visits === 'friends') {
+        const [a, b] = pair(me ?? '', ownerId);
+        const row = me ? await friendRepo().get(a, b) : null;
+        if (row?.status !== 'accepted') return 'friends_only';
+      }
+      return 'ok';
+    };
+    const count = (p: [string, number], day: string) => (p[0] === day ? p[1] : 0);
+
+    /** A visitor waters a seeded plot for the owner (both get a line on their board, the visitor a little XP). */
+    app.post<{ Params: { id: string } }>('/farms/:id/help', async (req, reply) => {
+      const me = who(req);
+      if (!me) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`farmhelp:${me}`, 30))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ plot: z.number().int().min(0).max(40) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const owner = await repo.getUser(req.params.id);
+      const helper = await repo.ensureUser(me, (await repo.getUser(me))?.name ?? 'Guest');
+      if (!owner || owner.id === me) return reply.code(404).send({ error: 'not_found' });
+      const ogs = (owner.gameState ?? {}) as Record<string, unknown>;
+      const of = farmOf(ogs);
+      const ok = await mayVisit(me, owner.id, of);
+      if (ok !== 'ok') return reply.code(403).send({ error: ok });
+      const day = today();
+      const hgs = (helper.gameState ?? {}) as Record<string, unknown>;
+      const hf = farmOf(hgs);
+      if (count(hf.helped, day) >= HELPS_PER_DAY) return reply.code(409).send({ error: 'help_limit' });
+      const p = of.plots[body.data.plot];
+      if (!p?.crop || p.wateredAt) return reply.code(409).send({ error: 'help_nothing' });
+      p.wateredAt = Date.now();
+      farmLog(of, `${helper.name} watered your ${p.crop === 'corn' ? 'corn' : `${p.crop}s`}. How kind!`);
+      hf.helped = [day, count(hf.helped, day) + 1];
+      await saveFarm(owner.id, ogs, of);
+      await saveFarm(me, hgs, hf);
+      await repo.reward(me, 3, 0, 'farm_help');
+      await repo.logEvent({ name: 'myfarm_help', playerId: me, props: { owner: owner.id } });
+      return { plot: p, said: `I watered ${owner.name}'s ${p.crop === 'corn' ? 'corn' : `${p.crop}s`}.` };
+    });
+
+    /** A visitor leaves a note on the farm's notice board. */
+    app.post<{ Params: { id: string } }>('/farms/:id/note', async (req, reply) => {
+      const me = who(req);
+      if (!me) return reply.code(401).send({ error: 'unauthorized' });
+      if (!(await limiter.allow(`farmnote:${me}`, 10))) return reply.code(429).send({ error: 'rate_limited' });
+      const body = z.object({ text: z.string().min(2).max(80) }).safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+      const owner = await repo.getUser(req.params.id);
+      const writer = await repo.ensureUser(me, (await repo.getUser(me))?.name ?? 'Guest');
+      if (!owner || owner.id === me) return reply.code(404).send({ error: 'not_found' });
+      const ogs = (owner.gameState ?? {}) as Record<string, unknown>;
+      const of = farmOf(ogs);
+      const ok = await mayVisit(me, owner.id, of);
+      if (ok !== 'ok') return reply.code(403).send({ error: ok });
+      const day = today();
+      const wgs = (writer.gameState ?? {}) as Record<string, unknown>;
+      const wf = farmOf(wgs);
+      if (count(wf.noted, day) >= NOTES_PER_DAY) return reply.code(409).send({ error: 'note_limit' });
+      of.notes = [...of.notes, { t: Date.now(), name: writer.name.slice(0, 20), text: maskProfanity(body.data.text.trim()) }].slice(-NOTES_KEPT);
+      wf.noted = [day, count(wf.noted, day) + 1];
+      await saveFarm(owner.id, ogs, of);
+      await saveFarm(me, wgs, wf);
+      await repo.logEvent({ name: 'myfarm_note', playerId: me, props: { owner: owner.id } });
+      return { notes: of.notes };
+    });
+
     /** Somebody's farm, for a visitor: friends only, everyone, or closed (the owner chooses). */
     app.get<{ Params: { id: string } }>('/farms/:id', async (req, reply) => {
       const me = who(req);
@@ -170,7 +239,7 @@ export function myFarmRoutes(repo: AttemptRepo) {
           if (row?.status !== 'accepted') return reply.code(403).send({ error: 'friends_only' });
         }
       }
-      const view: FarmView = { owner: owner.id, name: owner.name, fields: farm.fields, plots: farm.plots, animals: farm.animals, visits: farm.visits, dog: farm.dog ? { name: farm.dog.name, level: dogLevel(farm.dog.train), awake: dogAwake(farm, today()) } : null };
+      const view: FarmView = { owner: owner.id, name: owner.name, fields: farm.fields, plots: farm.plots, animals: farm.animals, visits: farm.visits, notes: farm.notes, dog: farm.dog ? { name: farm.dog.name, level: dogLevel(farm.dog.train), awake: dogAwake(farm, today()) } : null };
       return { farm: view, now: Date.now() };
     });
   };

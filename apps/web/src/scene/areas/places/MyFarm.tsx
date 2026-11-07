@@ -127,7 +127,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
   const now = Date.now() + s.skew;
   useUsable({ id: 'myfarm-gate', ...W(0, MY_FARM.d / 2 - 0.9), r: 1.8, icon: '🚪', label: t('Leave the farm'), priority: true, use: () => useMyFarm.getState().leave() });
   useUsable(mine ? { id: 'myfarm-shop', ...W(SHOP.x, SHOP.z - 1.1), r: 1.6, icon: '🛒', label: t('Farm shop'), priority: true, use: () => useMyFarm.getState().setPanel('shop') } : null);
-  useUsable(mine ? { id: 'myfarm-log', ...W(LOG_BOARD.x, LOG_BOARD.z - 1.1), r: 1.6, icon: '📋', label: t('Farm notice board'), priority: true, use: () => useMyFarm.getState().setPanel('settings') } : null);
+  useUsable({ id: 'myfarm-log', ...W(LOG_BOARD.x, LOG_BOARD.z - 1.1), r: 1.6, icon: '📋', label: mine ? t('Farm notice board') : t('Leave a note for your friend'), priority: true, use: () => useMyFarm.getState().setPanel('settings') });
   useUsable(mine ? { id: 'myfarm-bin', ...W(BIN.x + 1.3, BIN.z), r: 1.6, icon: '💰', label: t('Sell my produce'), priority: true, use: () => useMyFarm.getState().setPanel('barn') } : null);
   for (let i = 0; i < MAX_FIELDS * FIELD_PLOTS; i++) {
     const { x, z } = plotPos(i);
@@ -139,6 +139,10 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     // a friend's ripe plot: take one piece (secretly…)
     const vp = view?.plots[i];
     const ripe = !mine && view && i < view.fields * FIELD_PLOTS && vp && !vp.stolen && myPlotStage(vp, now).stage === 'ready';
+    // a friend's plot that needs water: help
+    const thirsty = !mine && view && i < view.fields * FIELD_PLOTS && vp?.crop && !vp.wateredAt;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useUsable(thirsty ? { id: `myfarm-help-${i}`, ...W(x, z), r: 1.35, icon: '💧', label: t('Water it for your friend'), priority: true, use: () => void useMyFarm.getState().help(i) } : null);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useUsable(ripe ? { id: `myfarm-steal-${i}`, ...W(x, z), r: 1.35, icon: '🤫', label: t('Take one secretly'), priority: true, use: () => void useMyFarm.getState().steal(i) } : null);
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -310,10 +314,10 @@ export default function MyFarm() {
         {own ? (
           <>
             <Sign x={SHOP.x} z={SHOP.z} text="FARM SHOP" sub="seeds · animals · feed" color="#2f6b3a" y={1.2} rot={Math.PI} />
-            <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />
             <Sign x={BIN.x} z={BIN.z - 0.9} text="SELL" color="#c0392b" y={1.2} />
           </>
         ) : null}
+        <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />
       </group>
       <Animals slot={slot} animals={animals} now={now} />
       {(own ? mine.dog : view.dog) ? <FarmDog slot={slot} awake={own ? mine.dog!.fedDay === useMyFarm.getState().day : view.dog!.awake} name={(own ? mine.dog!.name : view.dog!.name) ?? 'Rex'} /> : null}

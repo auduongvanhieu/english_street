@@ -1,3 +1,9 @@
+import { useTeamGame } from '../../store/teamGame';
+import { useUsable } from '../../world/usables';
+import { useT } from '../../i18n';
+
+/** Where the team games board stands (Main Street, by the fountain). */
+const TEAM_BOARD = { x: -5, z: 5.6 };
 import { Suspense, lazy, useRef, type ComponentType, type LazyExoticComponent } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
@@ -55,6 +61,13 @@ const SCENES: Record<AreaId, LazyExoticComponent<ComponentType>> = {
 const gateLabel = (ids: AreaId[], dir: -1 | 1) => (dir < 0 ? '← ' : '') + ids.map((id) => areaById(id).name).join(' · ') + (dir > 0 ? ' →' : '');
 
 /** Everything of the extended streets: welcome gates, bus stops, area gates, signposts and the areas. */
+/** The team games board by the fountain on Main Street (opens 🏆 Team games). */
+function TeamBoard() {
+  const t = useT();
+  useUsable({ id: 'team-board', x: TEAM_BOARD.x, z: TEAM_BOARD.z - 1.2, r: 1.8, icon: '🏆', label: t('Team games'), priority: true, use: () => useTeamGame.getState().setOpen(true) });
+  return <Sign x={TEAM_BOARD.x} z={TEAM_BOARD.z} rot={Math.PI} text="TEAM GAMES" sub="relay · hunt · rush · harvest · draw" color="#c0392b" y={1.6} w={3.4} />;
+}
+
 export function Areas() {
   return (
     <group>
@@ -87,6 +100,7 @@ export function Areas() {
       <Suspense fallback={null}>
         <MyFarm />
       </Suspense>
+      <TeamBoard />
       <StreetGate x={-46} label={gateLabel(['supermarket', 'restaurant'], -1)} />
       <StreetGate x={46} label={gateLabel(['zoo', 'farm'], 1)} />
       <StreetGate x={-170} label={gateLabel(['clothes', 'cinema'], -1)} />

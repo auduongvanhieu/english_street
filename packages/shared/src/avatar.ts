@@ -69,6 +69,18 @@ export const GLASSES_ITEMS: Record<AvatarGlasses, ShopItem> = {
   round: { id: 'glasses:round', label: 'Glasses', price: 0 },
   sun: { id: 'glasses:sun', label: 'Sunglasses', price: 40 },
 };
+/** A pet that walks beside you (premium, coins; everybody sees it). Kinds are the street critters. */
+export const AVATAR_PETS = ['none', 'cat', 'shiba', 'husky', 'rabbit', 'duck', 'guineapig'] as const;
+export type AvatarPet = (typeof AVATAR_PETS)[number];
+export const PET_ITEMS: Record<AvatarPet, ShopItem> = {
+  none: { id: 'pet:none', label: 'No pet', price: 0 },
+  cat: { id: 'pet:cat', label: 'Cat', price: 120 },
+  shiba: { id: 'pet:shiba', label: 'Shiba dog', price: 150 },
+  husky: { id: 'pet:husky', label: 'Husky', price: 180 },
+  rabbit: { id: 'pet:rabbit', label: 'Rabbit', price: 100 },
+  duck: { id: 'pet:duck', label: 'Duck', price: 80 },
+  guineapig: { id: 'pet:guineapig', label: 'Guinea pig', price: 90 },
+};
 /** Name tag styles (premium: bought with coins, everybody sees them over your head). */
 export const NAME_TAGS = ['plain', 'gold', 'ocean', 'rainbow'] as const;
 export type NameTagStyle = (typeof NAME_TAGS)[number];
@@ -97,6 +109,7 @@ const AvatarBase = z.object({
   glasses: z.enum(AVATAR_GLASSES).catch('none').default('none'),
   bag: z.enum(AVATAR_BAGS).catch('none').default('none'),
   tag: z.enum(NAME_TAGS).catch('plain').default('plain'),
+  pet: z.enum(AVATAR_PETS).catch('none').default('none'),
   /** Bought item / colour ids. */
   owned: z.array(z.string()).catch([]).default([]),
 });
@@ -131,7 +144,7 @@ export function itemPrice(id: string): number | null {
     const c = list.find((x) => x.id === id);
     if (c) return c.price;
   }
-  for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS, TAG_ITEMS] as Record<string, ShopItem>[]) {
+  for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS, TAG_ITEMS, PET_ITEMS] as Record<string, ShopItem>[]) {
     const it = Object.values(rec).find((x) => x.id === id);
     if (it) return it.price;
   }
@@ -154,7 +167,7 @@ export function missingItems(look: AvatarLook, owned: string[]): string[] | null
     if (!c) return null;
     if (c.price > 0 && !owned.includes(c.id)) out.add(c.id);
   }
-  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag], TAG_ITEMS[look.tag]]) if (it.price > 0 && !owned.includes(it.id)) out.add(it.id);
+  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag], TAG_ITEMS[look.tag], PET_ITEMS[look.pet]]) if (it.price > 0 && !owned.includes(it.id)) out.add(it.id);
   return [...out];
 }
 

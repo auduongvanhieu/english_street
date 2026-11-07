@@ -17,6 +17,9 @@ const ERRORS: Record<string, string> = {
   steal_limit: 'That is enough for today.',
   steal_not_ready: 'It is not ripe yet.',
   steal_taken: 'Somebody already took one from there.',
+  help_limit: 'You helped a lot today. Thank you!',
+  help_nothing: 'That plot does not need water.',
+  note_limit: 'You left enough notes today.',
   busy: 'Something is growing there already.',
   empty: 'Nothing is planted there.',
   no_seed: 'You have no seeds of that kind. Buy some in the farm shop.',
@@ -65,11 +68,7 @@ export function MyFarmHud() {
   const coin = <Icon name="coin" size={13} className="inline align-[-2px] text-amber-500" />;
   return (
     <>
-      {toast?.error && !at ? (
-        <div data-ui className="pointer-events-none absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-full bg-slate-900/85 px-4 py-2 text-sm text-white">
-          {t(ERRORS[toast.error] ?? toast.error)}
-        </div>
-      ) : null}
+
       {at && at.slot >= 0 ? (
         <div data-ui className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.4rem)] z-20 sm:top-[9.4rem]">
           <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-white/90 py-1 pe-1 ps-3 text-xs text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md">
@@ -93,7 +92,7 @@ export function MyFarmHud() {
           🐕 {toast.note}
         </div>
       ) : null}
-      {at && toast && !toast.note ? (
+      {toast && !toast.note ? (
         <div data-ui className="pointer-events-none absolute bottom-40 left-1/2 z-20 -translate-x-1/2">
           <div className={`rounded-full px-4 py-2 text-sm shadow-lg ${toast.error ? 'bg-red-50 text-red-700' : 'bg-white/95 text-slate-800'}`} dir="auto">
             {toast.error ? t(ERRORS[toast.error] ?? toast.error) : (
@@ -234,7 +233,8 @@ export function MyFarmHud() {
         </div>
       ) : null}
 
-      {at && panel === 'settings' ? (
+      {at && panel === 'settings' && view ? <VisitorBoard /> : null}
+      {at && panel === 'settings' && !view ? (
         <div data-ui className={wrap}>
           <div className={card}>
             {head('book', t('Farm notice board'))}
@@ -252,6 +252,18 @@ export function MyFarmHud() {
                 </button>
               ))}
             </div>
+            {mine.notes.length ? (
+              <>
+                <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('Notes from friends')}</h3>
+                <ul className="mb-3 space-y-1 text-sm" dir="ltr">
+                  {[...mine.notes].reverse().map((n) => (
+                    <li key={n.t} className="rounded-lg bg-amber-50 px-2 py-1">
+                      <b>{n.name}:</b> {n.text}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">{t('What happened on my farm')}</h3>
             {mine.log.length ? (
               <ul className="space-y-1 text-sm" dir="ltr">
@@ -351,6 +363,68 @@ function TrainPanel() {
             </div>
           </>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** A friend's notice board: read their notes, leave one (in English!). */
+function VisitorBoard() {
+  const t = useT();
+  const view = useMyFarm((x) => x.view);
+  const s = useMyFarm.getState();
+  const [text, setText] = useState('');
+  const [sent, setSent] = useState(false);
+  if (!view) return null;
+  const ideas = ['Your farm is beautiful!', 'I watered your carrots.', 'Your chickens are so cute!', 'See you at the market!'];
+  return (
+    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-md -translate-x-1/2">
+      <div className="pointer-events-auto max-h-[70dvh] overflow-y-auto rounded-2xl bg-white/95 p-3 shadow-2xl">
+        <div className="mb-2 flex items-center justify-between">
+          <b className="flex items-center gap-1.5 text-gray-800">
+            <Icon name="book" size={18} />
+            {t("{name}'s notice board", { name: view.name })}
+          </b>
+          <button type="button" onClick={() => s.setPanel(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+        <ul className="mb-2 space-y-1 text-sm" dir="ltr">
+          {view.notes.length ? (
+            [...view.notes].reverse().map((n) => (
+              <li key={n.t} className="rounded-lg bg-amber-50 px-2 py-1">
+                <b>{n.name}:</b> {n.text}
+              </li>
+            ))
+          ) : (
+            <li className="text-gray-500">{t('No notes yet. Be the first!')}</li>
+          )}
+        </ul>
+        {sent ? (
+          <p className="text-center text-sm text-green-700">✓ {t('Your note is on the board.')}</p>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (text.trim().length < 2) return;
+              void s.note(text.trim()).then((ok) => ok && setSent(true));
+            }}
+          >
+            <div className="mb-1.5 flex flex-wrap gap-1" dir="ltr">
+              {ideas.map((i) => (
+                <button key={i} type="button" onClick={() => setText(i)} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">
+                  {i}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              <input value={text} onChange={(e) => setText(e.target.value.slice(0, 80))} placeholder={t('Write a note in English')} className="min-h-10 min-w-0 flex-1 rounded-xl border px-3 text-sm" dir="ltr" />
+              <button type="submit" className="min-h-10 rounded-xl bg-amber-500 px-3 text-sm font-semibold text-white">
+                {t('Post')}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

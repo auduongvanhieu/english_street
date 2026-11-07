@@ -18,6 +18,8 @@ import {
   HAT_ITEMS,
   NAME_TAGS,
   TAG_ITEMS,
+  AVATAR_PETS,
+  PET_ITEMS,
   SKIN_TONES,
   avatarLook,
   itemPrice,
@@ -64,6 +66,7 @@ const GLASSES_ICON: Record<string, string> = { none: '🚫', round: '👓', sun:
 const HAIR_ICON: Record<string, string> = { short: '👦', spiky: '⚡', curly: '🌀', bob: '👧', long: '👩', ponytail: '🎀', buns: '🍡', bald: '🥚' };
 const HAIRSTYLE_ITEMS = Object.fromEntries(AVATAR_HAIRSTYLES.map((k) => [k, { id: `hair:${k}`, label: HAIRSTYLE_LABELS[k], price: 0 }])) as Record<(typeof AVATAR_HAIRSTYLES)[number], ShopItem>;
 const BAG_ICON: Record<string, string> = { none: '🚫', backpack: '🎒' };
+const PET_ICON: Record<string, string> = { none: '🚫', cat: '🐈', shiba: '🐕', husky: '🐺', rabbit: '🐇', duck: '🦆', guineapig: '🐹' };
 const TAG_ICON: Record<string, string> = { plain: '🏷️', gold: '🥇', ocean: '🌊', rainbow: '🌈' };
 
 const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)]!;
@@ -86,6 +89,7 @@ function randomLook(): AvatarLook {
     glasses: Math.random() < 0.7 ? 'none' : pick(freeIds(GLASSES_ITEMS)),
     bag: 'none',
     tag: 'plain',
+    pet: 'none',
   };
 }
 
@@ -198,6 +202,7 @@ export function AvatarCreator() {
             {(look.body === 'robot' || (look.hat !== 'none' && look.hat !== 'crown')) && <Swatches title={t('Hat colour')} list={CLOTH_COLORS} value={look.hatColor} owned={owned} onPick={(hatColor) => set({ hatColor })} />}
             <Items title={t('Glasses')} keys={AVATAR_GLASSES} items={GLASSES_ITEMS} icons={GLASSES_ICON} value={look.glasses} owned={owned} onPick={(glasses) => set({ glasses })} />
             {look.body !== 'robot' && <Items title={t('Bag')} keys={AVATAR_BAGS} items={BAG_ITEMS} icons={BAG_ICON} value={look.bag} owned={owned} onPick={(bag) => set({ bag })} />}
+            <Items title={t('A pet that walks with you')} keys={AVATAR_PETS} items={PET_ITEMS} icons={PET_ICON} value={look.pet} owned={owned} onPick={(pet) => set({ pet })} />
             <Items title={t('Name tag (everybody sees it)')} keys={NAME_TAGS} items={TAG_ITEMS} icons={TAG_ICON} value={look.tag} owned={owned} onPick={(tag) => set({ tag })} />
             <p className="mt-1 text-xs text-gray-500">{t('Items with 🪙 can be tried on for free — you only pay when you save. Earn coins by finishing quests.')}</p>
           </>

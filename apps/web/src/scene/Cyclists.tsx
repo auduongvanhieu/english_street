@@ -81,7 +81,7 @@ function bikeGeometry(c: Cyclist) {
 }
 
 function riderSpec(c: Cyclist): ChibiSpec {
-  return { body: 'tee', skin: c.skin, hair: c.hair, hairStyle: c.hairStyle, top: c.shirt, bottom: c.shorts, shoes: '#f2f2f2', hat: 'helmet', hatColor: c.helmet, glasses: 'none', bag: 'none', tag: 'plain' };
+  return { body: 'tee', skin: c.skin, hair: c.hair, hairStyle: c.hairStyle, top: c.shirt, bottom: c.shorts, shoes: '#f2f2f2', hat: 'helmet', hatColor: c.helmet, glasses: 'none', bag: 'none', tag: 'plain', pet: 'none' };
 }
 
 interface RiderRig {

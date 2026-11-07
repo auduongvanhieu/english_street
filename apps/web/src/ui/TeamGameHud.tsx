@@ -125,7 +125,7 @@ function Lobby({ st, mine }: { st: TeamState; mine: TeamId | null }) {
             <ul className="my-1 min-h-10 text-sm">
               {st.teams[team].map((p) => (
                 <li key={p.id} className="truncate">
-                  {p.id === me ? '⭐ ' : '• '}
+                  {p.id === me ? '⭐ ' : p.bot ? '🤖 ' : '• '}
                   {p.name}
                 </li>
               ))}
@@ -139,9 +139,27 @@ function Lobby({ st, mine }: { st: TeamState; mine: TeamId | null }) {
                 {t('Leave')}
               </button>
             )}
+            {mine && st.game !== 'draw' ? (
+              <div className="mt-1 flex gap-1 text-xs">
+                <button type="button" onClick={() => g.send({ op: 'bot', team })} className="min-h-8 flex-1 rounded-lg bg-white/80">
+                  + 🤖
+                </button>
+                {st.teams[team].some((p) => p.bot) ? (
+                  <button type="button" onClick={() => g.send({ op: 'kickbot', team })} className="min-h-8 flex-1 rounded-lg bg-white/80">
+                    − 🤖
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
+      {!mine ? (
+        <button type="button" onClick={() => g.send({ op: 'quick' })} className="mt-2 min-h-10 w-full rounded-xl bg-amber-500 text-sm font-bold text-white">
+          ⚡ {t('Quick join')}
+        </button>
+      ) : null}
+      <p className="mt-1 text-center text-xs text-gray-500">{st.game === 'draw' ? t('Draw & Guess needs real players (two in a team).') : t('Not enough players? Add a robot 🤖 to a team.')}</p>
       <button type="button" disabled={!mine || !st.teams.red.length || !st.teams.blue.length || st.phase !== 'lobby'} onClick={() => g.start()} className="mt-2 min-h-11 w-full rounded-xl bg-emerald-600 text-sm font-bold text-white disabled:opacity-40">
         {st.phase !== 'lobby' ? t('A game is running…') : !st.teams.red.length || !st.teams.blue.length ? t('Each team needs at least one player') : t('Start!')}
       </button>
