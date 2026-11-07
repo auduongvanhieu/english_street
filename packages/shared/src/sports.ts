@@ -47,5 +47,9 @@ export const MINIGAMES = {
   class: { perPoint: 5, max: 15, perDay: 4 },
   /** hospital: right sentence, body part and medicine (0-3) */
   clinic: { perPoint: 5, max: 15, perDay: 3 },
+  /** zoo feeding time: animals fed the right food first time (0-4) */
+  zookeeper: { perPoint: 3, max: 12, perDay: 3 },
+  /** farm jobs (milking, eggs): the right amount (0-1) */
+  farmhand: { perPoint: 6, max: 6, perDay: 6 },
 } as const;
 export type MinigameId = keyof typeof MINIGAMES;

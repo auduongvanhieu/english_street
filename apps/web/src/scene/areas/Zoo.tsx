@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type * as THREE from 'three';
+import { ZooJobs } from './AnimalJobs';
 import { ENCLOSURES, HUT, PETTING, PETTING_FEEDER, PETTING_HUTCH, enclosurePath, type Enclosure, type Habitat } from '../../world/zooLayout';
 import { FRONT_Z, YARD_MIN_Z, areaById } from '../../world/areas';
 import { Animal } from './Animal';
@@ -124,6 +125,7 @@ export function Zoo() {
           <Ground key={e.id} x0={e.x0} x1={e.x1} z0={e.z0} z1={e.z1} color={HABITAT_GROUND[e.habitat]} y={0.016} />
         ))}
         <ZooStatic />
+        <ZooJobs />
         {ENCLOSURES.map((e) => (
           <Sign key={e.id} x={(e.x0 + e.x1) / 2 + 2.2} z={e.z1 + 0.45} text={e.item.toUpperCase()} sub={e.names.join(' · ')} color="#2f6b3a" y={1.1} />
         ))}

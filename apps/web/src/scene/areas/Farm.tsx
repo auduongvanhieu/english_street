@@ -1,3 +1,4 @@
+import { FarmJobs } from './AnimalJobs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -195,6 +196,7 @@ export function Farm() {
     <NearArea area={area}>
       <group>
         <Ground x0={area.x0} x1={area.x1} z0={YARD_MIN_Z - 0.5} z1={FRONT_Z} color="#a8d27a" y={0.006} />
+        <FarmJobs />
         <Ground x0={126} x1={130} z0={-16.8} z1={FRONT_Z} color="#d9c49a" y={0.01} />
         <Ground x0={area.x0 + 0.5} x1={area.x1 - 0.5} z0={-16.6} z1={-14.4} color="#d9c49a" y={0.01} />
         {PENS.map((p) => (
