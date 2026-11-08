@@ -22,7 +22,7 @@ export interface JourneyGoal {
 export type JourneyGuide = { npc: string } | { area: AreaId } | { place: 'river' | 'ferry' | 'fishing' | 'kitchen' | 'kiosk' | 'library' };
 export interface JourneyStep {
   id: string;
-  kind: 'main' | 'area' | 'daily' | 'story';
+  kind: 'main' | 'area' | 'daily' | 'story' | 'bonus';
   area?: AreaId | 'river';
   goal: JourneyGoal;
   reward: { xp: number; coins: number };
@@ -168,7 +168,14 @@ export const INVITE_PAY_STEP = 'm04-shopping';
 /** The chapter number (1-based) that pays an invite. */
 export const INVITE_PAY_CHAPTER = MAIN_STEPS.findIndex((s) => s.id === INVITE_PAY_STEP) + 1;
 
-export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL, ...STORY_STEPS];
+/**
+ * One-off bonus tasks. "Install the game": opening English Street as an installed app (home-screen web app, or
+ * the store app) sends `app_installed` once; a big reward because most players don't know they can.
+ */
+export const APP_INSTALL_STEP = 'b-install-app';
+export const BONUS_STEPS: JourneyStep[] = [{ id: APP_INSTALL_STEP, kind: 'bonus', goal: { event: 'app_installed' }, reward: R(50, 200) }];
+
+export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL, ...STORY_STEPS, ...BONUS_STEPS];
 export const stepById = (id: string) => ALL_STEPS.find((s) => s.id === id);
 
 /** Saved per player (User.gameState.journey). */

@@ -1,3 +1,4 @@
+import { InstallGuide, InstallNudge, reportInstalledApp } from './ui/InstallApp';
 import { waiter } from './world/waiter';
 import { TripSportsHud } from './ui/TripSportsHud';
 import { useBeachSports } from './store/beachSports';
@@ -355,8 +356,8 @@ export default function App() {
         // back where they left the street last time (not when a link sent them somewhere)
         const spot = !deepLink ? restoreSpot(r?.lastPos) : null;
         if (spot) teleportTo(spot.x, spot.z, spot.rot);
-        // the journey needs the player to exist on the server first
-        void useJourney.getState().load();
+        // the journey needs the player to exist on the server first; opened as the installed app = the install bonus
+        void useJourney.getState().load().then(() => reportInstalledApp(track));
       })
       .catch(() => undefined);
     // First visit: offer the placement test right away.
@@ -404,6 +405,8 @@ export default function App() {
       {tutorialOn ? null : <NextStepChip touch={touch} />}
       <GuideChip />
       <JourneyToasts />
+      {tutorialOn ? null : <InstallNudge touch={touch} />}
+      <InstallGuide />
       {!touch && <WeatherChip compact={false} />}
       <Notices />
       <BusOverlay />

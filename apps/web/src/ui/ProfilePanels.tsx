@@ -1,3 +1,6 @@
+import { BONUS_STEPS } from '@es/shared';
+import { isInstalledApp } from '../net/pwa';
+import { useInstallDone, useInstallGuide } from './InstallApp';
 import { useJourney } from '../store/journey';
 import { AREA_INFO } from '@es/shared';
 import { JourneyPanel } from './journey/JourneyPanel';
@@ -40,20 +43,20 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         type="button"
         data-ui
         onClick={() => open('profile')}
-        className="hud-top absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-11 items-center gap-2 rounded-full bg-black/50 px-3 text-xs text-white backdrop-blur-sm"
-        aria-label={t('Profile')}
+        className="hud-top absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-9 items-center gap-1.5 rounded-full bg-black/45 px-2.5 text-[11px] text-white backdrop-blur-sm"
+        aria-label={`${t('Profile')}: ${p.name}`}
       >
-        <span className="max-w-24 truncate font-semibold">{p.name}</span>
-        <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono">{p.cefrLevel}</span>
+        {/* the name is over the character's head already: level only */}
+        <span className="rounded bg-white/20 px-1 py-px font-mono">{p.cefrLevel}</span>
         <span className="flex items-center gap-1">
           {t('Lv {level}', { level: p.level })}
-          <span className="h-1.5 w-10 rounded bg-white/20">
-            <span className="block h-1.5 rounded bg-yellow-400" style={{ width: `${pct}%` }} />
+          <span className="h-1 w-8 rounded bg-white/20">
+            <span className="block h-1 rounded bg-yellow-400" style={{ width: `${pct}%` }} />
           </span>
         </span>
         {!p.placementDone && (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 text-slate-900">
-            <Icon name="target" size={14} />
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-yellow-400 text-slate-900">
+            <Icon name="target" size={11} />
           </span>
         )}
       </button>
@@ -139,6 +142,7 @@ function ProfilePanel() {
             {t('Take the 2-minute level test')}
           </button>
         )}
+        <InstallItem />
         <Item to="daily"><Icon name="book" className="me-3 text-slate-600" />{t('My journey: quests, passport, today')}</Item>
         <Item to="notebook"><Icon name="feedback" className="me-3 text-slate-600" />{t('Notebook')}</Item>
         <Item to="avatar"><Icon name="smile" className="me-3 text-slate-600" />{t('Character & shop')}</Item>
@@ -417,5 +421,18 @@ function JourneyBadges() {
         ))}
       </div>
     </div>
+  );
+}
+
+/** Phone profile sheet: "Install the game (+200 coins)" until it is done. */
+function InstallItem() {
+  const t = useT();
+  const done = useInstallDone();
+  if (done || isInstalledApp()) return null;
+  return (
+    <button type="button" onClick={() => useInstallGuide.getState().show(true)} className="flex min-h-12 w-full items-center rounded-xl bg-blue-600 px-4 text-left text-base font-medium text-white">
+      <span className="me-3 text-lg">📲</span>
+      {t('Install the game, get {n} coins!', { n: BONUS_STEPS[0]!.reward.coins })}
+    </button>
   );
 }

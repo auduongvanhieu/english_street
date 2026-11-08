@@ -1,5 +1,6 @@
 import {
   AREA_STEPS,
+  BONUS_STEPS,
   DAILY_BONUS,
   STORY_BONUS,
   STORY_STEPS,
@@ -78,6 +79,8 @@ export function applyEvent(st: JourneyState, name: string, props: Record<string,
   // area tasks (all open at once)
   const before = stampsOf(st);
   for (const s of AREA_STEPS) if (!st.done.includes(s.id) && bump(s, st.prog)) (st.done.push(s.id), done.push(s));
+  // one-off bonus tasks (install the app)
+  for (const s of BONUS_STEPS) if (!st.done.includes(s.id) && bump(s, st.prog)) (st.done.push(s.id), done.push(s));
   const after = stampsOf(st);
   const stamp = after.find((a) => !before.includes(a));
   // the main chain: every chapter counts when it is done, in any order (the HUD shows the first one not done);

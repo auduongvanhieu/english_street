@@ -92,8 +92,12 @@ const STORY: Record<string, Text> = {
   's8-night': { title: tk('Good night!'), how: tk('Go home to My room (or check in at the hotel) at the end of the day.'), say: 'Good night! See you tomorrow.' },
 };
 
+const BONUS: Record<string, Text> = {
+  'b-install-app': { title: tk('Install the game on your phone'), how: tk('Add English Street to your home screen, then open it from there.') },
+};
+
 export function stepText(s: JourneyStep): { title: string; how: string; say?: string } {
-  const pick = s.kind === 'main' ? MAIN[s.id] : s.kind === 'daily' ? DAILY[s.id] : s.kind === 'story' ? STORY[s.id] : AREA[s.id.split('-').slice(2).join('-')];
+  const pick = s.kind === 'bonus' ? BONUS[s.id] : s.kind === 'main' ? MAIN[s.id] : s.kind === 'daily' ? DAILY[s.id] : s.kind === 'story' ? STORY[s.id] : AREA[s.id.split('-').slice(2).join('-')];
   return pick ? { title: t(pick.title), how: t(pick.how), say: pick.say } : { title: s.id, how: '' };
 }
 export function areaName(a: AreaId | 'river') {

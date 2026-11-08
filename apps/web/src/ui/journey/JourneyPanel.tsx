@@ -1,3 +1,4 @@
+import { InstallCard } from '../InstallApp';
 import { useEffect, useState } from 'react';
 import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_PAY_CHAPTER, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
 import { getPlayerId } from '../../net/player';
@@ -89,6 +90,7 @@ export function JourneyPanel() {
         <p className="text-sm text-gray-500">{t('Loading…')}</p>
       ) : tab === 'journey' ? (
         <>
+          <InstallCard />
           <p className="mb-2 text-sm text-gray-600">
             {t('Chapter {n} of {total}', { n: Math.min(view.chapter + 1, MAIN_STEPS.length), total: MAIN_STEPS.length })}
           </p>
