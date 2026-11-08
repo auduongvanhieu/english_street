@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DECOR_ITEMS, THIEF_BREATH_S, applyMyFarm, myFarmAt, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
+import { DECOR_ITEMS, THIEF_BREATH_S, applyMyFarm, inRect, myFarmAt, emptyMyFarm, myFarm, type FarmView, type MyFarmAction, type MyFarmError, type MyFarmState } from '@es/shared';
 import { get, post } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { onFarm, sendFarm } from '../net/client';
@@ -196,6 +196,19 @@ export function initMyFarm() {
   const iv = window.setInterval(() => {
     if (!useMyFarm.getState().at) void useMyFarm.getState().load();
   }, 120_000);
+  // left the farm another way than the gate (Take me there, the map, the bus, My room…): forget the farm, so its
+  // buttons go away; "been inside" first, so the teleport in through the gate doesn't count as leaving
+  let inside = false;
+  const away = window.setInterval(() => {
+    const at = useMyFarm.getState().at;
+    if (!at || at.slot < 0) return void (inside = false);
+    const there = inRect(myFarm(at.slot).rect, localPos.x, localPos.z, 8);
+    if (there) inside = true;
+    else if (inside) {
+      inside = false;
+      useMyFarm.setState({ at: null, view: null, panel: null, decorating: null });
+    }
+  }, 1000);
   const off = onFarm((m) => {
     const st = useMyFarm.getState();
     if (m.op === 'slot') {
@@ -223,6 +236,7 @@ export function initMyFarm() {
   return () => {
     off();
     window.clearInterval(iv);
+    window.clearInterval(away);
   };
 }
 

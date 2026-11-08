@@ -9,6 +9,8 @@ import { AreaGroup, Ground, Merged, box, cyl, sphere, tree, type Part } from '..
 import { useBooks } from '../../../store/books';
 import { useUsable } from '../../../world/usables';
 import { useMyRoom } from '../../../store/myRoom';
+import { useProfile } from '../../../store/profile';
+import { useGame } from '../../../store/game';
 import { useT } from '../../../i18n';
 import { t as tr } from '../../../i18n';
 
@@ -322,12 +324,39 @@ function onTap(e: ThreeEvent<MouseEvent>) {
   else useArea.getState().openCard({ area: 'home', item: best.item });
 }
 
-/** The front door of the house leads to "My room" too (your own room off the map). */
+/** "My room" has its own door in the living room (west wall): a name plate "<name>'s room", tap it to go in. */
+const ROOM_DOOR = { x: H.x0 + 0.16, z: -10.05 };
 function MyRoomDoor() {
   const t = useT();
-  const [x, z] = FRAME.toWorld(2.3, HOUSE.z1 + 0.9);
-  useUsable({ id: 'home-my-room', x, z, r: 1.4, icon: '🏠', label: t('My room'), use: () => void useMyRoom.getState().enter() });
-  return null;
+  // the name over the character's head (a guest's profile is just "Guest")
+  const playerName = useGame((s) => s.playerName);
+  const profileName = useProfile((s) => s.profile?.name);
+  const name = playerName || profileName || '';
+  const [x, z] = FRAME.toWorld(ROOM_DOOR.x + 1.0, ROOM_DOOR.z);
+  const label = name ? t("{name}'s room", { name }) : t('My room');
+  useUsable({ id: 'home-my-room', x, z, r: 1.4, icon: '🚪', label, use: () => void useMyRoom.getState().enter() });
+  return (
+    <group position={[ROOM_DOOR.x, 0, ROOM_DOOR.z]} rotation-y={Math.PI / 2}>
+      <Merged
+        castShadow={false}
+        build={(p) => {
+          // frame, the door, its panels and knob, a doormat
+          for (const s of [-1, 1]) p.add(box(0.14, 2.35, 0.1), '#ffffff', { p: [s * 0.62, 1.175, 0] });
+          p.add(box(1.38, 0.14, 0.1), '#ffffff', { p: [0, 2.37, 0] });
+          p.add(box(1.1, 2.25, 0.07), '#9a6240', { p: [0, 1.125, 0.03] });
+          for (const y of [0.6, 1.55]) p.add(box(0.8, 0.62, 0.03), '#b27650', { p: [0, y, 0.075] });
+          p.add(sphere(0.055, 8, 6), '#f2c94c', { p: [0.4, 1.05, 0.11] });
+          p.add(box(1.0, 0.02, 0.6), '#c96f6f', { p: [0, 0.01, 0.45] });
+          // name plate over the door
+          p.add(box(1.5, 0.36, 0.05), '#fff6df', { p: [0, 2.68, 0.04] });
+          p.add(box(1.58, 0.44, 0.03), '#7a4a2a', { p: [0, 2.68, 0.01] });
+        }}
+      />
+      <Text position={[0, 2.68, 0.08]} fontSize={0.17} maxWidth={1.4} color="#7a4a2a" anchorX="center" anchorY="middle">
+        {label}
+      </Text>
+    </group>
+  );
 }
 
 export default function Home() {
@@ -336,9 +365,6 @@ export default function Home() {
     <AreaGroup area={AREA}>
       <MyBookshelf />
       <MyRoomDoor />
-      <Text position={[2.3, 2.3, HOUSE.z1 + 0.05]} fontSize={0.2} color="#8d5a3b" anchorX="center" anchorY="middle" outlineWidth={0.015} outlineColor="#ffffff">
-        🏠 MY ROOM
-      </Text>
       <Ground x0={-28} x1={28} z0={-23.5} z1={0} color="#a9d67f" y={0.006} />
       <Ground x0={-1.6} x1={1.6} z0={H.z1} z1={0} color="#cdbf9f" y={0.01} />
       <Merged build={shell} />
