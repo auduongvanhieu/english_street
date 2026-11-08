@@ -4,6 +4,7 @@ import { canBuyMore, inBag, useMyRoom } from '../store/myRoom';
 import { useProfile } from '../store/profile';
 import { useVoice } from '../store/voice';
 import { useT } from '../i18n';
+import { Icon } from './icons';
 
 /** My room: shop and bag, the carried piece's controls, and the visitor bar. */
 export function MyRoomHud() {
@@ -63,12 +64,19 @@ export function MyRoomHud() {
           </div>
         </div>
       ) : panel ? (
-        <div className="pointer-events-auto max-h-[55vh] w-full overflow-y-auto rounded-2xl bg-white/95 p-2.5 shadow-xl">
+        <div className="pointer-events-auto flex max-h-[60dvh] w-full flex-col overflow-hidden rounded-2xl bg-white/95 shadow-xl">
+          {/* title and close button stay put, the list scrolls */}
+          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2">
+            <b className="min-w-0 flex-1 truncate text-sm text-slate-800">{panel === 'shop' ? `🛒 ${t('Furniture shop')}` : `🎒 ${t('My things')}`}</b>
+            {panel === 'shop' ? <span className="text-xs font-semibold text-slate-600">🪙 {coins}</span> : null}
+            <button type="button" onClick={() => m.setPanel(null)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600" aria-label={t('Close')}>
+              <Icon name="close" size={16} />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
           {panel === 'shop' ? (
             <>
-              <p className="mb-1.5 text-xs text-gray-600">
-                {t('Buy furniture for your room. Every piece is an English word!')} 🪙 {coins}
-              </p>
+              <p className="mb-1.5 text-xs text-gray-600">{t('Buy furniture for your room. Every piece is an English word!')}</p>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4" dir="ltr">
                 {FURNITURE.map((f) => {
                   const can = canBuyMore(owned, f.id) && coins >= f.price;
@@ -106,6 +114,7 @@ export function MyRoomHud() {
               )}
             </>
           )}
+          </div>
         </div>
       ) : null}
     </div>
