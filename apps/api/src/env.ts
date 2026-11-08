@@ -32,6 +32,8 @@ const EnvSchema = z.object({
   NPC_RATE_PER_MIN: z.coerce.number().default(20),
   /** Cheaper model for A1–A2 quests and free chat (set equal to NPC_MODEL to disable routing). */
   NPC_MODEL_BASIC: z.string().default('claude-haiku-5-5'),
+  /** Model for translating the UI and the learning content (scripts/i18n-translate.ts, admin auto-translate). */
+  TRANSLATE_MODEL: z.string().default('claude-sonnet-5-5'),
   /** Anti-abuse: NPC turns per player per day, and a global daily spend ceiling (USD, estimated from usage). */
   NPC_DAILY_TURNS_PER_PLAYER: z.coerce.number().default(60),
   NPC_DAILY_BUDGET_USD: z.coerce.number().default(5),
