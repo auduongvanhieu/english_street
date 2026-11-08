@@ -66,7 +66,8 @@ export default defineConfig({
         // App shell is precached; 3D models are cached on first use so revisits start instantly.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Interface catalogs: each player only needs their own language, fetched (and then cached) on demand.
-        globIgnores: ['**/locales/**'],
+        // the admin site is not part of the game: an admin-only deploy must not change the game's precache
+        globIgnores: ['**/locales/**', 'admin/**', 'assets/admin-*'],
         navigateFallbackDenylist: [/^\/api\//, /^\/ws\//, /^\/admin/],
         runtimeCaching: [
           {

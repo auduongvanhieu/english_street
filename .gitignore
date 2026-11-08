@@ -12,3 +12,6 @@ apps/api/src/generated/
 .sm-uploads/
 _work/
 __pycache__/
+
+# deploy.sh: commit the running servers were started from (production checkout)
+.deployed-server-commit
