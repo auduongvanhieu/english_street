@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { NIGHT_WORD, WEATHER_WORD } from '@es/shared';
 import { useWorld } from '../store/world';
 import { sky } from '../world/sky';
-import { cameraOrbit } from '../input/camera';
+import { useSettings, type SkyTime, type SkyWeather } from '../store/settings';
 import { speak } from '../voice/tts';
 import { useT } from '../i18n';
 import { inRect } from '@es/shared';
@@ -30,13 +30,12 @@ export function WeatherChip({ compact }: { compact: boolean }) {
   const now = useWorld((s) => s.cfg?.now ?? null);
   const [, tick] = useState(0);
   const [open, setOpen] = useState(false);
-  const [looking, setLooking] = useState(cameraOrbit.tiltTarget > 0.5);
   const t = useT();
+  const skyTime = useSettings((s) => s.skyTime);
+  const skyWeather = useSettings((s) => s.skyWeather);
+  const setSky = useSettings((s) => s.set);
   useEffect(() => {
-    const id = setInterval(() => {
-      tick((n) => n + 1);
-      setLooking(cameraOrbit.tiltTarget > 0.5);
-    }, 1000);
+    const id = setInterval(() => tick((n) => n + 1), 1000);
     return () => clearInterval(id);
   }, []);
   const night = sky.day < 0.3;
@@ -48,10 +47,22 @@ export function WeatherChip({ compact }: { compact: boolean }) {
   const icon = hill ? hill.icon : night && clearish ? '🌙' : w.icon;
   const tempC = hill ? hill.tempC : now?.tempC;
   const word = hill ?? sw;
-  const lookUp = () => {
-    cameraOrbit.tiltTarget = cameraOrbit.tiltTarget > 0.5 ? 0 : 1;
-    setLooking(cameraOrbit.tiltTarget > 0.5);
-  };
+  const times: [SkyTime, string, string][] = [
+    ['system', '🕒', t('Real time')],
+    ['morning', '🌅', t('Morning')],
+    ['noon', '☀️', t('Noon')],
+    ['sunset', '🌇', t('Sunset')],
+    ['night', '🌙', t('Night')],
+  ];
+  const weathers: [SkyWeather, string, string][] = [
+    ['system', '🛰️', t('Real weather')],
+    ['clear', '☀️', t('Sunny')],
+    ['cloudy', '☁️', t('Cloudy')],
+    ['rain', '🌧️', t('Rain')],
+    ['storm', '⛈️', t('Storm')],
+    ['fog', '🌫️', t('Fog')],
+  ];
+  const chip = (on: boolean) => `flex min-h-9 flex-col items-center justify-center rounded-lg px-1 py-1 text-[10px] leading-tight ${on ? 'bg-sky-600 font-semibold text-white' : 'bg-slate-100 text-slate-700'}`;
   return (
     // touch: a round button in the right-hand column (App.tsx), the card opens to its left
     <div data-ui className={compact ? 'relative text-xs' : 'absolute bottom-3 left-3 z-10 flex flex-col-reverse items-start text-xs'}>
@@ -78,19 +89,10 @@ export function WeatherChip({ compact }: { compact: boolean }) {
           {tempC != null && <span>{Math.round(tempC)}°C</span>}
           <span className="tabular-nums opacity-80">{hhmm(sky.hour)}</span>
         </button>
-        <button
-          type="button"
-          onClick={lookUp}
-          title={looking ? t('Back to normal view') : t('Look at the sky')}
-          aria-pressed={looking}
-          className={`flex h-9 w-9 items-center justify-center rounded-full text-base text-white backdrop-blur-sm ${looking ? 'bg-sky-600' : 'bg-black/50 hover:bg-black/60'}`}
-        >
-          {looking ? '⬇️' : '🔭'}
-        </button>
       </div>
       )}
       {open && (
-        <div className={`w-64 rounded-xl ${compact ? 'absolute right-14 top-0 z-30' : 'my-2'} bg-white/95 p-3 text-gray-800 shadow-xl`}>
+        <div className={`w-72 rounded-xl ${compact ? 'absolute right-14 top-0 z-30' : 'my-2'} bg-white/95 p-3 text-gray-800 shadow-xl`}>
           <div className="flex items-start gap-2">
             <span className="text-2xl leading-none">{icon}</span>
             <div className="flex-1">
@@ -114,10 +116,28 @@ export function WeatherChip({ compact }: { compact: boolean }) {
             )}
             <div className="text-[11px] text-gray-400">{now?.live === false ? t('Weather set by the game team') : t('Live weather, updated every 10 minutes')}</div>
           </div>
-          <button type="button" onClick={lookUp} className="mt-2 w-full rounded-lg bg-sky-600 py-1.5 font-semibold text-white hover:bg-sky-700">
-            {looking ? t('Back to normal view') : `🔭 ${t('Look at the sky')}`}
-          </button>
-          <p className="mt-1 text-center text-[11px] text-gray-400">{t('Tip: drag up or down on the street to tilt the camera')}</p>
+          {/* day / night and weather on this screen only (same as Settings) */}
+          <div className="mt-2 border-t pt-2">
+            <div className="mb-1 font-semibold text-gray-700">{t('Time of day')}</div>
+            <div className="grid grid-cols-5 gap-1">
+              {times.map(([id, ic, label]) => (
+                <button key={id} type="button" onClick={() => setSky({ skyTime: id })} className={chip(skyTime === id)} aria-pressed={skyTime === id}>
+                  <span className="text-base leading-none">{ic}</span>
+                  <span className="mt-0.5 w-full truncate text-center">{label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mb-1 mt-2 font-semibold text-gray-700">{t('Weather')}</div>
+            <div className="grid grid-cols-6 gap-1">
+              {weathers.map(([id, ic, label]) => (
+                <button key={id} type="button" onClick={() => setSky({ skyWeather: id })} className={chip(skyWeather === id)} aria-pressed={skyWeather === id}>
+                  <span className="text-base leading-none">{ic}</span>
+                  <span className="mt-0.5 w-full truncate text-center">{label}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-center text-[11px] text-gray-400">{skyTime === 'system' && skyWeather === 'system' ? t('Follows the real time and weather in Vietnam') : t('Only on your screen')}</p>
+          </div>
         </div>
       )}
     </div>

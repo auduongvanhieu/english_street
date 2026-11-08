@@ -222,7 +222,13 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
           use: () => {
             const a = useMyFarm.getState();
             if (!dog) return a.setPanel('shop');
-            if (!fed) return void a.act({ action: 'dogfeed' });
+            if (!fed) {
+              // no feed in the barn: buy a bag first (1 coin), like feeding the animals
+              return void (async () => {
+                if (a.mine.feed < 1) await a.act({ action: 'buy', item: 'feed', qty: 1 });
+                if (useMyFarm.getState().mine.feed > 0) await useMyFarm.getState().act({ action: 'dogfeed' });
+              })();
+            }
             a.setPanel('train');
           },
         }
