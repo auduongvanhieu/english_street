@@ -16,6 +16,8 @@ export const SETTING_DEFS = {
   npcRatePerMin: { schema: z.number().int().min(1).max(600), def: () => env.NPC_RATE_PER_MIN },
   npcModel: { schema: z.string().regex(/^claude-[a-z0-9.-]+$/), def: () => env.NPC_MODEL },
   npcModelBasic: { schema: z.string().regex(/^claude-[a-z0-9.-]+$/), def: () => env.NPC_MODEL_BASIC },
+  /** Translating the UI and the learning content (admin auto-translate; the dev script reads TRANSLATE_MODEL). */
+  translateModel: { schema: z.string().regex(/^claude-[a-z0-9.-]+$/), def: () => env.TRANSLATE_MODEL },
   /** Message shown instead of the street ('' = open). Admins can still play. */
   maintenance: { schema: z.string().max(500), def: () => '' },
   /** Extra words for the chat filter (masked like the built-in list). */

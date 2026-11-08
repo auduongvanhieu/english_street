@@ -3,7 +3,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import { langName, type LangCode } from '@es/shared';
-import { env } from '../env';
+import { setting } from '../settings';
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
 
@@ -33,13 +33,13 @@ export async function translate(client: Anthropic, lang: LangCode, keys: string[
     const list = chunk.map((k, j) => ({ id: j, text: src[k] ?? k }));
     for (let attempt = 0; attempt < 3; attempt++) {
       const res = await client.messages.parse({
-        model: env.TRANSLATE_MODEL,
+        model: setting('translateModel'),
         max_tokens: 16000,
         system: Object.keys(src).length ? CONTENT_PROMPT(lang) : UI_PROMPT(lang),
         messages: [{ role: 'user', content: JSON.stringify(list) }],
         output_config: { format: zodOutputFormat(Batch) },
       });
-      onUsage?.(env.TRANSLATE_MODEL, res.usage);
+      onUsage?.(setting('translateModel'), res.usage);
       const got = res.parsed_output?.items ?? [];
       let ok = true;
       for (const { id, text } of got) {

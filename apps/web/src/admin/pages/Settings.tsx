@@ -18,6 +18,7 @@ const DESC: Record<string, [string, string, 'number' | 'text' | 'list' | 'long']
   npcRatePerMin: ['Số lượt NPC tối đa mỗi phút mỗi người', 'Max NPC turns per minute per player', 'number'],
   npcModel: ['Model cho NPC trình độ B1+ và chấm điểm', 'Model for B1+ NPCs and grading', 'text'],
   npcModelBasic: ['Model cho NPC A1–A2 và nói chuyện tự do', 'Model for A1–A2 NPCs and free talk', 'text'],
+  translateModel: ['Model dịch nội dung (tự dịch khi sửa nội dung)', 'Model for content translation (auto-translate)', 'text'],
   adminTestTurnsPerDay: ['Lượt "thử NPC" mỗi admin mỗi ngày', '"Try the NPC" turns per admin per day', 'number'],
   maintenance: ['Chế độ bảo trì (để trống = đang mở)', 'Maintenance message (empty = open)', 'long'],
   extraBannedWords: ['Từ cấm thêm (bộ lọc chat)', 'Extra banned words (chat filter)', 'list'],
@@ -39,7 +40,7 @@ export function SettingsPage() {
           { id: 'words', label: L('Bộ lọc chat', 'Chat filter') },
         ]}
       />
-      {tab === 'limits' ? <Limits keys={['maxGuestsPerIp', 'guestPassesPerIpHour', 'guestPassesPerIpDay', 'npcDailyBudgetUsd', 'npcDailyTurnsPerPlayer', 'npcRatePerMin', 'npcModel', 'npcModelBasic', 'adminTestTurnsPerDay']} /> : null}
+      {tab === 'limits' ? <Limits keys={['maxGuestsPerIp', 'guestPassesPerIpHour', 'guestPassesPerIpDay', 'npcDailyBudgetUsd', 'npcDailyTurnsPerPlayer', 'npcRatePerMin', 'npcModel', 'npcModelBasic', 'translateModel', 'adminTestTurnsPerDay']} /> : null}
       {tab === 'notices' ? (
         <>
           <Limits keys={['maintenance']} />
@@ -104,7 +105,7 @@ function SettingField({ row, onSaved }: { row: SettingRow; onSaved: () => void }
           <ListInput value={v as string[]} onChange={setV} />
         ) : type === 'long' ? (
           <Area rows={2} value={v as string} onChange={setV} />
-        ) : row.key.startsWith('npcModel') ? (
+        ) : row.key.startsWith('npcModel') || row.key === 'translateModel' ? (
           <Select value={String(v)} onChange={setV} options={[...new Set([String(v), 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-fable-5-1'])]} />
         ) : (
           <Text value={String(v ?? '')} onChange={setV} />
