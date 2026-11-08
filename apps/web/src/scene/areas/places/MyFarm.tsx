@@ -247,7 +247,11 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
               const a = useMyFarm.getState();
               if (!idx.length) return a.setPanel('shop');
               for (const x of ready) await a.act({ action: 'collect', animal: x.i });
-              if (!ready.length) for (const x of hungry) await a.act({ action: 'feed', animal: x.i });
+              if (ready.length || !hungry.length) return;
+              // out of feed: buy what is missing first (1 coin a bag), then feed
+              const short = hungry.length - a.mine.feed;
+              if (short > 0) await a.act({ action: 'buy', item: 'feed', qty: short });
+              for (const x of useMyFarm.getState().mine.feed > 0 ? hungry : []) await a.act({ action: 'feed', animal: x.i });
             },
           }
         : null,

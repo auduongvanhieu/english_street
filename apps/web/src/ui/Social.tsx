@@ -127,6 +127,29 @@ export function FriendsTab() {
         </section>
       ) : null}
       <section>
+        {/* my own places, next to my friends' ones below */}
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void useMyRoom.getState().enter();
+              useGame.getState().setUiPanel(null);
+            }}
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border bg-amber-50 px-2 text-sm font-semibold text-amber-900"
+          >
+            🏠 {t('My room')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              useMyFarm.getState().enter();
+              useGame.getState().setUiPanel(null);
+            }}
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border bg-emerald-50 px-2 text-sm font-semibold text-emerald-900"
+          >
+            🌾 {t('My farm')}
+          </button>
+        </div>
         <h3 className="mb-1.5 text-xs font-semibold uppercase text-gray-500">
           {t('My friends ({count})', { count: friends.length })}
         </h3>
