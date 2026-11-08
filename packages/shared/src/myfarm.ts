@@ -182,6 +182,8 @@ export const FARM_RESERVED: Rect[] = [
   { minX: -18.4, maxX: -0.6, minZ: 1.4, maxZ: 14 },
   { minX: -1.2, maxX: 2.2, minZ: -18, maxZ: 18 },
   { minX: -20, maxX: 20, minZ: -2, maxZ: 1 },
+  // the farm info board
+  { minX: 2.4, maxX: 5.4, minZ: 1, maxZ: 2.6 },
   { minX: 2.6, maxX: 19.4, minZ: 4.6, maxZ: 14.4 },
   { minX: 2.6, maxX: 19.4, minZ: -15.4, maxZ: -5.6 },
   { minX: 2.6, maxX: 19.4, minZ: 2.6, maxZ: 4.6 },

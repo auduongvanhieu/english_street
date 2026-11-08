@@ -59,89 +59,125 @@ function useNow(ms = 2000) {
   return Date.now() + skew;
 }
 
-/** The farm's top bar (own farm: level, XP, coins, barn, fertilizer; a friend's: their name) and the quick buttons. */
+/**
+ * On screen inside the farm, kept small: one "farm book" button (badge = things to do), plus "water all" and
+ * "harvest all" only while there is something to water or pick. The level, coins and barn live on the info board
+ * in the middle of the farm (and the book's Info tab). A friend's farm: their name and a leave button.
+ */
 export function FarmTopBar() {
   const t = useT();
   const at = useMyFarm((s) => s.at);
   const view = useMyFarm((s) => s.view);
   const mine = useMyFarm((s) => s.mine);
-  const coins = useMyFarm((s) => s.coins);
+  const panel = useMyFarm((s) => s.panel);
   const s = useMyFarm.getState();
   const now = useNow();
   if (!at || at.slot < 0) return null;
-  const lv = farmLevel(mine.farmXp);
-  const prog = levelProgress(mine.farmXp);
+  const top = 'pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.4rem)] z-20 flex max-w-[calc(100vw-6rem)] items-center gap-1.5 sm:top-[9.4rem]';
+  if (view) {
+    return (
+      <div data-ui className={top}>
+        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-white/95 py-1 pe-1 ps-3 text-xs font-semibold text-slate-800 shadow-md ring-1 ring-black/5">
+          🌾 {t("{name}'s farm", { name: at.name })}
+          <button type="button" onClick={() => s.leave()} className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100" title={t('Leave the farm')}>
+            <Icon name="exit" size={13} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (panel) return null;
   const plots = mine.fields * FIELD_PLOTS;
   const toWater = mine.plots.slice(0, plots).filter((p) => p.crop && !p.wateredAt).length;
   const ripe = mine.plots.slice(0, plots).filter((p) => myPlotStage(p, now).stage === 'ready').length;
   const crafted = Object.values(mine.machines).filter((m) => m.job && now - m.job.at >= (RECIPES[m.job.recipe]?.ms ?? Infinity)).length;
   const claimable = FARM_GOALS.filter((g) => !mine.goals.includes(g.id) && (mine.stats[g.stat] ?? 0) >= g.n).length;
   const canDeliver = mine.orders.filter((o) => Object.entries(o.items).every(([k, n]) => (mine.barn[k] ?? 0) >= n)).length;
-  const quick = 'pointer-events-auto flex h-9 items-center gap-1 rounded-full bg-white/95 px-2.5 text-xs sm:px-3 font-semibold text-slate-800 shadow-md ring-1 ring-black/5 disabled:opacity-40';
+  const todo = canDeliver + crafted + claimable;
+  const btn = 'pointer-events-auto relative flex h-9 items-center gap-1 rounded-full bg-white/95 px-2.5 text-sm font-semibold text-slate-800 shadow-md ring-1 ring-black/5';
+  const badge = (n: number, c: string) => (n ? <span className={`absolute -right-1 -top-1 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 text-white ${c}`}>{n}</span> : null);
   return (
-    <div data-ui className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[calc(max(0.75rem,env(safe-area-inset-top))+5.4rem)] z-20 flex max-w-[calc(100vw-6rem)] flex-col items-start gap-1.5 sm:top-[9.4rem]">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-white/95 py-1.5 pe-1.5 ps-3 text-xs text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md">
-        {view ? (
-          <span className="font-semibold">🌾 {t("{name}'s farm", { name: at.name })}</span>
-        ) : (
-          <>
-            <span className="flex flex-col leading-tight">
-              <b>
-                🌾 {t('My farm')} · {t('Level {n}', { n: lv })}
-              </b>
-              <span className="mt-0.5 block h-1.5 w-24 overflow-hidden rounded-full bg-slate-200" title={prog ? `${prog[0]}/${prog[1]} XP` : 'MAX'}>
-                <span className="block h-full rounded-full bg-emerald-500" style={{ width: `${prog ? Math.round((prog[0] / prog[1]) * 100) : 100}%` }} />
-              </span>
-            </span>
-            <span className="flex items-center gap-0.5 font-semibold">
-              <Coin />
-              {coins}
-            </span>
-            <span className="hidden items-center gap-0.5 sm:flex" title={t('Barn')}>
-              🏠 {barnCount(mine)}/{barnCap(mine)}
-            </span>
-            <span className="hidden items-center gap-0.5 sm:flex" title={t('Fertilizer')}>
-              🧪 {mine.fertilizer}
-            </span>
-          </>
-        )}
-        <button type="button" onClick={() => s.leave()} className="flex h-7 items-center gap-1 rounded-full bg-slate-100 px-2" title={t('Leave the farm')}>
-          <Icon name="exit" size={14} />
+    <div data-ui className={top}>
+      <button type="button" onClick={() => s.setPanel('info')} className={btn} title={t('Farm book')}>
+        📒 <span className="hidden text-xs sm:inline">{t('Farm book')}</span>
+        {badge(todo, 'bg-emerald-500')}
+      </button>
+      {toWater ? (
+        <button type="button" onClick={() => void s.act({ action: 'waterAll' })} className={btn} title={t('Water all')}>
+          💧 <span className="hidden text-xs sm:inline">{t('Water all')}</span>
+          {badge(toWater, 'bg-sky-500')}
+        </button>
+      ) : null}
+      {ripe ? (
+        <button type="button" onClick={() => void s.act({ action: 'harvestAll' })} className={btn} title={t('Harvest all')}>
+          🧺 <span className="hidden text-xs sm:inline">{t('Harvest all')}</span>
+          {badge(ripe, 'bg-amber-500')}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Book tab: the farm at a glance (what the info board in the middle shows). */
+function Info() {
+  const t = useT();
+  const mine = useMyFarm((s) => s.mine);
+  const coins = useMyFarm((s) => s.coins);
+  const day = useMyFarm((s) => s.day);
+  const s = useMyFarm.getState();
+  const lv = farmLevel(mine.farmXp);
+  const prog = levelProgress(mine.farmXp);
+  const next = prog ? unlocksAt(lv + 1) : [];
+  const earned = mine.earned[0] === day ? mine.earned[1] : 0;
+  const name = (it: string) => {
+    const [k, w] = it.split(':');
+    if (k === 'seed') return `${GOOD_ICON[w!]} ${w}`;
+    if (k === 'animal') return `${ANIMAL_INFO[w as keyof typeof ANIMAL_INFO].icon} ${w}`;
+    return `🪧 ${t('A new field')}`;
+  };
+  const cell = 'rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-black/5';
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-amber-50 p-3 ring-1 ring-black/5">
+        <div className="flex items-baseline justify-between">
+          <b className="text-lg text-slate-800">🌾 {t('Level {n}', { n: lv })}</b>
+          <span className="text-xs text-gray-500">{prog ? `${prog[0]}/${prog[1]} XP` : 'MAX'}</span>
+        </div>
+        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white">
+          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${prog ? Math.round((prog[0] / prog[1]) * 100) : 100}%` }} />
+        </div>
+        {next.length ? (
+          <p className="mt-2 text-xs text-gray-600" dir="auto">
+            {t('Next level:')} <span dir="ltr" className="font-semibold text-slate-700">{next.map(name).join(' · ')}</span>
+          </p>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className={cell}>
+          <div className="text-xs text-gray-500">{t('Coins')}</div>
+          <b className="flex items-center gap-1"><Coin /> {coins}</b>
+        </div>
+        <div className={cell}>
+          <div className="text-xs text-gray-500">{t('Barn')}</div>
+          <b>🏠 {barnCount(mine)}/{barnCap(mine)}</b>
+        </div>
+        <div className={cell}>
+          <div className="text-xs text-gray-500">{t('Fertilizer')}</div>
+          <b>🧪 {mine.fertilizer}</b>
+        </div>
+        <div className={cell}>
+          <div className="text-xs text-gray-500">{t('Earned today')}</div>
+          <b>{earned}/{FARM_DAY_CAP}</b>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => s.setPanel('decorate')} className="flex-1 rounded-xl bg-pink-50 py-2 text-sm font-semibold text-pink-800 ring-1 ring-pink-200">
+          🌷 {t('Decorate')}
+        </button>
+        <button type="button" onClick={() => s.leave()} className="flex flex-1 items-center justify-center gap-1 rounded-xl bg-slate-100 py-2 text-sm font-semibold text-slate-700">
+          <Icon name="exit" size={15} /> {t('Leave the farm')}
         </button>
       </div>
-      {!view ? (
-        <div className="flex flex-wrap gap-1.5">
-          <button type="button" disabled={!toWater} onClick={() => void s.act({ action: 'waterAll' })} className={quick}>
-            💧 <span className="hidden sm:inline">{t('Water all')}</span>
-            {toWater ? <span className="rounded-full bg-sky-100 px-1.5 text-sky-800">{toWater}</span> : null}
-          </button>
-          <button type="button" disabled={!ripe} onClick={() => void s.act({ action: 'harvestAll' })} className={quick}>
-            🧺 <span className="hidden sm:inline">{t('Harvest all')}</span>
-            {ripe ? <span className="rounded-full bg-amber-100 px-1.5 text-amber-800">{ripe}</span> : null}
-          </button>
-          <button type="button" onClick={() => s.setPanel('orders')} className={quick}>
-            📋 <span className="hidden sm:inline">{t('Orders')}</span>
-            {canDeliver ? <span className="rounded-full bg-emerald-500 px-1.5 text-white">{canDeliver}</span> : null}
-          </button>
-          <button type="button" onClick={() => s.setPanel('shop')} className={quick}>
-            🛒 <span className="hidden sm:inline">{t('Shop')}</span>
-          </button>
-          <button type="button" onClick={() => s.setPanel('barn')} className={quick}>
-            🏠 <span className="hidden sm:inline">{t('Barn')}</span>
-          </button>
-          <button type="button" onClick={() => s.setPanel('workshop')} className={quick}>
-            🍞 <span className="hidden sm:inline">{t('Workshop')}</span>
-            {crafted ? <span className="rounded-full bg-orange-500 px-1.5 text-white">{crafted}</span> : null}
-          </button>
-          <button type="button" onClick={() => s.setPanel('decorate')} className={quick}>
-            🌷 <span className="hidden sm:inline">{t('Decorate')}</span>
-          </button>
-          <button type="button" onClick={() => s.setPanel('goals')} className={quick}>
-            🏅 <span className="hidden sm:inline">{t('Goals')}</span>
-            {claimable ? <span className="rounded-full bg-emerald-500 px-1.5 text-white">{claimable}</span> : null}
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -153,8 +189,9 @@ export function FarmBook() {
   const view = useMyFarm((s) => s.view);
   const at = useMyFarm((s) => s.at);
   const s = useMyFarm.getState();
-  if (!at || view || (panel !== 'orders' && panel !== 'shop' && panel !== 'barn' && panel !== 'workshop' && panel !== 'goals')) return null;
+  if (!at || view || (panel !== 'info' && panel !== 'orders' && panel !== 'shop' && panel !== 'barn' && panel !== 'workshop' && panel !== 'goals')) return null;
   const tabs: [typeof panel, string][] = [
+    ['info', `🌾 ${t('Info')}`],
     ['orders', `📋 ${t('Orders')}`],
     ['shop', `🛒 ${t('Shop')}`],
     ['barn', `🏠 ${t('Barn')}`],
@@ -174,7 +211,7 @@ export function FarmBook() {
             <Icon name="close" size={18} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">{panel === 'orders' ? <Orders /> : panel === 'shop' ? <Shop /> : panel === 'workshop' ? <Workshop /> : panel === 'goals' ? <Goals /> : <Barn />}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">{panel === 'info' ? <Info /> : panel === 'orders' ? <Orders /> : panel === 'shop' ? <Shop /> : panel === 'workshop' ? <Workshop /> : panel === 'goals' ? <Goals /> : <Barn />}</div>
       </div>
     </div>
   );

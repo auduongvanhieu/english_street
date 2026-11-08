@@ -11,14 +11,14 @@ import { Merged, Sign, box, fenceRect } from '../kit';
 import { Animal } from '../Animal';
 import { Marker, Plants } from '../Farm';
 import { enclosurePath } from '../../../world/zooLayout';
-import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, LOG_BOARD, ORDER_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
+import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, INFO_BOARD, LOG_BOARD, ORDER_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
 import { setDynamicBlockers } from '../../../world/layout';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
 import { useT } from '../../../i18n';
 import { TimerBar, timeLeft } from './TimerBar';
 import { MyFarmLand } from './MyFarmLand';
-import { DECOR_ITEMS, MY_GROW_MS, RECIPES } from '@es/shared';
+import { DECOR_ITEMS, MY_GROW_MS, RECIPES, farmLevel } from '@es/shared';
 
 const NO_DECOR: { k: string; x: number; z: number; r: number }[] = [];
 
@@ -164,6 +164,7 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
   useUsable(mine ? { id: 'myfarm-shop', ...W(SHOP.x, SHOP.z - 1.1), r: 1.6, icon: '🛒', label: t('Farm shop'), priority: true, use: () => useMyFarm.getState().setPanel('shop') } : null);
   useUsable({ id: 'myfarm-log', ...W(LOG_BOARD.x, LOG_BOARD.z - 1.1), r: 1.6, icon: '📋', label: mine ? t('Farm notice board') : t('Leave a note for your friend'), priority: true, use: () => useMyFarm.getState().setPanel('settings') });
   useUsable(mine ? { id: 'myfarm-workshop', ...W(BARN.x, BARN.z + BARN.d / 2 + 0.9), r: 1.6, icon: '🍞', label: t('The workshop (in the barn)'), priority: true, use: () => useMyFarm.getState().setPanel('workshop') } : null);
+  useUsable(mine ? { id: 'myfarm-info', ...W(INFO_BOARD.x, INFO_BOARD.z + 1.1), r: 1.6, icon: '🌾', label: t('Farm info'), priority: true, use: () => useMyFarm.getState().setPanel('info') } : null);
   useUsable(mine ? { id: 'myfarm-orders', ...W(ORDER_BOARD.x, ORDER_BOARD.z - 1.1), r: 1.5, icon: '📋', label: t('Farm orders'), priority: true, use: () => useMyFarm.getState().setPanel('orders') } : null);
   useUsable(mine ? { id: 'myfarm-bin', ...W(BIN.x + 1.3, BIN.z), r: 1.6, icon: '💰', label: t('Sell my produce'), priority: true, use: () => useMyFarm.getState().setPanel('barn') } : null);
   for (let i = 0; i < MAX_FIELDS * FIELD_PLOTS; i++) {
@@ -408,6 +409,7 @@ export default function MyFarm() {
             <Sign x={SHOP.x} z={SHOP.z} text="FARM SHOP" sub="seeds · animals · feed" color="#2f6b3a" y={1.2} rot={Math.PI} />
             <Sign x={BIN.x} z={BIN.z - 0.9} text="SELL" color="#c0392b" y={1.2} />
             <Sign x={ORDER_BOARD.x} z={ORDER_BOARD.z} text="ORDERS" sub="deliver · earn more" color="#b5651d" y={1.2} rot={Math.PI} />
+            <InfoBoard />
           </>
         ) : null}
         <Sign x={LOG_BOARD.x} z={LOG_BOARD.z} text="NOTICE BOARD" color="#7a4a2a" y={1.2} rot={Math.PI} />
@@ -424,6 +426,12 @@ export default function MyFarm() {
 
 
 /** Over the barn door: the workshop job that ends first (bar + time left). */
+/** The farm info board: shows the farm level live (tap it for the info tab). */
+function InfoBoard() {
+  const lv = useMyFarm((s) => farmLevel(s.mine.farmXp));
+  return <Sign x={INFO_BOARD.x} z={INFO_BOARD.z} text="MY FARM" sub={`level ${lv} · tap to see`} color="#2f6b3a" y={1.3} w={2.7} />;
+}
+
 function WorkshopTimer() {
   const machines = useMyFarm((s) => s.mine.machines);
   const jobs = Object.values(machines)
