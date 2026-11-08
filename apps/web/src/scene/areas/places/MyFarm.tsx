@@ -11,7 +11,7 @@ import { Merged, Sign, box, fenceRect } from '../kit';
 import { Animal } from '../Animal';
 import { Marker, Plants } from '../Farm';
 import { enclosurePath } from '../../../world/zooLayout';
-import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, INFO_BOARD, LOG_BOARD, ORDER_BOARD, PENS, PLOT, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
+import { BARN, BIN, DECOR, DOG_HOUSE, GATE_W, INFO_BOARD, LOG_BOARD, ORDER_BOARD, PEN_GATE, PENS, PEN_PROPS, PLOT, penGateSide, penGateX, SHOP, blockersFor, plotPos } from '../../../world/myFarmLayout';
 import { setDynamicBlockers } from '../../../world/layout';
 import { useMyFarm } from '../../../store/myFarm';
 import { useUsable } from '../../../world/usables';
@@ -62,15 +62,24 @@ function Static({ fields, placed }: { fields: number; placed: Placed[] }) {
         // paths
         p.add(box(3, 0.02, MY_FARM.d - 1), '#d9c49a', { p: [0.5, 0.012, 0] });
         p.add(box(MY_FARM.w - 2, 0.02, 2.6), '#d9c49a', { p: [0, 0.013, -0.5] });
-        // pens: ground and fence (no gap: animals stay in)
+        // pens: ground, fence with an open gate on the path side (players walk in; the animals keep to their paths)
         for (const pen of PENS) {
           p.add(box(pen.x1 - pen.x0, 0.02, pen.z1 - pen.z0), pen.ground, { p: [(pen.x0 + pen.x1) / 2, 0.015, (pen.z0 + pen.z1) / 2] });
-          fenceRect(p, pen.x0, pen.x1, pen.z0, pen.z1, '#8a6a44', 1.0);
+          const gate = [penGateX(pen)];
+          const side = penGateSide(pen);
+          fenceRect(p, pen.x0, pen.x1, pen.z0, pen.z1, '#8a6a44', 1.0, side === 'z1' ? gate : [], side === 'z0' ? gate : []);
+          const gz = pen[side];
+          for (const x of gate[0]!) p.add(box(0.2, 1.5, 0.2), '#6e4a26', { p: [x, 0.75, gz] });
+          // the gate leaf, swung open against the fence (inside the pen)
+          const dz = side === 'z0' ? 1 : -1;
+          p.add(box(0.06, 0.85, 1.5), '#a0703c', { p: [gate[0]![1] + 0.08, 0.55, gz + dz * 0.8] });
+          // a little dirt where everybody walks through
+          p.add(box(PEN_GATE - 0.2, 0.02, 1.6), '#cdb27e', { p: [(pen.x0 + pen.x1) / 2, 0.02, gz + dz * 0.5] });
         }
-        p.addColored(kit.SM_Coop!, { p: [8.5, 0, 12] });
-        p.addColored(kit.SM_Trough!, { p: [15, 0, 13] });
-        p.addColored(kit.SM_Trough!, { p: [15, 0, -14] });
-        p.addColored(kit.SM_HayBale!, { p: [6, 0, -13.5], r: [0, 0.4, 0] });
+        p.addColored(kit.SM_Coop!, { p: [PEN_PROPS.coop.x, 0, PEN_PROPS.coop.z] });
+        p.addColored(kit.SM_Trough!, { p: [PEN_PROPS.troughN.x, 0, PEN_PROPS.troughN.z] });
+        p.addColored(kit.SM_Trough!, { p: [PEN_PROPS.troughS.x, 0, PEN_PROPS.troughS.z] });
+        p.addColored(kit.SM_HayBale!, { p: [PEN_PROPS.hay.x, 0, PEN_PROPS.hay.z], r: [0, 0.4, 0] });
         p.addColored(kit.SM_Barn!, { p: [BARN.x, 0, BARN.z] });
         // fields: soil beds (bought ones) and grass with a stake (not yet)
         for (let i = 0; i < MAX_FIELDS * FIELD_PLOTS; i++) {
@@ -239,13 +248,8 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
     const ready = idx.filter((x) => animalStage(x.a, now).stage === 'ready');
     const hungry = idx.filter((x) => animalStage(x.a, now).stage === 'hungry');
     const label = !idx.length ? t('Buy animals in the farm shop') : ready.length ? t('Collect {n}', { n: ready.length }) : hungry.length ? t('Feed the animals ({n})', { n: hungry.length }) : t('The animals are happy. Next one ready in {time}', { time: timeLeft(Math.min(...idx.map((x) => x.a.fedAt + ANIMAL_INFO[pen.kind].everyMs)) - now) });
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useUsable(
-      mine
-        ? {
-            id: `myfarm-pen-${pen.kind}`,
-            ...W(pen.spot.x, pen.spot.z),
-            r: 2,
+    const use = mine
+      ? {
             icon: ANIMAL_INFO[pen.kind].icon,
             label,
             priority: true,
@@ -260,8 +264,19 @@ function Usables({ slot, mine }: { slot: number; mine: boolean }) {
               for (const x of useMyFarm.getState().mine.feed > 0 ? hungry : []) await a.act({ action: 'feed', animal: x.i });
             },
           }
-        : null,
-    );
+      : null;
+    // at the gate (on the path) and anywhere inside the pen (front half, back half)
+    const cx = (pen.x0 + pen.x1) / 2;
+    const q = (pen.z1 - pen.z0) / 4;
+    const spots = [
+      { id: '', x: pen.spot.x, z: pen.spot.z, r: 2 },
+      { id: '-in1', x: cx, z: pen.z0 + q, r: 4.4 },
+      { id: '-in2', x: cx, z: pen.z1 - q, r: 4.4 },
+    ];
+    for (const sp of spots) {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useUsable(use ? { ...use, id: `myfarm-pen-${pen.kind}${sp.id}`, ...W(sp.x, sp.z), r: sp.r } : null);
+    }
   }
   return null;
 }

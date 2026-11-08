@@ -26,6 +26,13 @@ export const PENS: Pen[] = [
   { kind: 'sheep', x0: 3, x1: 10.5, z0: -15, z1: -6, spot: { x: 6.75, z: -4.7 }, ground: '#a9d27e' },
   { kind: 'pig', x0: 11.5, x1: 19, z0: -15, z1: -6, spot: { x: 15.25, z: -4.7 }, ground: '#8f6a4a' },
 ];
+/** Each pen has an open gate (this wide) in the fence on its path side, in the middle: you walk in to feed and collect. */
+export const PEN_GATE = 1.8;
+/** The pen's gate side: 'z0' for the pens north of the path (gate faces -z), 'z1' for those south of it. */
+export const penGateSide = (p: Pen): 'z0' | 'z1' => (p.spot.z < p.z0 ? 'z0' : 'z1');
+export const penGateX = (p: Pen): [number, number] => [(p.x0 + p.x1) / 2 - PEN_GATE / 2, (p.x0 + p.x1) / 2 + PEN_GATE / 2];
+/** Props inside the pens (scene MyFarm): coop, troughs, hay bale; solid too. */
+export const PEN_PROPS = { coop: { x: 8.5, z: 12 }, troughN: { x: 15, z: 13 }, troughS: { x: 15, z: -14 }, hay: { x: 6, z: -13.5 } };
 /** Barn (farm_kit SM_Barn, 16 x 9.5, front facing +z), shipping bin, the shop board and the dog house spot. */
 export const BARN = { x: -11, z: -12, w: 16, d: 9.5 };
 export const BIN = { x: -1.5, z: -9 };
@@ -173,7 +180,18 @@ export const LOCAL_BLOCKERS: Aabb[] = (() => {
     box(ORDER_BOARD.x, ORDER_BOARD.z, 0.85, 0.15),
     box(INFO_BOARD.x, INFO_BOARD.z, 1.4, 0.15),
   ];
-  for (const p of PENS) out.push(box((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, (p.x1 - p.x0) / 2, (p.z1 - p.z0) / 2));
+  // pen fences (thin walls) with the gate gap; the animals' paths stay inside, players walk in through the gate
+  const w = 0.12;
+  for (const p of PENS) {
+    const [g0, g1] = penGateX(p);
+    out.push({ minX: p.x0 - w, maxX: p.x0 + w, minZ: p.z0, maxZ: p.z1 }, { minX: p.x1 - w, maxX: p.x1 + w, minZ: p.z0, maxZ: p.z1 });
+    for (const side of ['z0', 'z1'] as const) {
+      const z = p[side];
+      if (penGateSide(p) === side) out.push({ minX: p.x0, maxX: g0, minZ: z - w, maxZ: z + w }, { minX: g1, maxX: p.x1, minZ: z - w, maxZ: z + w });
+      else out.push({ minX: p.x0, maxX: p.x1, minZ: z - w, maxZ: z + w });
+    }
+  }
+  out.push(box(PEN_PROPS.coop.x, PEN_PROPS.coop.z, 1.3, 1.1), box(PEN_PROPS.troughN.x, PEN_PROPS.troughN.z, 0.9, 0.35), box(PEN_PROPS.troughS.x, PEN_PROPS.troughS.z, 0.9, 0.35), box(PEN_PROPS.hay.x, PEN_PROPS.hay.z, 0.6, 0.5));
   for (const d of DECOR) {
     const h = DECOR_HALF[d.kind];
     if (h) out.push(box(d.x, d.z, h[0] * d.s, h[1] * d.s));
