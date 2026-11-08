@@ -533,12 +533,16 @@ export class StreetRoom extends Room<{ state: StreetState }> {
   }
   /** Admin changed this player's in-game settings: send them to every open game of theirs. */
   /** Play time: seconds each player has been here since the last tally (reported to the API by admin.ts). */
-  private playSince = new Map<string, { pid: string; at: number; started: boolean }>();
+  private playSince = new Map<string, { pid: string; at: number; started: boolean; from: { x: number; z: number }; moved: boolean }>();
   private tallyPlay(now: number, only?: string) {
     for (const [sid, t] of this.playSince) {
       if (only && sid !== only) continue;
       const p = this.state.players.get(sid);
-      addPlay(t.pid, (now - t.at) / 1000, !t.started, p && Number.isFinite(p.x) && Number.isFinite(p.z) ? { x: p.x, z: p.z, rot: p.rot } : undefined);
+      const ok = !!p && Number.isFinite(p.x) && Number.isFinite(p.z);
+      // the last place is saved only once the player has left the spawn (walked, or was put back where they left
+      // last time): a game closed or reloaded while still loading must not overwrite it with the spawn
+      if (ok && !t.moved && Math.hypot(p.x - t.from.x, p.z - t.from.z) > 3) t.moved = true;
+      addPlay(t.pid, (now - t.at) / 1000, !t.started, ok && t.moved ? { x: p.x, z: p.z, rot: p.rot } : undefined);
       t.at = now;
       t.started = true;
     }
@@ -663,7 +667,7 @@ export class StreetRoom extends Room<{ state: StreetState }> {
     this.state.players.set(client.sessionId, p);
     // accounts by their verified id, guests by the id their browser keeps
     const playId = auth?.uid || p.pid;
-    if (playId) this.playSince.set(client.sessionId, { pid: playId, at: Date.now(), started: false });
+    if (playId) this.playSince.set(client.sessionId, { pid: playId, at: Date.now(), started: false, from: { x: p.x, z: p.z }, moved: false });
     client.send(MSG.TIME, { now: Date.now() });
     client.send(MSG.ZONE, { id: this.roomId, ...this.zone });
     console.log(`[street] ${p.name} joined (${this.clients.length}/${this.maxClients})`);
