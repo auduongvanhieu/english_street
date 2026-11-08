@@ -190,26 +190,34 @@ export function FarmBook() {
   const at = useMyFarm((s) => s.at);
   const s = useMyFarm.getState();
   if (!at || view || (panel !== 'info' && panel !== 'orders' && panel !== 'shop' && panel !== 'barn' && panel !== 'workshop' && panel !== 'goals')) return null;
-  const tabs: [typeof panel, string][] = [
-    ['info', `🌾 ${t('Info')}`],
-    ['orders', `📋 ${t('Orders')}`],
-    ['shop', `🛒 ${t('Shop')}`],
-    ['barn', `🏠 ${t('Barn')}`],
-    ['workshop', `🍞 ${t('Workshop')}`],
-    ['goals', `🏅 ${t('Goals')}`],
+  const tabs: [typeof panel, string, string][] = [
+    ['info', '🌾', t('Info')],
+    ['orders', '📋', t('Orders')],
+    ['shop', '🛒', t('Shop')],
+    ['barn', '🏠', t('Barn')],
+    ['workshop', '🍞', t('Workshop')],
+    ['goals', '🏅', t('Goals')],
   ];
+  const cur = tabs.find(([id]) => id === panel)!;
   return (
-    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 w-[94vw] max-w-lg -translate-x-1/2">
-      <div className="pointer-events-auto flex max-h-[74dvh] flex-col overflow-hidden rounded-2xl bg-white/97 shadow-2xl ring-1 ring-black/5">
-        <div className="flex items-center gap-0.5 overflow-x-auto border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-amber-50 px-2 pt-2">
-          {tabs.map(([id, label]) => (
-            <button key={id} type="button" onClick={() => s.setPanel(id)} className={`shrink-0 rounded-t-xl px-2.5 py-2 text-sm font-semibold ${panel === id ? 'bg-white text-emerald-800 shadow-[0_-1px_0_rgba(0,0,0,0.04)]' : 'text-slate-500'}`}>
-              {label}
-            </button>
-          ))}
-          <button type="button" onClick={() => s.setPanel(null)} className="ms-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-white" aria-label={t('Close')}>
+    <div data-ui className="absolute inset-0 z-30 flex justify-center bg-black/25 px-[3vw] pt-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)]" onPointerDown={(e) => e.target === e.currentTarget && s.setPanel(null)}>
+      <div className="flex h-fit max-h-[calc(100dvh-max(0.75rem,env(safe-area-inset-top))-4.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+        {/* the title and the close button stay put; the tabs below always fit (icons, small labels) */}
+        <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-amber-50 px-3 pt-2.5">
+          <b className="min-w-0 flex-1 truncate text-base text-slate-800">
+            {cur[1]} {cur[2]}
+          </b>
+          <button type="button" onClick={() => s.setPanel(null)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-gray-600 shadow-sm ring-1 ring-black/5" aria-label={t('Close')}>
             <Icon name="close" size={18} />
           </button>
+        </div>
+        <div className="grid grid-cols-6 gap-1 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-amber-50 px-2 pb-1.5 pt-1.5">
+          {tabs.map(([id, icon, label]) => (
+            <button key={id} type="button" onClick={() => s.setPanel(id)} title={label} className={`flex min-w-0 flex-col items-center rounded-xl px-0.5 py-1 ${panel === id ? 'bg-white text-emerald-800 shadow-sm ring-1 ring-emerald-200' : 'text-slate-500'}`}>
+              <span className="text-lg leading-6">{icon}</span>
+              <span className="w-full truncate text-center text-[10px] font-semibold sm:text-xs">{label}</span>
+            </button>
+          ))}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">{panel === 'info' ? <Info /> : panel === 'orders' ? <Orders /> : panel === 'shop' ? <Shop /> : panel === 'workshop' ? <Workshop /> : panel === 'goals' ? <Goals /> : <Barn />}</div>
       </div>
