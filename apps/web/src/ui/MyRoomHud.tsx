@@ -23,27 +23,22 @@ export function MyRoomHud() {
   const bag = inBag({ items, owned });
   const bagN = Object.values(bag).reduce((a, b) => a + b, 0);
   const speak = (w: string) => useVoice.getState().speakAs('me', w, 'en-US');
-  const bar = (
-    <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl bg-white/95 px-2 py-1.5 text-sm shadow-lg">
-      <b className="px-1">🏠 {mine ? t('My room') : t("{name}'s room", { name: ownerName })}</b>
-      {mine ? (
-        <>
-          <button type="button" onClick={() => m.setPanel(panel === 'shop' ? null : 'shop')} className={`min-h-9 rounded-xl px-2.5 ${panel === 'shop' ? 'bg-amber-400' : 'bg-amber-100'}`}>
-            🛒 {t('Furniture shop')}
-          </button>
-          <button type="button" onClick={() => m.setPanel(panel === 'bag' ? null : 'bag')} className={`min-h-9 rounded-xl px-2.5 ${panel === 'bag' ? 'bg-sky-400' : 'bg-sky-100'}`}>
-            🎒 {t('My things')} ({bagN})
-          </button>
-        </>
-      ) : null}
-      <button type="button" onClick={() => m.leave()} className="min-h-9 rounded-xl bg-gray-100 px-2.5">
-        🚪 {t('Go out')}
-      </button>
-    </div>
-  );
+  const title = mine ? t('My room') : t("{name}'s room", { name: ownerName });
+  // closed: one small button; open: the bag and the shop as two tabs (going out is the door button below)
+  const head = !mine ? (
+    <div className="pointer-events-auto rounded-full bg-white/95 px-3 py-1.5 text-sm font-semibold shadow-lg">🏠 {title}</div>
+  ) : !panel ? (
+    <button type="button" onClick={() => m.setPanel('bag')} className="pointer-events-auto flex min-h-10 items-center gap-1.5 rounded-full bg-white/95 px-3.5 text-sm font-semibold text-slate-800 shadow-lg">
+      🏠 {title} <span className="text-xs font-normal text-slate-500">· 🎒 {bagN} · 🛒</span>
+    </button>
+  ) : null;
   return (
-    <div data-ui className="pointer-events-none absolute left-1/2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] z-30 flex w-[94vw] max-w-md -translate-x-1/2 flex-col items-center gap-2">
-      {bar}
+    <div
+      data-ui
+      // closed, the small button sits under the top-left chips (level, next quest); open, the card covers them
+      className={`pointer-events-none absolute left-1/2 z-30 flex w-[94vw] max-w-md -translate-x-1/2 flex-col items-center gap-2 ${panel || ghost ? 'top-[calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)]' : 'top-[calc(max(0.75rem,env(safe-area-inset-top))+6.6rem)]'}`}
+    >
+      {ghost ? null : head}
       {ghost ? (
         <div className="pointer-events-auto w-full rounded-2xl bg-white/95 p-2.5 shadow-xl">
           <p className="mb-1.5 text-center text-sm" dir="ltr">
@@ -63,20 +58,26 @@ export function MyRoomHud() {
             </button>
           </div>
         </div>
-      ) : panel ? (
+      ) : panel && mine ? (
         <div className="pointer-events-auto flex max-h-[60dvh] w-full flex-col overflow-hidden rounded-2xl bg-white/95 shadow-xl">
-          {/* title and close button stay put, the list scrolls */}
-          <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2">
-            <b className="min-w-0 flex-1 truncate text-sm text-slate-800">{panel === 'shop' ? `🛒 ${t('Furniture shop')}` : `🎒 ${t('My things')}`}</b>
-            {panel === 'shop' ? <span className="text-xs font-semibold text-slate-600">🪙 {coins}</span> : null}
-            <button type="button" onClick={() => m.setPanel(null)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600" aria-label={t('Close')}>
+          {/* tabs and the close button stay put, the list scrolls */}
+          <div className="flex items-center gap-1.5 border-b border-slate-100 px-2 py-2">
+            <button type="button" onClick={() => m.setPanel('bag')} className={`min-h-9 flex-1 rounded-xl px-2 text-sm font-semibold ${panel === 'bag' ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-800'}`}>
+              🎒 {t('My things')} ({bagN})
+            </button>
+            <button type="button" onClick={() => m.setPanel('shop')} className={`min-h-9 flex-1 rounded-xl px-2 text-sm font-semibold ${panel === 'shop' ? 'bg-amber-400 text-slate-900' : 'bg-amber-50 text-amber-800'}`}>
+              🛒 {t('Shop')}
+            </button>
+            <button type="button" onClick={() => m.setPanel(null)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600" aria-label={t('Close')}>
               <Icon name="close" size={16} />
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
           {panel === 'shop' ? (
             <>
-              <p className="mb-1.5 text-xs text-gray-600">{t('Buy furniture for your room. Every piece is an English word!')}</p>
+              <p className="mb-1.5 text-xs text-gray-600">
+                {t('Buy furniture for your room. Every piece is an English word!')} <b className="text-slate-700">🪙 {coins}</b>
+              </p>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4" dir="ltr">
                 {FURNITURE.map((f) => {
                   const can = canBuyMore(owned, f.id) && coins >= f.price;
