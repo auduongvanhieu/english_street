@@ -26,7 +26,7 @@ Rules:
 - Return every id exactly once.`;
 
 /** Translate `keys` (UI: the key is the English; content: `src[key]` is the English). Placeholders must survive. */
-export async function translate(client: Anthropic, lang: LangCode, keys: string[], src: Record<string, string> = {}): Promise<Record<string, string>> {
+export async function translate(client: Anthropic, lang: LangCode, keys: string[], src: Record<string, string> = {}, onUsage?: (model: string, u: Anthropic.Usage) => void): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
   for (let i = 0; i < keys.length; i += 60) {
     const chunk = keys.slice(i, i + 60);
@@ -39,6 +39,7 @@ export async function translate(client: Anthropic, lang: LangCode, keys: string[
         messages: [{ role: 'user', content: JSON.stringify(list) }],
         output_config: { format: zodOutputFormat(Batch) },
       });
+      onUsage?.(env.NPC_MODEL, res.usage);
       const got = res.parsed_output?.items ?? [];
       let ok = true;
       for (const { id, text } of got) {

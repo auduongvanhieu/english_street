@@ -14,7 +14,7 @@ import {
 import type { PairLine, PairQuest } from '@es/shared';
 import { env, hasRealApiKey } from '../env';
 import { judgePersonaBlock, judgeQuestBlock, judgeStateBlock, personaBlock, questBlock, stateBlock } from './prompt';
-import { budget } from './budget';
+import { logLlmUsage, tokensOf, type LlmPurpose } from './usageLog';
 
 /** A1–A2 quests and free chat go to the cheaper model; B1+ to the main one. */
 export function modelFor(level: string | null): string {
@@ -112,7 +112,7 @@ export class ClaudeNpcLlm implements NpcLlm {
       output_config: { format: zodOutputFormat(NpcTurnResponseSchema), effort: 'low' },
     };
 
-    const out = await this.call(req);
+    const out = await this.call(req, 'npc_turn', `${input.npc.id}/${input.quest?.id ?? 'chat'}`);
     return out ? sanitize(out, input) : SAFE_FALLBACK;
   }
 
@@ -140,7 +140,7 @@ export class ClaudeNpcLlm implements NpcLlm {
       messages: [{ role: 'user', content: user }],
       output_config: { format: zodOutputFormat(NpcTurnResponseSchema), effort: 'low' },
     };
-    const out = await this.call(req);
+    const out = await this.call(req, 'pair_judge', `${input.npc.id}/${input.quest.id}`);
     if (!out) return { ...SAFE_FALLBACK, reply: '' };
     const role = input.quest.roles.find((r) => r.id === input.speakerRole);
     const valid = new Set((role?.goals ?? []).map((g) => g.id));
@@ -164,7 +164,7 @@ export class ClaudeNpcLlm implements NpcLlm {
     this.usage.requests += 1;
     this.usage.input += res.usage.input_tokens;
     this.usage.output += res.usage.output_tokens;
-    budget.recordUsage(setting('npcModelBasic'), { input: res.usage.input_tokens, output: res.usage.output_tokens, cacheRead: 0, cacheWrite: 0 });
+    logLlmUsage('word_translate', to, setting('npcModelBasic'), tokensOf(res.usage));
     return res.content
       .map((b) => (b.type === 'text' ? b.text : ''))
       .join('')
@@ -172,7 +172,7 @@ export class ClaudeNpcLlm implements NpcLlm {
   }
 
   /** One parse call with usage accounting; null on refusal or unparseable output (after one retry). */
-  private async call(req: Anthropic.MessageCreateParamsNonStreaming): Promise<NpcTurnResponse | null> {
+  private async call(req: Anthropic.MessageCreateParamsNonStreaming, purpose: LlmPurpose, detail: string): Promise<NpcTurnResponse | null> {
     for (let attempt = 0; attempt < 2; attempt++) {
       const res = await this.client.messages.parse(req);
       this.usage.requests += 1;
@@ -180,12 +180,7 @@ export class ClaudeNpcLlm implements NpcLlm {
       this.usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
       this.usage.cacheWrite += res.usage.cache_creation_input_tokens ?? 0;
       this.usage.output += res.usage.output_tokens;
-      budget.recordUsage(req.model, {
-        input: res.usage.input_tokens,
-        output: res.usage.output_tokens,
-        cacheRead: res.usage.cache_read_input_tokens ?? 0,
-        cacheWrite: res.usage.cache_creation_input_tokens ?? 0,
-      });
+      logLlmUsage(purpose, detail, req.model, tokensOf(res.usage));
       if (res.stop_reason === 'refusal') return null;
       if (res.parsed_output) return res.parsed_output;
     }

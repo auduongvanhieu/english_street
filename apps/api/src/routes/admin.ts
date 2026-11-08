@@ -9,6 +9,7 @@ import { adminUserRoutes } from '../admin/userRoutes';
 import { adminStatsRoutes } from '../admin/stats';
 import { adminOpsRoutes } from '../admin/opsRoutes';
 import { adminTestRoutes } from '../admin/testRoutes';
+import { adminLlmRoutes } from '../admin/llmRoutes';
 
 /**
  * Admin site API (/admin/*): sign in with an editor/admin account (POST /admin/login), or
@@ -22,6 +23,7 @@ export function adminRoutes(repo: AttemptRepo, npc: NpcService) {
     adminStatsRoutes(app);
     adminOpsRoutes(app);
     adminTestRoutes(app, npc);
+    adminLlmRoutes(app);
     app.get('/admin/budget', async () => budget.snapshot());
     app.get<{ Querystring: { days?: string } }>('/admin/stats', async (req) => computeStats(repo, Math.min(90, Math.max(1, Number(req.query.days) || 7))));
   };

@@ -295,3 +295,21 @@ model PlayDay {
   @@id([userId, day])
   @@index([day])
 }
+
+/// Claude API use per Vietnam day (UTC+7), what it was for and model: tokens and estimated USD (admin "Claude AI").
+/// purpose: npc_turn | pair_judge | word_translate | content_translate; detail: npc/quest id or language.
+model LlmUsage {
+  day        String
+  purpose    String
+  detail     String @default("")
+  model      String
+  requests   Int    @default(0)
+  input      Int    @default(0)
+  output     Int    @default(0)
+  cacheRead  Int    @default(0)
+  cacheWrite Int    @default(0)
+  usd        Float  @default(0)
+
+  @@id([day, purpose, detail, model])
+  @@index([day])
+}

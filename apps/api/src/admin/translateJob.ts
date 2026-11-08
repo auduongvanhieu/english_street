@@ -4,6 +4,7 @@ import { areaTranslations, baseAreaSource, getArea, getOverride } from '@es/ques
 import { env, hasRealApiKey } from '../env';
 import { prisma } from '../plugins/prisma';
 import { translate } from '../i18n/translate';
+import { logLlmUsage, tokensOf } from '../npc/usageLog';
 import { contentChanged } from './contentStore';
 
 /**
@@ -92,7 +93,7 @@ async function run() {
     for (const lang of langs) {
       const keys = missingFor(lang, src, prev);
       if (keys.length) {
-        const got = await translate(client, lang, keys, src);
+        const got = await translate(client, lang, keys, src, (model, u) => logLlmUsage('content_translate', lang, model, tokensOf(u)));
         const o = getOverride('area-tr', lang);
         const data = { ...((o && !o.deleted ? o.data : {}) as Record<string, string>), ...got };
         const row = await prisma.contentDoc.findUnique({ where: { kind_id: { kind: 'area-tr', id: lang } } });
