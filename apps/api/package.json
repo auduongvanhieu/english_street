@@ -8,7 +8,7 @@
     "build": "tsc --noEmit",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/journey/engine.test.ts src/journey/myfarm.test.ts src/journey/teamgames.test.ts",
+    "test": "tsx --test src/journey/engine.test.ts src/journey/myfarm.test.ts src/journey/teamgames.test.ts src/npc/notEnglish.test.ts",
     "prisma": "prisma",
     "postinstall": "prisma generate",
     "eval:npc": "tsx scripts/npc-eval.ts",

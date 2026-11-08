@@ -145,10 +145,12 @@ export class ClaudeNpcLlm implements NpcLlm {
     const role = input.quest.roles.find((r) => r.id === input.speakerRole);
     const valid = new Set((role?.goals ?? []).map((g) => g.id));
     const done = input.goalsDone[input.speakerRole] ?? [];
+    const foreign = notEnglish(input.text);
     return {
       ...out,
       reply: out.reply.trim().slice(0, 200),
-      goals_completed: [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !done.includes(g)),
+      goals_completed: foreign ? [] : [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !done.includes(g)),
+      hint: foreign ? out.hint || ENGLISH_HINT : out.hint,
       corrections: out.corrections.filter((c) => normalize(c.corrected) !== normalize(c.original)).slice(0, 2),
       new_vocab: out.new_vocab.slice(0, 2),
     };
@@ -298,12 +300,32 @@ MockNpcLlm.prototype.judge = async function (input: JudgeInput): Promise<NpcTurn
 };
 
 /** Keep only goal ids that exist and are not done yet; clamp list sizes. */
+/** Words with Vietnamese letters (ă â đ ê ô ơ ư or a tone mark on a vowel). */
+const VI_WORD = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+/**
+ * The learner wrote in their own language, not English: mostly Vietnamese words, or mostly letters of another
+ * script (Thai, Chinese, Arabic…). Such a line never completes a goal, whatever the model said (small models
+ * sometimes count "cho tôi một ly cà phê" as ordering a drink).
+ */
+export function notEnglish(text: string): boolean {
+  const words = text.toLowerCase().match(/[\p{L}\p{M}]+/gu) ?? [];
+  if (!words.length) return false;
+  const vi = words.filter((w) => VI_WORD.test(w)).length;
+  if (vi >= 2 ? vi / words.length > 0.5 : vi === 1 && words.length <= 2) return true;
+  const letters = text.match(/\p{L}/gu) ?? [];
+  const other = letters.filter((c) => !/\p{Script=Latin}/u.test(c)).length;
+  return letters.length > 0 && other / letters.length > 0.5;
+}
+const ENGLISH_HINT = 'Try to say it in English 🙂';
+
 function sanitize(out: NpcTurnResponse, input: TurnInput): NpcTurnResponse {
   const valid = new Set((input.quest?.goals ?? []).map((g) => g.id));
+  const foreign = notEnglish(input.text);
   return {
     ...out,
     reply: out.reply.trim().slice(0, 600),
-    goals_completed: [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !input.goalsDone.includes(g)),
+    goals_completed: foreign ? [] : [...new Set(out.goals_completed)].filter((g) => valid.has(g) && !input.goalsDone.includes(g)),
+    hint: foreign ? out.hint || ENGLISH_HINT : out.hint,
     // Drop "corrections" that change nothing (small models sometimes emit "this is already correct").
     corrections: out.corrections.filter((c) => normalize(c.corrected) !== normalize(c.original)).slice(0, 2),
     new_vocab: out.new_vocab.slice(0, 2),
