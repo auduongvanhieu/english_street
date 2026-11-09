@@ -3,6 +3,9 @@ import { track } from '../net/analytics';
 
 export type Quality = 'high' | 'low';
 export type Tri = 'auto' | 'on' | 'off';
+/** Frame-rate cap of the 3D scene: 30 by default (phones stay cool), 60 / 120 if the player wants it smoother. */
+export type FpsCap = 30 | 60 | 120;
+export const FPS_CAPS: FpsCap[] = [30, 60, 120];
 /** Sky shown to this player: the real Vietnam clock / live weather ('system') or a fixed choice. */
 export type SkyTime = 'system' | 'morning' | 'noon' | 'sunset' | 'night';
 export type SkyWeather = 'system' | 'clear' | 'cloudy' | 'rain' | 'storm' | 'fog';
@@ -41,8 +44,9 @@ export interface Settings {
   micMode: 'tap' | 'hold';
   skyTime: SkyTime;
   skyWeather: SkyWeather;
+  fps: FpsCap;
   setQuality: (q: Quality) => void;
-  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume' | 'micMode' | 'skyTime' | 'skyWeather'>>) => void;
+  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume' | 'micMode' | 'skyTime' | 'skyWeather' | 'fps'>>) => void;
 }
 
 export const useSettings = create<Settings>((set) => ({
@@ -55,6 +59,7 @@ export const useSettings = create<Settings>((set) => ({
   micMode: read<'tap' | 'hold'>('es:micMode', 'tap', (v) => v === 'tap' || v === 'hold'),
   skyTime: read<SkyTime>('es:skyTime', 'system', (v) => SKY_TIMES.includes(v as SkyTime)),
   skyWeather: read<SkyWeather>('es:skyWeather', 'system', (v) => SKY_WEATHERS.includes(v as SkyWeather)),
+  fps: read<FpsCap>('es:fps', 30, (v) => FPS_CAPS.includes(v as FpsCap)),
   setQuality: (quality) => {
     track('settings_change', { key: 'quality', value: quality });
     set({ quality });
@@ -66,6 +71,7 @@ export const useSettings = create<Settings>((set) => ({
     if (patch.micMode !== undefined) localStorage.setItem('es:micMode', JSON.stringify(patch.micMode));
     if (patch.skyTime !== undefined) localStorage.setItem('es:skyTime', JSON.stringify(patch.skyTime));
     if (patch.skyWeather !== undefined) localStorage.setItem('es:skyWeather', JSON.stringify(patch.skyWeather));
+    if (patch.fps !== undefined) localStorage.setItem('es:fps', JSON.stringify(patch.fps));
     if (patch.ambientVolume !== undefined) localStorage.setItem('es:ambient', JSON.stringify(patch.ambientVolume));
     for (const [key, value] of Object.entries(patch)) track('settings_change', { key, value: String(value) });
     set(patch);

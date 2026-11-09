@@ -3,7 +3,7 @@ import { Icon } from './icons';
 import { useTutorial } from '../store/tutorial';
 import { useGame } from '../store/game';
 import { useProfile } from '../store/profile';
-import { subtitlesOn, useSettings, type Tri, type SkyTime, type SkyWeather } from '../store/settings';
+import { FPS_CAPS, subtitlesOn, useSettings, type FpsCap, type Tri, type SkyTime, type SkyWeather } from '../store/settings';
 import { useVoice } from '../store/voice';
 import { useVoiceChat } from '../net/voicechat';
 import { Sheet, SheetHeader } from './Sheet';
@@ -233,6 +233,9 @@ export function SettingsPanel() {
           <h3 className="pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{t('Graphics & sound')}</h3>
           <Row label={t('Graphics quality')} hint={t('Low = no shadows, smoother on phones')}>
             <Segmented value={s.quality} options={[{ id: 'low' as const, label: `⚡ ${t('Low')}` }, { id: 'high' as const, label: `✨ ${t('High')}` }]} onChange={(v) => s.setQuality(v)} />
+          </Row>
+          <Row label={t('Frame rate')} hint={s.fps === 30 ? t('30 FPS keeps your phone cool and saves battery') : t('Smoother, but the phone gets warmer and uses more battery')}>
+            <Segmented<string> value={String(s.fps)} options={FPS_CAPS.map((f) => ({ id: String(f), label: `${f}` }))} onChange={(v) => s.set({ fps: Number(v) as FpsCap })} />
           </Row>
           <Row label={t('Time of day')} hint={s.skyTime === 'system' ? t('Follows the real time in Vietnam') : t('Only on your screen')}>
             <select value={s.skyTime} onChange={(e) => s.set({ skyTime: e.target.value as SkyTime })} className="min-h-9 rounded-lg border bg-white px-2 text-sm" aria-label={t('Time of day')}>

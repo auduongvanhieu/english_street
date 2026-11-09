@@ -22,6 +22,8 @@ const SAMPLE_AFTER_S = 15;
 /** Averages FPS over a window, reads renderer draw calls, reports once per session (and keeps a live copy for the e2e scripts). */
 export function PerfProbe() {
   const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  if (import.meta.env.DEV) (window as unknown as { __esScene?: unknown }).__esScene = scene; // e2e scripts
   const frames = useRef(0);
   const elapsed = useRef(0);
   const reported = useRef(false);

@@ -1,5 +1,5 @@
-import { lazy, memo, Suspense, useRef, type ReactNode } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { lazy, memo, Suspense, useEffect, useRef, type ReactNode } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Horizon } from './Horizon';
 import { NightLights } from './NightLights';
@@ -35,6 +35,32 @@ function StreetDecor({ children }: { children: ReactNode }) {
   return <group ref={ref}>{children}</group>;
 }
 
+/**
+ * Draws the scene at most `fps` times a second (Settings → Frame rate, 30 by default). Without a cap the browser
+ * redraws at the screen rate (60, 120 on newer iPhones) and phones get hot. The canvas runs with frameloop="demand"
+ * and this loop asks for a frame at the capped rate; R3F's own clock still gives useFrame the real time between
+ * frames, so movement speed does not depend on the cap.
+ */
+function FrameLimiter() {
+  const invalidate = useThree((s) => s.invalidate);
+  const fps = useSettings((s) => s.fps);
+  useEffect(() => {
+    const interval = 1000 / fps;
+    let last = -Infinity;
+    let raf = 0;
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick);
+      // a little slack: on a 60 Hz screen a 30 cap draws every 2nd refresh even when a refresh comes a bit early
+      if (t < last + interval - 2) return;
+      last = Math.max(last + interval, t - interval);
+      invalidate();
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [fps, invalidate]);
+  return null;
+}
+
 /** Memoised: HUD state changes in App must never re-render (and re-diff) the whole 3D tree. */
 export default memo(function Scene({ playerName }: { playerName: string }) {
   const quality = useSettings((s) => s.quality);
@@ -43,6 +69,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
     <>
       <Canvas
         key={quality} // shadow map settings are fixed at renderer creation
+        frameloop="demand" // FrameLimiter asks for the frames
         shadows={low ? false : { type: THREE.PCFShadowMap }}
         camera={{ position: [0, 5.5, 12.5], fov: 50, far: 160 }}
         dpr={low ? 1 : [1, 1.5]}
@@ -83,6 +110,7 @@ export default memo(function Scene({ playerName }: { playerName: string }) {
           <Areas />
         </Suspense>
         <PerfProbe />
+        <FrameLimiter />
       </Canvas>
     </>
   );
