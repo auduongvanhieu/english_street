@@ -60,7 +60,7 @@ export const FIELD_PRICES = [0, 50, 120, 250];
 export const FIELD_LEVEL = [1, 2, 4, 6];
 export const MAX_FIELDS = FIELD_PRICES.length;
 /** Coins a farm can earn by selling and orders, per day (Vietnam day). */
-export const FARM_DAY_CAP = 500;
+export const FARM_DAY_CAP = 1000;
 /** Barn: how many pieces it holds; upgrades add room. */
 export const BARN_BASE = 60;
 export const BARN_STEP = 40;
