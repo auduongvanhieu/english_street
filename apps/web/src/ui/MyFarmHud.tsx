@@ -98,7 +98,7 @@ export function MyFarmHud() {
         </div>
       ) : null}
       {toast && !toast.note ? (
-        <div data-ui className="pointer-events-none absolute bottom-40 left-1/2 z-20 -translate-x-1/2">
+        <div data-ui className="pointer-events-none absolute bottom-40 left-1/2 z-40 -translate-x-1/2">
           <div className={`rounded-full px-4 py-2 text-sm shadow-lg ${toast.error ? 'bg-red-50 text-red-700' : 'bg-white/95 text-slate-800'}`} dir="auto">
             {toast.error ? t(ERRORS[toast.error] ?? toast.error) : (
               <>

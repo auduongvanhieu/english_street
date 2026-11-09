@@ -92,7 +92,8 @@ export function FarmTopBar() {
   const ripe = mine.plots.slice(0, plots).filter((p) => myPlotStage(p, now).stage === 'ready').length;
   const crafted = Object.values(mine.machines).filter((m) => m.job && now - m.job.at >= (RECIPES[m.job.recipe]?.ms ?? Infinity)).length;
   const claimable = FARM_GOALS.filter((g) => !mine.goals.includes(g.id) && (mine.stats[g.stat] ?? 0) >= g.n).length;
-  const canDeliver = mine.orders.filter((o) => Object.entries(o.items).every(([k, n]) => (mine.barn[k] ?? 0) >= n)).length;
+  const room = FARM_DAY_CAP - (mine.earned[0] === s.day ? mine.earned[1] : 0);
+  const canDeliver = mine.orders.filter((o) => o.coins <= room && Object.entries(o.items).every(([k, n]) => (mine.barn[k] ?? 0) >= n)).length;
   const todo = canDeliver + crafted + claimable;
   const btn = 'pointer-events-auto relative flex h-9 items-center gap-1 rounded-full bg-white/95 px-2.5 text-sm font-semibold text-slate-800 shadow-md ring-1 ring-black/5';
   const badge = (n: number, c: string) => (n ? <span className={`absolute -right-1 -top-1 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 text-white ${c}`}>{n}</span> : null);
@@ -234,17 +235,19 @@ function Orders() {
   return (
     <div className="space-y-2">
       <p className="text-xs text-gray-500">{t('People in the street need farm goods. Read the order, get everything into your barn, then deliver it. Orders pay more than selling.')}</p>
+      <p className="text-xs font-semibold text-amber-700">{t('Earned on the farm today: {n}/{max} coins', { n: earned, max: FARM_DAY_CAP })}</p>
       {mine.orders.map((o) => (
-        <OrderCard key={o.id} o={o} barn={mine.barn} deliver={() => void s.act({ action: 'deliver', order: o.id })} skip={() => void s.act({ action: 'skipOrder', order: o.id })} />
+        <OrderCard key={o.id} o={o} barn={mine.barn} room={FARM_DAY_CAP - earned} deliver={() => void s.act({ action: 'deliver', order: o.id })} skip={() => void s.act({ action: 'skipOrder', order: o.id })} />
       ))}
-      <p className="text-xs text-gray-500">{t('Earned on the farm today: {n}/{max} coins', { n: earned, max: FARM_DAY_CAP })}</p>
     </div>
   );
 }
 
-function OrderCard({ o, barn, deliver, skip }: { o: FarmOrder; barn: Record<string, number>; deliver: () => void; skip: () => void }) {
+function OrderCard({ o, barn, room, deliver, skip }: { o: FarmOrder; barn: Record<string, number>; room: number; deliver: () => void; skip: () => void }) {
   const t = useT();
   const ok = Object.entries(o.items).every(([k, n]) => (barn[k] ?? 0) >= n);
+  // the farm pays at most FARM_DAY_CAP a day: an order over what is left waits for tomorrow
+  const capped = ok && o.coins > room;
   return (
     <div className={`rounded-xl border p-2.5 ${ok ? 'border-emerald-300 bg-emerald-50/70' : 'border-amber-200 bg-amber-50/60'}`}>
       <div className="mb-1 flex items-center justify-between gap-2">
@@ -270,13 +273,14 @@ function OrderCard({ o, barn, deliver, skip }: { o: FarmOrder; barn: Record<stri
         })}
       </div>
       <div className="flex gap-1.5">
-        <button type="button" disabled={!ok} onClick={deliver} className="min-h-9 flex-1 rounded-lg bg-emerald-600 text-sm font-semibold text-white disabled:opacity-40">
+        <button type="button" disabled={!ok || capped} onClick={deliver} className="min-h-9 flex-1 rounded-lg bg-emerald-600 text-sm font-semibold text-white disabled:opacity-40">
           {t('Deliver')}
         </button>
         <button type="button" onClick={skip} className="min-h-9 rounded-lg bg-white px-3 text-xs text-slate-500 ring-1 ring-slate-200">
           {t('Skip')}
         </button>
       </div>
+      {capped ? <p className="mt-1.5 text-xs font-semibold text-red-600">{t('You can earn only {n} more coins on the farm today. Deliver this order tomorrow!', { n: Math.max(0, room) })}</p> : null}
     </div>
   );
 }
