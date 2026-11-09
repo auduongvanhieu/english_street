@@ -24,20 +24,26 @@ export function NextStepChip({ touch }: { touch: boolean }) {
     <div
       data-ui
       className={`hud-top absolute z-10 flex items-center gap-1 bg-white/90 text-slate-800 shadow-md ring-1 ring-black/5 backdrop-blur-md ${
-        touch ? 'hud-left left-[calc(max(0.75rem,env(safe-area-inset-left))+3.4rem)] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)] max-w-[52vw] rounded-full py-0.5 pl-2.5 pr-0.5' : 'left-3 top-[6.6rem] max-w-[min(20rem,62vw)] rounded-2xl py-1 pl-3 pr-1'
+        touch ? 'hud-left left-[calc(max(0.75rem,env(safe-area-inset-left))+3.4rem)] top-[calc(max(0.75rem,env(safe-area-inset-top))+3.1rem)] h-7 max-w-[52vw] rounded-full pl-1 ' + (step.guide ? 'pr-0.5' : 'pr-2.5') : 'left-3 top-[6.6rem] max-w-[min(20rem,62vw)] rounded-2xl py-1 pl-2 ' + (step.guide ? 'pr-1' : 'pr-3')
       }`}
     >
-      <button type="button" onClick={() => useGame.getState().setUiPanel('daily')} className="min-w-0 flex-1 text-left">
+      <button type="button" onClick={() => useGame.getState().setUiPanel('daily')} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
+      {/* what kind of task: the journey book, a place's passport, or today's tasks */}
+      <span aria-hidden className={`flex shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 ${touch ? 'h-5 w-5' : 'h-8 w-8'}`}>
+        <Icon name={step.kind === 'main' ? 'book' : step.area ? 'passport' : 'calendar'} size={touch ? 12 : 17} />
+      </span>
+        <span className="min-w-0 flex-1">
         {/* phones: one small line (the title only) so it does not cover the street */}
         <div className={`text-[10px] font-semibold uppercase tracking-wide text-amber-600 ${touch ? 'hidden' : ''}`}>{step.kind === 'main' ? t('Journey') : step.area ? `${step.area === 'river' ? '🚣' : AREA_INFO[step.area].icon} ${t('Passport')}` : t('Today')}</div>
         <div className={`truncate font-semibold ${touch ? 'text-xs' : 'text-sm'}`}>
           {tx.title}
           {need > 1 ? <span className="ml-1 font-normal text-gray-500">{`${Math.min(prog, need)}/${need}`}</span> : null}
         </div>
+        </span>
       </button>
       {step.guide ? (
-        <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-7 w-7 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
-          <Icon name="pin" size={touch ? 15 : 18} />
+        <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-6 w-6 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
+          <Icon name="pin" size={touch ? 13 : 18} />
         </button>
       ) : null}
     </div>
