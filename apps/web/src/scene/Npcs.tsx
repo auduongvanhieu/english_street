@@ -2,6 +2,7 @@ import { useGame, type NpcInfo } from '../store/game';
 import { useVoice } from '../store/voice';
 import { Chibi } from './chibi/Chibi';
 import { NPC_CHIBI, NPC_CHIBI_DEFAULT } from './npcLook';
+import { FarHide } from './nearInstances';
 import { NameTag } from './NameTag';
 
 export function Npcs() {
@@ -9,7 +10,9 @@ export function Npcs() {
   return (
     <>
       {npcs.map((n) => (
-        <Npc key={n.id} npc={n} />
+        <FarHide key={n.id}>
+          <Npc npc={n} />
+        </FarHide>
       ))}
     </>
   );

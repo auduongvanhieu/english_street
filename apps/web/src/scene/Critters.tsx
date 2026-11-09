@@ -13,6 +13,7 @@ import { heldCritters, holderOf } from '../world/hold';
 import { spotState, spots } from '../world/spots';
 import { roarSound } from '../audio/ambient';
 import { buildCritter, coatFor, type CritterParts } from './chibi/buildCritter';
+import { FarHide } from './nearInstances';
 import { chibiMaterial, chibiOutline } from './chibi/buildChibi';
 
 /** Critter keeps this far from players' centres (player radius 0.4 + its own size + a little room). */
@@ -33,7 +34,9 @@ export function Critters() {
   return (
     <>
       {CRITTERS.map((c) => (
-        <CritterView key={c.id} c={c} />
+        <FarHide key={c.id}>
+          <CritterView c={c} />
+        </FarHide>
       ))}
     </>
   );

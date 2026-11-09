@@ -1,10 +1,11 @@
-import { useLayoutEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { SHOPS, SHOP_ROW_TZ, TILE, buildTiles } from '../world/layout';
 import { useSettings } from '../store/settings';
 import { chibiMaterial } from './chibi/buildChibi';
 import { LPM_URL } from './LpmModel';
+import { snapshot, useNearInstances, type InstanceSet } from './nearInstances';
 
 /**
  * Flowers and grass tufts scattered over the grass tiles, one InstancedMesh per source mesh
@@ -92,8 +93,10 @@ function Instanced({ part, spots, unit }: { part: { geometry: THREE.BufferGeomet
     const im = new THREE.InstancedMesh(part.geometry, part.material, Math.max(1, spots.length));
     im.castShadow = false; // tiny clumps: shadows cost a full extra pass for nothing visible
     im.receiveShadow = true;
+    im.frustumCulled = false; // only the clumps near the camera are drawn (useNearInstances)
     return im;
   }, [part, spots.length]);
+  const set = useRef<InstanceSet | null>(null);
   useLayoutEffect(() => {
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -106,7 +109,9 @@ function Instanced({ part, spots, unit }: { part: { geometry: THREE.BufferGeomet
     });
     mesh.count = spots.length;
     mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    // a few pixels each beyond ~70 m (and in the fog): draw the ones near the camera only
+    set.current = { xs: Float32Array.from(spots, (s) => s.x), zs: Float32Array.from(spots, (s) => s.z), radius: [70, 45], parts: [{ mesh, all: snapshot(mesh) }] };
   }, [mesh, spots, unit, part.size]);
+  useNearInstances(() => set.current);
   return <primitive object={mesh} />;
 }

@@ -13,6 +13,7 @@ import { localPos } from './LocalPlayer';
 import { INTERIOR_BOUNDS, MY_FARMS_AREA, TRIP_PLACES, inRect } from '@es/shared';
 import { hillRain } from '../world/mapleHill';
 import { preloadLpm, useLpmGeometry } from './LpmModel';
+import { snapshot, useNearInstances, type InstanceSet } from './nearInstances';
 import { ambientBirds } from '../audio/ambient';
 
 /**
@@ -289,6 +290,7 @@ export function StreetLamps({ low }: { low: boolean }) {
   const posts = useRef<THREE.InstancedMesh>(null);
   const postGeometry = useLpmGeometry('street_lamp');
   const pools = useRef<THREE.InstancedMesh>(null);
+  const lampSet = useRef<InstanceSet | null>(null);
   const haloGeo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(spots.flatMap(([x, z]) => [x, LAMP_Y - 0.05, z])), 3));
@@ -312,7 +314,11 @@ export function StreetLamps({ low }: { low: boolean }) {
       im.instanceMatrix.needsUpdate = true;
       im.computeBoundingSphere();
     }
+    // ~230 lamps along every road: draw only those near and in front of the camera (scene/nearInstances.ts)
+    const ims = [posts.current, bulbs.current, pools.current].filter((m): m is THREE.InstancedMesh => !!m);
+    lampSet.current = { xs: Float32Array.from(spots, ([x]) => x), zs: Float32Array.from(spots, ([, z]) => z), reach: 4, parts: ims.map((mesh) => ({ mesh, all: snapshot(mesh) })) };
   }, [spots]);
+  useNearInstances(() => lampSet.current);
   const lights = useRef<(THREE.PointLight | null)[]>([]);
   const off = useMemo(() => new THREE.Color('#9aa0a6'), []);
   const on = useMemo(() => new THREE.Color('#ffe6a8'), []);

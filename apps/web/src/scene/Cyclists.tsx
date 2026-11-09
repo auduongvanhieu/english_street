@@ -17,6 +17,7 @@ const PASS_GAP = 1.35;
 const SEE_AHEAD = 7;
 const MAX_SWERVE = 2.6;
 import { NameTag } from './NameTag';
+import { FarHide } from './nearInstances';
 import { CHIBI_SCALE, JOINTS, chibiMaterial, chibiOutline, chibiParts, type ChibiParts, type ChibiSpec } from './chibi/buildChibi';
 
 /**
@@ -291,13 +292,13 @@ export function Cyclists() {
   return (
     <group>
       {riders.map((c, i) => (
-        <group key={c.id}>
+        <FarHide key={c.id}>
           <mesh ref={(el) => (bikes.current[i] = el)} geometry={geos.bike[i]} material={chibiMaterial()} matrixAutoUpdate={false} castShadow frustumCulled={false} onClick={click(c.id)} />
           <RiderBody parts={geos.rider[i]!} rig={(rigs.current[i] ??= {})} outline={outline} onClick={click(c.id)} />
           <group ref={(el) => (tags.current[i] = el)}>
             {(greet[c.id] ?? 0) > Date.now() || selected === c.id ? <NameTag name={c.name} sub="cyclist" bubble={(greet[c.id] ?? 0) > Date.now() ? c.greeting : undefined} y={2.05} /> : null}
           </group>
-        </group>
+        </FarHide>
       ))}
       <instancedMesh ref={wheels} args={[geos.wheel, chibiMaterial(), n * 2]} frustumCulled={false} castShadow />
       <instancedMesh ref={cranks} args={[geos.crank, chibiMaterial(), n]} frustumCulled={false} />

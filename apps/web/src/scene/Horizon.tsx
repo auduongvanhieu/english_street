@@ -26,6 +26,7 @@ import { sky } from '../world/sky';
 import { useSettings } from '../store/settings';
 import { chibiMaterial } from './chibi/buildChibi';
 import { preloadLpm, useLpmParts } from './LpmModel';
+import { snapshot, snapshotColors, useNearInstances, type InstanceSet } from './nearInstances';
 
 /**
  * Everything beyond the playable street so the horizon is never a flat green plane:
@@ -326,58 +327,67 @@ function Backdrop({ low }: { low: boolean }) {
   );
 }
 
-/** One InstancedMesh per mesh inside the GLB (Kenney tiles have exactly one), with optional per-instance tint. */
+/**
+ * One InstancedMesh per mesh inside the GLB (Kenney tiles have exactly one), with optional per-instance tint.
+ * Only the instances near and in front of the camera are drawn (scene/nearInstances.ts): the rows run the whole
+ * street, so most of them are out of sight at any time.
+ */
 function InstancedModel({ model, placements }: { model: TileModel; placements: Placement[] }) {
   const scene = useTileScene(model);
   const meshes = useMemo(() => {
     scene.updateMatrixWorld(true);
     const rootInv = scene.matrixWorld.clone().invert();
-    const out: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }[] = [];
+    const out: { mesh: THREE.InstancedMesh; local: THREE.Matrix4 }[] = [];
     scene.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.isMesh) out.push({ geometry: m.geometry, material: m.material as THREE.Material, local: rootInv.clone().multiply(m.matrixWorld) });
+      if (!m.isMesh) return;
+      const geometry = m.geometry;
+      // three only multiplies instanceColor into the fragment when vertexColors is on (a missing colour attribute reads as white),
+      // so the GLB material is cloned with that flag rather than shared with the street tiles.
+      const mat = (m.material as THREE.Material).clone();
+      mat.vertexColors = true;
+      // …and a missing `color` attribute reads as black (not white) on standard materials, so give the shared geometry one.
+      if (!geometry.getAttribute('color')) geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.getAttribute('position').count * 3).fill(1), 3));
+      const im = new THREE.InstancedMesh(geometry, mat, placements.length);
+      im.castShadow = false; // outside the shadow camera anyway
+      im.receiveShadow = true;
+      im.frustumCulled = false; // the visible subset is picked by useNearInstances
+      out.push({ mesh: im, local: rootInv.clone().multiply(m.matrixWorld) });
     });
     return out;
-  }, [scene]);
-  return (
-    <>
-      {meshes.map((m, i) => (
-        <InstancedPart key={i} {...m} placements={placements} />
-      ))}
-    </>
-  );
-}
-
-function InstancedPart({ geometry, material, local, placements }: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4; placements: Placement[] }) {
-  const mesh = useMemo(() => {
-    // three only multiplies instanceColor into the fragment when vertexColors is on (a missing colour attribute reads as white),
-    // so the GLB material is cloned with that flag rather than shared with the street tiles.
-    const mat = material.clone();
-    mat.vertexColors = true;
-    // …and a missing `color` attribute reads as black (not white) on standard materials, so give the shared geometry one.
-    if (!geometry.getAttribute('color')) geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.getAttribute('position').count * 3).fill(1), 3));
-    const im = new THREE.InstancedMesh(geometry, mat, placements.length);
-    im.castShadow = false; // outside the shadow camera anyway
-    im.receiveShadow = true;
-    return im;
-  }, [geometry, material, placements.length]);
+  }, [scene, placements.length]);
+  const set = useRef<InstanceSet | null>(null);
   useLayoutEffect(() => {
     const tmp = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const white = new THREE.Color('#ffffff');
-    placements.forEach((p, i) => {
-      const m = new THREE.Matrix4()
-        .makeScale(1, 1, p.sz ?? 1)
-        .multiply(new THREE.Matrix4().compose(new THREE.Vector3(), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.rot), new THREE.Vector3(TILE, TILE * p.scaleY, TILE)))
-        .setPosition(p.x, TILE_Y, p.z);
-      mesh.setMatrixAt(i, tmp.multiplyMatrices(m, local));
-      mesh.setColorAt(i, p.tint ? new THREE.Color(p.tint[0], p.tint[1], p.tint[2]) : white);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [mesh, placements, local]);
-  return <primitive object={mesh} />;
+    for (const { mesh, local } of meshes) {
+      placements.forEach((p, i) => {
+        const m = new THREE.Matrix4()
+          .makeScale(1, 1, p.sz ?? 1)
+          .multiply(new THREE.Matrix4().compose(new THREE.Vector3(), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.rot), new THREE.Vector3(TILE, TILE * p.scaleY, TILE)))
+          .setPosition(p.x, TILE_Y, p.z);
+        mesh.setMatrixAt(i, tmp.multiplyMatrices(m, local));
+        mesh.setColorAt(i, p.tint ? new THREE.Color(p.tint[0], p.tint[1], p.tint[2]) : white);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+    set.current = {
+      xs: Float32Array.from(placements, (p) => p.x),
+      zs: Float32Array.from(placements, (p) => p.z),
+      reach: TILE * Math.max(1, ...placements.map((p) => p.sz ?? 1)) * 0.75,
+      parts: meshes.map(({ mesh }) => ({ mesh, all: snapshot(mesh), colors: snapshotColors(mesh) })),
+    };
+  }, [meshes, placements]);
+  useNearInstances(() => set.current);
+  return (
+    <>
+      {meshes.map(({ mesh }, i) => (
+        <primitive key={i} object={mesh} />
+      ))}
+    </>
+  );
 }
 
 /** Instanced primitive with one flat colour. */

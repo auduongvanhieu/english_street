@@ -84,3 +84,23 @@ heat map still run once a second). Ball patches ride the normal 20 Hz state patc
 boats), the ferry, 2 timetable boards and fishing floats: ≈ +20 draw calls when the river is in view (all LPM,
 vertex-coloured, shared toon material). Boats sync through the room state (5 numbers / boat, only while someone
 rows); the ferry is computed from the shared clock, no network traffic.
+
+## Draw only what can be seen (2026-11-09)
+
+The backdrop (houses and trees along the whole street), both sets of street lamps and the flowers / grass tufts were
+street-wide InstancedMeshes: their bounding spheres cover the whole map, so the frustum never dropped them and every
+instance was drawn (and the lamps cast shadows) even from inside the restaurant. `scene/nearInstances.tsx` now keeps
+only the instances near and in front of the camera (within the far plane; 80 m inside an area; flowers 70 / 45 m),
+rebuilt when the camera moves 3 m or turns ~6°. NPCs, street animals and cyclists (frustum culling off, they pop) are
+hidden beyond 80 m (45 m inside an area) by `FarHide`. Inside an area the sun's shadow box shrinks to the yard.
+
+Headless, high quality, 900×640 (draw calls · triangles):
+
+| View | Before | After |
+|---|---|---|
+| Main Street | 323 · 1.26M | 288 · 0.63M |
+| Restaurant | 189 · 0.98M | 133 · 0.23M |
+| School | 120 · 0.89M | 82 · 0.17M |
+| Supermarket | 188 · 1.04M | 111 · 0.27M |
+
+Also since 2026-11-09 the canvas runs on demand at a frame-rate cap (Settings → Frame rate, 30 by default).

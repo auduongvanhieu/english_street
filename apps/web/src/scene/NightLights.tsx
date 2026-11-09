@@ -10,6 +10,7 @@ import { BRIDGE_X, SOUTH_END_X, STREET_END_X } from '../world/areas';
 import { Part, box, chibiMaterial } from './chibi/buildChibi';
 import { preloadLpm, useLpmGeometry } from './LpmModel';
 import { RIVER_FAR_Z, RIVER_NEAR_Z, TILE_Y, backdropPlacements } from './Horizon';
+import { snapshot, useNearInstances, type InstanceSet } from './nearInstances';
 import { FAIRY, bulbMat, glowGeometry, glowPointsMat, poolMat, reflectMat, updateNightGlow, type Glow } from './nightGlow';
 
 /**
@@ -126,6 +127,7 @@ export function NightLights({ low }: { low: boolean }) {
   const bulbRef = useRef<THREE.InstancedMesh>(null);
   const poolRef = useRef<THREE.InstancedMesh>(null);
   const reflRef = useRef<THREE.InstancedMesh>(null);
+  const lampSets = useRef<InstanceSet[] | null>(null);
   const shopLamps = SHOPS.length * 2;
   const pools = posts.length + SHOPS.length;
   useLayoutEffect(() => {
@@ -149,7 +151,21 @@ export function NightLights({ low }: { low: boolean }) {
       im.instanceMatrix.needsUpdate = true;
       im.computeBoundingSphere();
     }
+    // lanterns along the whole river and park: draw only those near and in front of the camera (scene/nearInstances.ts)
+    const shopX = SHOPS.map((s) => s.tx * TILE);
+    const shopZ = SHOP_ROW_TZ * TILE + TILE / 2;
+    const px = posts.map(([x]) => x);
+    const pz = posts.map(([, z]) => z);
+    const part = (m: THREE.InstancedMesh | null) => (m ? [{ mesh: m, all: snapshot(m) }] : []);
+    lampSets.current = [
+      { xs: Float32Array.from(px), zs: Float32Array.from(pz), reach: 6, parts: [...part(postRef.current), ...part(reflRef.current)] },
+      { xs: Float32Array.from([...px, ...shopX.flatMap((x) => [x, x])]), zs: Float32Array.from([...pz, ...shopX.flatMap(() => [shopZ, shopZ])]), reach: 2, parts: part(bulbRef.current) },
+      { xs: Float32Array.from([...px, ...shopX]), zs: Float32Array.from([...pz, ...shopX.map(() => shopZ)]), reach: 3, parts: part(poolRef.current) },
+    ];
   }, [posts]);
+  useNearInstances(() => lampSets.current?.[0] ?? null);
+  useNearInstances(() => lampSets.current?.[1] ?? null);
+  useNearInstances(() => lampSets.current?.[2] ?? null);
 
   useFrame(({ gl }) => {
     const h = gl.domElement.height;

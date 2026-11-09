@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { localPos } from './LocalPlayer';
 import { sky } from '../world/sky';
+import { useArea } from '../store/area';
 
 /**
  * The sun (directional light + its shadow box) follows the player along the now 340 m long street, snapped to
@@ -26,6 +27,13 @@ export function SunFollow({ low }: { low: boolean }) {
     l.color.copy(sky.lightColor);
     l.intensity = sky.lightIntensity;
     l.position.set(x + sky.lightDir.x * 50, sky.lightDir.y * 50, z + sky.lightDir.z * 50);
+    // inside an area (one yard, 56 × 24 m) a smaller shadow box: fewer things in the shadow pass, crisper shadows
+    const [hw, hd] = useArea.getState().current ? [28, 22] : [45, 30];
+    const cam = l.shadow.camera;
+    if (cam.right !== hw) {
+      Object.assign(cam, { left: -hw, right: hw, top: hd, bottom: -hd });
+      cam.updateProjectionMatrix();
+    }
     if (l.target.position.x === x && l.target.position.z === z) return;
     l.target.position.set(x, 0, z);
     l.target.updateMatrixWorld();
