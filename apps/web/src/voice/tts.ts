@@ -1,5 +1,12 @@
 import { nativeCall, nativeHas, onNative } from '../native/bridge';
 
+/** Set from the "Sound" setting (App.tsx). Muted speech keeps its timing, so read-along and talk flows go on. */
+let muted = false;
+export function setSpeechMuted(m: boolean) {
+  muted = m;
+  if (m) stopSpeaking();
+}
+
 /** Text-to-speech via the browser SpeechSynthesis API, or the Flutter shell's native engine inside the app. */
 
 export function ttsSupported(): boolean {
@@ -70,6 +77,20 @@ export function speak(text: string, opts: SpeakOptions = {}): () => void {
   if (!text.trim()) {
     opts.onEnd?.();
     return () => undefined;
+  }
+  if (muted) {
+    let done = false;
+    const end = () => {
+      if (done) return;
+      done = true;
+      opts.onEnd?.();
+    };
+    opts.onStart?.();
+    const timer = window.setTimeout(end, 400 + (text.length * 60) / (opts.rate ?? 0.95));
+    return () => {
+      window.clearTimeout(timer);
+      end();
+    };
   }
   if (nativeHas('tts')) return speakNative(text, opts);
   if (!ttsSupported()) {

@@ -85,7 +85,8 @@ import { HotelPanels, HotelToasts } from './ui/hotel/HotelPanels';
 import { DmToast, PlayersButton, PlayersPanel } from './ui/PlayersPanel';
 import { PlayerPopup, ShoutButton, TalkBar, TalkBox, TalkToast, FollowChip } from './ui/Talk';
 import { CritterCard } from './ui/CritterCard';
-import { setAmbientVolume } from './audio/ambient';
+import { setAmbientVolume, setSoundOn } from './audio/ambient';
+import { setSpeechMuted } from './voice/tts';
 import { exposeSession, isNativeApp, onNative } from './native/bridge';
 import { API_URL, post } from './net/api';
 import { useSettings } from './store/settings';
@@ -201,6 +202,11 @@ export default function App() {
 
   // Ambient sound follows the setting; browsers only allow audio after a gesture, so (re)apply on first tap/key.
   const ambient = useSettings((s) => s.ambientVolume);
+  const sound = useSettings((s) => s.sound);
+  useEffect(() => {
+    setSoundOn(sound);
+    setSpeechMuted(!sound);
+  }, [sound]);
   useEffect(() => {
     if (conn !== 'connected') return;
     setAmbientVolume(ambient);
@@ -211,7 +217,7 @@ export default function App() {
       window.removeEventListener('pointerdown', kick);
       window.removeEventListener('keydown', kick);
     };
-  }, [conn, ambient]);
+  }, [conn, ambient, sound]);
 
   // Drag on the scene rotates the camera (mouse or one finger); wheel / pinch zooms.
   useEffect(() => {

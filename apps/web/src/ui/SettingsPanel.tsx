@@ -256,8 +256,11 @@ export function SettingsPanel() {
               <option value="fog">🌫️ {t('Fog')}</option>
             </select>
           </Row>
+          <Row label={t('Sound')} hint={s.sound ? t('NPC voices, birds and game sounds') : t('All game sounds are off')}>
+            <Toggle on={s.sound} onChange={(v) => s.set({ sound: v })} label={t('Sound')} />
+          </Row>
           <Row label={t('Bird sounds')} hint={s.ambientVolume === 0 ? t('off') : `${Math.round(s.ambientVolume * 100)}%`}>
-            <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36" aria-label={t('Bird sounds')} />
+            <input type="range" min={0} max={1} step={0.05} value={s.ambientVolume} disabled={!s.sound} onChange={(e) => s.set({ ambientVolume: Number(e.target.value) })} className="w-36 disabled:opacity-40" aria-label={t('Bird sounds')} />
           </Row>
         </section>
         <section className="py-2">

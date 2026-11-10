@@ -6,8 +6,18 @@
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let chirpTimer: number | null = null;
+/** The "Sound" setting is off: the whole context is suspended and no new sound starts. */
+let muted = false;
+
+export function setSoundOn(on: boolean) {
+  muted = !on;
+  if (!ctx) return;
+  if (muted) void ctx.suspend();
+  else void ctx.resume();
+}
 
 function ensure(): boolean {
+  if (muted) return false;
   if (ctx) return true;
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return false;
@@ -52,7 +62,7 @@ function scheduleChirps() {
 
 /** Apply the volume setting (0..1). Needs a prior user gesture to actually produce sound. */
 export function setAmbientVolume(v: number) {
-  if (v <= 0) {
+  if (v <= 0 || muted) {
     if (ctx && master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
     if (chirpTimer) window.clearTimeout(chirpTimer);
     chirpTimer = null;

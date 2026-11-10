@@ -45,8 +45,10 @@ export interface Settings {
   skyTime: SkyTime;
   skyWeather: SkyWeather;
   fps: FpsCap;
+  /** All game sound (NPC voices, birds, effects). Voice chat with other players is not affected. */
+  sound: boolean;
   setQuality: (q: Quality) => void;
-  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume' | 'micMode' | 'skyTime' | 'skyWeather' | 'fps'>>) => void;
+  set: (patch: Partial<Pick<Settings, 'subtitles' | 'ipa' | 'ttsRate' | 'ambientVolume' | 'micMode' | 'skyTime' | 'skyWeather' | 'fps' | 'sound'>>) => void;
 }
 
 export const useSettings = create<Settings>((set) => ({
@@ -60,6 +62,7 @@ export const useSettings = create<Settings>((set) => ({
   skyTime: read<SkyTime>('es:skyTime', 'system', (v) => SKY_TIMES.includes(v as SkyTime)),
   skyWeather: read<SkyWeather>('es:skyWeather', 'system', (v) => SKY_WEATHERS.includes(v as SkyWeather)),
   fps: read<FpsCap>('es:fps', 30, (v) => FPS_CAPS.includes(v as FpsCap)),
+  sound: read<boolean>('es:sound', true, (v) => typeof v === 'boolean'),
   setQuality: (quality) => {
     track('settings_change', { key: 'quality', value: quality });
     set({ quality });
@@ -71,6 +74,7 @@ export const useSettings = create<Settings>((set) => ({
     if (patch.micMode !== undefined) localStorage.setItem('es:micMode', JSON.stringify(patch.micMode));
     if (patch.skyTime !== undefined) localStorage.setItem('es:skyTime', JSON.stringify(patch.skyTime));
     if (patch.skyWeather !== undefined) localStorage.setItem('es:skyWeather', JSON.stringify(patch.skyWeather));
+    if (patch.sound !== undefined) localStorage.setItem('es:sound', JSON.stringify(patch.sound));
     if (patch.fps !== undefined) localStorage.setItem('es:fps', JSON.stringify(patch.fps));
     if (patch.ambientVolume !== undefined) localStorage.setItem('es:ambient', JSON.stringify(patch.ambientVolume));
     for (const [key, value] of Object.entries(patch)) track('settings_change', { key, value: String(value) });
