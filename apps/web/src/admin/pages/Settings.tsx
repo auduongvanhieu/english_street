@@ -9,7 +9,7 @@ interface SettingRow {
   default: unknown;
   isDefault: boolean;
 }
-const DESC: Record<string, [string, string, 'number' | 'text' | 'list' | 'long']> = {
+const DESC: Record<string, [string, string, 'number' | 'text' | 'list' | 'long' | 'bool' | 'json' | 'mode']> = {
   maxGuestsPerIp: ['Số khách chơi cùng lúc từ một IP', 'Guests playing at once from one IP', 'number'],
   guestPassesPerIpHour: ['Số vé khách mỗi IP mỗi giờ', 'Guest passes per IP per hour', 'number'],
   guestPassesPerIpDay: ['Số vé khách mỗi IP mỗi ngày', 'Guest passes per IP per day', 'number'],
@@ -23,6 +23,19 @@ const DESC: Record<string, [string, string, 'number' | 'text' | 'list' | 'long']
   maintenance: ['Chế độ bảo trì (để trống = đang mở)', 'Maintenance message (empty = open)', 'long'],
   extraBannedWords: ['Từ cấm thêm (bộ lọc chat)', 'Extra banned words (chat filter)', 'list'],
   allowedWords: ['Bỏ chặn từ có sẵn', 'Allow built-in words again', 'list'],
+  payMode: ['Nạp xu: tắt / chỉ người thử / mở cho mọi người', 'Top-ups: off / testers only / everyone', 'mode'],
+  payTesters: ['Người thử (id hoặc email)', 'Testers (id or e-mail)', 'list'],
+  payVnd: ['Cho nạp bằng chuyển khoản VNĐ', 'Allow bank transfer (VND)', 'bool'],
+  payUsdt: ['Cho nạp bằng USDT', 'Allow USDT', 'bool'],
+  payPacks: ['Các gói xu (id, coins, vnd, usdt)', 'Coin packs (id, coins, vnd, usdt)', 'json'],
+  payFirstBonus: ['Lần nạp đầu được gấp đôi xu', 'First top-up gives double coins', 'bool'],
+  payOrderMinutes: ['Thời gian chờ mỗi đơn (phút)', 'Order wait time (minutes)', 'number'],
+  payBank: ['Ngân hàng (mã VietQR, vd MB, VCB, 970422)', 'Bank (VietQR code, e.g. MB, VCB, 970422)', 'text'],
+  payBankAccount: ['Số tài khoản', 'Account number', 'text'],
+  payBankName: ['Tên chủ tài khoản (không dấu)', 'Account holder name', 'text'],
+  payTrc20Address: ['Ví nhận USDT TRC20 (Tron, bắt đầu bằng T)', 'USDT TRC20 wallet (Tron, starts with T)', 'text'],
+  payBep20Address: ['Ví nhận USDT BEP20 (BNB Chain, 0x…)', 'USDT BEP20 wallet (BNB Chain, 0x…)', 'text'],
+  payBep20Confirmations: ['BEP20: số block chờ xác nhận', 'BEP20: blocks to wait', 'number'],
 };
 
 export function SettingsPage() {
@@ -57,7 +70,7 @@ function useSettings() {
   return useLoad(() => get<{ settings: SettingRow[]; builtinBadWords: string[]; betaGate: boolean }>('/admin/settings'));
 }
 
-function Limits({ keys }: { keys: string[] }) {
+export function Limits({ keys }: { keys: string[] }) {
   const L = useL();
   const s = useSettings();
   return (
@@ -96,11 +109,17 @@ function SettingField({ row, onSaved }: { row: SettingRow; onSaved: () => void }
           {L(vi, en)} {row.isDefault ? <Badge>{L('mặc định', 'default')}</Badge> : <Badge tone="amber">{L('đã đổi', 'changed')}</Badge>}
         </span>
       }
-      hint={`${L('Mặc định', 'Default')}: ${Array.isArray(row.default) ? row.default.join(', ') || '—' : String(row.default) || '—'}`}
+      hint={`${L('Mặc định', 'Default')}: ${Array.isArray(row.default) ? row.default.map((x) => (typeof x === 'object' ? JSON.stringify(x) : String(x))).join(', ') || '—' : String(row.default) || '—'}`}
     >
       <div className="flex gap-1">
         {type === 'number' ? (
           <Num value={v as number} onChange={setV} step="any" />
+        ) : type === 'bool' ? (
+          <Select value={v ? 'true' : 'false'} onChange={(x) => setV(x === 'true')} options={[{ value: 'true', label: L('Bật', 'On') }, { value: 'false', label: L('Tắt', 'Off') }]} />
+        ) : type === 'mode' ? (
+          <Select value={String(v)} onChange={setV} options={[{ value: 'off', label: L('Tắt', 'Off') }, { value: 'test', label: L('Chỉ người thử', 'Testers only') }, { value: 'on', label: L('Mở cho mọi người', 'Everyone') }]} />
+        ) : type === 'json' ? (
+          <JsonText value={v} onChange={setV} />
         ) : type === 'list' ? (
           <ListInput value={v as string[]} onChange={setV} />
         ) : type === 'long' ? (
@@ -120,6 +139,30 @@ function SettingField({ row, onSaved }: { row: SettingRow; onSaved: () => void }
         ) : null}
       </div>
     </Field>
+  );
+}
+
+/** JSON in a text box; only valid JSON reaches the setting. */
+function JsonText({ value, onChange }: { value: unknown; onChange: (v: unknown) => void }) {
+  const [txt, setTxt] = useState(() => JSON.stringify(value, null, 1));
+  const [bad, setBad] = useState(false);
+  return (
+    <div className="flex-1">
+      <Area
+        rows={6}
+        value={txt}
+        onChange={(t) => {
+          setTxt(t);
+          try {
+            onChange(JSON.parse(t));
+            setBad(false);
+          } catch {
+            setBad(true);
+          }
+        }}
+      />
+      {bad ? <p className="text-xs text-red-600">JSON?</p> : null}
+    </div>
   );
 }
 

@@ -13,6 +13,7 @@ import { OnlinePage } from './pages/Online';
 import { JourneyPage } from './pages/Journey';
 import { PasswordRequestsPage } from './pages/PasswordRequests';
 import { ReportsPage } from './pages/Reports';
+import { PaymentsPage } from './pages/Payments';
 import { ContentList } from './pages/ContentList';
 import { DocEditor } from './pages/DocEditor';
 import { AreaEditor } from './pages/AreaEditor';
@@ -90,6 +91,7 @@ const NAV: { vi: string; en: string; items: NavItem[] }[] = [
     en: 'Operations',
     items: [
       { path: 'settings', icon: 'settings', vi: 'Cài đặt', en: 'Settings', adminOnly: true },
+      { path: 'payments', icon: 'coin', vi: 'Nạp xu', en: 'Top-ups', adminOnly: true },
       { path: 'claude', icon: 'coin', vi: 'Claude AI: chi phí', en: 'Claude AI: cost', adminOnly: true },
       { path: 'audit', icon: 'log', vi: 'Nhật ký', en: 'Audit log', adminOnly: true },
       { path: 'security', icon: 'shield', vi: 'Bảo mật tài khoản', en: 'Account security' },
@@ -220,6 +222,8 @@ function Routes({ route }: { route: string[] }): ReactNode {
       return <TranslationsPage lang={b} />;
     case 'settings':
       return <SettingsPage />;
+    case 'payments':
+      return <PaymentsPage />;
     case 'claude':
       return <ClaudePage />;
     case 'audit':

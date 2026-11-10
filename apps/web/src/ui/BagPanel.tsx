@@ -3,7 +3,7 @@ import { ANIMAL_INFO, BAG_ITEMS, CLOTH_COLORS, FURNITURE, GLASSES_ITEMS, HAIR_CO
 import { get, fetchBooks, fetchMyBooks } from '../net/api';
 import { getPlayerId } from '../net/player';
 import { useProfile } from '../store/profile';
-import { Panel } from './ProfilePanels';
+import { Panel, TopUpButton } from './ProfilePanels';
 import { Icon } from './icons';
 import { useT } from '../i18n';
 
@@ -44,7 +44,7 @@ export function BagPanel() {
   return (
     <Panel title={t('My bag')} icon="bag">
       <p className="mb-3 flex items-center gap-1 text-lg font-bold">
-        <Icon name="coin" className="text-amber-500" /> {p?.coins ?? 0} {t('coins')}
+        <Icon name="coin" className="text-amber-500" /> {p?.coins ?? 0} {t('coins')} <TopUpButton />
       </p>
       {section(
         t('Seeds and feed'),

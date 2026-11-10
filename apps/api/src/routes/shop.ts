@@ -36,12 +36,11 @@ export function shopRoutes(repo: AttemptRepo) {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await limiter.allow(`taxi:${id}`, 20))) return reply.code(429).send({ error: 'rate_limited' });
-      const { u } = await load(id);
-      if (u.coins < TAXI_PRICE) return reply.code(402).send({ error: 'not_enough_coins' });
-      await repo.updateUser(id, { coins: u.coins - TAXI_PRICE });
-      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'taxi', coins: TAXI_PRICE } });
+      await load(id);
+      const paid = await repo.spend(id, TAXI_PRICE, 'taxi');
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       await repo.logEvent({ name: 'taxi_ride', playerId: id, props: {} });
-      return { coins: u.coins - TAXI_PRICE };
+      return { coins: paid.balance };
     });
 
     // River boat hire at the north pier: a hire lasts BOAT_HIRE.minutes; the first one is free.
@@ -61,15 +60,12 @@ export function shopRoutes(repo: AttemptRepo) {
       if (gs.boatUntil && gs.boatUntil > now) return { until: gs.boatUntil, coins: u.coins, free: false };
       const free = !gs.boatFreeUsed;
       const cost = free ? 0 : BOAT_HIRE.coins;
-      if (u.coins < cost) return reply.code(402).send({ error: 'not_enough_coins' });
+      const paid = cost ? await repo.spend(id, cost, 'boat') : { balance: u.coins, paid: 0 };
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       const until = now + BOAT_HIRE.minutes * 60_000;
       await save(id, { ...gs, boatUntil: until, boatFreeUsed: true });
-      if (cost) {
-        await repo.updateUser(id, { coins: u.coins - cost });
-        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'boat', coins: cost } });
-      }
       await repo.logEvent({ name: 'boat_hire', playerId: id, props: { free } });
-      return { until, coins: u.coins - cost, free };
+      return { until, coins: paid.balance, free };
     });
 
     // ---- My room: buy furniture, save where it stands, let friends look ----
@@ -91,12 +87,12 @@ export function shopRoutes(repo: AttemptRepo) {
       const room = roomOf(gs);
       if ((room.owned[f.id] ?? 0) >= FURNITURE_MAX) return reply.code(409).send({ error: 'too_many' });
       if (u.coins < f.price) return reply.code(402).send({ error: 'not_enough_coins' });
+      const paid = await repo.spend(id, f.price, 'furniture');
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       room.owned = { ...room.owned, [f.id]: (room.owned[f.id] ?? 0) + 1 };
       await save(id, { ...gs, room });
-      await repo.updateUser(id, { coins: u.coins - f.price });
-      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'furniture', coins: f.price } });
       await repo.logEvent({ name: 'home_buy', playerId: id, props: { item: f.id } });
-      return { ...room, coins: u.coins - f.price };
+      return { ...room, coins: paid.balance };
     });
     app.post('/me/room/save', async (req, reply) => {
       const id = who(req);
@@ -130,11 +126,10 @@ export function shopRoutes(repo: AttemptRepo) {
       const body = z.object({ item: z.enum(Object.keys(PREMIUM_PRICES) as [PremiumItem, ...PremiumItem[]]) }).safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const price = PREMIUM_PRICES[body.data.item];
-      const { u } = await load(id);
-      if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
-      await repo.updateUser(id, { coins: u.coins - price });
-      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: body.data.item, coins: price } });
-      return { coins: u.coins - price };
+      await load(id);
+      const paid = await repo.spend(id, price, body.data.item);
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
+      return { coins: paid.balance };
     });
 
     app.get('/me/hotel', async (req, reply) => {
@@ -157,15 +152,12 @@ export function shopRoutes(repo: AttemptRepo) {
       const free = !suite && !gs.hotelFreeUsed;
       const night = suite ? SUITE_NIGHT_PRICE : free ? 0 : HOTEL_NIGHT_PRICE;
       const cost = body.data.nights * night;
-      if (u.coins < cost) return reply.code(402).send({ error: 'not_enough_coins' });
+      const paid = cost ? await repo.spend(id, cost, 'hotel') : { balance: u.coins, paid: 0 };
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       const stay: HotelStay = { room: hotelRoomFor(id), nights: body.data.nights, since: Date.now(), minibar: [], nightPrice: night, ...(suite ? { suite: true } : {}) };
       await save(id, { ...gs, hotel: stay, hotelFreeUsed: gs.hotelFreeUsed || free });
-      if (cost) {
-        await repo.updateUser(id, { coins: u.coins - cost });
-        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'hotel', coins: cost } });
-      }
       await repo.logEvent({ name: 'hotel_checkin', playerId: id, props: { room: stay.room, nights: stay.nights, free, suite } });
-      return { stay, coins: u.coins - cost, free };
+      return { stay, coins: paid.balance, free };
     });
 
     app.post('/me/hotel/minibar', async (req, reply) => {
@@ -209,18 +201,15 @@ export function shopRoutes(repo: AttemptRepo) {
       const correct = body.data.disputed === wrong;
       // the guest pays the real minibar total (nights were paid at check-in); a correct check earns XP
       const due = real.filter((l) => !l.en.startsWith(NIGHT_LINE) && !l.en.startsWith(SUITE_LINE)).reduce((s, l) => s + l.qty * l.price, 0);
-      const pay = Math.min(due, u.coins);
       const xp = correct ? 15 : 0;
       const rest: Record<string, unknown> = { ...gs };
       delete rest.hotel;
       await save(id, rest);
-      if (pay) {
-        await repo.updateUser(id, { coins: u.coins - pay });
-        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'hotel_minibar', coins: pay } });
-      }
+      const paid = due ? await repo.spend(id, due, 'hotel_minibar', { upTo: true }) : null;
+      const pay = paid?.paid ?? 0;
       if (xp) await repo.reward(id, xp, 0, 'hotel');
       await repo.logEvent({ name: 'hotel_checkout', playerId: id, props: { correct, paid: pay } });
-      return { correct, wrong, paid: pay, xp, coins: u.coins - pay + 0 };
+      return { correct, wrong, paid: pay, xp, coins: paid ? paid.balance : u.coins };
     });
   };
 }

@@ -9,6 +9,7 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/journey/engine.test.ts src/journey/myfarm.test.ts src/journey/teamgames.test.ts src/npc/notEnglish.test.ts",
+    "test:db": "tsx src/npc/ledger.dbtest.ts && tsx src/payments/payments.dbtest.ts",
     "prisma": "prisma",
     "postinstall": "prisma generate",
     "eval:npc": "tsx scripts/npc-eval.ts",
@@ -33,6 +34,7 @@
     "ioredis": "^6.0.0",
     "nodemailer": "^10.3.1",
     "pg": "^8.23.1",
+    "qrcode": "1.5.4",
     "tsx": "^4.23.15",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
@@ -41,6 +43,7 @@
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.15.0",
+    "@types/qrcode": "^1.5.6",
     "prisma": "7.10.1",
     "typescript": "^5.9.0"
   }

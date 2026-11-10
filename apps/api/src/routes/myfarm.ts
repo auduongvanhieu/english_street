@@ -62,9 +62,8 @@ export function myFarmRoutes(repo: AttemptRepo) {
       await saveFarm(thiefId, tgs, tf);
       if (owner) await saveFarm(owner.id, ogs, of);
       if (fine && owner) {
-        await repo.updateUser(thiefId, { coins: thief.coins - fine });
-        await repo.reward(owner.id, 0, fine, 'farm_fine');
-        await repo.logEvent({ name: 'coins_spent', playerId: thiefId, props: { source: 'farm_fine', coins: fine } });
+        const paid = await repo.spend(thiefId, fine, 'farm_fine', { upTo: true });
+        if (paid?.paid) await repo.reward(owner.id, 0, paid.paid, 'farm_fine');
       }
       await repo.logEvent({ name: 'myfarm_chase', playerId: thiefId, props: { result, fine, owner: p.owner } });
       return { result, fine, crop: p.crop };
@@ -147,17 +146,20 @@ export function myFarmRoutes(repo: AttemptRepo) {
       const gs = (u.gameState ?? {}) as Record<string, unknown>;
       const r = applyMyFarm(farmOf(gs), body.data, Date.now(), u.coins, today());
       if (r.error) return { ...r, coins: u.coins, now: Date.now() };
-      await repo.updateUser(id, { gameState: { ...gs, myfarm: r.farm } });
+      // pay first (in one step), then save the farm: a failed payment changes nothing
+      let balance = u.coins + r.coins;
       if (r.coins < 0) {
-        await repo.updateUser(id, { coins: u.coins + r.coins });
-        await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'myfarm', coins: -r.coins, item: body.data.action === 'buy' ? body.data.item : '' } });
+        const paid = await repo.spend(id, -r.coins, 'myfarm', { extra: { item: body.data.action === 'buy' ? body.data.item : '' } });
+        if (!paid) return { farm: farmOf(gs), coins: u.coins, now: Date.now(), said: '', xp: 0, error: 'coins' as const };
+        balance = paid.balance;
       }
+      await repo.updateUser(id, { gameState: { ...gs, myfarm: r.farm } });
       if (r.coins > 0 || r.xp) await repo.reward(id, r.xp, Math.max(0, r.coins), 'myfarm');
       // "water all" / "harvest all" count like one watering / harvest (journey steps)
       const ev = body.data.action === 'harvestAll' ? 'harvest' : body.data.action === 'waterAll' ? 'water' : body.data.action;
       await repo.logEvent({ name: `myfarm_${ev}`, playerId: id, props: { coins: r.coins, ...(body.data.action === 'buy' ? { item: body.data.item } : {}) } });
       if (r.levelUp) await repo.logEvent({ name: 'myfarm_level', playerId: id, props: { level: r.levelUp } });
-      return { farm: r.farm, said: r.said, xp: r.xp, delta: r.coins, coins: u.coins + r.coins, now: Date.now(), levelUp: r.levelUp };
+      return { farm: r.farm, said: r.said, xp: r.xp, delta: r.coins, coins: balance, now: Date.now(), levelUp: r.levelUp };
     });
 
     /** May `me` come in? (the owner's choice: friends, everybody, nobody) */

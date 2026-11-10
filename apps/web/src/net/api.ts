@@ -33,6 +33,10 @@ export const ERROR_TEXT: Record<string, string> = {
   mail_off: tk('Sending e-mail is not set up yet. Please contact the admin.'),
   mail_failed: tk('We could not send the e-mail. Please try again later.'),
   bad_name: tk('Name must be at least 2 characters.'),
+  too_many_pending: tk('You have too many top-ups waiting. Finish or cancel one first.'),
+  need_account: tk('Sign up for an account first to top up.'),
+  not_open: tk('Top-ups are not open yet.'),
+  bad_method: tk('This way to pay is not available right now.'),
 };
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {

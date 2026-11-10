@@ -5,6 +5,8 @@ import { useJourney } from '../store/journey';
 import { AREA_INFO } from '@es/shared';
 import { JourneyPanel } from './journey/JourneyPanel';
 import { BagPanel } from './BagPanel';
+import { TopUpPanel } from './TopUpPanel';
+import { usePay } from '../store/pay';
 import { Icon, type IconName } from './icons';
 import { useEffect, useState } from 'react';
 import { AREAS } from '../world/areas';
@@ -30,10 +32,26 @@ const _i18n = () => [
 ];
 void _i18n;
 
+/** "+" next to the coins: opens Top up (only when top-ups are open for this player, never inside the store app). */
+export function TopUpButton({ dark }: { dark?: boolean }) {
+  const t = useT();
+  const on = usePay((s) => !!s.info?.enabled);
+  const open = useGame((s) => s.setUiPanel);
+  if (!on) return null;
+  return (
+    <button type="button" onClick={() => open('topup')} aria-label={t('Top up coins')} title={t('Top up coins')} className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold leading-none ${dark ? 'bg-yellow-400 text-slate-900 hover:bg-yellow-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+      +
+    </button>
+  );
+}
+
 export function ProfileHud({ compact }: { compact?: boolean }) {
   const t = useT();
   const p = useProfile((s) => s.profile);
+  const loggedIn = useProfile((s) => s.loggedIn);
   const open = useGame((s) => s.setUiPanel);
+  // what top-ups this player may see (again after signing in)
+  useEffect(() => void usePay.getState().load(), [loggedIn]);
   if (!p) return null;
   const prevLevelXp = 50 * (p.level - 1) * (p.level - 1);
   const pct = Math.min(100, Math.round(((p.xp - prevLevelXp) / Math.max(1, p.nextLevelXp - prevLevelXp)) * 100));
@@ -76,7 +94,7 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mt-1 flex justify-between opacity-90">
-        <span className="flex items-center gap-1"><Icon name="coin" size={14} className="text-yellow-300" />{p.coins}</span>
+        <span className="flex items-center gap-1"><Icon name="coin" size={14} className="text-yellow-300" />{p.coins}<TopUpButton dark /></span>
         <span className="flex items-center gap-1"><Icon name="bolt" size={14} className="text-orange-300" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
         <span className="flex items-center gap-1"><Icon name="star" size={14} className="text-amber-300" />{p.badges.length}</span>
         {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={14} />{p.quota.turnsLeftToday}</span>}
@@ -129,7 +147,7 @@ function ProfilePanel() {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mb-4 flex justify-between text-sm text-gray-700">
-        <span className="flex items-center gap-1"><Icon name="coin" size={16} className="text-amber-500" />{p.coins}</span>
+        <span className="flex items-center gap-1"><Icon name="coin" size={16} className="text-amber-500" />{p.coins}<TopUpButton /></span>
         <span className="flex items-center gap-1"><Icon name="bolt" size={16} className="text-orange-500" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
         <span className="flex items-center gap-1"><Icon name="star" size={16} className="text-amber-500" />{p.badges.length}</span>
         {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={16} />{t('{n} left', { n: p.quota.turnsLeftToday })}</span>}
@@ -180,6 +198,7 @@ export function UiPanels() {
   if (which === 'profile') return <ProfilePanel />;
   if (which === 'settings') return <SettingsPanel />;
   if (which === 'bag') return <BagPanel />;
+  if (which === 'topup') return <TopUpPanel />;
   return null;
 }
 

@@ -313,3 +313,60 @@ model LlmUsage {
   @@id([day, purpose, detail, model])
   @@index([day])
 }
+
+/// Every change of User.coins (one row per change): rewards, spending, top-ups, refunds, admin fixes.
+/// reason: reward | spend | purchase | refund | admin | transfer; source: what for (taxi, quiz, myfarm…); ref: order code etc.
+model CoinLedger {
+  id           String   @id @default(cuid())
+  userId       String
+  delta        Int
+  balanceAfter Int
+  reason       String
+  source       String   @default("")
+  ref          String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([reason, createdAt])
+}
+
+/// A top-up: the player picked a coin pack and a way to pay. amount is in the smallest unit: đồng (vnd) or
+/// micro-USDT (usdt_trc20 / usdt_bep20, 1 USDT = 1 000 000). code: the transfer content (vnd) / order id shown.
+/// status: pending | paid | expired | cancelled | refunded
+model PaymentOrder {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  userId     String
+  pack       String
+  coins      Int
+  method     String
+  amount     Int
+  status     String    @default("pending")
+  paidAmount Int       @default(0)
+  txRef      String?   @unique
+  note       String    @default("")
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  paidAt     DateTime?
+
+  @@index([userId, createdAt])
+  @@index([status, method])
+}
+
+/// Every incoming transfer seen (SePay webhook, TRC20 / BEP20 scan), matched to an order or waiting for an admin.
+/// source: sepay | trc20 | bep20; amount in the same unit as PaymentOrder.amount; status: matched | unmatched | manual | ignored
+model PaymentTx {
+  id        String   @id @default(cuid())
+  source    String
+  txRef     String
+  amount    Int
+  content   String   @default("")
+  orderCode String?
+  status    String
+  raw       Json     @default("{}")
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@unique([source, txRef])
+  @@index([status, createdAt])
+}

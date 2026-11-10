@@ -417,10 +417,11 @@ export function accountRoutes(repo: AttemptRepo) {
       if (price === null) return reply.code(400).send({ error: 'unknown_item' });
       if (price === 0 || avatar.owned.includes(body.data.item)) return reply.code(409).send({ error: 'already_owned' });
       if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
+      const paid = await repo.spend(id, price, 'avatar', { extra: { item: body.data.item } });
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       avatar.owned.push(body.data.item);
-      await repo.updateUser(id, { avatarConfig: avatar, coins: u.coins - price });
-      await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'avatar', item: body.data.item, coins: price } });
-      return { avatar, coins: u.coins - price };
+      await repo.updateUser(id, { avatarConfig: avatar });
+      return { avatar, coins: paid.balance };
     });
 
   };

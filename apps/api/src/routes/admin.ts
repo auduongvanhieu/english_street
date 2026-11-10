@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { adminPayRoutes } from '../payments/routes';
 import { budget } from '../npc/budget';
 import type { AttemptRepo } from '../npc/attempts';
 import type { NpcService } from '../npc/service';
@@ -24,6 +25,7 @@ export function adminRoutes(repo: AttemptRepo, npc: NpcService) {
     adminOpsRoutes(app);
     adminTestRoutes(app, npc);
     adminLlmRoutes(app);
+    adminPayRoutes(app);
     app.get('/admin/budget', async () => budget.snapshot());
     app.get<{ Querystring: { days?: string } }>('/admin/stats', async (req) => computeStats(repo, Math.min(90, Math.max(1, Number(req.query.days) || 7))));
   };

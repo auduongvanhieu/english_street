@@ -1,4 +1,5 @@
 import { getPairQuest, getQuest } from '@es/quests';
+import { changeCoinsTx } from '../npc/attempts';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -150,7 +151,6 @@ export function adminUserRoutes(app: FastifyInstance) {
     if (p.name) data.name = maskProfanity(p.name);
     if (p.cefrLevel) data.cefrLevel = p.cefrLevel;
     if (p.role) data.role = p.role;
-    if (p.coinsDelta) data.coins = Math.max(0, u.coins + p.coinsDelta);
     if (p.xpDelta) data.xp = Math.max(0, u.xp + p.xpDelta);
     if (p.resetPlacement) data.placementDoneAt = null;
     if (p.basket || p.resetPlots) {
@@ -162,6 +162,8 @@ export function adminUserRoutes(app: FastifyInstance) {
       gs.farm = farm;
       data.gameState = gs as Prisma.InputJsonValue;
     }
+    // coins change in one step through the ledger (a top-up landing at the same time is never lost)
+    if (p.coinsDelta) await prisma.$transaction((tx) => changeCoinsTx(tx, u.id, p.coinsDelta!, 'admin', req.admin!.name, '', p.coinsDelta! < 0));
     const after = await prisma.user.update({ where: { id: u.id }, data, select: PUBLIC_USER });
     forgetStatus(u.id);
     // the player's coin history (admin page): an admin's change, kept apart from the game economy

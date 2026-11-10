@@ -38,6 +38,8 @@ import { setProfanityWords } from '@es/shared';
 import { startContent } from './admin/contentStore';
 import { initTranslationJob } from './admin/translateJob';
 import { enableAnnouncements, worldRoutes } from './routes/world';
+import { payRoutes } from './payments/routes';
+import { startChainWatch } from './payments/chain';
 
 // forceCloseConnections: a restart (tsx watch, systemd) must free the port immediately instead of waiting for keep-alive sockets.
 const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env.TRUST_PROXY, forceCloseConnections: true });
@@ -71,7 +73,7 @@ registerAuth(app);
 
 // Closed beta: every write except sign-in needs a beta pass (x-beta-pass) or a signed-in account.
 if (env.BETA_CODES.length > 0) {
-  const open = new Set(['/auth/login', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/feedback']);
+  const open = new Set(['/auth/login', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/feedback', '/pay/webhook/sepay']);
   app.addHook('onRequest', async (req, reply) => {
     const path = req.url.split('?')[0]!;
     if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;
@@ -83,7 +85,7 @@ if (env.BETA_CODES.length > 0) {
 // Anti-spam: writes need a signed-in account or a guest human pass (captcha), so bots can't burn the
 // NPC budget or fill the database. Sign-in / sign-up / the guest pass itself carry their own captcha.
 {
-  const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/me/push-token']);
+  const open = new Set(['/auth/login', '/auth/register', '/auth/guest', '/auth/forgot', '/auth/reset', '/beta/verify', '/events', '/me/push-token', '/pay/webhook/sepay']);
   app.addHook('onRequest', async (req, reply) => {
     const path = req.url.split('?')[0]!;
     if (req.method !== 'POST' || open.has(path) || path.startsWith('/admin') || path.startsWith('/internal')) return;
@@ -105,6 +107,8 @@ await app.register(shopRoutes(attempts));
 await app.register(myFarmRoutes(attempts));
 await app.register(minigameRoutes(attempts));
 await app.register(bookRoutes(attempts));
+await app.register(payRoutes(dbOn));
+if (dbOn) startChainWatch(redis);
 const npcService = new NpcService(llm, sessions, attempts);
 await app.register(npcRoutes(npcService));
 await app.register(pairRoutes(new PairService(llm, attempts, pairs), attempts));

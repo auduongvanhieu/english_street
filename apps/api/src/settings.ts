@@ -26,6 +26,35 @@ export const SETTING_DEFS = {
   allowedWords: { schema: z.array(z.string().trim().toLowerCase().min(2).max(40)).max(2000), def: () => [] as string[] },
   /** Admin "try the NPC" turns per admin per day. */
   adminTestTurnsPerDay: { schema: z.number().int().min(0).max(1000), def: () => 100 },
+  // ---- top-ups (payments/): coin packs paid by bank transfer (SePay) or USDT ----
+  /** off = hidden; test = only the testers below; on = every signed-in player */
+  payMode: { schema: z.enum(['off', 'test', 'on']), def: () => 'off' as 'off' | 'test' | 'on' },
+  /** user ids or e-mails who can top up while payMode = test */
+  payTesters: { schema: z.array(z.string().trim().toLowerCase().min(3).max(80)).max(200), def: () => [] as string[] },
+  payVnd: { schema: z.boolean(), def: () => true },
+  payUsdt: { schema: z.boolean(), def: () => true },
+  /** coin packs: id, coins, price in đồng and in USDT */
+  payPacks: {
+    schema: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), coins: z.number().int().min(1).max(1_000_000), vnd: z.number().int().min(1000).max(50_000_000), usdt: z.number().min(0.5).max(2000) })).min(1).max(8),
+    def: () => [
+      { id: 'small', coins: 1000, vnd: 20_000, usdt: 1 },
+      { id: 'medium', coins: 2700, vnd: 50_000, usdt: 2 },
+      { id: 'large', coins: 6000, vnd: 100_000, usdt: 4 },
+    ],
+  },
+  /** the first paid top-up gives double coins */
+  payFirstBonus: { schema: z.boolean(), def: () => true },
+  /** an order waits this long (the transfer is still accepted after it, the code still matches) */
+  payOrderMinutes: { schema: z.number().int().min(5).max(24 * 60), def: () => 30 },
+  /** bank for VietQR: bank code or BIN (e.g. MB, VCB, 970422), account number, account name */
+  payBank: { schema: z.string().trim().max(20), def: () => '' },
+  payBankAccount: { schema: z.string().trim().regex(/^[0-9A-Za-z]{0,30}$/), def: () => '' },
+  payBankName: { schema: z.string().trim().max(60), def: () => '' },
+  /** wallets that receive USDT (addresses only, the keys never touch the server) */
+  payTrc20Address: { schema: z.string().trim().regex(/^(T[1-9A-HJ-NP-Za-km-z]{33})?$/), def: () => '' },
+  payBep20Address: { schema: z.string().trim().regex(/^(0x[0-9a-fA-F]{40})?$/), def: () => '' },
+  /** BEP20: blocks to wait (TRC20 uses Tron's own "confirmed") */
+  payBep20Confirmations: { schema: z.number().int().min(1).max(200), def: () => 15 },
 } as const;
 export type SettingKey = keyof typeof SETTING_DEFS;
 export type SettingValue<K extends SettingKey> = z.infer<(typeof SETTING_DEFS)[K]['schema']>;
@@ -42,6 +71,8 @@ export function setting<K extends SettingKey>(key: K): SettingValue<K> {
   return (values.has(key) ? values.get(key) : SETTING_DEFS[key].def()) as SettingValue<K>;
 }
 export const isDefault = (key: SettingKey) => !values.has(key);
+/** Tests only: set a value in this process without the database. */
+export const setSettingForTest = <K extends SettingKey>(key: K, value: SettingValue<K>) => void values.set(key, value);
 export const onSettingsChange = (fn: () => void) => listeners.add(fn);
 
 export async function loadSettings() {

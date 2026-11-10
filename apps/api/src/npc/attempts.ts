@@ -73,6 +73,28 @@ export interface FeedbackInput {
 }
 
 export const DAILY_BONUS_XP = 30;
+export type CoinReason = 'reward' | 'spend' | 'purchase' | 'refund' | 'admin' | 'transfer';
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * The one place User.coins changes (inside a transaction): delta < 0 only succeeds when the balance stays ≥ 0
+ * (upTo: take what there is). Writes the CoinLedger row. Returns null when there were not enough coins.
+ */
+export async function changeCoinsTx(tx: Tx, userId: string, delta: number, reason: CoinReason, source = '', ref = '', upTo = false): Promise<{ balance: number; delta: number } | null> {
+  let d = Math.trunc(delta);
+  if (d < 0 && upTo) {
+    const rows = await tx.$queryRaw<{ coins: number }[]>`SELECT coins FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    d = -Math.min(-d, Math.max(0, rows[0]?.coins ?? 0));
+  }
+  if (d < 0) {
+    const r = await tx.user.updateMany({ where: { id: userId, coins: { gte: -d } }, data: { coins: { increment: d } } });
+    if (!r.count) return null;
+  } else if (d > 0) await tx.user.update({ where: { id: userId }, data: { coins: { increment: d } } });
+  const u = await tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
+  if (!u) return null;
+  if (d) await tx.coinLedger.create({ data: { userId, delta: d, balanceAfter: u.coins, reason, source, ref } });
+  return { balance: u.coins, delta: d };
+}
 
 export interface AttemptRepo {
   readonly name: string;
@@ -88,6 +110,14 @@ export interface AttemptRepo {
   create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>): Promise<AttemptRecord>;
   update(id: string, patch: Partial<AttemptRecord>): Promise<void>;
   listCompleted(userId: string): Promise<Pick<AttemptRecord, 'questId' | 'npcId' | 'finishedAt'>[]>;
+  /**
+   * Take coins in one step (the balance never goes below 0, a top-up landing at the same time is never lost).
+   * Returns the new balance and what was taken, or null when there are not enough coins.
+   * upTo: take what there is (a fine, the minibar). Logs coins_spent and a CoinLedger row.
+   */
+  spend(userId: string, amount: number, source: string, opts?: { upTo?: boolean; extra?: Record<string, unknown> }): Promise<{ balance: number; paid: number } | null>;
+  /** Give (or with a negative delta, take back) coins outside game rewards: purchase, refund, admin, transfer. */
+  addCoins(userId: string, delta: number, reason: CoinReason, source: string, ref?: string): Promise<number>;
   /** Add XP / coins; coins are logged as a coins_earned event (economy stats) with their source. */
   reward(userId: string, xp: number, coins: number, source?: string, extra?: Record<string, unknown>): Promise<void>;
   /** Daily-board bonus if the quest is on today's board and not yet completed today. */
@@ -201,6 +231,21 @@ export class MemoryAttemptRepo implements AttemptRepo {
       u.coins += coins;
     }
   }
+  async spend(userId: string, amount: number, source: string, opts?: { upTo?: boolean; extra?: Record<string, unknown> }) {
+    const u = this.users.get(userId);
+    if (!u) return null;
+    const paid = opts?.upTo ? Math.min(amount, Math.max(0, u.coins)) : amount;
+    if (u.coins < paid) return null;
+    u.coins -= paid;
+    if (paid) await this.logEvent({ name: 'coins_spent', playerId: userId, props: { source, coins: paid, ...opts?.extra } });
+    return { balance: u.coins, paid };
+  }
+  async addCoins(userId: string, delta: number, _reason: CoinReason, _source: string) {
+    const u = this.users.get(userId);
+    if (!u) return 0;
+    u.coins = Math.max(0, u.coins + delta);
+    return u.coins;
+  }
   dailyBonus(userId: string, questId: string) {
     return dailyBonusFor(this, userId, questId);
   }
@@ -298,9 +343,10 @@ export class PrismaAttemptRepo implements AttemptRepo {
     await prisma.$transaction([
       prisma.questAttempt.updateMany({ where: { userId: guestId }, data: { userId } }),
       prisma.vocabEntry.updateMany({ where: { userId: guestId }, data: { userId } }),
-      prisma.user.update({ where: { id: userId }, data: { xp: { increment: g.xp }, coins: { increment: g.coins }, cefrLevel: g.cefrLevel, placementDoneAt: g.placementDoneAt } }),
+      prisma.user.update({ where: { id: userId }, data: { xp: { increment: g.xp }, cefrLevel: g.cefrLevel, placementDoneAt: g.placementDoneAt } }),
       prisma.user.delete({ where: { id: guestId } }),
     ]);
+    if (g.coins) await this.addCoins(userId, g.coins, 'transfer', 'guest', guestId);
   }
 
   async create(a: Omit<AttemptRecord, 'startedAt' | 'finishedAt'>) {
@@ -319,8 +365,22 @@ export class PrismaAttemptRepo implements AttemptRepo {
   async listCompleted(userId: string) {
     return prisma.questAttempt.findMany({ where: { userId, status: 'completed' }, select: { questId: true, npcId: true, finishedAt: true } });
   }
+  async spend(userId: string, amount: number, source: string, opts?: { upTo?: boolean; extra?: Record<string, unknown> }) {
+    const r = await prisma.$transaction((tx) => changeCoinsTx(tx, userId, -Math.max(0, amount), 'spend', source, '', opts?.upTo));
+    if (!r) return null;
+    const paid = -r.delta;
+    if (paid) await this.logEvent({ name: 'coins_spent', playerId: userId, props: { source, coins: paid, ...opts?.extra } });
+    return { balance: r.balance, paid };
+  }
+  async addCoins(userId: string, delta: number, reason: CoinReason, source: string, ref = '') {
+    const r = await prisma.$transaction((tx) => changeCoinsTx(tx, userId, delta, reason, source, ref, delta < 0));
+    return r?.balance ?? 0;
+  }
   async reward(userId: string, xp: number, coins: number, source = 'other', extra?: Record<string, unknown>) {
-    await prisma.user.update({ where: { id: userId }, data: { xp: { increment: xp }, coins: { increment: coins } } });
+    await prisma.$transaction(async (tx) => {
+      if (xp) await tx.user.update({ where: { id: userId }, data: { xp: { increment: xp } } });
+      if (coins) await changeCoinsTx(tx, userId, coins, 'reward', source, typeof extra?.attempt === 'string' ? extra.attempt : '', coins < 0);
+    });
     // quests log every reward (even 0 coins) so the admin site can show what each attempt paid
     if (coins > 0 || extra?.attempt) await this.logEvent({ name: 'coins_earned', playerId: userId, props: { source, coins, xp, ...extra } });
   }

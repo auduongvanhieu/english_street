@@ -60,6 +60,10 @@ const EnvSchema = z.object({
   /** Guest passes (POST /auth/guest) one IP may get per hour / per day. */
   GUEST_PASSES_PER_IP_HOUR: z.coerce.number().int().positive().default(10),
   GUEST_PASSES_PER_IP_DAY: z.coerce.number().int().positive().default(30),
+  /** Top-ups: SePay webhook API key (SePay → Webhooks → "API Key"), TronGrid key (optional), BNB Chain RPC. */
+  SEPAY_API_KEY: z.string().default(''),
+  TRONGRID_API_KEY: z.string().default(''),
+  BSC_RPC_URL: z.string().default('https://bsc-rpc.publicnode.com'),
 });
 
 export const env = EnvSchema.parse(process.env);

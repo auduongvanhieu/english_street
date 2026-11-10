@@ -115,11 +115,12 @@ export function bookRoutes(repo: AttemptRepo) {
       const { u, gs, books } = await load(id);
       if (books.owned.includes(book.id)) return { ...books, coins: u.coins };
       if (u.coins < book.price) return reply.code(402).send({ error: 'not_enough_coins' });
+      const paid = book.price ? await repo.spend(id, book.price, 'book') : { balance: u.coins, paid: 0 };
+      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
       const next: MyBooks = { ...books, owned: [...books.owned, book.id] };
-      await repo.updateUser(id, { gameState: { ...gs, books: next }, coins: u.coins - book.price });
-      if (book.price) await repo.logEvent({ name: 'coins_spent', playerId: id, props: { source: 'book', coins: book.price } });
+      await repo.updateUser(id, { gameState: { ...gs, books: next } });
       await repo.logEvent({ name: 'book_bought', playerId: id, props: { book: book.id } });
-      return { ...next, coins: u.coins - book.price };
+      return { ...next, coins: paid.balance };
     });
 
     app.post('/me/books/quiz', async (req, reply) => {
