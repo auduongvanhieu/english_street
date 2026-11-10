@@ -51,7 +51,12 @@ export function telemetryRoutes(repo: AttemptRepo) {
       const body = EventsSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const pid = playerIdFrom(req, body.data.playerId);
-      for (const e of body.data.events) if (CLIENT_EVENTS.has(e.name) || AREA_ACTIVITY_EVENT.test(e.name)) await repo.logEvent({ name: e.name, playerId: pid, props: e.props });
+      for (const e of body.data.events) {
+        if (!(CLIENT_EVENTS.has(e.name) || AREA_ACTIVITY_EVENT.test(e.name))) continue;
+        await repo.logEvent({ name: e.name, playerId: pid, props: e.props });
+        // "Coach says" in the sports panel counts like the one on the field (Sports day, the daily sport, the passport)
+        if (e.name === 'sports_coach_done' && pid) await repo.logEvent({ name: 'minigame_done', playerId: pid, props: { game: 'coach', from: 'panel', score: Number(e.props.correct) || 0 } });
+      }
       return reply.code(204).send();
     });
 
