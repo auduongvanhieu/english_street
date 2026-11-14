@@ -40,6 +40,8 @@ import { initTranslationJob } from './admin/translateJob';
 import { enableAnnouncements, worldRoutes } from './routes/world';
 import { payRoutes } from './payments/routes';
 import { startChainWatch } from './payments/chain';
+import { gemRoutes } from './gems/routes';
+import { bonusTurnsOf, giveBackBonusTurn, takeBonusTurn } from './gems/core';
 
 // forceCloseConnections: a restart (tsx watch, systemd) must free the port immediately instead of waiting for keep-alive sockets.
 const app = Fastify({ logger: isProd ? { level: 'info' } : true, trustProxy: env.TRUST_PROXY, forceCloseConnections: true });
@@ -60,6 +62,7 @@ await startSettings(redis, dbOn);
 await startContent(redis, dbOn);
 if (dbOn) await initTranslationJob().catch(() => undefined);
 budget.useRedis(redis);
+if (dbOn) budget.useBonusTurns({ take: takeBonusTurn, giveBack: giveBackBonusTurn, count: bonusTurnsOf });
 limiter.useRedis(redis);
 captcha.useRedis(redis);
 const llm = createNpcLlm();
@@ -108,6 +111,7 @@ await app.register(myFarmRoutes(attempts));
 await app.register(minigameRoutes(attempts));
 await app.register(bookRoutes(attempts));
 await app.register(payRoutes(dbOn));
+await app.register(gemRoutes(dbOn));
 if (dbOn) startChainWatch(redis);
 const npcService = new NpcService(llm, sessions, attempts);
 await app.register(npcRoutes(npcService));

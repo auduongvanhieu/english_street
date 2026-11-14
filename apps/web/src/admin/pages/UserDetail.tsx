@@ -20,6 +20,7 @@ interface Detail {
   events: { name: string; props: Record<string, unknown>; createdAt: string }[];
   online: { sessionId: string; zone: string; x: number; z: number; ip: string; since: number }[];
   playDays: { day: string; seconds: number; sessions: number }[];
+  gemLedger: { delta: number; balanceAfter: number; reason: string; source: string; ref: string; createdAt: string }[];
 }
 interface Report {
   id: string;
@@ -118,6 +119,10 @@ export function UserDetail({ id }: { id: string }) {
                     <dt className="text-gray-500">XP · 🪙 · 🔥</dt>
                     <dd className="tabular-nums">
                       {fmtNum(u.xp)} · {fmtNum(u.coins)} · {u.streak}
+                    </dd>
+                    <dt className="text-gray-500">💎 · {L('lượt NPC đã mua', 'bought NPC turns')}</dt>
+                    <dd className="tabular-nums">
+                      {fmtNum(u.gems ?? 0)} · {fmtNum(u.npcBonusTurns ?? 0)}
                     </dd>
                     <dt className="text-gray-500">{L('Ngôn ngữ', 'Language')}</dt>
                     <dd>{u.nativeLang || '—'}</dd>
@@ -230,6 +235,22 @@ export function UserDetail({ id }: { id: string }) {
                     ]}
                   />
                 </div>
+              </Card>
+              ) : null}
+              {tab === 'coins' ? (
+              <Card title={`💎 ${L('Lịch sử kim cương', 'Gem history')} (${d.gemLedger.length})`} className="mt-3">
+                <Table
+                  rows={d.gemLedger.map((w, k) => ({ ...w, k }))}
+                  rowKey={(w) => String(w.k)}
+                  empty={L('Chưa có', 'None yet')}
+                  cols={[
+                    { key: 'd', label: L('Lúc', 'When'), render: (w) => fmtDate(w.createdAt) },
+                    { key: 'r', label: L('Loại', 'Kind'), render: (w) => w.reason },
+                    { key: 's', label: L('Chi tiết', 'Detail'), render: (w) => <span className="text-gray-600">{[w.source, w.ref].filter(Boolean).join(' · ')}</span>, wide: true },
+                    { key: 'c', label: '💎', render: (w) => <b className={w.delta > 0 ? 'text-emerald-700' : 'text-red-700'}>{w.delta > 0 ? `+${w.delta}` : w.delta}</b>, className: 'text-right' },
+                    { key: 'b', label: L('Còn', 'Left'), render: (w) => w.balanceAfter, className: 'text-right' },
+                  ]}
+                />
               </Card>
               ) : null}
 
@@ -508,6 +529,8 @@ function EditModal({ u, self, onClose, onSaved }: { u: UserRow; self: boolean; o
   const [role, setRole] = useState(u.role);
   const [coins, setCoins] = useState<number | undefined>(0);
   const [xp, setXp] = useState<number | undefined>(0);
+  const [gems, setGems] = useState<number | undefined>(0);
+  const [turns, setTurns] = useState<number | undefined>(0);
   const [resetPlacement, setResetPlacement] = useState(false);
   return (
     <Modal title={L('Sửa người chơi', 'Edit player')} onClose={onClose}>
@@ -527,6 +550,12 @@ function EditModal({ u, self, onClose, onSaved }: { u: UserRow; self: boolean; o
         <Field label={L('Cộng/trừ XP', 'Add/remove XP')} hint={`${L('hiện có', 'now')} ${u.xp}`}>
           <Num value={xp} onChange={setXp} />
         </Field>
+        <Field label={L('Cộng/trừ 💎', 'Add/remove 💎')} hint={`${L('hiện có', 'now')} ${u.gems ?? 0}`}>
+          <Num value={gems} onChange={setGems} />
+        </Field>
+        <Field label={L('Cộng/trừ lượt NPC đã mua', 'Add/remove bought NPC turns')} hint={`${L('hiện có', 'now')} ${u.npcBonusTurns ?? 0}`}>
+          <Num value={turns} onChange={setTurns} />
+        </Field>
       </div>
       <label className="mb-3 flex items-center gap-2 text-sm">
         <input type="checkbox" checked={resetPlacement} onChange={(e) => setResetPlacement(e.target.checked)} /> {L('Cho làm lại bài test xếp lớp', 'Let them retake the placement test')}
@@ -543,6 +572,8 @@ function EditModal({ u, self, onClose, onSaved }: { u: UserRow; self: boolean; o
               ...(role !== u.role ? { role } : {}),
               ...(coins ? { coinsDelta: coins } : {}),
               ...(xp ? { xpDelta: xp } : {}),
+              ...(gems ? { gemsDelta: gems } : {}),
+              ...(turns ? { bonusTurnsDelta: turns } : {}),
               ...(resetPlacement ? { resetPlacement: true } : {}),
             });
             onSaved();

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TAXI_PRICE, FURNITURE_MAX, PlacedSchema, ROOM_MAX_ITEMS, furniture, type RoomState, BOAT_HIRE, HOTEL_MAX_NIGHTS, HOTEL_NIGHT_PRICE, SUITE_NIGHT_PRICE, PREMIUM_PRICES, type PremiumItem, MINIBAR, MINIBAR_MAX, hotelRoomFor, type HotelBill, type HotelStay } from '@es/shared';
 import type { AttemptRepo } from '../npc/attempts';
 import { playerIdFrom } from '../auth';
+import { gemPrice, spendGems } from '../gems/core';
 import { limiter } from '../npc/ratelimit';
 
 /**
@@ -86,13 +87,24 @@ export function shopRoutes(repo: AttemptRepo) {
       const { u, gs } = await load(id);
       const room = roomOf(gs);
       if ((room.owned[f.id] ?? 0) >= FURNITURE_MAX) return reply.code(409).send({ error: 'too_many' });
-      if (u.coins < f.price) return reply.code(402).send({ error: 'not_enough_coins' });
-      const paid = await repo.spend(id, f.price, 'furniture');
-      if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
+      let coins = u.coins;
+      let gems: number | undefined;
+      if (f.gems) {
+        // 💎 gem piece
+        if (repo.name !== 'postgres') return reply.code(404).send({ error: 'not_found' });
+        const left = await spendGems(id, gemPrice(f.id) ?? f.gems, 'furniture', f.id);
+        if (left === null) return reply.code(402).send({ error: 'not_enough_gems' });
+        gems = left;
+      } else {
+        if (u.coins < f.price) return reply.code(402).send({ error: 'not_enough_coins' });
+        const paid = await repo.spend(id, f.price, 'furniture');
+        if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });
+        coins = paid.balance;
+      }
       room.owned = { ...room.owned, [f.id]: (room.owned[f.id] ?? 0) + 1 };
       await save(id, { ...gs, room });
-      await repo.logEvent({ name: 'home_buy', playerId: id, props: { item: f.id } });
-      return { ...room, coins: paid.balance };
+      await repo.logEvent({ name: 'home_buy', playerId: id, props: { item: f.id, ...(f.gems ? { gems: true } : {}) } });
+      return { ...room, coins, ...(gems !== undefined ? { gems } : {}) };
     });
     app.post('/me/room/save', async (req, reply) => {
       const id = who(req);

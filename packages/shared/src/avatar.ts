@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Player character look ("Tạo nhân vật"). Everything is picked from fixed lists so a player who is not
  * into graphics can still make a nice character: a body (one of the Quaternius models, or the robot),
- * palette colours for skin / hair / clothes, and a few accessories. Some items cost coins.
+ * palette colours for skin / hair / clothes, and a few accessories. Some items cost coins, a few special ones 💎 gems.
  */
 export const AVATAR_BODIES = ['tee', 'hoodie', 'suit', 'girl', 'dress', 'robot'] as const;
 export type AvatarBody = (typeof AVATAR_BODIES)[number];
@@ -26,9 +26,14 @@ export interface PaletteColor {
   hex: string;
   /** coins; 0 = free */
   price: number;
+  /** 💎 gem item (bought with gems instead of coins; the admin may change the price) */
+  gems?: number;
 }
 export const SKIN_TONES: PaletteColor[] = ['#f6d7c3', '#eec1a0', '#e0ac80', '#c98e62', '#a86e45', '#8a5634', '#6b3f25', '#4a2a19'].map((hex, i) => ({ id: `skin${i + 1}`, hex, price: 0 }));
-export const HAIR_COLORS: PaletteColor[] = ['#1c1410', '#3a2618', '#6b4226', '#a0682f', '#d9b25c', '#e8d9a8', '#b8b8b8', '#c2402e', '#e86fa8', '#3f7fd6'].map((hex, i) => ({ id: `hair${i + 1}`, hex, price: i >= 8 ? 20 : 0 }));
+export const HAIR_COLORS: PaletteColor[] = ['#1c1410', '#3a2618', '#6b4226', '#a0682f', '#d9b25c', '#e8d9a8', '#b8b8b8', '#c2402e', '#e86fa8', '#3f7fd6'].map((hex, i) => ({ id: `hair${i + 1}`, hex, price: i >= 8 ? 20 : 0 } as PaletteColor)).concat([
+  { id: 'hair-ice', hex: '#9fdcff', price: 0, gems: 20 },
+  { id: 'hair-violet', hex: '#9b6bff', price: 0, gems: 20 },
+]);
 /** Clothes and hat colours. The last three were the paid robot colours before characters existed; their ids are kept so purchases carry over. */
 export const CLOTH_COLORS: PaletteColor[] = [
   { id: 'blue', hex: '#4a90e2', price: 0 },
@@ -53,12 +58,16 @@ export const CLOTH_COLORS: PaletteColor[] = [
   { id: 'coral', hex: '#ff7f66', price: 40 },
   { id: 'lavender', hex: '#b9a3e8', price: 40 },
   { id: 'silver', hex: '#c9ced6', price: 60 },
+  { id: 'neon', hex: '#3cff8f', price: 0, gems: 20 },
+  { id: 'rosegold', hex: '#e7a99a', price: 0, gems: 20 },
 ];
 
 export interface ShopItem {
   id: string;
   label: string;
   price: number;
+  /** 💎 gem item */
+  gems?: number;
 }
 export const HAT_ITEMS: Record<AvatarHat, ShopItem> = {
   none: { id: 'hat:none', label: 'None', price: 0 },
@@ -89,13 +98,16 @@ export const PET_ITEMS: Record<AvatarPet, ShopItem> = {
   guineapig: { id: 'pet:guineapig', label: 'Guinea pig', price: 90 },
 };
 /** Name tag styles (premium: bought with coins, everybody sees them over your head). */
-export const NAME_TAGS = ['plain', 'gold', 'ocean', 'rainbow'] as const;
+export const NAME_TAGS = ['plain', 'gold', 'ocean', 'rainbow', 'diamond', 'fire', 'galaxy'] as const;
 export type NameTagStyle = (typeof NAME_TAGS)[number];
 export const TAG_ITEMS: Record<NameTagStyle, ShopItem> = {
   plain: { id: 'tag:plain', label: 'Plain', price: 0 },
   gold: { id: 'tag:gold', label: 'Gold', price: 150 },
   ocean: { id: 'tag:ocean', label: 'Ocean', price: 200 },
   rainbow: { id: 'tag:rainbow', label: 'Rainbow', price: 300 },
+  diamond: { id: 'tag:diamond', label: 'Diamond', price: 0, gems: 50 },
+  fire: { id: 'tag:fire', label: 'Fire', price: 0, gems: 40 },
+  galaxy: { id: 'tag:galaxy', label: 'Galaxy', price: 0, gems: 40 },
 };
 export const BAG_ITEMS: Record<AvatarBag, ShopItem> = {
   none: { id: 'bag:none', label: 'None', price: 0 },
@@ -145,18 +157,30 @@ export function parseLook(json: string | null | undefined): AvatarLook {
 }
 
 const find = (list: PaletteColor[], h: string) => list.find((c) => c.hex.toLowerCase() === h.toLowerCase());
-/** Ownable id of a palette colour or item ('gold', 'hair9', 'hat:crown'…), or null for anything free. */
-export function itemPrice(id: string): number | null {
+/** Price of an ownable palette colour or item ('gold', 'hair9', 'hat:crown', 'tag:diamond'…), or null if unknown. */
+export function itemCost(id: string): { coins: number; gems: number } | null {
   for (const list of [SKIN_TONES, HAIR_COLORS, CLOTH_COLORS]) {
     const c = list.find((x) => x.id === id);
-    if (c) return c.price;
+    if (c) return { coins: c.price, gems: c.gems ?? 0 };
   }
   for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS, TAG_ITEMS, PET_ITEMS] as Record<string, ShopItem>[]) {
     const it = Object.values(rec).find((x) => x.id === id);
-    if (it) return it.price;
+    if (it) return { coins: it.price, gems: it.gems ?? 0 };
   }
   return null;
 }
+/** Coin price of an item (0 for a gem item), or null if unknown. */
+export function itemPrice(id: string): number | null {
+  return itemCost(id)?.coins ?? null;
+}
+/** Every 💎 gem item of the character shop with its default price. */
+export function avatarGemItems(): { id: string; gems: number }[] {
+  const out: { id: string; gems: number }[] = [];
+  for (const list of [SKIN_TONES, HAIR_COLORS, CLOTH_COLORS]) for (const c of list) if (c.gems) out.push({ id: c.id, gems: c.gems });
+  for (const rec of [HAT_ITEMS, GLASSES_ITEMS, BAG_ITEMS, TAG_ITEMS, PET_ITEMS] as Record<string, ShopItem>[]) for (const it of Object.values(rec)) if (it.gems) out.push({ id: it.id, gems: it.gems });
+  return out;
+}
+const paid = (x: { price: number; gems?: number }) => x.price > 0 || (x.gems ?? 0) > 0;
 
 /** Paid items / colours in a look that are not owned yet (ids, no duplicates), or null if a colour is not in its palette. */
 export function missingItems(look: AvatarLook, owned: string[]): string[] | null {
@@ -172,9 +196,9 @@ export function missingItems(look: AvatarLook, owned: string[]): string[] | null
   for (const [list, h] of colors) {
     const c = find(list, h);
     if (!c) return null;
-    if (c.price > 0 && !owned.includes(c.id)) out.add(c.id);
+    if (paid(c) && !owned.includes(c.id)) out.add(c.id);
   }
-  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag], TAG_ITEMS[look.tag], PET_ITEMS[look.pet]]) if (it.price > 0 && !owned.includes(it.id)) out.add(it.id);
+  for (const it of [HAT_ITEMS[look.hat], GLASSES_ITEMS[look.glasses], BAG_ITEMS[look.bag], TAG_ITEMS[look.tag], PET_ITEMS[look.pet]]) if (paid(it) && !owned.includes(it.id)) out.add(it.id);
   return [...out];
 }
 

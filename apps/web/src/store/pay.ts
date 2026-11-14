@@ -1,15 +1,22 @@
 import { create } from 'zustand';
-import type { PayInfo, PayMethod, PayOrderView } from '@es/shared';
-import { get, post } from '../net/api';
+import type { GemInfo, PayInfo, PayMethod, PayOrderView } from '@es/shared';
+import { buyNpcTurnsApi, exchangeGemsApi, fetchGems, get, post } from '../net/api';
 import { isNativeApp } from '../native/bridge';
 import { useProfile } from './profile';
 
 /**
- * Top-ups: the coin packs, the order being paid (watched until the money arrives) and past orders.
- * Hidden inside the iOS / Android app (store rules: digital goods there go through the store's own payments).
+ * 💎 Gems and top-ups: the balance and prices (GemInfo), the gem packs, the order being paid (watched until the
+ * money arrives) and past orders. Buying is hidden inside the iOS / Android app (store rules: digital goods there
+ * go through the store's own payments); gems a player already has still work there.
  */
 interface PayStore {
   info: PayInfo | null;
+  gem: GemInfo | null;
+  loadGems: () => Promise<void>;
+  /** gems → coins; returns the coins received */
+  exchange: (gems: number) => Promise<number>;
+  /** one pack of extra NPC turns */
+  buyTurns: () => Promise<number>;
   order: PayOrderView | null;
   busy: boolean;
   error: string;
@@ -43,6 +50,7 @@ export const usePay = create<PayStore>((set, getS) => {
           set({ order: null, done: next });
           void useProfile.getState().refresh();
           void getS().load();
+          void getS().loadGems();
         } else set({ order: next });
       } catch {
         /* try again next tick */
@@ -51,6 +59,26 @@ export const usePay = create<PayStore>((set, getS) => {
   };
   return {
     info: null,
+    gem: null,
+    async loadGems() {
+      try {
+        set({ gem: await fetchGems() });
+      } catch {
+        /* API without a database: no gems */
+      }
+    },
+    async exchange(gems) {
+      const r = await exchangeGemsApi(gems);
+      set((s) => ({ gem: s.gem ? { ...s.gem, gems: r.gems } : s.gem }));
+      void useProfile.getState().refresh();
+      return r.got;
+    },
+    async buyTurns() {
+      const r = await buyNpcTurnsApi();
+      set((s) => ({ gem: s.gem ? { ...s.gem, gems: r.gems, bonusTurns: r.bonusTurns } : s.gem }));
+      void useProfile.getState().refresh();
+      return r.turns;
+    },
     order: null,
     busy: false,
     error: '',

@@ -5,7 +5,7 @@ import { useJourney } from '../store/journey';
 import { AREA_INFO } from '@es/shared';
 import { JourneyPanel } from './journey/JourneyPanel';
 import { BagPanel } from './BagPanel';
-import { TopUpPanel } from './TopUpPanel';
+import { GemsButton, TopUpPanel } from './TopUpPanel';
 import { usePay } from '../store/pay';
 import { Icon, type IconName } from './icons';
 import { useEffect, useState } from 'react';
@@ -32,16 +32,20 @@ const _i18n = () => [
 ];
 void _i18n;
 
-/** "+" next to the coins: opens Top up (only when top-ups are open for this player, never inside the store app). */
-export function TopUpButton({ dark }: { dark?: boolean }) {
-  const t = useT();
-  const on = usePay((s) => !!s.info?.enabled);
-  const open = useGame((s) => s.setUiPanel);
-  if (!on) return null;
+/**
+ * 💎 gems and a "+" that opens the gems panel. Shown once gems mean something for this player: top-ups are open
+ * for them (never inside the store app), or they have gems / bought NPC turns.
+ */
+export function GemChip({ dark, size = 14 }: { dark?: boolean; size?: number }) {
+  const p = useProfile((s) => s.profile);
+  const payOn = usePay((s) => !!s.info?.enabled);
+  if (!p || !(payOn || p.gems > 0 || (p.quota?.bonusTurns ?? 0) > 0)) return null;
   return (
-    <button type="button" onClick={() => open('topup')} aria-label={t('Top up coins')} title={t('Top up coins')} className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold leading-none ${dark ? 'bg-yellow-400 text-slate-900 hover:bg-yellow-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
-      +
-    </button>
+    <span className="flex items-center gap-1">
+      <Icon name="gem" size={size} className={dark ? 'text-sky-300' : 'text-sky-500'} />
+      {p.gems}
+      <GemsButton dark={dark} />
+    </span>
   );
 }
 
@@ -94,10 +98,11 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mt-1 flex justify-between opacity-90">
-        <span className="flex items-center gap-1"><Icon name="coin" size={14} className="text-yellow-300" />{p.coins}<TopUpButton dark /></span>
+        <span className="flex items-center gap-1"><Icon name="coin" size={14} className="text-yellow-300" />{p.coins}</span>
+        <GemChip dark />
         <span className="flex items-center gap-1"><Icon name="bolt" size={14} className="text-orange-300" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
         <span className="flex items-center gap-1"><Icon name="star" size={14} className="text-amber-300" />{p.badges.length}</span>
-        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={14} />{p.quota.turnsLeftToday}</span>}
+        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={14} />{p.quota.turnsLeftToday}{p.quota.bonusTurns ? `+${p.quota.bonusTurns}` : ''}</span>}
       </div>
       <div className="mt-2 grid grid-cols-2 gap-1">
         {(
@@ -147,10 +152,11 @@ function ProfilePanel() {
         <span>{t('{xp} XP', { xp: p.xp })}</span>
       </div>
       <div className="mb-4 flex justify-between text-sm text-gray-700">
-        <span className="flex items-center gap-1"><Icon name="coin" size={16} className="text-amber-500" />{p.coins}<TopUpButton /></span>
+        <span className="flex items-center gap-1"><Icon name="coin" size={16} className="text-amber-500" />{p.coins}</span>
+        <GemChip size={16} />
         <span className="flex items-center gap-1"><Icon name="bolt" size={16} className="text-orange-500" />{p.streak === 1 ? t('1 day') : t('{n} days', { n: p.streak })}</span>
         <span className="flex items-center gap-1"><Icon name="star" size={16} className="text-amber-500" />{p.badges.length}</span>
-        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={16} />{t('{n} left', { n: p.quota.turnsLeftToday })}</span>}
+        {p.quota && <span className="flex items-center gap-1" title={t('NPC conversation turns left today')}><Icon name="chat" size={16} />{t('{n} left', { n: p.quota.turnsLeftToday })}{p.quota.bonusTurns ? ` +${p.quota.bonusTurns}` : ''}</span>}
       </div>
       <JourneyBadges />
       <div className="space-y-2">

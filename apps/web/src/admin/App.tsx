@@ -91,7 +91,7 @@ const NAV: { vi: string; en: string; items: NavItem[] }[] = [
     en: 'Operations',
     items: [
       { path: 'settings', icon: 'settings', vi: 'Cài đặt', en: 'Settings', adminOnly: true },
-      { path: 'payments', icon: 'coin', vi: 'Nạp xu', en: 'Top-ups', adminOnly: true },
+      { path: 'payments', icon: 'gem', vi: 'Kim cương & nạp', en: 'Gems & top-ups', adminOnly: true },
       { path: 'claude', icon: 'coin', vi: 'Claude AI: chi phí', en: 'Claude AI: cost', adminOnly: true },
       { path: 'audit', icon: 'log', vi: 'Nhật ký', en: 'Audit log', adminOnly: true },
       { path: 'security', icon: 'shield', vi: 'Bảo mật tài khoản', en: 'Account security' },

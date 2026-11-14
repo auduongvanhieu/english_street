@@ -26,23 +26,23 @@ export const SETTING_DEFS = {
   allowedWords: { schema: z.array(z.string().trim().toLowerCase().min(2).max(40)).max(2000), def: () => [] as string[] },
   /** Admin "try the NPC" turns per admin per day. */
   adminTestTurnsPerDay: { schema: z.number().int().min(0).max(1000), def: () => 100 },
-  // ---- top-ups (payments/): coin packs paid by bank transfer (SePay) or USDT ----
+  // ---- top-ups (payments/): 💎 gem packs paid by bank transfer (SePay) or USDT ----
   /** off = hidden; test = only the testers below; on = every signed-in player */
   payMode: { schema: z.enum(['off', 'test', 'on']), def: () => 'off' as 'off' | 'test' | 'on' },
   /** user ids or e-mails who can top up while payMode = test */
   payTesters: { schema: z.array(z.string().trim().toLowerCase().min(3).max(80)).max(200), def: () => [] as string[] },
   payVnd: { schema: z.boolean(), def: () => true },
   payUsdt: { schema: z.boolean(), def: () => true },
-  /** coin packs: id, coins, price in đồng and in USDT */
+  /** gem packs: id, gems, price in đồng and in USDT */
   payPacks: {
-    schema: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), coins: z.number().int().min(1).max(1_000_000), vnd: z.number().int().min(1000).max(50_000_000), usdt: z.number().min(0.5).max(2000) })).min(1).max(8),
+    schema: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), gems: z.number().int().min(1).max(1_000_000), vnd: z.number().int().min(1000).max(50_000_000), usdt: z.number().min(0.5).max(2000) })).min(1).max(8),
     def: () => [
-      { id: 'small', coins: 1000, vnd: 20_000, usdt: 1 },
-      { id: 'medium', coins: 2700, vnd: 50_000, usdt: 2 },
-      { id: 'large', coins: 6000, vnd: 100_000, usdt: 4 },
+      { id: 'small', gems: 100, vnd: 20_000, usdt: 1 },
+      { id: 'medium', gems: 270, vnd: 50_000, usdt: 2 },
+      { id: 'large', gems: 600, vnd: 100_000, usdt: 4 },
     ],
   },
-  /** the first paid top-up gives double coins */
+  /** the first paid top-up gives double gems */
   payFirstBonus: { schema: z.boolean(), def: () => true },
   /** an order waits this long (the transfer is still accepted after it, the code still matches) */
   payOrderMinutes: { schema: z.number().int().min(5).max(24 * 60), def: () => 30 },
@@ -55,6 +55,19 @@ export const SETTING_DEFS = {
   payBep20Address: { schema: z.string().trim().regex(/^(0x[0-9a-fA-F]{40})?$/), def: () => '' },
   /** BEP20: blocks to wait (TRC20 uses Tron's own "confirmed") */
   payBep20Confirmations: { schema: z.number().int().min(1).max(200), def: () => 15 },
+  // ---- 💎 gems (gems/) ----
+  /** coins for 1 gem (gems → coins only, never back) */
+  gemRate: { schema: z.number().int().min(1).max(1000), def: () => 10 },
+  /** extra NPC turns sold for gems (used after the free daily turns; they do not expire) */
+  gemTurnPack: { schema: z.object({ turns: z.number().int().min(1).max(1000), gems: z.number().int().min(1).max(10_000) }), def: () => ({ turns: 20, gems: 20 }) },
+  /** extra USD a day for bought NPC turns, on top of npcDailyBudgetUsd (players who paid are not stopped by the free budget) */
+  npcPaidDailyBudgetUsd: { schema: z.number().min(0).max(10_000), def: () => 2 },
+  /** gift for every 7 days in a row (signed-up players; 0 = off) */
+  gemGiftStreak: { schema: z.number().int().min(0).max(1000), def: () => 5 },
+  /** gift for each journey chapter done (signed-up players; 0 = off) */
+  gemGiftChapter: { schema: z.number().int().min(0).max(1000), def: () => 10 },
+  /** gem price changes per item id ('tag:diamond', 'royal-bed'…); items not listed keep their price */
+  gemPrices: { schema: z.record(z.string().regex(/^[a-z0-9:-]{1,40}$/), z.number().int().min(1).max(100_000)), def: () => ({}) as Record<string, number> },
 } as const;
 export type SettingKey = keyof typeof SETTING_DEFS;
 export type SettingValue<K extends SettingKey> = z.infer<(typeof SETTING_DEFS)[K]['schema']>;

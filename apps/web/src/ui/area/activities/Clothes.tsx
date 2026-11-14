@@ -34,6 +34,9 @@ const NONE: string[] = [];
 const ROUND = 5;
 type Mode = 'menu' | 'game' | 'wardrobe';
 
+/** The wardrobe sells coin colours; 💎 colours (and any already owned) are in Create character. */
+const SHOP_COLORS = CLOTH_COLORS.filter((c) => !c.gems);
+
 /** 🪞 Fitting room: serve customers (pick the right clothes, colours and size, then the price) or try clothes on yourself and buy them. */
 export default function ClothesActivity({ content }: { content: AreaContentDto }) {
   const t = useT();
@@ -504,15 +507,15 @@ export function Wardrobe({ content, onExit, compact, onLook }: { content: AreaCo
           <H>
             <span dir="ltr">{item(outfit.id === 'overalls' ? 'shirt' : outfit.id)?.en}</span>
           </H>
-          <Swatches label={t('Colour')} colours={CLOTH_COLORS} owned={owned} value={look.top} onPick={(top) => set({ top })} />
+          <Swatches label={t('Colour')} colours={SHOP_COLORS} owned={owned} value={look.top} onPick={(top) => set({ top })} />
           <H>
             <span dir="ltr">{lowerId ? item(lowerId)?.en : outfit.id === 'suit' ? 'tie' : outfit.id === 'dress' ? 'belt' : 'overalls'}</span>
           </H>
-          <Swatches label={t('Colour')} colours={CLOTH_COLORS} owned={owned} value={look.bottom} onPick={(bottom) => set({ bottom })} />
+          <Swatches label={t('Colour')} colours={SHOP_COLORS} owned={owned} value={look.bottom} onPick={(bottom) => set({ bottom })} />
           <H>
             <span dir="ltr">shoes</span>
           </H>
-          <Swatches label="shoes" colours={CLOTH_COLORS} owned={owned} value={look.shoes} onPick={(shoes) => set({ shoes })} />
+          <Swatches label="shoes" colours={SHOP_COLORS} owned={owned} value={look.shoes} onPick={(shoes) => set({ shoes })} />
         </>
       ) : null}
       <H>{t('Hats, glasses and bags')}</H>
@@ -539,7 +542,7 @@ export function Wardrobe({ content, onExit, compact, onLook }: { content: AreaCo
       {hatColour ? (
         <>
           <H>{t('Hat colour')}</H>
-          <Swatches label={t('Hat colour')} colours={CLOTH_COLORS} owned={owned} value={look.hatColor} onPick={(hatColor) => set({ hatColor })} />
+          <Swatches label={t('Hat colour')} colours={SHOP_COLORS} owned={owned} value={look.hatColor} onPick={(hatColor) => set({ hatColor })} />
         </>
       ) : null}
       <p className="text-[11px] text-gray-500">{t('Trying on is free. Items with 🪙 cost coins when you buy them; everything else is free to wear.')}</p>

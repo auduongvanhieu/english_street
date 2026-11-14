@@ -27,6 +27,10 @@ export interface JourneyToast {
   id: string;
   xp: number;
   coins: number;
+  /** 💎 gift (main chapters) */
+  gems?: number;
+  /** days in a row (the streak gift) */
+  streak?: number;
   stamp?: string;
 }
 interface JourneyStore {
@@ -42,6 +46,8 @@ interface JourneyStore {
   track: (id: string, on: boolean) => Promise<void>;
   go: (step: JourneyStep) => void;
   dismiss: (key: number) => void;
+  /** a toast that is not a journey step (the 💎 streak gift) */
+  pushToast: (x: Omit<JourneyToast, 'key'>) => void;
 }
 
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
@@ -130,6 +136,11 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
   dismiss(key) {
     set((s) => ({ toasts: s.toasts.filter((x) => x.key !== key) }));
   },
+  pushToast(x) {
+    const key = ++toastKey;
+    set((s) => ({ toasts: [...s.toasts, { ...x, key }].slice(-4) }));
+    window.setTimeout(() => getS().dismiss(key), 7000);
+  },
 }));
 
 /** The step to show on the HUD: the current main chapter, else a tracked / today's task. */
@@ -144,7 +155,7 @@ export function currentStep(v: JourneyView | null): JourneyStep | null {
 export function initJourney() {
   const off = onJourney((ev: JourneyEvent) => {
     haptic('medium');
-    const toasts = ev.done.map((d) => ({ key: ++toastKey, id: d.id, xp: d.xp, coins: d.coins, stamp: undefined as string | undefined }));
+    const toasts = ev.done.map((d) => ({ key: ++toastKey, id: d.id, xp: d.xp, coins: d.coins, gems: d.gems ?? 0, stamp: undefined as string | undefined }));
     if (ev.stamp && toasts[0]) toasts[toasts.length - 1]!.stamp = ev.stamp;
     useJourney.setState((s) => ({ toasts: [...s.toasts, ...toasts].slice(-4) }));
     for (const x of toasts) window.setTimeout(() => useJourney.getState().dismiss(x.key), 7000);

@@ -22,7 +22,7 @@ import {
   PET_ITEMS,
   SKIN_TONES,
   avatarLook,
-  itemPrice,
+  itemCost,
   missingItems,
   type AvatarBody,
   type AvatarLook,
@@ -31,6 +31,7 @@ import {
 } from '@es/shared';
 import { useGame } from '../store/game';
 import { useProfile } from '../store/profile';
+import { usePay } from '../store/pay';
 import { buyItem, saveAvatar } from '../net/api';
 import { sendAvatar } from '../net/client';
 import { track } from '../net/analytics';
@@ -46,6 +47,7 @@ const _i18n = () => [
   tr('Short'), tr('Spiky'), tr('Curly'), tr('Bob'), tr('Long'), tr('Ponytail'), tr('Buns'), tr('Bald'),
   tr('None'), tr('Cap'), tr('Beanie'), tr('Sun hat'), tr('Top hat'), tr('Crown'), tr('Glasses'), tr('Sunglasses'), tr('Backpack'),
   tr('Details'), tr('Tie'), tr('Shoes'), tr('Belt'), tr('Shirt'), tr('Trousers'), tr('Shorts'),
+  tr('Diamond'), tr('Fire'), tr('Galaxy'), tr('neon'), tr('rosegold'),
   tr('blue'), tr('green'), tr('orange'), tr('purple'), tr('white'), tr('grey'), tr('charcoal'), tr('navy'), tr('denim'), tr('khaki'), tr('brown'), tr('red'), tr('pink'), tr('yellow'), tr('teal'), tr('gold'), tr('crimson'), tr('midnight'),
 ];
 void _i18n;
@@ -67,7 +69,17 @@ const HAIR_ICON: Record<string, string> = { short: '👦', spiky: '⚡', curly: 
 const HAIRSTYLE_ITEMS = Object.fromEntries(AVATAR_HAIRSTYLES.map((k) => [k, { id: `hair:${k}`, label: HAIRSTYLE_LABELS[k], price: 0 }])) as Record<(typeof AVATAR_HAIRSTYLES)[number], ShopItem>;
 const BAG_ICON: Record<string, string> = { none: '🚫', backpack: '🎒' };
 const PET_ICON: Record<string, string> = { none: '🚫', cat: '🐈', shiba: '🐕', husky: '🐺', rabbit: '🐇', duck: '🦆', guineapig: '🐹' };
-const TAG_ICON: Record<string, string> = { plain: '🏷️', gold: '🥇', ocean: '🌊', rainbow: '🌈' };
+const TAG_ICON: Record<string, string> = { plain: '🏷️', gold: '🥇', ocean: '🌊', rainbow: '🌈', diamond: '💎', fire: '🔥', galaxy: '🌌' };
+
+/** 💎 price of a gem item now (the admin may change it), else 0. */
+export function useGemPriceOf() {
+  const prices = usePay((s) => s.gem?.prices);
+  return (id: string, fallback = 0) => prices?.[id] ?? (fallback || (itemCost(id)?.gems ?? 0));
+}
+/** Small price label: 🪙 coins or 💎 gems. */
+function PriceTag({ coins, gems }: { coins: number; gems: number }) {
+  return gems ? <span className="text-sky-700">💎{gems}</span> : <span className="text-amber-700">🪙{coins}</span>;
+}
 
 const pick = <T,>(list: readonly T[]) => list[Math.floor(Math.random() * list.length)]!;
 
@@ -106,11 +118,16 @@ export function AvatarCreator() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   useEffect(() => localStorage.setItem(AVATAR_INTRO_KEY, '1'), []);
+  useEffect(() => void usePay.getState().loadGems(), []);
+  const gemOf = useGemPriceOf();
 
   if (!profile) return null;
   const owned = profile.avatar.owned;
   const missing = missingItems(look, owned) ?? [];
-  const cost = missing.reduce((n, id) => n + (itemPrice(id) ?? 0), 0);
+  const cost = missing.reduce((n, id) => n + (itemCost(id)?.gems ? 0 : (itemCost(id)?.coins ?? 0)), 0);
+  const gemCost = missing.reduce((n, id) => n + (itemCost(id)?.gems ? gemOf(id) : 0), 0);
+  const short = cost > profile.coins || gemCost > (profile.gems ?? 0);
+  const priceText = [cost ? `🪙${cost}` : '', gemCost ? `💎${gemCost}` : ''].filter(Boolean).join(' · ');
   const dirty = JSON.stringify(look) !== JSON.stringify(saved);
   const labels = slotLabels(look.body);
   const set = (patch: Partial<AvatarLook>) => {
@@ -126,7 +143,7 @@ export function AvatarCreator() {
       await saveAvatar(look);
       await refresh();
       sendAvatar(look);
-      track('avatar_save', { body: look.body, hat: look.hat, glasses: look.glasses, bag: look.bag, bought: missing.length, coins: cost });
+      track('avatar_save', { body: look.body, hat: look.hat, glasses: look.glasses, bag: look.bag, bought: missing.length, coins: cost, gems: gemCost });
       setMsg({ ok: true, text: missing.length ? (missing.length > 1 ? t('Bought {n} items and saved!', { n: missing.length }) : t('Bought 1 item and saved!')) : t('Saved! Everyone on the street sees your new look.') });
       setWave((w) => w + 1);
     } catch (e) {
@@ -141,7 +158,10 @@ export function AvatarCreator() {
     <Sheet onClose={() => close(null)} label={t('Create your character')} wide>
       <SheetHeader>
         <h2 className="text-lg font-bold">🎨 {t('Your character')}</h2>
-        <span className="ml-auto mr-2 text-sm text-gray-600">🪙 {profile.coins}</span>
+        <span className="ml-auto mr-2 text-sm text-gray-600">
+          🪙 {profile.coins}
+          {profile.gems || gemCost ? <> · 💎 {profile.gems ?? 0}</> : null}
+        </span>
         <button type="button" onClick={() => close(null)} className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100" aria-label={t('Close')}>
           ✕
         </button>
@@ -205,13 +225,14 @@ export function AvatarCreator() {
             <Items title={t('A pet that walks with you')} keys={AVATAR_PETS} items={PET_ITEMS} icons={PET_ICON} value={look.pet} owned={owned} onPick={(pet) => set({ pet })} />
             <Items title={t('Name tag (everybody sees it)')} keys={NAME_TAGS} items={TAG_ITEMS} icons={TAG_ICON} value={look.tag} owned={owned} onPick={(tag) => set({ tag })} />
             <p className="mt-1 text-xs text-gray-500">{t('Items with 🪙 can be tried on for free — you only pay when you save. Earn coins by finishing quests.')}</p>
+            <p className="mt-1 text-xs text-sky-700">{t('Items with 💎 are special: they are bought with gems.')}</p>
           </>
         )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2 border-t p-3">
         <p className={`min-w-0 flex-1 text-sm ${msg ? (msg.ok ? 'text-green-700' : 'text-red-600') : 'text-gray-500'}`}>
-          {msg?.text ?? (cost > 0 ? (missing.length > 1 ? t('Buying {n} items: 🪙 {cost}', { n: missing.length, cost }) : t('Buying 1 item: 🪙 {cost}', { cost })) : dirty ? t('Unsaved changes') : t('This is you!'))}
+          {msg?.text ?? (priceText ? (missing.length > 1 ? t('Buying {n} items: {cost}', { n: missing.length, cost: priceText }) : t('Buying 1 item: {cost}', { cost: priceText })) : dirty ? t('Unsaved changes') : t('This is you!'))}
         </p>
         {dirty && (
           <button type="button" onClick={() => set(saved)} className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50">
@@ -221,10 +242,10 @@ export function AvatarCreator() {
         <button
           type="button"
           onClick={() => void save()}
-          disabled={busy || !dirty || cost > profile.coins}
+          disabled={busy || !dirty || short}
           className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
         >
-          {busy ? t('Saving…') : cost > profile.coins ? t('Not enough 🪙') : cost > 0 ? t('Buy & save · 🪙{cost}', { cost }) : t('Save')}
+          {busy ? t('Saving…') : cost > profile.coins ? t('Not enough 🪙') : gemCost > (profile.gems ?? 0) ? t('Not enough 💎') : priceText ? t('Buy & save · {cost}', { cost: priceText }) : t('Save')}
         </button>
       </div>
     </Sheet>
@@ -287,24 +308,30 @@ function WavingAvatar({ look, wave }: { look: AvatarLook; wave: number }) {
 
 function Swatches({ title, list, value, owned, onPick }: { title: string; list: PaletteColor[]; value: string; owned: string[]; onPick: (hex: string) => void }) {
   const t = useT();
+  const gemOf = useGemPriceOf();
   return (
     <div className="mb-3">
       <h3 className="mb-1.5 text-sm font-semibold text-gray-700">{title}</h3>
       <div className="flex flex-wrap gap-2">
         {list.map((c) => {
           const selected = c.hex.toLowerCase() === value.toLowerCase();
-          const locked = c.price > 0 && !owned.includes(c.id);
+          const gems = c.gems ? gemOf(c.id, c.gems) : 0;
+          const locked = (c.price > 0 || gems > 0) && !owned.includes(c.id);
           return (
             <button
               key={c.id}
               type="button"
               onClick={() => onPick(c.hex)}
-              title={locked ? `${t(c.id)} · 🪙${c.price}` : t(c.id)}
-              aria-label={locked ? t('{title} {colour} ({price} coins)', { title, colour: t(c.id), price: c.price }) : `${title} ${t(c.id)}`}
+              title={locked ? `${t(c.id)} · ${gems ? `💎${gems}` : `🪙${c.price}`}` : t(c.id)}
+              aria-label={locked ? (gems ? t('{title} {colour} ({price} gems)', { title, colour: t(c.id), price: gems }) : t('{title} {colour} ({price} coins)', { title, colour: t(c.id), price: c.price })) : `${title} ${t(c.id)}`}
               className={`relative h-9 w-9 rounded-full shadow-inner ring-offset-2 ${selected ? 'ring-2 ring-blue-600' : 'ring-1 ring-black/10 hover:ring-gray-400'}`}
               style={{ background: c.hex }}
             >
-              {locked && <span className="absolute -bottom-1 -right-1 rounded-full bg-white px-1 text-[9px] leading-4 shadow">🪙{c.price}</span>}
+              {locked && (
+                <span className="absolute -bottom-1 -right-1 rounded-full bg-white px-1 text-[9px] leading-4 shadow">
+                  <PriceTag coins={c.price} gems={gems} />
+                </span>
+              )}
             </button>
           );
         })}
@@ -315,18 +342,24 @@ function Swatches({ title, list, value, owned, onPick }: { title: string; list: 
 
 function Items<K extends string>({ title, keys, items, icons, value, owned, onPick }: { title: string; keys: readonly K[]; items: Record<K, ShopItem>; icons: Record<string, string>; value: K; owned: string[]; onPick: (k: K) => void }) {
   const t = useT();
+  const gemOf = useGemPriceOf();
   return (
     <div className="mb-3">
       <h3 className="mb-1.5 text-sm font-semibold text-gray-700">{title}</h3>
       <div className="flex flex-wrap gap-2">
         {keys.map((k) => {
           const it = items[k];
-          const locked = it.price > 0 && !owned.includes(it.id);
+          const gems = it.gems ? gemOf(it.id, it.gems) : 0;
+          const locked = (it.price > 0 || gems > 0) && !owned.includes(it.id);
           return (
             <button key={k} type="button" onClick={() => onPick(k)} className={`flex w-20 flex-col items-center rounded-xl border-2 py-1.5 text-xs ${value === k ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
               <span className="text-2xl">{icons[k]}</span>
               {t(it.label)}
-              {locked && <span className="text-[10px] text-amber-700">🪙 {it.price}</span>}
+              {locked && (
+                <span className="text-[10px]">
+                  <PriceTag coins={it.price} gems={gems} />
+                </span>
+              )}
             </button>
           );
         })}

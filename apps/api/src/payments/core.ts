@@ -3,13 +3,13 @@ import QRCode from 'qrcode';
 import { MICRO_USDT, type PayMethod, type PayOrderView, type PayPack, type PayStatus } from '@es/shared';
 import { prisma } from '../plugins/prisma';
 import { setting } from '../settings';
-import { changeCoinsTx } from '../npc/attempts';
+import { changeBalanceTx } from '../npc/attempts';
 
 /**
- * Top-ups. An order = a coin pack + a way to pay, with a code (the bank transfer content) or, for USDT, an
+ * Top-ups. An order = a 💎 gem pack + a way to pay, with a code (the bank transfer content) or, for USDT, an
  * amount nobody else is waiting for (2.137 USDT). Incoming transfers (SePay webhook, chain scan) go through
- * receive(): each transfer is stored once (unique source + txRef), matched to its order and the coins are
- * credited in the same transaction, so a repeated webhook or scan never pays twice.
+ * receive(): each transfer is stored once (unique source + txRef), matched to its order and the
+ * gems credited in the same transaction, so a repeated webhook or scan never pays twice.
  */
 
 export const MAX_PENDING = 5;
@@ -51,11 +51,11 @@ type OrderRow = Awaited<ReturnType<typeof prisma.paymentOrder.findFirstOrThrow>>
 
 export async function orderView(o: OrderRow, bonus?: boolean): Promise<PayOrderView> {
   const method = o.method as PayMethod;
-  const coins = o.status === 'paid' || o.status === 'refunded' ? o.coins : o.coins * ((bonus ?? (await firstBonusFor(o.userId))) ? 2 : 1);
+  const gems = o.status === 'paid' || o.status === 'refunded' ? o.gems : o.gems * ((bonus ?? (await firstBonusFor(o.userId))) ? 2 : 1);
   const v: PayOrderView = {
     code: o.code,
     pack: o.pack,
-    coins,
+    gems,
     method,
     amount: o.amount,
     status: o.status as PayStatus,
@@ -107,7 +107,7 @@ export async function createOrder(u: { id: string; email: string | null }, packI
       if (clash) continue;
     }
     try {
-      return await prisma.paymentOrder.create({ data: { code, userId: u.id, pack: pack.id, coins: pack.coins, method, amount, expiresAt } });
+      return await prisma.paymentOrder.create({ data: { code, userId: u.id, pack: pack.id, gems: pack.gems, method, amount, expiresAt } });
     } catch {
       /* code taken: try another */
     }
@@ -129,7 +129,7 @@ export interface Incoming {
   content: string;
   raw: unknown;
 }
-export type ReceiveResult = { result: 'duplicate' } | { result: 'paid'; code: string; userId: string; coins: number } | { result: 'unmatched'; reason: string; code?: string };
+export type ReceiveResult = { result: 'duplicate' } | { result: 'paid'; code: string; userId: string; gems: number } | { result: 'unmatched'; reason: string; code?: string };
 
 const METHOD_OF: Record<Incoming['source'], PayMethod> = { sepay: 'vnd', trc20: 'usdt_trc20', bep20: 'usdt_bep20' };
 
@@ -146,14 +146,14 @@ async function findOrder(tx: Tx, inc: Incoming) {
 }
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
-/** Pay an order inside a transaction: mark it paid and credit the coins (first top-up: double). */
+/** Pay an order inside a transaction: mark it paid and credit the gems (first top-up: double). */
 export async function fulfil(tx: Tx, o: OrderRow, paidAmount: number, txRef: string, note = '') {
   const first = setting('payFirstBonus') && (await tx.paymentOrder.count({ where: { userId: o.userId, status: { in: ['paid', 'refunded'] } } })) === 0;
-  const coins = o.coins * (first ? 2 : 1);
-  const r = await tx.paymentOrder.updateMany({ where: { id: o.id, status: { in: ['pending', 'expired', 'cancelled'] } }, data: { status: 'paid', paidAmount, txRef, paidAt: new Date(), coins, note } });
+  const gems = o.gems * (first ? 2 : 1);
+  const r = await tx.paymentOrder.updateMany({ where: { id: o.id, status: { in: ['pending', 'expired', 'cancelled'] } }, data: { status: 'paid', paidAmount, txRef, paidAt: new Date(), gems, note } });
   if (!r.count) return null;
-  await changeCoinsTx(tx, o.userId, coins, 'purchase', o.method, o.code);
-  return coins;
+  await changeBalanceTx(tx, o.userId, 'gem', gems, 'purchase', o.method, o.code);
+  return gems;
 }
 
 /** One incoming transfer: store it once, match it, pay the order. */
@@ -169,15 +169,15 @@ export async function receive(inc: Incoming): Promise<ReceiveResult> {
       else if (o.status === 'paid' || o.status === 'refunded') res = { result: 'unmatched', reason: 'already_paid', code: o.code };
       else if (inc.amount < o.amount) res = { result: 'unmatched', reason: 'underpaid', code: o.code };
       else {
-        const coins = await fulfil(tx, o, inc.amount, `${inc.source}:${inc.txRef}`, inc.amount > o.amount ? 'overpaid' : '');
-        res = coins === null ? { result: 'unmatched', reason: 'already_paid', code: o.code } : { result: 'paid', code: o.code, userId: o.userId, coins };
+        const gems = await fulfil(tx, o, inc.amount, `${inc.source}:${inc.txRef}`, inc.amount > o.amount ? 'overpaid' : '');
+        res = gems === null ? { result: 'unmatched', reason: 'already_paid', code: o.code } : { result: 'paid', code: o.code, userId: o.userId, gems };
       }
       await tx.paymentTx.create({
         data: { source: inc.source, txRef: inc.txRef, amount: inc.amount, content: inc.content.slice(0, 500), orderCode: 'code' in res ? res.code : null, status: res.result === 'paid' ? 'matched' : 'unmatched', note: res.result === 'unmatched' ? res.reason : '', raw: (inc.raw ?? {}) as object },
       });
       return res;
     });
-    if (out.result === 'paid') await prisma.event.create({ data: { name: 'pay_paid', playerId: out.userId, props: { code: out.code, coins: out.coins, source: inc.source, amount: inc.amount } } });
+    if (out.result === 'paid') await prisma.event.create({ data: { name: 'pay_paid', playerId: out.userId, props: { code: out.code, gems: out.gems, source: inc.source, amount: inc.amount } } });
     return out;
   } catch (e) {
     // two deliveries of the same transfer at the same moment: the unique index stops the second

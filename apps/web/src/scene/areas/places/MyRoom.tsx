@@ -41,21 +41,47 @@ function Wall({ x, z, w, d, out, color = '#f3e6d0' }: { x: number; z: number; w:
   );
 }
 
+/** 💎 gem pieces reuse the normal models with a colour over them (and a soft glow): one material per look. */
+const tinted = new Map<string, THREE.Material>();
+function materialOf(tint?: string, glow?: string): THREE.Material {
+  if (!tint) return chibiMaterial();
+  const key = `${tint}|${glow ?? ''}`;
+  let m = tinted.get(key);
+  if (!m) {
+    const t = chibiMaterial().clone();
+    // pour the colour over the model's own colours (keeps their light and dark parts, unlike a plain multiply)
+    const c = new THREE.Color(tint);
+    const v = `vec3(${c.r.toFixed(3)}, ${c.g.toFixed(3)}, ${c.b.toFixed(3)})`;
+    t.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, ${v} * (0.55 + 0.6 * dot(diffuseColor.rgb, vec3(0.333))), 0.7);`);
+    };
+    t.customProgramCacheKey = () => `tint:${key}`;
+    if (glow) {
+      t.emissive.set(glow);
+      t.emissiveIntensity = 0.45;
+    }
+    tinted.set(key, (m = t));
+  }
+  return m;
+}
+
 function Piece({ p, cx, cz, ghost }: { p: Placed; cx: number; cz: number; ghost?: 'ok' | 'bad' }) {
   const kit = useLpmParts('home_kit');
   const f = furniture(p.id);
   if (!f) return null;
   const geo = kit[f.mesh];
   if (!geo) return null;
-  return <mesh geometry={geo} material={ghost === 'ok' ? ghostOk : ghost === 'bad' ? ghostBad : chibiMaterial()} position={[cx + p.x, f.wallY ? f.wallY - (f.id === 'picture' ? 0.3 : 0) : 0.002, cz + p.z]} rotation-y={(p.r * Math.PI) / 2} castShadow={!ghost} />;
+  return <mesh geometry={geo} material={ghost === 'ok' ? ghostOk : ghost === 'bad' ? ghostBad : materialOf(f.tint, f.glow)} position={[cx + p.x, f.wallY ? f.wallY - (f.id === 'picture' ? 0.3 : 0) : 0.002, cz + p.z]} rotation-y={(p.r * Math.PI) / 2} castShadow={!ghost} />;
 }
 
 /** Places to sit on the furniture in the room (sofa, armchair, chairs, the end of the bed). */
 const SIT: Record<string, [number, number][]> = { sofa: [[-0.42, 0.05], [0.42, 0.05]], armchair: [[0, 0.05]], chair: [[0, 0.02]], bed: [[0, 0.7]] };
+/** 💎 pieces sit like the piece whose model they use (golden armchair = armchair). */
+const SAME_AS: Record<string, string> = { SM_HM_Sofa: 'sofa', SM_HM_Armchair: 'armchair', SM_HM_Chair: 'chair', SM_HM_Bed: 'bed' };
 function RoomSeats({ items, cx, cz }: { items: Placed[]; cx: number; cz: number }) {
   useEffect(() => {
     const seats = items.flatMap((p) =>
-      (SIT[p.id] ?? []).map(([lx, lz]) => {
+      (SIT[p.id] ?? SIT[SAME_AS[furniture(p.id)?.mesh ?? ''] ?? ''] ?? []).map(([lx, lz]) => {
         const a = (p.r * Math.PI) / 2;
         return { x: cx + p.x + lx * Math.cos(a) + lz * Math.sin(a), z: cz + p.z - lx * Math.sin(a) + lz * Math.cos(a), rot: a };
       }),

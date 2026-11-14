@@ -2,6 +2,8 @@ import { FURNITURE, furniture } from '@es/shared';
 import { getPlayerId } from '../net/player';
 import { canBuyMore, inBag, useMyRoom } from '../store/myRoom';
 import { useProfile } from '../store/profile';
+import { usePay } from '../store/pay';
+import { useEffect } from 'react';
 import { useVoice } from '../store/voice';
 import { useT } from '../i18n';
 import { Icon } from './icons';
@@ -17,6 +19,9 @@ export function MyRoomHud() {
   const panel = useMyRoom((s) => s.panel);
   const note = useMyRoom((s) => s.note);
   const coins = useProfile((s) => s.profile?.coins ?? 0);
+  const gems = useProfile((s) => s.profile?.gems ?? 0);
+  const gemPrices = usePay((s) => s.gem?.prices);
+  useEffect(() => void usePay.getState().loadGems(), []);
   const m = useMyRoom.getState();
   if (!owner) return null;
   const mine = owner === getPlayerId();
@@ -77,16 +82,18 @@ export function MyRoomHud() {
             <>
               <p className="mb-1.5 text-xs text-gray-600">
                 {t('Buy furniture for your room. Every piece is an English word!')} <b className="text-slate-700">🪙 {coins}</b>
+                {gems ? <b className="ms-1 text-sky-700">💎 {gems}</b> : null}
               </p>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4" dir="ltr">
                 {FURNITURE.map((f) => {
-                  const can = canBuyMore(owned, f.id) && coins >= f.price;
+                  const g = f.gems ? (gemPrices?.[f.id] ?? f.gems) : 0;
+                  const can = canBuyMore(owned, f.id) && (g ? gems >= g : coins >= f.price);
                   return (
-                    <button key={f.id} type="button" disabled={!can} onClick={() => void m.buy(f.id)} onMouseEnter={() => undefined} className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50 p-1 text-xs disabled:opacity-40">
+                    <button key={f.id} type="button" disabled={!can} onClick={() => void m.buy(f.id)} onMouseEnter={() => undefined} className={`flex min-h-20 flex-col items-center justify-center rounded-xl border p-1 text-xs disabled:opacity-40 ${g ? 'border-sky-300 bg-sky-50' : 'border-amber-200 bg-amber-50'}`}>
                       <span className="text-2xl">{f.icon}</span>
                       <b className="text-sm">{f.en}</b>
                       <span>
-                        🪙 {f.price}
+                        {g ? `💎 ${g}` : `🪙 ${f.price}`}
                         {owned[f.id] ? ` · ×${owned[f.id]}` : ''}
                       </span>
                     </button>

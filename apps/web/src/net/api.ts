@@ -1,6 +1,6 @@
 import type { AreaContentDto, AreaId, FarmAction, FarmActionResult, FarmState, FriendList, HotelBill, HotelStay, LangCode, MinigameId, Book, BookCard, BookClub, BookClubNote, MyBooks } from '@es/shared';
 import { learnerLang, t, tk } from '../i18n';
-import type { AttemptSummary, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
+import type { AttemptSummary, GemInfo, Avatar, AvatarLook, AuthResponse, PlacementQuestion, Profile, ReviewGrade, SessionChatResponse, SessionState, VocabEntryDto } from '@es/shared';
 import type { NpcInfo } from '../store/game';
 import { authHeaders, getPlayerId } from './player';
 
@@ -19,6 +19,7 @@ export const ERROR_TEXT: Record<string, string> = {
   too_many_guests: tk('Too many guests from your network right now. Sign in to play, or try again later.'),
   captcha_failed: tk('The security code was wrong or expired. Try the new one.'),
   not_enough_coins: tk('Not enough coins yet.'),
+  not_enough_gems: tk('Not enough gems.'),
   not_owned: tk('Buy that item first.'),
   bad_color: tk('That colour is not available.'),
   beta_pass_required: tk('English Street is in closed beta. Please enter an invite code.'),
@@ -56,6 +57,10 @@ export const post = <T>(path: string, body: unknown) => request<T>('POST', path,
 export const get = <T>(path: string) => request<T>('GET', path);
 
 const q = () => `?playerId=${encodeURIComponent(getPlayerId())}`;
+// 💎 gems
+export const fetchGems = () => get<GemInfo>(`/me/gems${q()}`);
+export const exchangeGemsApi = (gems: number) => post<{ gems: number; coins: number; got: number }>(`/me/gems/exchange${q()}`, { gems });
+export const buyNpcTurnsApi = () => post<{ gems: number; bonusTurns: number; turns: number }>(`/me/gems/npc-turns${q()}`, {});
 
 export const fetchNpcs = () => get<NpcInfo[]>('/npcs');
 export type MinigameResult = { xp: number; coins: number; capped: boolean; record: boolean; best: number | null; left: number };
@@ -95,7 +100,7 @@ export const forgotPassword = (email: string, c: CaptchaAnswer) => post<{ ok: bo
 export const resetPassword = (email: string, code: string, password: string) => post<AuthResponse>('/auth/reset', { email, code, password });
 export const changePassword = (current: string, password: string) => post<{ token: string }>('/me/password', { current, password });
 export const changeName = (name: string) => post<{ name: string }>(`/me/name?playerId=${encodeURIComponent(getPlayerId())}`, { playerId: getPlayerId(), name });
-export const fetchMe = () => get<Profile & { quota: { turnsLeftToday: number } }>(`/me${q()}`);
+export const fetchMe = () => get<Profile & { quota: { turnsLeftToday: number; bonusTurns?: number }; streakGift?: { gems: number; ref: string } }>(`/me${q()}`);
 export const fetchPlacement = () => get<Omit<PlacementQuestion, 'answer'>[]>('/placement');
 export const submitPlacement = (answers: number[]) => post<{ correct: number; total: number; level: string }>(`/me/placement${q()}`, { answers });
 export const fetchVocab = () => get<VocabEntryDto[]>(`/me/vocab${q()}`);

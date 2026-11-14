@@ -9,7 +9,7 @@ import {
   INVITE_PAY_STEP,
   avatarLook,
   checkLook,
-  itemPrice,
+  itemCost,
   AvatarSchema,
   isLang,
   LangSchema,
@@ -42,6 +42,7 @@ import { forgetStatus } from '../moderation';
 import { sendMail, mailEnabled } from '../mailer';
 import { countryOf } from '../geo';
 import { gameRename } from '../admin/game';
+import { gemPrice, spendGems, todayStreakGift } from '../gems/core';
 
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_TRIES = 5;
@@ -93,6 +94,7 @@ export function accountRoutes(repo: AttemptRepo) {
       level,
       nextLevelXp: xpForLevel(level + 1),
       coins: u.coins,
+      gems: u.gems ?? 0,
       streak: u.streak,
       avatar: AvatarSchema.parse(u.avatarConfig ?? {}),
       stats: { questsCompleted: completed.length, reviewsDone: u.reviewsDone },
@@ -269,7 +271,8 @@ export function accountRoutes(repo: AttemptRepo) {
       const id = who(req);
       if (!id) return reply.code(401).send({ error: 'unauthorized' });
       const u = await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
-      return { ...(await profile(u)), quota: { turnsLeftToday: await budget.remainingFor(id) } };
+      const gift = repo.name === 'postgres' ? await todayStreakGift(id).catch(() => null) : null;
+      return { ...(await profile(u)), quota: { turnsLeftToday: await budget.remainingFor(id), bonusTurns: await budget.bonusLeft(id) }, ...(gift ? { streakGift: gift } : {}) };
     });
 
     app.get('/placement', async () => loadPlacement().map(({ answer: _a, ...q }) => q));
@@ -413,9 +416,20 @@ export function accountRoutes(repo: AttemptRepo) {
       if (!body.success) return reply.code(400).send({ error: 'bad_request' });
       const u = await repo.ensureUser(id, (await repo.getUser(id))?.name ?? 'Guest');
       const avatar = AvatarSchema.parse(u.avatarConfig ?? {});
-      const price = itemPrice(body.data.item);
-      if (price === null) return reply.code(400).send({ error: 'unknown_item' });
-      if (price === 0 || avatar.owned.includes(body.data.item)) return reply.code(409).send({ error: 'already_owned' });
+      const cost = itemCost(body.data.item);
+      if (cost === null) return reply.code(400).send({ error: 'unknown_item' });
+      if ((cost.coins === 0 && cost.gems === 0) || avatar.owned.includes(body.data.item)) return reply.code(409).send({ error: 'already_owned' });
+      if (cost.gems) {
+        // 💎 gem item
+        if (repo.name !== 'postgres') return reply.code(404).send({ error: 'not_found' });
+        const gems = await spendGems(id, gemPrice(body.data.item) ?? cost.gems, 'avatar', body.data.item);
+        if (gems === null) return reply.code(402).send({ error: 'not_enough_gems' });
+        avatar.owned.push(body.data.item);
+        await repo.updateUser(id, { avatarConfig: avatar });
+        await repo.logEvent({ name: 'gems_spent', playerId: id, props: { source: 'avatar', item: body.data.item } });
+        return { avatar, coins: u.coins, gems };
+      }
+      const price = cost.coins;
       if (u.coins < price) return reply.code(402).send({ error: 'not_enough_coins' });
       const paid = await repo.spend(id, price, 'avatar', { extra: { item: body.data.item } });
       if (!paid) return reply.code(402).send({ error: 'not_enough_coins' });

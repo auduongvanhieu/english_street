@@ -24,6 +24,8 @@ export interface UserRow {
   cefrLevel: string;
   xp: number;
   coins: number;
+  gems: number;
+  npcBonusTurns: number;
   streak: number;
   lastActiveAt: string;
   createdAt: string;
@@ -75,7 +77,7 @@ export function UsersPage() {
   const [level, setLevel] = useState('');
   const [lang, setLang] = useState('');
   const [active, setActive] = useState('');
-  const [sort, setSort] = useState<'recent' | 'created' | 'play' | 'xp' | 'coins' | 'name'>('recent');
+  const [sort, setSort] = useState<'recent' | 'created' | 'play' | 'xp' | 'coins' | 'gems' | 'name'>('recent');
   const [page, setPage] = useState(1);
   const params = new URLSearchParams({ kind, sort, page: String(page), size: '50', ...(query ? { q: query } : {}), ...(level ? { level } : {}), ...(lang ? { lang } : {}), ...(active ? { active } : {}) });
   const meId = useSession((x) => x.me?.id);
@@ -129,6 +131,7 @@ export function UsersPage() {
               { value: 'play', label: L('Chơi lâu nhất', 'Most play time') },
               { value: 'xp', label: 'XP' },
               { value: 'coins', label: 'Coins' },
+              { value: 'gems', label: '💎' },
               { value: 'name', label: L('Tên', 'Name') },
             ]}
           />
@@ -157,6 +160,7 @@ export function UsersPage() {
                   { key: 'ip', label: 'IP', render: (u) => <span className="font-mono text-xs text-gray-600">{u.lastIp || '—'}</span>, wide: true },
                   { key: 'xp', label: 'XP', render: (u) => fmtNum(u.xp), className: 'text-right tabular-nums' },
                   { key: 'coins', label: '🪙', render: (u) => fmtNum(u.coins), className: 'text-right tabular-nums' },
+                  { key: 'gems', label: '💎', render: (u) => (u.gems ? fmtNum(u.gems) : '—'), className: 'text-right tabular-nums' },
                   { key: 'streak', label: '🔥', render: (u) => u.streak, className: 'text-right', wide: true },
                   { key: 'last', label: L('Hoạt động', 'Active'), render: (u) => ago(u.lastActiveAt) },
                   {

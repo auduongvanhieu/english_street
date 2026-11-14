@@ -37,6 +37,10 @@ model User {
   cefrLevel    CefrLevel @default(A1)
   xp           Int      @default(0)
   coins        Int      @default(0)
+  /// 💎 gems: bought with money (top-ups) or a small gift; spent on gem items, extra NPC turns, or changed into coins
+  gems         Int      @default(0)
+  /// NPC turns bought with gems, used once the free daily turns are gone (they do not expire)
+  npcBonusTurns Int     @default(0)
   streak       Int      @default(0)
   lastActiveAt DateTime @default(now())
   avatarConfig Json     @default("{}")
@@ -314,11 +318,13 @@ model LlmUsage {
   @@index([day])
 }
 
-/// Every change of User.coins (one row per change): rewards, spending, top-ups, refunds, admin fixes.
-/// reason: reward | spend | purchase | refund | admin | transfer; source: what for (taxi, quiz, myfarm…); ref: order code etc.
+/// Every change of User.coins or User.gems (one row per change): rewards, spending, top-ups, refunds, admin fixes.
+/// currency: coin | gem; reason: reward | spend | purchase | refund | admin | transfer | exchange;
+/// source: what for (taxi, quiz, myfarm, npc_turns…); ref: order code etc.
 model CoinLedger {
   id           String   @id @default(cuid())
   userId       String
+  currency     String   @default("coin")
   delta        Int
   balanceAfter Int
   reason       String
@@ -330,7 +336,7 @@ model CoinLedger {
   @@index([reason, createdAt])
 }
 
-/// A top-up: the player picked a coin pack and a way to pay. amount is in the smallest unit: đồng (vnd) or
+/// A top-up: the player picked a gem pack and a way to pay. amount is in the smallest unit: đồng (vnd) or
 /// micro-USDT (usdt_trc20 / usdt_bep20, 1 USDT = 1 000 000). code: the transfer content (vnd) / order id shown.
 /// status: pending | paid | expired | cancelled | refunded
 model PaymentOrder {
@@ -338,7 +344,7 @@ model PaymentOrder {
   code       String    @unique
   userId     String
   pack       String
-  coins      Int
+  gems       Int
   method     String
   amount     Int
   status     String    @default("pending")

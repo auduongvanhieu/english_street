@@ -12,6 +12,8 @@ import { Subtitled } from './Subtitled';
 import { subtitlesOn, useSettings } from '../store/settings';
 import { useProfile } from '../store/profile';
 import { useLang, useT } from '../i18n';
+import { ERROR_TEXT } from '../net/api';
+import { usePay } from '../store/pay';
 
 export function NpcPanel() {
   const id = useGame((s) => s.panelNpc);
@@ -293,6 +295,7 @@ function Chat({ npcId, lang }: { npcId: string; lang: string }) {
           </div>
         )}
         {error && <p className="text-sm text-red-600">{t('Error: {error}', { error })}</p>}
+        {error && error === t(ERROR_TEXT.daily_quota_exhausted!) ? <MoreTurns /> : null}
         {sttError && <p className="text-sm text-red-600">{sttError}</p>}
       </div>
 
@@ -422,6 +425,47 @@ function Summary({ onClose }: { onClose: () => void }) {
       <button type="button" onClick={onClose} className="min-h-12 w-full rounded-lg bg-blue-600 py-2 font-semibold text-white">
         {t('Back to the street')}
       </button>
+    </div>
+  );
+}
+
+/** Today's free NPC turns are used up: buy more with 💎 gems (or get gems first). */
+function MoreTurns() {
+  const t = useT();
+  const gems = useProfile((s) => s.profile?.gems ?? 0);
+  const gem = usePay((s) => s.gem);
+  const payOn = usePay((s) => !!s.info?.enabled);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => void usePay.getState().loadGems(), []);
+  const pack = gem?.turnPack ?? { turns: 20, gems: 20 };
+  if (gems < pack.gems)
+    return payOn || gems > 0 ? (
+      <button type="button" onClick={() => useGame.getState().setUiPanel('topup')} className="min-h-11 w-full rounded-xl border border-sky-300 bg-sky-50 px-3 text-sm font-semibold text-sky-800">
+        💎 {t('Get gems to keep talking ({n} turns · {g} gems)', { n: pack.turns, g: pack.gems })}
+      </button>
+    ) : null;
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const n = await usePay.getState().buyTurns();
+            setMsg(t('+{n} NPC turns! Send your message again.', { n }));
+          } catch (e) {
+            setMsg((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="min-h-11 w-full rounded-xl bg-sky-600 px-3 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {t('Buy {n} more turns · {g} 💎', { n: pack.turns, g: pack.gems })}
+      </button>
+      {msg ? <p className="text-center text-xs text-emerald-700">{msg}</p> : null}
     </div>
   );
 }

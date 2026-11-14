@@ -28,8 +28,15 @@ export function pairRoutes(pairs: PairService, repo: AttemptRepo) {
       const pid = playerIdFrom(req, body.data.playerId);
       if (!pid) return reply.code(401).send({ error: 'unauthorized' });
       if (!(await allowTurn(pid))) return reply.code(429).send({ error: 'rate_limited' });
-      await budget.check(pid, req.ip);
-      const out = await pairs.chat(req.params.id, pid, body.data.text);
+      const b = await budget.check(pid, req.ip, true);
+      let out;
+      try {
+        out = await pairs.chat(req.params.id, pid, body.data.text);
+      } catch (e) {
+        // a bought turn that did not happen is given back
+        if (b.bonus) await budget.giveBack(pid);
+        throw e;
+      }
       await budget.recordTurn(pid, req.ip);
       return out;
     });

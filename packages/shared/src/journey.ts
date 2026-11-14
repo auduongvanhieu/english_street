@@ -211,7 +211,7 @@ export interface JourneyView {
 /** Pushed by the game server when a step is finished. */
 export interface JourneyEvent {
   /** step ids, plus 'daily-bonus', 'weekly', 'invite' (my friend joined), 'welcome' (I joined with an invite) */
-  done: { id: string; xp: number; coins: number }[];
+  done: { id: string; xp: number; coins: number; /** 💎 gift (main chapters, signed-up players) */ gems?: number }[];
   stamp?: string;
 }
 

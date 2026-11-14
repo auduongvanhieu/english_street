@@ -81,6 +81,8 @@ export const ProfileSchema = z.object({
   level: z.number().int(),
   nextLevelXp: z.number().int(),
   coins: z.number().int(),
+  /** 💎 gems (top-ups and small gifts) */
+  gems: z.number().int().default(0),
   streak: z.number().int(),
   avatar: AvatarSchema,
   stats: z.object({ questsCompleted: z.number().int(), reviewsDone: z.number().int() }),

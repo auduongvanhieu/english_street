@@ -22,7 +22,7 @@ await prisma.user.create({ data: { id, name: 'Pay test', email: 'pay-tester@exam
 });
 await prisma.user.create({ data: { id: guest, name: 'Guest', coins: 0 } });
 await prisma.user.create({ data: { id: other, name: 'Other', email: `other-${t}@example.com`, coins: 0 } });
-const coins = async (u = id) => (await prisma.user.findUniqueOrThrow({ where: { id: u } })).coins;
+const gems = async (u = id) => (await prisma.user.findUniqueOrThrow({ where: { id: u } })).gems;
 const err = async (p: Promise<unknown>) => p.then(() => 'ok', (e) => (e instanceof PayError ? e.code : String(e)));
 
 // who may buy
@@ -38,20 +38,20 @@ assert.equal(again.code, o1.code);
 assert.match(o1.code, /^ES[A-Z2-9]{6}$/);
 assert.equal(o1.amount, 50_000);
 const v1 = await orderView(o1);
-assert.equal(v1.coins, 5400, 'first top-up shows double');
+assert.equal(v1.gems, 540, 'first top-up shows double');
 assert.ok(v1.pay?.kind === 'vnd' && v1.pay.qr.includes(`addInfo=${o1.code}`));
 // underpaid: nothing credited, waits for an admin
 assert.deepEqual(await receive({ source: 'sepay', txRef: `a${t}`, amount: 40_000, content: `${o1.code} nap xu`, raw: {} }), { result: 'unmatched', reason: 'underpaid', code: o1.code });
-assert.equal(await coins(), 10);
+assert.equal(await gems(), 0);
 // paid (bank mangled the content a bit) → credited once, a repeated webhook does nothing
 const content = `MBVCB.123 ${o1.code.slice(0, 4)} ${o1.code.slice(4)} chuyen tien`;
 const r = await receive({ source: 'sepay', txRef: `b${t}`, amount: 50_000, content, raw: {} });
-assert.deepEqual(r, { result: 'paid', code: o1.code, userId: id, coins: 5400 });
+assert.deepEqual(r, { result: 'paid', code: o1.code, userId: id, gems: 540 });
 assert.deepEqual(await receive({ source: 'sepay', txRef: `b${t}`, amount: 50_000, content, raw: {} }), { result: 'duplicate' });
 // same webhook twice at the same moment
 const both = await Promise.all([receive({ source: 'sepay', txRef: `c${t}`, amount: 50_000, content: o1.code, raw: {} }), receive({ source: 'sepay', txRef: `c${t}`, amount: 50_000, content: o1.code, raw: {} })]);
 assert.ok(both.some((x) => x.result === 'duplicate'));
-assert.equal(await coins(), 10 + 5400, 'credited exactly once');
+assert.equal(await gems(), 540, 'credited exactly once');
 // no code at all
 assert.equal((await receive({ source: 'sepay', txRef: `d${t}`, amount: 20_000, content: 'tien an trua', raw: {} })).result, 'unmatched');
 
@@ -62,12 +62,13 @@ assert.ok(u1.amount > 1_000_000 && u1.amount < 1_300_000 && u1.amount % 1000 ===
 assert.notEqual(u1.amount, u2.amount);
 assert.equal((await receive({ source: 'trc20', txRef: `tx${t}`, amount: u1.amount - 1000, content: 'Tsender', raw: {} })).result, 'unmatched');
 const ru = await receive({ source: 'trc20', txRef: `tx2${t}`, amount: u1.amount, content: 'Tsender', raw: {} });
-assert.deepEqual(ru, { result: 'paid', code: u1.code, userId: id, coins: 1000 });
+assert.deepEqual(ru, { result: 'paid', code: u1.code, userId: id, gems: 100 });
 // the same amount on the other network is not this order
 assert.equal((await receive({ source: 'bep20', txRef: `0x${t}:0`, amount: u2.amount, content: '0xabc', raw: {} })).result, 'unmatched');
-assert.equal(await coins(), 10 + 5400 + 1000);
+assert.equal(await gems(), 540 + 100);
+assert.equal((await prisma.user.findUniqueOrThrow({ where: { id } })).coins, 10, 'coins untouched');
 const ledger = await prisma.coinLedger.findMany({ where: { userId: id } });
-assert.deepEqual(ledger.map((l) => l.delta).sort(), [1000, 5400]);
+assert.deepEqual(ledger.map((l) => `${l.currency}:${l.delta}`).sort(), ['gem:100', 'gem:540']);
 
 // clean up
 await prisma.paymentTx.deleteMany({ where: { OR: [{ orderCode: { in: [o1.code, u1.code, u2.code] } }, { txRef: { contains: String(t) } }] } });

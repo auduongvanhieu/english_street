@@ -9,7 +9,7 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/journey/engine.test.ts src/journey/myfarm.test.ts src/journey/teamgames.test.ts src/npc/notEnglish.test.ts",
-    "test:db": "tsx src/npc/ledger.dbtest.ts && tsx src/payments/payments.dbtest.ts",
+    "test:db": "tsx src/npc/ledger.dbtest.ts && tsx src/payments/payments.dbtest.ts && tsx src/gems/gems.dbtest.ts",
     "prisma": "prisma",
     "postinstall": "prisma generate",
     "eval:npc": "tsx scripts/npc-eval.ts",

@@ -19,6 +19,12 @@ export interface Furniture {
   mesh: string;
   /** a rug lies under things: other pieces may stand on it */
   flat?: boolean;
+  /** 💎 gem piece (bought with gems instead of coins; the admin may change the price) */
+  gems?: number;
+  /** colour multiplied over the model (gem pieces reuse the normal models) */
+  tint?: string;
+  /** soft light colour (crystal lamp) */
+  glow?: string;
 }
 export const FURNITURE: Furniture[] = [
   { id: 'bed', en: 'bed', icon: '🛏️', price: 60, w: 1.4, d: 2.0, mesh: 'SM_HM_Bed' },
@@ -37,6 +43,11 @@ export const FURNITURE: Furniture[] = [
   { id: 'picture', en: 'picture', icon: '🖼️', price: 15, w: 0.8, d: 0.06, wallY: 1.2, mesh: 'SM_HM_Picture' },
   { id: 'fridge', en: 'fridge', icon: '🧊', price: 40, w: 0.7, d: 0.7, mesh: 'SM_HM_Fridge' },
   { id: 'cooker', en: 'cooker', icon: '🍳', price: 35, w: 0.7, d: 0.65, mesh: 'SM_HM_Cooker' },
+  // 💎 gem pieces
+  { id: 'royal-bed', en: 'royal bed', icon: '👑', price: 0, gems: 40, tint: '#c4a2ff', w: 1.4, d: 2.0, mesh: 'SM_HM_Bed' },
+  { id: 'gold-armchair', en: 'golden armchair', icon: '✨', price: 0, gems: 30, tint: '#ffd54a', w: 0.85, d: 0.85, mesh: 'SM_HM_Armchair' },
+  { id: 'crystal-lamp', en: 'crystal lamp', icon: '💎', price: 0, gems: 25, tint: '#b4ecff', glow: '#7fdcff', w: 0.4, d: 0.4, mesh: 'SM_HM_Lamp' },
+  { id: 'gold-clock', en: 'golden clock', icon: '🕰️', price: 0, gems: 20, tint: '#ffd54a', w: 0.45, d: 0.1, wallY: 1.7, mesh: 'SM_HM_Clock' },
 ];
 export const furniture = (id: string) => FURNITURE.find((f) => f.id === id);
 /** Most of one kind a player can own. */

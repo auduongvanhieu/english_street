@@ -1,6 +1,6 @@
 /**
- * Top-ups: coin packs paid by bank transfer in VND (VietQR, confirmed by SePay) or in USDT (TRC20 / BEP20,
- * confirmed by reading the chain). The API owns prices and credits coins; these are the shapes the game sees.
+ * Top-ups: 💎 gem packs paid by bank transfer in VND (VietQR, confirmed by SePay) or in USDT (TRC20 / BEP20,
+ * confirmed by reading the chain). The API owns prices and credits gems; these are the shapes the game sees.
  */
 export const PAY_METHODS = ['vnd', 'usdt_trc20', 'usdt_bep20'] as const;
 export type PayMethod = (typeof PAY_METHODS)[number];
@@ -10,7 +10,7 @@ export const MICRO_USDT = 1_000_000;
 
 export interface PayPack {
   id: string;
-  coins: number;
+  gems: number;
   vnd: number;
   usdt: number;
 }
@@ -18,8 +18,8 @@ export interface PayPack {
 export interface PayOrderView {
   code: string;
   pack: string;
-  /** coins this order gives (first top-up bonus included) */
-  coins: number;
+  /** gems this order gives (first top-up bonus included) */
+  gems: number;
   method: PayMethod;
   /** smallest unit (đồng / micro-USDT) */
   amount: number;
@@ -37,7 +37,7 @@ export interface PayInfo {
   needAccount: boolean;
   methods: PayMethod[];
   packs: PayPack[];
-  /** the next paid top-up gives double coins */
+  /** the next paid top-up gives double gems */
   firstBonus: boolean;
   orders: PayOrderView[];
 }
@@ -46,4 +46,24 @@ export interface PayInfo {
 export function payAmountText(method: PayMethod, amount: number): string {
   if (method === 'vnd') return `${amount.toLocaleString('vi-VN')}đ`;
   return `${(amount / MICRO_USDT).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USDT`;
+}
+
+/**
+ * 💎 Gems: bought with top-ups (plus small gifts for a 7-day streak and journey chapters). Coins stay the reward
+ * for learning; gems buy special items, extra NPC turns, or turn into coins (one way only).
+ */
+export interface GemInfo {
+  gems: number;
+  /** NPC turns bought (used after the free daily turns) */
+  bonusTurns: number;
+  /** coins for 1 gem */
+  rate: number;
+  /** extra NPC turns: how many for how many gems */
+  turnPack: { turns: number; gems: number };
+  /** gem price of each gem item (admin may change them) */
+  prices: Record<string, number>;
+  /** gifts: gems for every 7 days in a row, for each journey chapter (0 = off) */
+  gifts: { streak: number; chapter: number };
+  /** top-ups are open for this player */
+  payOpen: boolean;
 }

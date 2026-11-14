@@ -3,20 +3,143 @@ import { payAmountText, type PayMethod, type PayOrderView, type PayPack } from '
 import { tk, useT } from '../i18n';
 import { usePay } from '../store/pay';
 import { useProfile } from '../store/profile';
+import { useGame } from '../store/game';
 import { Icon } from './icons';
 import { Panel } from './ProfilePanels';
 
-/** "Top up coins": pick a pack, a way to pay, then the QR / address and a live "waiting for the money". */
+/**
+ * 💎 Gems: the balance, then three tabs: buy gems (top-ups: pick a pack, a way to pay, the QR / address and a
+ * live "waiting for the money"), change gems into coins, extra NPC turns.
+ */
 export function TopUpPanel() {
   const t = useT();
   const info = usePay((s) => s.info);
   const order = usePay((s) => s.order);
   const done = usePay((s) => s.done);
-  useEffect(() => void usePay.getState().load(), []);
+  const gems = useProfile((s) => s.profile?.gems ?? 0);
+  const bonus = useProfile((s) => s.profile?.quota?.bonusTurns ?? 0);
+  const [tab, setTab] = useState<'buy' | 'coins' | 'turns'>('buy');
+  useEffect(() => {
+    void usePay.getState().load();
+    void usePay.getState().loadGems();
+  }, []);
+  const canBuy = !!info?.enabled;
+  const cur = !canBuy && tab === 'buy' ? 'coins' : tab;
+  const tabs: ['buy' | 'coins' | 'turns', string][] = [['coins', t('Gems → coins')], ['turns', t('NPC turns')]];
+  if (canBuy) tabs.unshift(['buy', t('Buy gems')]);
   return (
-    <Panel title={t('Top up coins')} icon="coin">
-      {done ? <Done o={done} /> : order ? <OrderView o={order} /> : info?.enabled ? <Packs /> : <p className="text-sm text-gray-500">{info ? t('Top-ups are not open yet.') : t('Loading…')}</p>}
+    <Panel title={t('Gems')} icon="gem">
+      {done ? (
+        <Done o={done} />
+      ) : order ? (
+        <OrderView o={order} />
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
+            <span className="flex items-center gap-1">
+              {t('You have')} <Icon name="gem" size={16} className="text-sky-500" /> <b>{gems.toLocaleString('vi-VN')}</b> {t('gems')}
+            </span>
+            {bonus ? (
+              <span className="flex items-center gap-1 text-xs">
+                <Icon name="chat" size={14} /> {t('+{n} NPC turns', { n: bonus })}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex gap-1 rounded-xl bg-gray-100 p-1 text-sm">
+            {tabs.map(([id, label]) => (
+              <button key={id} type="button" onClick={() => setTab(id)} className={`min-h-9 flex-1 rounded-lg px-2 font-medium ${cur === id ? 'bg-white text-slate-900 shadow' : 'text-gray-600'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {cur === 'buy' ? <Packs /> : cur === 'coins' ? <ToCoins /> : <Turns />}
+          <p className="text-xs text-gray-500">{t('Special 💎 items are in Create character (hair, clothes, name tags) and in My room (furniture). Lessons and quests are always free.')}</p>
+        </div>
+      )}
     </Panel>
+  );
+}
+
+/** Gems → coins, one way. */
+function ToCoins() {
+  const t = useT();
+  const gem = usePay((s) => s.gem);
+  const gems = useProfile((s) => s.profile?.gems ?? 0);
+  const [n, setN] = useState(10);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const rate = gem?.rate ?? 10;
+  const go = async () => {
+    setBusy(true);
+    setMsg('');
+    try {
+      const got = await usePay.getState().exchange(n);
+      setMsg(t('+{n} coins!', { n: got }));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-2 text-sm">
+      <p className="text-gray-600">{t('1 gem = {n} coins. Coins cannot be changed back into gems.', { n: rate })}</p>
+      <div className="flex items-center gap-2">
+        {[10, 50, 100].map((v) => (
+          <button key={v} type="button" onClick={() => setN(v)} className={`min-h-10 flex-1 rounded-xl border-2 font-semibold ${n === v ? 'border-sky-500 bg-sky-50' : 'border-gray-200'}`}>
+            {v} 💎
+          </button>
+        ))}
+      </div>
+      <button type="button" disabled={busy || gems < n} onClick={() => void go()} className="flex min-h-12 w-full items-center justify-center gap-1 rounded-xl bg-amber-500 font-semibold text-white disabled:opacity-50">
+        {n} 💎 → <Icon name="coin" size={16} /> {(n * rate).toLocaleString('vi-VN')}
+      </button>
+      {gems < n ? <p className="text-xs text-gray-500">{t('Not enough gems.')}</p> : null}
+      {msg ? <p className="text-center font-semibold text-emerald-700">{msg}</p> : null}
+    </div>
+  );
+}
+
+/** Extra NPC conversation turns, used after today's free ones (they do not run out at midnight). */
+function Turns() {
+  const t = useT();
+  const gem = usePay((s) => s.gem);
+  const gems = useProfile((s) => s.profile?.gems ?? 0);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const pack = gem?.turnPack ?? { turns: 20, gems: 20 };
+  const go = async () => {
+    setBusy(true);
+    setMsg('');
+    try {
+      const n = await usePay.getState().buyTurns();
+      setMsg(t('+{n} NPC turns!', { n }));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-2 text-sm">
+      <p className="text-gray-600">{t('Every day you get free turns to talk with the NPCs. When they are used up, bought turns let you keep talking. Bought turns do not expire.')}</p>
+      <button type="button" disabled={busy || gems < pack.gems} onClick={() => void go()} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 font-semibold text-white disabled:opacity-50">
+        <Icon name="chat" size={16} /> {t('{n} turns', { n: pack.turns })} · {pack.gems} 💎
+      </button>
+      {gems < pack.gems ? <p className="text-xs text-gray-500">{t('Not enough gems.')}</p> : null}
+      {msg ? <p className="text-center font-semibold text-emerald-700">{msg}</p> : null}
+    </div>
+  );
+}
+
+/** "+" next to the gems: opens the gems panel. */
+export function GemsButton({ dark }: { dark?: boolean }) {
+  const t = useT();
+  const open = useGame((s) => s.setUiPanel);
+  return (
+    <button type="button" onClick={() => open('topup')} aria-label={t('Gems')} title={t('Gems')} className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold leading-none ${dark ? 'bg-sky-300 text-slate-900 hover:bg-sky-200' : 'bg-sky-500 text-white hover:bg-sky-600'}`}>
+      +
+    </button>
   );
 }
 
@@ -27,12 +150,11 @@ function Packs() {
   const info = usePay((s) => s.info)!;
   const busy = usePay((s) => s.busy);
   const error = usePay((s) => s.error);
-  const coins = useProfile((s) => s.profile?.coins ?? 0);
   const [pack, setPack] = useState<PayPack | null>(null);
   if (info.needAccount)
     return (
       <div className="space-y-3 text-sm">
-        <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{t('Sign up for an account first, so the coins you buy are kept safe in it. Open Settings → Account, or sign out and choose "Sign up". Your guest progress moves to the new account.')}</p>
+        <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{t('Sign up for an account first, so the gems you buy are kept safe in it. Open Settings → Account, or sign out and choose "Sign up". Your guest progress moves to the new account.')}</p>
       </div>
     );
   const x = info.firstBonus ? 2 : 1;
@@ -40,22 +162,19 @@ function Packs() {
   const usdt = info.methods.some((m) => m !== 'vnd');
   return (
     <div className="space-y-3">
-      <p className="flex items-center gap-1 text-sm text-gray-600">
-        {t('You have')} <Icon name="coin" size={16} className="text-amber-500" /> <b>{coins}</b> {t('coins')}
-      </p>
-      {info.firstBonus ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">🎁 {t('First top-up: double coins!')}</p> : null}
+      {info.firstBonus ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">🎁 {t('First top-up: double gems!')}</p> : null}
       <div className="grid gap-2 sm:grid-cols-3">
         {info.packs.map((p) => (
           <button
             key={p.id}
             type="button"
             onClick={() => setPack(p)}
-            className={`flex flex-col items-center rounded-xl border-2 p-3 ${pack?.id === p.id ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-white hover:border-amber-300'}`}
+            className={`flex flex-col items-center rounded-xl border-2 p-3 ${pack?.id === p.id ? 'border-sky-500 bg-sky-50' : 'border-gray-200 bg-white hover:border-sky-300'}`}
           >
-            <span className="flex items-center gap-1 text-xl font-bold text-amber-600">
-              <Icon name="coin" size={20} /> {(p.coins * x).toLocaleString('vi-VN')}
+            <span className="flex items-center gap-1 text-xl font-bold text-sky-600">
+              <Icon name="gem" size={20} /> {(p.gems * x).toLocaleString('vi-VN')}
             </span>
-            {x > 1 ? <span className="text-xs text-gray-400 line-through">{p.coins.toLocaleString('vi-VN')}</span> : null}
+            {x > 1 ? <span className="text-xs text-gray-400 line-through">{p.gems.toLocaleString('vi-VN')}</span> : null}
             {vnd ? (
               <>
                 <span className="mt-1 text-sm font-semibold text-slate-800">{p.vnd.toLocaleString('vi-VN')}đ</span>
@@ -80,7 +199,7 @@ function Packs() {
       ) : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <History />
-      <p className="text-xs text-gray-400">{t('Coins are only for this game and cannot be changed back into money. Need help? Send the order code with the Feedback button.')}</p>
+      <p className="text-xs text-gray-400">{t('Gems are only for this game and cannot be changed back into money. Need help? Send the order code with the Feedback button.')}</p>
     </div>
   );
 }
@@ -99,7 +218,7 @@ function History() {
             <button type="button" disabled={o.status !== 'pending'} onClick={() => usePay.getState().open(o)} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left disabled:cursor-default">
               <span className="font-mono text-xs text-gray-500">{o.code}</span>
               <span className="flex-1 text-gray-700">
-                {o.coins.toLocaleString('vi-VN')} <Icon name="coin" size={13} className="inline text-amber-500" /> · {payAmountText(o.method, o.amount)}
+                {o.gems.toLocaleString('vi-VN')} <Icon name="gem" size={13} className="inline text-sky-500" /> · {payAmountText(o.method, o.amount)}
               </span>
               <span className={o.status === 'paid' ? 'font-semibold text-emerald-700' : o.status === 'pending' ? 'font-semibold text-amber-600' : 'text-gray-400'}>{label[o.status]}</span>
             </button>
@@ -160,11 +279,11 @@ function OrderView({ o }: { o: PayOrderView }) {
         </button>
         <span className="font-mono text-xs text-gray-500">{o.code}</span>
       </div>
-      <p className="flex items-center gap-1 text-lg font-bold text-amber-600">
-        <Icon name="coin" size={20} /> {o.coins.toLocaleString('vi-VN')} {t('coins')}
+      <p className="flex items-center gap-1 text-lg font-bold text-sky-600">
+        <Icon name="gem" size={20} /> {o.gems.toLocaleString('vi-VN')} {t('gems')}
       </p>
       {o.status === 'expired' ? (
-        <p className="rounded-xl bg-gray-100 p-3 text-sm text-gray-700">{t('Time is up for this order. If you already sent the money, the coins still arrive when it does.')}</p>
+        <p className="rounded-xl bg-gray-100 p-3 text-sm text-gray-700">{t('Time is up for this order. If you already sent the money, the gems still arrive when it does.')}</p>
       ) : null}
       {p?.kind === 'vnd' ? (
         <>
@@ -207,8 +326,8 @@ function Done({ o }: { o: PayOrderView }) {
     <div className="space-y-4 py-6 text-center">
       <div className="text-5xl">🎉</div>
       <p className="text-lg font-bold text-emerald-700">{t('Top-up done!')}</p>
-      <p className="flex items-center justify-center gap-1 text-2xl font-bold text-amber-600">
-        +{o.coins.toLocaleString('vi-VN')} <Icon name="coin" size={24} />
+      <p className="flex items-center justify-center gap-1 text-2xl font-bold text-sky-600">
+        +{o.gems.toLocaleString('vi-VN')} <Icon name="gem" size={24} />
       </p>
       <button type="button" onClick={() => usePay.getState().back()} className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white">
         {t('OK')}

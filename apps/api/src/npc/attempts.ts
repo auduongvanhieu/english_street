@@ -2,6 +2,8 @@ import type { Correction, QuestAttemptStatus, ReviewGrade, VocabItem } from '@es
 import { dailyQuestIds, scheduleReview, type CefrLevel } from '@es/shared';
 import { loadQuests } from '@es/quests';
 import { prisma } from '../plugins/prisma';
+import { setting } from '../settings';
+import { giftGems } from '../gems/core';
 
 export interface AttemptRecord {
   id: string;
@@ -26,6 +28,8 @@ export interface UserRecord {
   cefrLevel: string;
   xp: number;
   coins: number;
+  gems: number;
+  npcBonusTurns: number;
   streak: number;
   lastActiveAt: Date;
   avatarConfig: unknown;
@@ -73,28 +77,36 @@ export interface FeedbackInput {
 }
 
 export const DAILY_BONUS_XP = 30;
-export type CoinReason = 'reward' | 'spend' | 'purchase' | 'refund' | 'admin' | 'transfer';
+export type CoinReason = 'reward' | 'spend' | 'purchase' | 'refund' | 'admin' | 'transfer' | 'exchange';
+/** coin = earned by learning and playing; gem = 💎 bought with top-ups (plus small gifts) */
+export type Currency = 'coin' | 'gem';
 type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 /**
- * The one place User.coins changes (inside a transaction): delta < 0 only succeeds when the balance stays ≥ 0
- * (upTo: take what there is). Writes the CoinLedger row. Returns null when there were not enough coins.
+ * The one place User.coins / User.gems change (inside a transaction): delta < 0 only succeeds when the balance
+ * stays ≥ 0 (upTo: take what there is). Writes the CoinLedger row. Returns null when there was not enough.
  */
-export async function changeCoinsTx(tx: Tx, userId: string, delta: number, reason: CoinReason, source = '', ref = '', upTo = false): Promise<{ balance: number; delta: number } | null> {
+export async function changeBalanceTx(tx: Tx, userId: string, currency: Currency, delta: number, reason: CoinReason, source = '', ref = '', upTo = false): Promise<{ balance: number; delta: number } | null> {
   let d = Math.trunc(delta);
+  const gem = currency === 'gem';
   if (d < 0 && upTo) {
-    const rows = await tx.$queryRaw<{ coins: number }[]>`SELECT coins FROM "User" WHERE id = ${userId} FOR UPDATE`;
-    d = -Math.min(-d, Math.max(0, rows[0]?.coins ?? 0));
+    const rows = gem
+      ? await tx.$queryRaw<{ v: number }[]>`SELECT gems AS v FROM "User" WHERE id = ${userId} FOR UPDATE`
+      : await tx.$queryRaw<{ v: number }[]>`SELECT coins AS v FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    d = -Math.min(-d, Math.max(0, rows[0]?.v ?? 0));
   }
   if (d < 0) {
-    const r = await tx.user.updateMany({ where: { id: userId, coins: { gte: -d } }, data: { coins: { increment: d } } });
+    const r = await tx.user.updateMany({ where: gem ? { id: userId, gems: { gte: -d } } : { id: userId, coins: { gte: -d } }, data: gem ? { gems: { increment: d } } : { coins: { increment: d } } });
     if (!r.count) return null;
-  } else if (d > 0) await tx.user.update({ where: { id: userId }, data: { coins: { increment: d } } });
-  const u = await tx.user.findUnique({ where: { id: userId }, select: { coins: true } });
+  } else if (d > 0) await tx.user.update({ where: { id: userId }, data: gem ? { gems: { increment: d } } : { coins: { increment: d } } });
+  const u = await tx.user.findUnique({ where: { id: userId }, select: { coins: true, gems: true } });
   if (!u) return null;
-  if (d) await tx.coinLedger.create({ data: { userId, delta: d, balanceAfter: u.coins, reason, source, ref } });
-  return { balance: u.coins, delta: d };
+  const balance = gem ? u.gems : u.coins;
+  if (d) await tx.coinLedger.create({ data: { userId, currency, delta: d, balanceAfter: balance, reason, source, ref } });
+  return { balance, delta: d };
 }
+/** Coins only (most of the game). */
+export const changeCoinsTx = (tx: Tx, userId: string, delta: number, reason: CoinReason, source = '', ref = '', upTo = false) => changeBalanceTx(tx, userId, 'coin', delta, reason, source, ref, upTo);
 
 export interface AttemptRepo {
   readonly name: string;
@@ -172,7 +184,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
   async ensureUser(id: string, name: string) {
     let u = this.users.get(id);
     if (!u) {
-      u = { id, email: null, name, passwordHash: null, cefrLevel: 'A1', xp: 0, coins: 0, streak: 0, lastActiveAt: new Date(0), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
+      u = { id, email: null, name, passwordHash: null, cefrLevel: 'A1', xp: 0, coins: 0, gems: 0, npcBonusTurns: 0, streak: 0, lastActiveAt: new Date(0), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
       this.users.set(id, u);
     }
     if (!u.email) u.name = name;
@@ -186,7 +198,7 @@ export class MemoryAttemptRepo implements AttemptRepo {
     return [...this.users.values()].find((u) => u.email === email.toLowerCase()) ?? null;
   }
   async createUser(u: { id: string; email: string; name: string; passwordHash: string }) {
-    const rec: UserRecord = { ...u, email: u.email.toLowerCase(), cefrLevel: 'A1', xp: 0, coins: 0, streak: 1, lastActiveAt: new Date(), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
+    const rec: UserRecord = { ...u, email: u.email.toLowerCase(), cefrLevel: 'A1', xp: 0, coins: 0, gems: 0, npcBonusTurns: 0, streak: 1, lastActiveAt: new Date(), avatarConfig: {}, placementDoneAt: null, reviewsDone: 0, nativeLang: '', gameState: {} };
     this.users.set(u.id, rec);
     return rec;
   }
@@ -318,8 +330,14 @@ export class PrismaAttemptRepo implements AttemptRepo {
     const u = await prisma.user.upsert({ where: { id }, create: { id, name, lastActiveAt: new Date(0) }, update: {} });
     const s = { streak: u.streak, lastActiveAt: u.lastActiveAt };
     bumpStreak(s);
-    const updated = await prisma.user.update({ where: { id }, data: { ...(u.email ? {} : { name }), streak: s.streak, lastActiveAt: s.lastActiveAt } });
-    return updated as UserRecord;
+    // only the request that moved lastActiveAt counts the new day (two at once must not gift twice)
+    const moved = await prisma.user.updateMany({ where: { id, lastActiveAt: u.lastActiveAt }, data: { ...(u.email ? {} : { name }), streak: s.streak, lastActiveAt: s.lastActiveAt } });
+    // 💎 a small gift for every 7 days in a row (signed-up players)
+    if (moved.count && u.email && s.streak > u.streak && s.streak % 7 === 0) {
+      const gems = await giftGems(id, setting('gemGiftStreak'), 'streak', `${s.streak}:${s.lastActiveAt.toISOString().slice(0, 10)}`).catch(() => 0);
+      if (gems) await this.logEvent({ name: 'gems_streak', playerId: id, props: { streak: s.streak, gems } });
+    }
+    return (await prisma.user.findUnique({ where: { id } })) as UserRecord;
   }
   async getUser(id: string) {
     return (await prisma.user.findUnique({ where: { id } })) as UserRecord | null;

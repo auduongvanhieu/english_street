@@ -73,12 +73,33 @@ class Budget {
     this.backend = 'redis';
   }
 
-  /** Throws a 429 NpcError when a limit is reached. */
-  async check(playerId: string, ip: string) {
+  /** Bought NPC turns (💎, gems/core.ts): set when the database is on. */
+  private bonus: { take(pid: string): Promise<boolean>; giveBack(pid: string): Promise<void>; count(pid: string): Promise<number> } | null = null;
+  useBonusTurns(b: NonNullable<Budget['bonus']>) {
+    this.bonus = b;
+  }
+
+  /**
+   * Throws a 429 NpcError when a limit is reached. Past the free daily turns (or the free daily budget) a bought
+   * turn is used: take it now (`consume`, give it back with giveBack() if the turn fails), or only check there is one.
+   * Bought turns have their own budget on top of the free one (npcPaidDailyBudgetUsd).
+   */
+  async check(playerId: string, ip: string, consume = false): Promise<{ bonus: boolean }> {
     const [usd, player, perIp] = await this.counters.get(dayKey(), ['usd', `p:${playerId}`, `ip:${ip}`]);
-    if (usd! >= setting('npcDailyBudgetUsd')) throw new NpcError(429, 'daily_budget_exhausted');
-    if (player! >= setting('npcDailyTurnsPerPlayer')) throw new NpcError(429, 'daily_quota_exhausted');
-    if (perIp! >= setting('npcDailyTurnsPerPlayer') * 3) throw new NpcError(429, 'daily_quota_exhausted');
+    const free = setting('npcDailyTurnsPerPlayer');
+    const freeBudget = usd! < setting('npcDailyBudgetUsd');
+    if (freeBudget && player! < free && perIp! < free * 3) return { bonus: false };
+    const why = freeBudget ? 'daily_quota_exhausted' : 'daily_budget_exhausted';
+    if (!this.bonus || usd! >= setting('npcDailyBudgetUsd') + setting('npcPaidDailyBudgetUsd')) throw new NpcError(429, why);
+    const ok = consume ? await this.bonus.take(playerId) : (await this.bonus.count(playerId)) > 0;
+    if (!ok) throw new NpcError(429, why);
+    return { bonus: consume };
+  }
+  async giveBack(playerId: string) {
+    await this.bonus?.giveBack(playerId);
+  }
+  async bonusLeft(playerId: string) {
+    return this.bonus ? this.bonus.count(playerId) : 0;
   }
 
   async recordTurn(playerId: string, ip: string) {

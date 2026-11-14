@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Profile } from '@es/shared';
 import { useGame } from './game';
+import { useJourney } from './journey';
 import { changeName as apiChangeName, changePassword as apiChangePassword, fetchMe, login as apiLogin, register as apiRegister, resetPassword as apiResetPassword, saveLang, type CaptchaAnswer } from '../net/api';
 import { isLang } from '@es/shared';
 import { onLangChange, useLang } from '../i18n';
@@ -8,7 +9,7 @@ import { track } from '../net/analytics';
 import { getGuestId, getToken, setSession } from '../net/player';
 
 interface ProfileStore {
-  profile: (Profile & { quota?: { turnsLeftToday: number } }) | null;
+  profile: (Profile & { quota?: { turnsLeftToday: number; bonusTurns?: number }; streakGift?: { gems: number; ref: string } }) | null;
   loggedIn: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string, captcha: CaptchaAnswer) => Promise<void>;
@@ -47,6 +48,18 @@ export const useProfile = create<ProfileStore>((set, get) => ({
       }
       set({ profile });
       syncLang(profile);
+      // 💎 the 7-days-in-a-row gift: show it once
+      const g = profile.streakGift;
+      if (g) {
+        let seen = '';
+        try {
+          seen = localStorage.getItem('es:streakGift') ?? '';
+          localStorage.setItem('es:streakGift', g.ref);
+        } catch {
+          /* private mode */
+        }
+        if (seen !== g.ref) useJourney.getState().pushToast({ id: 'gems-streak', xp: 0, coins: 0, gems: g.gems, streak: profile.streak });
+      }
     } catch (e) {
       // a saved sign-in the API refuses: forget it so the sign-in form (with its security check) works again
       if (getToken() && /unauthorized|^401$/.test((e as Error).message)) {

@@ -9,15 +9,31 @@ const TAG_STYLE: Record<NameTagStyle, { color: string; outline: string; size: nu
   gold: { color: '#f5c518', outline: '#6b4a00', size: 0.33 },
   ocean: { color: '#38bdf8', outline: '#0c3a5c', size: 0.33 },
   rainbow: { color: '#ff4d4d', outline: '#2a1a40', size: 0.34 },
+  // 💎 gem tags (colour moves, see MOVING)
+  diamond: { color: '#dff6ff', outline: '#1e4f86', size: 0.35 },
+  fire: { color: '#ff7a1a', outline: '#5a0d00', size: 0.35 },
+  galaxy: { color: '#b38cff', outline: '#120a33', size: 0.35 },
 };
-/** The rainbow tag cycles through the colours. */
-function RainbowText({ children }: { children: string }) {
+/** Tags whose colour moves: hue from…to (degrees), speed, saturation, lightness. Rainbow goes all the way round. */
+const MOVING: Partial<Record<NameTagStyle, { from: number; to: number; speed: number; s: number; l: number }>> = {
+  rainbow: { from: 0, to: 360, speed: 90, s: 90, l: 60 },
+  diamond: { from: 185, to: 215, speed: 1.6, s: 90, l: 82 },
+  fire: { from: 5, to: 45, speed: 3, s: 100, l: 55 },
+  galaxy: { from: 235, to: 300, speed: 1.2, s: 85, l: 68 },
+};
+function MovingText({ tag, children }: { tag: NameTagStyle; children: string }) {
   const ref = useRef<{ color: string | number } | null>(null);
+  const m = MOVING[tag]!;
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.color = `hsl(${Math.round((clock.elapsedTime * 90) % 360)}, 90%, 60%)`;
+    if (!ref.current) return;
+    const tm = clock.elapsedTime;
+    // rainbow: round and round; the others swing between their two hues
+    const h = m.to - m.from >= 360 ? (tm * m.speed) % 360 : m.from + ((Math.sin(tm * m.speed) + 1) / 2) * (m.to - m.from);
+    ref.current.color = `hsl(${Math.round(h)}, ${m.s}%, ${m.l}%)`;
   });
+  const st = TAG_STYLE[tag];
   return (
-    <Text ref={ref as never} fontSize={TAG_STYLE.rainbow.size} color={TAG_STYLE.rainbow.color} anchorX="center" outlineWidth={0.025} outlineColor={TAG_STYLE.rainbow.outline}>
+    <Text ref={ref as never} fontSize={st.size} color={st.color} anchorX="center" outlineWidth={0.025} outlineColor={st.outline}>
       {children}
     </Text>
   );
@@ -70,8 +86,8 @@ export function NameTag({
             {name}
           </Text>
         </>
-      ) : tag === 'rainbow' ? (
-        <RainbowText>{name}</RainbowText>
+      ) : MOVING[tag] ? (
+        <MovingText tag={tag}>{name}</MovingText>
       ) : (
         <Text fontSize={TAG_STYLE[tag].size} color={TAG_STYLE[tag].color} anchorX="center" outlineWidth={tag === 'plain' ? 0.02 : 0.025} outlineColor={TAG_STYLE[tag].outline}>
           {name}

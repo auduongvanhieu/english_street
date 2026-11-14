@@ -22,6 +22,8 @@ import {
 } from '@es/shared';
 import type { AttemptRepo, EventInput } from '../npc/attempts';
 import { prisma } from '../plugins/prisma';
+import { setting } from '../settings';
+import { giftGems } from '../gems/core';
 
 /**
  * Journey progress (plans/english-street-quest-journey.md). Every logged game event with a player goes through
@@ -265,7 +267,9 @@ export class Journey {
     const paid: JourneyEvent['done'] = [];
     for (const s of r.done) {
       await this.repo.reward(pid, s.reward.xp, s.reward.coins, 'journey');
-      paid.push({ id: s.id, xp: s.reward.xp, coins: s.reward.coins });
+      // 💎 each main chapter also gives a few gems (signed-up players; journey state makes it once per chapter)
+      const gems = s.kind === 'main' && this.repo.name === 'postgres' ? await giftGems(pid, setting('gemGiftChapter'), 'journey', s.id).catch(() => 0) : 0;
+      paid.push({ id: s.id, xp: s.reward.xp, coins: s.reward.coins, ...(gems ? { gems } : {}) });
       await this.repo.logEvent({ name: 'journey_step', playerId: pid, props: { id: s.id, kind: s.kind } });
     }
     if (r.dailyBonus) {

@@ -6,7 +6,7 @@ export type IconName =
   | 'menu' | 'close' | 'more' | 'users' | 'map' | 'settings' | 'feedback' | 'exit' | 'mic' | 'micOff' | 'voice'
   | 'chat' | 'talk' | 'jump' | 'smile' | 'megaphone' | 'chair' | 'stand' | 'hand' | 'heart' | 'drop'
   | 'sun' | 'moon' | 'cloud' | 'rain' | 'storm' | 'fog' | 'target' | 'pin' | 'graphics' | 'bolt'
-  | 'check' | 'star' | 'circle' | 'book' | 'sunrise' | 'passport' | 'calendar' | 'speaker' | 'coin' | 'lock' | 'gift' | 'bus' | 'walk' | 'smileHi' | 'thumb' | 'no' | 'dance' | 'trophy' | 'bag';
+  | 'check' | 'star' | 'circle' | 'book' | 'sunrise' | 'passport' | 'calendar' | 'speaker' | 'coin' | 'gem' | 'lock' | 'gift' | 'bus' | 'walk' | 'smileHi' | 'thumb' | 'no' | 'dance' | 'trophy' | 'bag';
 
 const P: Record<IconName, React.ReactNode> = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
@@ -194,6 +194,7 @@ const P: Record<IconName, React.ReactNode> = {
       <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
     </>
   ),
+  gem: <path d="M7 4.5h10l3.5 5L12 20 3.5 9.5zM3.5 9.5h17M9.5 4.5 8 9.5l4 10.5 4-10.5-1.5-5" />,
   coin: (
     <>
       <circle cx="12" cy="12" r="8.5" />

@@ -64,6 +64,8 @@ export function JourneyToasts() {
             ? t('Weekly challenge complete!')
             : x.id === 'invite'
               ? t('Your friend joined English Street!')
+              : x.id === 'gems-streak'
+                ? t('{n} days in a row: a gift!', { n: x.streak ?? 7 })
               : x.id === 'welcome'
                 ? t('Welcome bonus from your friend')
                 : x.id === 'story-bonus'
@@ -74,7 +76,7 @@ export function JourneyToasts() {
             <div className="text-xs font-semibold uppercase opacity-80">✅ {t('Done!')}</div>
             <div className="font-bold">{title}</div>
             <div className="text-sm">
-              +{x.xp} XP · +{x.coins} 🪙 {x.stamp ? `· 🛂 ${t('New stamp!')}` : ''}
+              {x.id === 'gems-streak' ? `+${x.gems} 💎 ` : `+${x.xp} XP · +${x.coins} 🪙 ${x.gems ? `· +${x.gems} 💎 ` : ''}`}{x.stamp ? `· 🛂 ${t('New stamp!')}` : ''}
             </div>
           </button>
         );

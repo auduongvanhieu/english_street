@@ -1,5 +1,5 @@
 import { getPairQuest, getQuest } from '@es/quests';
-import { changeCoinsTx } from '../npc/attempts';
+import { changeBalanceTx, changeCoinsTx } from '../npc/attempts';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -21,6 +21,8 @@ const PUBLIC_USER = {
   cefrLevel: true,
   xp: true,
   coins: true,
+  gems: true,
+  npcBonusTurns: true,
   streak: true,
   lastActiveAt: true,
   createdAt: true,
@@ -41,7 +43,7 @@ const ListQuery = z.object({
   lang: z.string().max(10).optional(),
   kind: z.enum(['all', 'registered', 'guest', 'banned', 'muted', 'staff']).default('all'),
   active: z.coerce.number().int().min(0).max(3650).optional(),
-  sort: z.enum(['recent', 'created', 'play', 'xp', 'coins', 'name']).default('recent'),
+  sort: z.enum(['recent', 'created', 'play', 'xp', 'coins', 'gems', 'name']).default('recent'),
   page: z.coerce.number().int().min(1).default(1),
   size: z.coerce.number().int().min(5).max(200).default(50),
 });
@@ -51,6 +53,9 @@ const PatchSchema = z.object({
   cefrLevel: z.enum(CEFR_LEVELS).optional(),
   role: z.enum(['player', 'editor', 'admin']).optional(),
   coinsDelta: z.number().int().min(-1_000_000).max(1_000_000).optional(),
+  /** 💎 gems and bought NPC turns */
+  gemsDelta: z.number().int().min(-1_000_000).max(1_000_000).optional(),
+  bonusTurnsDelta: z.number().int().min(-100_000).max(100_000).optional(),
   xpDelta: z.number().int().min(-1_000_000).max(1_000_000).optional(),
   /** Farm basket: crop → pieces; `resetPlots` empties the garden. */
   basket: z.partialRecord(z.enum(CROPS), z.number().int().min(0).max(100_000)).optional(),
@@ -73,7 +78,7 @@ export function adminUserRoutes(app: FastifyInstance) {
       ...(kind === 'registered' ? { email: { not: null } } : kind === 'guest' ? { email: null } : kind === 'banned' ? { bannedUntil: { gt: now } } : kind === 'muted' ? { mutedUntil: { gt: now } } : kind === 'staff' ? { role: { in: ['editor', 'admin'] } } : {}),
     };
     const orderBy: Prisma.UserOrderByWithRelationInput =
-      sort === 'created' ? { createdAt: 'desc' } : sort === 'play' ? { playSeconds: 'desc' } : sort === 'xp' ? { xp: 'desc' } : sort === 'coins' ? { coins: 'desc' } : sort === 'name' ? { name: 'asc' } : { lastActiveAt: 'desc' };
+      sort === 'created' ? { createdAt: 'desc' } : sort === 'play' ? { playSeconds: 'desc' } : sort === 'xp' ? { xp: 'desc' } : sort === 'coins' ? { coins: 'desc' } : sort === 'gems' ? { gems: 'desc' } : sort === 'name' ? { name: 'asc' } : { lastActiveAt: 'desc' };
     const [total, rows] = await Promise.all([prisma.user.count({ where }), prisma.user.findMany({ where, orderBy, skip: (page - 1) * size, take: size, select: PUBLIC_USER })]);
     return { total, page, size, rows };
   });
@@ -132,6 +137,8 @@ export function adminUserRoutes(app: FastifyInstance) {
       events,
       online: online?.players.filter((p) => p.uid === u.id) ?? [],
       playDays,
+      // 💎 every gem change (newest first)
+      gemLedger: await prisma.coinLedger.findMany({ where: { userId: u.id, currency: 'gem' }, orderBy: { createdAt: 'desc' }, take: 100, select: { delta: true, balanceAfter: true, reason: true, source: true, ref: true, createdAt: true } }),
     };
   });
 
@@ -164,11 +171,13 @@ export function adminUserRoutes(app: FastifyInstance) {
     }
     // coins change in one step through the ledger (a top-up landing at the same time is never lost)
     if (p.coinsDelta) await prisma.$transaction((tx) => changeCoinsTx(tx, u.id, p.coinsDelta!, 'admin', req.admin!.name, '', p.coinsDelta! < 0));
+    if (p.gemsDelta) await prisma.$transaction((tx) => changeBalanceTx(tx, u.id, 'gem', p.gemsDelta!, 'admin', req.admin!.name, '', p.gemsDelta! < 0));
+    if (p.bonusTurnsDelta) data.npcBonusTurns = Math.max(0, u.npcBonusTurns + p.bonusTurnsDelta);
     const after = await prisma.user.update({ where: { id: u.id }, data, select: PUBLIC_USER });
     forgetStatus(u.id);
     // the player's coin history (admin page): an admin's change, kept apart from the game economy
     if (after.coins !== u.coins) await prisma.event.create({ data: { name: 'coins_admin', playerId: u.id, props: { coins: after.coins - u.coins, by: req.admin!.name } } });
-    const before = { name: u.name, cefrLevel: u.cefrLevel, role: u.role, coins: u.coins, xp: u.xp, farm: (u.gameState as { farm?: unknown })?.farm ?? null };
+    const before = { name: u.name, cefrLevel: u.cefrLevel, role: u.role, coins: u.coins, gems: u.gems, npcBonusTurns: u.npcBonusTurns, xp: u.xp, farm: (u.gameState as { farm?: unknown })?.farm ?? null };
     await audit(req, 'user.update', u.id, before, p);
     return after;
   });

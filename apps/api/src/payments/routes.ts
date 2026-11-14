@@ -6,7 +6,7 @@ import { env } from '../env';
 import { prisma } from '../plugins/prisma';
 import { limiter } from '../npc/ratelimit';
 import { audit, bad } from '../admin/core';
-import { changeCoinsTx } from '../npc/attempts';
+import { changeBalanceTx } from '../npc/attempts';
 import { setting } from '../settings';
 import { chainStatus } from './chain';
 import { PayError, createOrder, expireOld, firstBonusFor, fulfil, methods, orderView, packs, payOpenFor, receive } from './core';
@@ -106,19 +106,26 @@ export function adminPayRoutes(app: FastifyInstance) {
     const [orders, unmatched, paid] = await Promise.all([
       prisma.paymentOrder.findMany({ where: { createdAt: { gte: since } }, orderBy: { createdAt: 'desc' }, take: 200 }),
       prisma.paymentTx.findMany({ where: { status: 'unmatched' }, orderBy: { createdAt: 'desc' }, take: 100 }),
-      prisma.paymentOrder.findMany({ where: { status: 'paid', paidAt: { gte: since } }, select: { paidAt: true, method: true, paidAmount: true, coins: true } }),
+      prisma.paymentOrder.findMany({ where: { status: 'paid', paidAt: { gte: since } }, select: { paidAt: true, method: true, paidAmount: true, gems: true } }),
     ]);
     const users = await prisma.user.findMany({ where: { id: { in: [...new Set(orders.map((o) => o.userId))] } }, select: { id: true, name: true, email: true } });
-    const byDay: Record<string, { vnd: number; usdt: number; coins: number; n: number }> = {};
+    const byDay: Record<string, { vnd: number; usdt: number; gems: number; n: number }> = {};
     for (const p of paid) {
       const d = new Date(p.paidAt!.getTime() + 7 * 3600_000).toISOString().slice(0, 10);
-      const row = (byDay[d] ??= { vnd: 0, usdt: 0, coins: 0, n: 0 });
+      const row = (byDay[d] ??= { vnd: 0, usdt: 0, gems: 0, n: 0 });
       if (p.method === 'vnd') row.vnd += p.paidAmount;
       else row.usdt += p.paidAmount;
-      row.coins += p.coins;
+      row.gems += p.gems;
       row.n += 1;
     }
+    // 💎 where gems came from and went (gifts, items, NPC turns, coins)
+    const gemRows = await prisma.coinLedger.groupBy({ by: ['reason', 'source'], where: { currency: 'gem', createdAt: { gte: since } }, _sum: { delta: true }, _count: true });
+    const gemUse = gemRows.map((r) => ({ reason: r.reason, source: r.source, gems: r._sum.delta ?? 0, n: r._count })).sort((a, b) => Math.abs(b.gems) - Math.abs(a.gems));
+    const held = await prisma.user.aggregate({ _sum: { gems: true, npcBonusTurns: true } });
     return {
+      gemUse,
+      gemsHeld: held._sum.gems ?? 0,
+      bonusTurnsHeld: held._sum.npcBonusTurns ?? 0,
       orders: orders.map((o) => ({ ...o, user: users.find((u) => u.id === o.userId) ?? null })),
       unmatched,
       byDay,
@@ -126,10 +133,10 @@ export function adminPayRoutes(app: FastifyInstance) {
     };
   });
 
-  /** A transfer that matched nothing: pay an order with it, or give the coins to a player directly. */
+  /** A transfer that matched nothing: pay an order with it, or give the gems to a player directly. */
   app.post<{ Params: { id: string } }>('/admin/payments/tx/:id/assign', async (req, reply) => {
-    const body = z.object({ code: z.string().max(20).optional(), userId: z.string().max(64).optional(), coins: z.number().int().min(1).max(1_000_000).optional(), note: z.string().max(200).default('') }).safeParse(req.body);
-    if (!body.success || (!body.data.code && !(body.data.userId && body.data.coins))) return bad(reply, 'bad_request');
+    const body = z.object({ code: z.string().max(20).optional(), userId: z.string().max(64).optional(), gems: z.number().int().min(1).max(1_000_000).optional(), note: z.string().max(200).default('') }).safeParse(req.body);
+    if (!body.success || (!body.data.code && !(body.data.userId && body.data.gems))) return bad(reply, 'bad_request');
     const b = body.data;
     const out = await prisma.$transaction(async (tx) => {
       const t = await tx.paymentTx.findUnique({ where: { id: req.params.id } });
@@ -137,15 +144,15 @@ export function adminPayRoutes(app: FastifyInstance) {
       if (b.code) {
         const o = await tx.paymentOrder.findUnique({ where: { code: b.code.toUpperCase() } });
         if (!o) return { error: 'no_order' } as const;
-        const coins = await fulfil(tx, o, t.amount, `${t.source}:${t.txRef}`, `admin: ${b.note}`.trim());
-        if (coins === null) return { error: 'already_paid' } as const;
+        const gems = await fulfil(tx, o, t.amount, `${t.source}:${t.txRef}`, `admin: ${b.note}`.trim());
+        if (gems === null) return { error: 'already_paid' } as const;
         await tx.paymentTx.update({ where: { id: t.id }, data: { status: 'manual', orderCode: o.code, note: `${t.note} → ${req.admin!.name}` } });
-        return { ok: true, coins, userId: o.userId } as const;
+        return { ok: true, gems, userId: o.userId } as const;
       }
-      const r = await changeCoinsTx(tx, b.userId!, b.coins!, 'purchase', `admin:${t.source}`, t.id);
+      const r = await changeBalanceTx(tx, b.userId!, 'gem', b.gems!, 'purchase', `admin:${t.source}`, t.id);
       if (!r) return { error: 'no_user' } as const;
-      await tx.paymentTx.update({ where: { id: t.id }, data: { status: 'manual', note: `${t.note} → ${req.admin!.name}: ${b.coins} coins to ${b.userId}` } });
-      return { ok: true, coins: b.coins!, userId: b.userId! } as const;
+      await tx.paymentTx.update({ where: { id: t.id }, data: { status: 'manual', note: `${t.note} → ${req.admin!.name}: ${b.gems} gems to ${b.userId}` } });
+      return { ok: true, gems: b.gems!, userId: b.userId! } as const;
     });
     if ('error' in out) return bad(reply, out.error!, 409);
     await audit(req, 'pay.assign', req.params.id, null, b);
@@ -160,13 +167,13 @@ export function adminPayRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  /** Money given back outside the game: take the coins back (what is left of them) and mark the order. */
+  /** Money given back outside the game: take the gems back (what is left of them) and mark the order. */
   app.post<{ Params: { code: string } }>('/admin/payments/orders/:code/refund', async (req, reply) => {
     const note = String((req.body as { note?: unknown } | undefined)?.note ?? '').slice(0, 200);
     const out = await prisma.$transaction(async (tx) => {
       const o = await tx.paymentOrder.findUnique({ where: { code: req.params.code } });
       if (!o || o.status !== 'paid') return null;
-      const r = await changeCoinsTx(tx, o.userId, -o.coins, 'refund', o.method, o.code, true);
+      const r = await changeBalanceTx(tx, o.userId, 'gem', -o.gems, 'refund', o.method, o.code, true);
       await tx.paymentOrder.update({ where: { id: o.id }, data: { status: 'refunded', note: `${o.note} refund: ${note} (${req.admin!.name})`.trim() } });
       return { taken: -(r?.delta ?? 0) };
     });

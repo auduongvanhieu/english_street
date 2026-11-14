@@ -10,7 +10,7 @@ interface Order {
   code: string;
   userId: string;
   pack: string;
-  coins: number;
+  gems: number;
   method: PayMethod;
   amount: number;
   status: string;
@@ -33,7 +33,10 @@ interface Tx {
 interface Data {
   orders: Order[];
   unmatched: Tx[];
-  byDay: Record<string, { vnd: number; usdt: number; coins: number; n: number }>;
+  byDay: Record<string, { vnd: number; usdt: number; gems: number; n: number }>;
+  gemUse: { reason: string; source: string; gems: number; n: number }[];
+  gemsHeld: number;
+  bonusTurnsHeld: number;
   config: { mode: 'off' | 'test' | 'on'; methods: PayMethod[]; sepayKey: boolean; chain: { trc20: { at: number; ok: boolean; error: string }; bep20: { at: number; ok: boolean; error: string; block: number } } };
 }
 
@@ -47,7 +50,7 @@ export function PaymentsPage() {
   const s = useLoad(() => get<Data>('/admin/payments?days=60'));
   const n = s.data?.unmatched.length ?? 0;
   return (
-    <Page title={`💳 ${L('Nạp xu', 'Top-ups')}`}>
+    <Page title={`💎 ${L('Kim cương & nạp tiền', 'Gems & top-ups')}`}>
       <Tabs
         value={tab}
         onChange={setTab}
@@ -68,7 +71,7 @@ export function PaymentsPage() {
               )}
             </p>
           </Card>
-          <Limits keys={['payMode', 'payTesters', 'payVnd', 'payUsdt', 'payFirstBonus', 'payOrderMinutes', 'payBank', 'payBankAccount', 'payBankName', 'payTrc20Address', 'payBep20Address', 'payBep20Confirmations', 'payPacks']} />
+          <Limits keys={['payMode', 'payTesters', 'payVnd', 'payUsdt', 'payFirstBonus', 'payOrderMinutes', 'payBank', 'payBankAccount', 'payBankName', 'payTrc20Address', 'payBep20Address', 'payBep20Confirmations', 'payPacks', 'gemRate', 'gemTurnPack', 'npcPaidDailyBudgetUsd', 'gemGiftStreak', 'gemGiftChapter', 'gemPrices']} />
         </>
       ) : (
         <Loaded s={s}>
@@ -82,7 +85,7 @@ export function PaymentsPage() {
 function Overview({ d }: { d: Data }) {
   const L = useL();
   const days = Object.entries(d.byDay).sort((a, b) => b[0].localeCompare(a[0]));
-  const sum = days.reduce((s, [, v]) => ({ vnd: s.vnd + v.vnd, usdt: s.usdt + v.usdt, n: s.n + v.n, coins: s.coins + v.coins }), { vnd: 0, usdt: 0, n: 0, coins: 0 });
+  const sum = days.reduce((s, [, v]) => ({ vnd: s.vnd + v.vnd, usdt: s.usdt + v.usdt, n: s.n + v.n, gems: s.gems + v.gems }), { vnd: 0, usdt: 0, n: 0, gems: 0 });
   const c = d.config;
   const ago = (ms: number) => (ms ? `${Math.round((Date.now() - ms) / 1000)}s` : '—');
   return (
@@ -98,7 +101,7 @@ function Overview({ d }: { d: Data }) {
         </Card>
         <Card title={L('Đơn đã trả', 'Paid orders')}>
           <p className="text-lg font-bold">{sum.n}</p>
-          <p className="text-xs text-slate-500">{sum.coins.toLocaleString('vi-VN')} {L('xu đã cộng', 'coins credited')}</p>
+          <p className="text-xs text-slate-500">{sum.gems.toLocaleString('vi-VN')} {L('💎 đã bán', 'gems sold')}</p>
         </Card>
         <Card title={L('Kết nối', 'Connections')}>
           <p className="text-xs">SePay key: {c.sepayKey ? <Badge tone="green">OK</Badge> : <Badge tone="red">{L('chưa đặt', 'not set')}</Badge>}</p>
@@ -119,7 +122,22 @@ function Overview({ d }: { d: Data }) {
             { key: 'n', label: L('Đơn', 'Orders'), render: ([, v]) => v.n },
             { key: 'vnd', label: 'VNĐ', render: ([, v]) => payAmountText('vnd', v.vnd) },
             { key: 'usdt', label: 'USDT', render: ([, v]) => payAmountText('usdt_trc20', v.usdt) },
-            { key: 'coins', label: L('Xu', 'Coins'), render: ([, v]) => v.coins.toLocaleString('vi-VN') },
+            { key: 'gems', label: '💎', render: ([, v]) => v.gems.toLocaleString('vi-VN') },
+          ]}
+        />
+      </Card>
+      <Card title={L('💎 Kim cương đi đâu (60 ngày)', '💎 Where gems went (60 days)')} className="mt-3">
+        <p className="mb-2 text-xs text-slate-500">
+          {L('Người chơi đang giữ', 'Players hold')} <b>{d.gemsHeld.toLocaleString('vi-VN')} 💎</b> · {L('lượt NPC đã mua chưa dùng', 'bought NPC turns not used yet')}: <b>{d.bonusTurnsHeld.toLocaleString('vi-VN')}</b>
+        </p>
+        <Table
+          rows={d.gemUse}
+          rowKey={(r) => `${r.reason}:${r.source}`}
+          cols={[
+            { key: 'reason', label: L('Loại', 'Kind'), render: (r) => GEM_REASON[r.reason]?.(L) ?? r.reason },
+            { key: 'source', label: L('Vào việc', 'For'), render: (r) => r.source || '—' },
+            { key: 'n', label: L('Lần', 'Times'), render: (r) => r.n },
+            { key: 'gems', label: '💎', render: (r) => <span className={r.gems < 0 ? 'text-red-600' : 'text-emerald-700'}>{r.gems > 0 ? '+' : ''}{r.gems.toLocaleString('vi-VN')}</span> },
           ]}
         />
       </Card>
@@ -127,14 +145,23 @@ function Overview({ d }: { d: Data }) {
   );
 }
 
+const GEM_REASON: Record<string, (L: (vi: string, en: string) => string) => string> = {
+  purchase: (L) => L('Nạp tiền', 'Top-up'),
+  reward: (L) => L('Quà tặng', 'Gift'),
+  spend: (L) => L('Mua đồ / lượt NPC', 'Items / NPC turns'),
+  exchange: (L) => L('Đổi sang xu', 'Into coins'),
+  refund: (L) => L('Hoàn đơn', 'Refund'),
+  admin: (L) => L('Admin sửa', 'Admin change'),
+};
+
 function Orders({ d, reload }: { d: Data; reload: () => void }) {
   const L = useL();
   const [q, setQ] = useState('');
   const rows = d.orders.filter((o) => !q || `${o.code} ${o.user?.name ?? ''} ${o.user?.email ?? ''} ${o.userId}`.toLowerCase().includes(q.toLowerCase()));
   const refund = async (o: Order) => {
-    if (!(await confirmDialog(L(`Hoàn đơn ${o.code}? Game sẽ lấy lại ${o.coins} xu (hoặc số xu còn lại). Tiền phải tự chuyển trả cho người chơi.`, `Refund ${o.code}? The game takes back ${o.coins} coins (or what is left). Send the money back yourself.`), { danger: true }))) return;
+    if (!(await confirmDialog(L(`Hoàn đơn ${o.code}? Game sẽ lấy lại ${o.gems} 💎 (hoặc số còn lại). Tiền phải tự chuyển trả cho người chơi.`, `Refund ${o.code}? The game takes back ${o.gems} gems (or what is left). Send the money back yourself.`), { danger: true }))) return;
     const r = await api<{ taken: number }>('POST', `/admin/payments/orders/${o.code}/refund`, { note: '' });
-    toast(L(`Đã lấy lại ${r.taken} xu`, `Took back ${r.taken} coins`));
+    toast(L(`Đã lấy lại ${r.taken} 💎`, `Took back ${r.taken} gems`));
     reload();
   };
   return (
@@ -149,7 +176,7 @@ function Orders({ d, reload }: { d: Data; reload: () => void }) {
           { key: 'code', label: L('Mã', 'Code'), render: (o) => <span className="font-mono">{o.code}</span> },
           { key: 'user', label: L('Người chơi', 'Player'), render: (o) => <a href={`#/users/${o.userId}`} className="text-indigo-600 hover:underline">{o.user?.name ?? o.userId}</a> },
           { key: 'amount', label: L('Số tiền', 'Amount'), render: (o) => payAmountText(o.method, o.amount) },
-          { key: 'coins', label: L('Xu', 'Coins'), render: (o) => o.coins.toLocaleString('vi-VN') },
+          { key: 'gems', label: '💎', render: (o) => o.gems.toLocaleString('vi-VN') },
           { key: 'status', label: L('Trạng thái', 'Status'), render: (o) => <Badge tone={STATUS_TONE[o.status] ?? 'gray'}>{o.status}</Badge> },
           { key: 'at', label: L('Lúc', 'When'), wide: true, render: (o) => fmtDate(o.paidAt ?? o.createdAt) },
           { key: 'note', label: L('Ghi chú', 'Note'), wide: true, render: (o) => <span className="text-xs text-slate-500">{o.note}</span> },
@@ -179,13 +206,13 @@ function Review({ d, reload }: { d: Data; reload: () => void }) {
     wrong_method: L('sai cách trả', 'wrong way to pay'),
   };
   const ignore = async (t: Tx) => {
-    if (!(await confirmDialog(L('Bỏ qua giao dịch này (không cộng xu)?', 'Ignore this transfer (no coins)?')))) return;
+    if (!(await confirmDialog(L('Bỏ qua giao dịch này (không cộng 💎)?', 'Ignore this transfer (no gems)?')))) return;
     await api('POST', `/admin/payments/tx/${t.id}/ignore`, { note: '' });
     reload();
   };
   return (
     <Card>
-      <p className="mb-3 text-sm text-slate-600">{L('Tiền đã về nhưng không khớp đơn nào. Gán cho đơn đúng (cộng xu theo gói) hoặc cộng xu trực tiếp cho người chơi, hay bỏ qua nếu không phải tiền nạp.', 'Money that arrived but matched no order. Pay the right order with it, give coins to a player directly, or ignore it if it is not a top-up.')}</p>
+      <p className="mb-3 text-sm text-slate-600">{L('Tiền đã về nhưng không khớp đơn nào. Gán cho đơn đúng (cộng 💎 theo gói) hoặc cộng 💎 trực tiếp cho người chơi, hay bỏ qua nếu không phải tiền nạp.', 'Money that arrived but matched no order. Pay the right order with it, give gems to a player directly, or ignore it if it is not a top-up.')}</p>
       <Table
         rows={d.unmatched}
         rowKey={(t) => t.id}
@@ -221,16 +248,16 @@ function Assign({ t, onClose, onDone }: { t: Tx; onClose: () => void; onDone: ()
   const L = useL();
   const [code, setCode] = useState(t.orderCode ?? '');
   const [userId, setUserId] = useState('');
-  const [coins, setCoins] = useState<number | undefined>(undefined);
+  const [gems, setGems] = useState<number | undefined>(undefined);
   const run = async (body: object) => {
-    const r = await api<{ coins: number }>('POST', `/admin/payments/tx/${t.id}/assign`, body);
-    toast(L(`Đã cộng ${r.coins} xu`, `Credited ${r.coins} coins`));
+    const r = await api<{ gems: number }>('POST', `/admin/payments/tx/${t.id}/assign`, body);
+    toast(L(`Đã cộng ${r.gems} 💎`, `Credited ${r.gems} gems`));
     onDone();
   };
   return (
     <Modal title={`${L('Xử lý giao dịch', 'Fix transfer')} · ${payAmountText(txMethod(t.source), t.amount)}`} onClose={onClose}>
       <p className="mb-3 break-all text-xs text-slate-500">{t.content}</p>
-      <Field label={L('Gán cho đơn (cộng xu theo gói của đơn)', 'Pay an order (coins of its pack)')}>
+      <Field label={L('Gán cho đơn (cộng 💎 theo gói của đơn)', 'Pay an order (gems of its pack)')}>
         <div className="flex gap-1">
           <Text value={code} onChange={(v) => setCode(v.toUpperCase())} placeholder="ES…" />
           <AsyncBtn kind="primary" disabled={!/^ES[A-Z0-9]{6}$/.test(code)} onRun={() => run({ code })}>
@@ -238,11 +265,11 @@ function Assign({ t, onClose, onDone }: { t: Tx; onClose: () => void; onDone: ()
           </AsyncBtn>
         </div>
       </Field>
-      <Field label={L('Hoặc cộng xu trực tiếp cho người chơi (id)', 'Or give coins to a player (id)')}>
+      <Field label={L('Hoặc cộng 💎 trực tiếp cho người chơi (id)', 'Or give gems to a player (id)')}>
         <div className="flex gap-1">
           <Text value={userId} onChange={setUserId} placeholder="user id" />
-          <Num value={coins} onChange={setCoins} placeholder={L('xu', 'coins')} />
-          <AsyncBtn kind="primary" disabled={!userId || !coins} onRun={() => run({ userId, coins })}>
+          <Num value={gems} onChange={setGems} placeholder="💎" />
+          <AsyncBtn kind="primary" disabled={!userId || !gems} onRun={() => run({ userId, gems })}>
             {L('Cộng', 'Give')}
           </AsyncBtn>
         </div>
