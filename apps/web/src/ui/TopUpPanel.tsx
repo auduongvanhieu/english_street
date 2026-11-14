@@ -36,6 +36,8 @@ function Packs() {
       </div>
     );
   const x = info.firstBonus ? 2 : 1;
+  const vnd = info.methods.includes('vnd');
+  const usdt = info.methods.some((m) => m !== 'vnd');
   return (
     <div className="space-y-3">
       <p className="flex items-center gap-1 text-sm text-gray-600">
@@ -54,8 +56,14 @@ function Packs() {
               <Icon name="coin" size={20} /> {(p.coins * x).toLocaleString('vi-VN')}
             </span>
             {x > 1 ? <span className="text-xs text-gray-400 line-through">{p.coins.toLocaleString('vi-VN')}</span> : null}
-            <span className="mt-1 text-sm font-semibold text-slate-800">{p.vnd.toLocaleString('vi-VN')}đ</span>
-            <span className="text-xs text-gray-500">≈ {p.usdt} USDT</span>
+            {vnd ? (
+              <>
+                <span className="mt-1 text-sm font-semibold text-slate-800">{p.vnd.toLocaleString('vi-VN')}đ</span>
+                {usdt ? <span className="text-xs text-gray-500">≈ {p.usdt} USDT</span> : null}
+              </>
+            ) : (
+              <span className="mt-1 text-sm font-semibold text-slate-800">{p.usdt} USDT</span>
+            )}
           </button>
         ))}
       </div>

@@ -17,6 +17,8 @@ const BEP20_TO_MICRO = 10n ** 12n;
 /** blocks read per RPC call / looked back on start (BNB Chain makes a block about every 0.75 s) */
 const BSC_CHUNK = 500;
 const BSC_LOOKBACK = 4000;
+/** never read further back than this (~8 h at 0.75 s a block); an older transfer is missed and the admin credits it by hand */
+const BSC_MAX_BEHIND = 40_000;
 
 let timer: NodeJS.Timeout | null = null;
 let redis: Redis | null = null;
@@ -67,6 +69,8 @@ export async function scanBep20(address: string): Promise<Incoming[]> {
   const latest = Number(await rpc<string>('eth_blockNumber', []));
   const safe = latest - setting('payBep20Confirmations');
   if (!bscFrom) bscFrom = Number((await redis?.get('pay:bep20:from')) ?? 0) || safe - BSC_LOOKBACK;
+  // after a long pause (top-ups off, server down) do not crawl days of blocks in one go: no order is that old
+  bscFrom = Math.max(bscFrom, safe - BSC_MAX_BEHIND);
   const out: Incoming[] = [];
   const to = `0x${address.toLowerCase().slice(2).padStart(64, '0')}`;
   while (bscFrom <= safe) {

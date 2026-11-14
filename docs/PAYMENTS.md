@@ -51,6 +51,12 @@ Các khoá bí mật nằm trong `.env` của server:
 - `TRONGRID_API_KEY` (không bắt buộc, giúp ít bị giới hạn);
 - `BSC_RPC_URL` (mặc định `https://bsc-rpc.publicnode.com`; RPC mặc định của Binance không cho đọc log).
 
+## Chỉ dùng USDT (chưa có SePay)
+
+Cách trả nào chưa điền đủ cài đặt thì tự ẩn. Để trống `payBank`/`payBankAccount` thì game không hiện chuyển khoản, giá gói ghi bằng USDT. Chỉ cần làm bước 3 và 4 ở dưới với 2 địa chỉ ví. Có thể chỉ điền một ví, game chỉ hiện mạng đó.
+
+Ví nhận tiền có thể là ví riêng (Trust Wallet, OKX Wallet…) hoặc địa chỉ nạp của sàn. Server chỉ đọc tiền vào địa chỉ đó trên blockchain.
+
 ## Bật lần đầu
 
 1. **SePay:**
