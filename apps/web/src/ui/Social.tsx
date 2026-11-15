@@ -1,10 +1,12 @@
 import { useMyRoom } from '../store/myRoom';
 import { useMyFarm } from '../store/myFarm';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { GROUP_CHAT_MAX, GROUP_MAX, GROUP_NAME_MAX } from '@es/shared';
+import { FRIEND_MSG_MAX, GROUP_CHAT_MAX, GROUP_MAX, GROUP_NAME_MAX } from '@es/shared';
 import { useGame, type RemotePlayer } from '../store/game';
 import { useDm } from '../store/dm';
-import { jumpToZone, useFriends } from '../store/friends';
+import { friendUnread, jumpToZone, useFriends } from '../store/friends';
+import { useFollow } from '../store/follow';
+import { SheetHeader } from './Sheet';
 import { setGroupViewing, useGroup, useMyGroup } from '../store/group';
 import { useVoiceChat } from '../net/voicechat';
 import { getToken } from '../net/player';
@@ -41,7 +43,7 @@ function Avatar({ name, tone = 'blue' }: { name: string; tone?: 'blue' | 'green'
 export function PanelTabs() {
   const t = useT();
   const tab = useDm((s) => s.tab);
-  const requests = useFriends((s) => s.list.incoming.length);
+  const requests = useFriends((s) => s.list.incoming.length + friendUnread(s.list));
   const groupUnread = useGroup((s) => s.unread + (s.invite ? 1 : 0));
   const tabs = [
     ['here', `👥 ${t('Here')}`, 0],
@@ -78,6 +80,7 @@ export function FriendsTab() {
   const list = useFriends((s) => s.list);
   const online = useFriends((s) => s.online);
   const error = useFriends((s) => s.error);
+  const unread = list.unread ?? {};
   const players = useGame((s) => s.players);
   const zone = useGame((s) => s.zone);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -87,7 +90,10 @@ export function FriendsTab() {
   // friends in this zone: their live player (session id) by player id
   const here = new Map(Object.values(players).map((p) => [p.pid, p]));
   const friends = [...list.friends].sort(
-    (a, b) => Number(!!online[b.pid]) - Number(!!online[a.pid]) || a.name.localeCompare(b.name),
+    (a, b) =>
+      (unread[b.pid] ?? 0) - (unread[a.pid] ?? 0) ||
+      Number(!!online[b.pid]) - Number(!!online[a.pid]) ||
+      a.name.localeCompare(b.name),
   );
   return (
     <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-3 sm:px-5">
@@ -192,6 +198,11 @@ export function FriendsTab() {
                       t('Offline')
                     )}
                   </span>
+                  {unread[f.pid] ? (
+                    <span className="block truncate text-xs font-semibold text-blue-700">
+                      {t('{count} new messages', { count: unread[f.pid]! })}
+                    </span>
+                  ) : null}
                 </span>
                 <button
                   type="button"
@@ -217,16 +228,21 @@ export function FriendsTab() {
                 >
                   🌾
                 </button>
-                {sameZone ? (
-                  <button
-                    type="button"
-                    onClick={() => useDm.getState().open(p!.id)}
-                    className="min-h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white"
-                    title={t('Message')}
-                  >
-                    💬
-                  </button>
-                ) : on && !on.locked && on.zoneId !== zone?.id ? (
+                <button
+                  type="button"
+                  onClick={() => useFriends.getState().openChat(f.pid)}
+                  className="relative min-h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white"
+                  title={t('Message')}
+                  aria-label={t('Message')}
+                >
+                  💬
+                  {unread[f.pid] ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
+                      {unread[f.pid]}
+                    </span>
+                  ) : null}
+                </button>
+                {!sameZone && on && !on.locked && on.zoneId !== zone?.id ? (
                   <button
                     type="button"
                     onClick={() => jumpToZone(on.zoneId)}
@@ -638,6 +654,157 @@ function GroupView() {
   );
 }
 
+/* ------------------------------------------------------------------------------------------- friend chat */
+
+/** Messages with one friend, kept in the API: they arrive even when the friend is offline. */
+export function FriendChat({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const pid = useFriends((s) => s.chat)!;
+  const friend = useFriends((s) => s.list.friends.find((f) => f.pid === pid));
+  const on = useFriends((s) => s.online[pid]);
+  const messages = useFriends((s) => s.messages);
+  const err = useFriends((s) => s.chatError);
+  const sending = useFriends((s) => s.sending);
+  const zone = useGame((s) => s.zone);
+  const p = useGame((s) => Object.values(s.players).find((x) => x.pid === pid));
+  const [text, setText] = useState('');
+  const box = useRef<HTMLDivElement>(null);
+  const name = friend?.name ?? p?.name ?? '';
+  useEffect(() => {
+    box.current?.scrollTo({ top: box.current.scrollHeight });
+  }, [messages.length]);
+  // still friends? (removed meanwhile: back to the list)
+  useEffect(() => {
+    if (!friend && useFriends.getState().loaded) useFriends.getState().openChat(null);
+  }, [friend]);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (await useFriends.getState().sendMessage(text)) setText('');
+  };
+  const where = p ? placeOf(p.x, p.z, p.bus) : null;
+  const time = (iso: string) => {
+    const d = new Date(iso);
+    const today = d.toDateString() === new Date().toDateString();
+    return today
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString([], { day: 'numeric', month: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  return (
+    <>
+      <SheetHeader>
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => useFriends.getState().openChat(null)}
+            className="min-h-9 min-w-9 rounded-lg text-lg text-gray-600 hover:bg-gray-100"
+            aria-label={t('Back to friends')}
+          >
+            ←
+          </button>
+          <span className="relative">
+            <Avatar name={name} tone={on ? 'green' : 'gray'} />
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${on ? 'bg-green-500' : 'bg-gray-300'}`}
+            />
+          </span>
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold">⭐ {name}</h2>
+            <p className="truncate text-xs text-gray-500">
+              {p && where ? (
+                <>
+                  {where.icon} <span dir="ltr">{where.name}</span> · {t('{distance} m', { distance: Math.round(dist(p)) })}
+                </>
+              ) : on ? (
+                <>
+                  {t('Online in')} <span dir="ltr">{on.zone}</span>
+                </>
+              ) : (
+                t('Offline — they will read it next time they play.')
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="min-h-9 min-w-9 rounded-lg px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+          aria-label={t('Close')}
+        >
+          ✕
+        </button>
+      </SheetHeader>
+      {p || (on && !on.locked && on.zoneId !== zone?.id) ? (
+        <div className="flex shrink-0 gap-2 border-b px-4 py-2 sm:px-5">
+          {p ? (
+            <button
+              type="button"
+              onClick={() => {
+                useFollow.getState().start(p.id, p.name);
+                onClose();
+              }}
+              className="min-h-10 flex-1 rounded-lg bg-emerald-600 px-2 text-sm font-medium text-white"
+            >
+              🚶 {t('Go to them')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => jumpToZone(on!.zoneId)}
+              className="min-h-10 flex-1 rounded-lg bg-emerald-600 px-2 text-sm font-medium text-white"
+            >
+              {t('Go to their zone')}
+            </button>
+          )}
+        </div>
+      ) : null}
+      <div ref={box} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 py-3 sm:px-5">
+        {messages.length === 0 ? (
+          <p className="py-4 text-center text-xs text-gray-500">
+            {t('Write to {name} in English. They get it even when they are offline.', { name })}
+          </p>
+        ) : null}
+        {messages.map((m) => {
+          const mine = m.from !== pid;
+          return (
+            <div key={m.id} className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
+              <span
+                className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-1.5 text-sm ${mine ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}
+                dir="auto"
+              >
+                {m.text}
+              </span>
+              <span className="px-1 text-[10px] text-gray-400">
+                {time(m.at)}
+                {mine ? ` · ${m.read ? t('Seen') : t('Sent')}` : ''}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="shrink-0 border-t px-4 pb-3 pt-2 sm:px-5">
+        {err ? <p className="mb-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">{err}</p> : null}
+        <form onSubmit={(e) => void submit(e)} className="flex gap-2">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={FRIEND_MSG_MAX}
+            placeholder={t('Write in English…')}
+            className="min-h-11 min-w-0 flex-1 rounded-lg border px-3 text-sm"
+            dir="auto"
+          />
+          <button
+            type="submit"
+            disabled={!text.trim() || sending}
+            className="min-h-11 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {t('Send')}
+          </button>
+        </form>
+      </div>
+    </>
+  );
+}
+
 /* ------------------------------------------------------------------------------------------- notices */
 
 const openPanel = (tab: 'friends' | 'group') => {
@@ -668,13 +835,26 @@ export function SocialToasts() {
     >
       {ftoast ? (
         <div className="pointer-events-auto flex items-center gap-2 rounded-xl bg-white p-2.5 shadow-2xl">
-          <span className="text-xl">{ftoast.kind === 'request' ? '⭐' : '🎉'}</span>
+          <span className="text-xl">{ftoast.kind === 'request' ? '⭐' : ftoast.kind === 'message' ? '💬' : '🎉'}</span>
           <span className="min-w-0 flex-1 text-sm">
             {ftoast.kind === 'request'
               ? t('{name} wants to be your friend.', { name: ftoast.name })
-              : t('You and {name} are now friends!', { name: ftoast.name })}
+              : ftoast.kind === 'message'
+                ? t('{name} sent you a message.', { name: ftoast.name })
+                : t('You and {name} are now friends!', { name: ftoast.name })}
           </span>
-          {ftoast.kind === 'request' ? (
+          {ftoast.kind === 'message' ? (
+            <button
+              type="button"
+              onClick={() => {
+                openPanel('friends');
+                useFriends.getState().openChat(ftoast.pid);
+              }}
+              className="min-h-9 rounded-lg bg-blue-600 px-3 text-sm font-medium text-white"
+            >
+              {t('Reply')}
+            </button>
+          ) : ftoast.kind === 'request' ? (
             <button
               type="button"
               onClick={() => void useFriends.getState().respond(ftoast.pid, true)}

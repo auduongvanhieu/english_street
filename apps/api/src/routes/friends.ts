@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { FRIENDS_MAX, type FriendList } from '@es/shared';
+import { FRIEND_MSG_MAX, FRIENDS_MAX, maskProfanity, type FriendList, type FriendMessage } from '@es/shared';
 import { playerIdFrom } from '../auth';
 import { limiter } from '../npc/ratelimit';
 import { friendListFor, friendRepo, pair } from '../friends';
@@ -13,6 +13,8 @@ import { friendListFor, friendRepo, pair } from '../friends';
  *   POST /friends/request  { to, toName, myName }      -> { status: 'pending' | 'friends' }
  *   POST /friends/respond  { from, accept, myName }    -> { status: 'friends' | 'declined' }
  *   POST /friends/remove   { pid }                     -> { ok }
+ *   GET  /friends/messages?with=<pid>                  -> { messages: FriendMessage[] } (marks them read)
+ *   POST /friends/messages { to, text }                -> { message: FriendMessage }   (friends only, online or not)
  */
 const Id = z.string().min(8).max(64);
 const Name = z
@@ -27,7 +29,38 @@ export async function friendRoutes(app: FastifyInstance) {
   app.get('/friends', async (req, reply) => {
     const pid = playerIdFrom(req, (req.query as { playerId?: unknown }).playerId);
     if (!pid) return reply.code(401).send({ error: 'unauthorized' });
-    return friendListFor(pid, await friendRepo().listFor(pid)) satisfies FriendList;
+    const repo = friendRepo();
+    const [rows, unread] = await Promise.all([repo.listFor(pid), repo.unread(pid)]);
+    const list: FriendList = friendListFor(pid, rows);
+    // only messages from current friends count (a removed friend's old messages stay unread, unseen)
+    const friends = new Set(list.friends.map((f) => f.pid));
+    list.unread = Object.fromEntries(Object.entries(unread).filter(([k]) => friends.has(k)));
+    return list;
+  });
+
+  app.get('/friends/messages', async (req, reply) => {
+    const q = req.query as { playerId?: unknown; with?: unknown };
+    const pid = playerIdFrom(req, q.playerId);
+    if (!pid) return reply.code(401).send({ error: 'unauthorized' });
+    const other = Id.safeParse(q.with);
+    if (!other.success) return reply.code(400).send({ error: 'bad_request' });
+    const row = await friendRepo().get(pid, other.data);
+    if (row?.status !== 'accepted') return reply.code(403).send({ error: 'not_friends' });
+    return { messages: await friendRepo().thread(pid, other.data, 100) } satisfies { messages: FriendMessage[] };
+  });
+
+  app.post('/friends/messages', async (req, reply) => {
+    const pid = me(req, req.body);
+    const body = z.object({ to: Id, text: z.string().max(FRIEND_MSG_MAX * 2) }).safeParse(req.body);
+    if (!pid) return reply.code(401).send({ error: 'unauthorized' });
+    if (!body.success) return reply.code(400).send({ error: 'bad_request' });
+    const text = maskProfanity(body.data.text.trim().slice(0, FRIEND_MSG_MAX));
+    if (!text) return reply.code(400).send({ error: 'bad_request' });
+    const row = await friendRepo().get(pid, body.data.to);
+    if (row?.status !== 'accepted') return reply.code(403).send({ error: 'not_friends' });
+    if (!(await limiter.allow(`friendmsg:${pid}`, 20, 60)) || !(await limiter.allow(`friendmsgday:${pid}`, 500, 86400)))
+      return reply.code(429).send({ error: 'rate_limited' });
+    return { message: await friendRepo().addMessage(pid, body.data.to, text) } satisfies { message: FriendMessage };
   });
 
   app.post('/friends/request', async (req, reply) => {

@@ -418,8 +418,9 @@ export class StreetRoom extends Room<{ state: StreetState }> {
         }
         client.send(MSG.FRIEND, { op: 'presence', online } satisfies FriendEvent);
       } else if (msg.op === 'ping') {
-        if (typeof msg.pid !== 'string' || (msg.kind !== 'request' && msg.kind !== 'accepted') || !p.pid) return;
-        if (now - (this.lastPingAt.get(client.sessionId) ?? 0) < 1000) return;
+        if (typeof msg.pid !== 'string' || (msg.kind !== 'request' && msg.kind !== 'accepted' && msg.kind !== 'message') || !p.pid) return;
+        // message pings come one per message sent; request pings are rarer
+        if (now - (this.lastPingAt.get(client.sessionId) ?? 0) < (msg.kind === 'message' ? 250 : 1000)) return;
         this.lastPingAt.set(client.sessionId, now);
         for (const r of ROOMS)
           r.state.players.forEach((q: Player, sid: string) => {

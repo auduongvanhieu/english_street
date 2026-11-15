@@ -32,7 +32,7 @@ import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
 import { initTalkMessaging, useTalk } from './store/talk';
 import { initDm, useDm } from './store/dm';
-import { initFriends, setZoneJumper } from './store/friends';
+import { initFriends, setZoneJumper, useFriends } from './store/friends';
 import { initGroup } from './store/group';
 import { SocialToasts } from './ui/Social';
 import { initHotel, useHotel } from './store/hotel';
@@ -262,7 +262,10 @@ export default function App() {
       } else if (!typing && (e.key === 'm' || e.key === 'M') && !s.panelNpc) {
         s.setUiPanel(s.uiPanel === 'map' ? null : 'map');
       } else if (!typing && (e.key === 'p' || e.key === 'P') && !s.panelNpc) {
-        if (s.uiPanel !== 'players') useDm.getState().open(null);
+        if (s.uiPanel !== 'players') {
+          useDm.getState().open(null);
+          useFriends.getState().openChat(null);
+        }
         s.setUiPanel(s.uiPanel === 'players' ? null : 'players');
       } else if (!typing && (e.key === 'g' || e.key === 'G') && !s.panelNpc && area.current) {
         area.setPanel(!area.panel);

@@ -13,7 +13,7 @@ import { CORRIDOR_MAX_Z, SOUTH_MIN_Z, areaAt } from '../world/areas';
 import { t as tr, useT } from '../i18n';
 import { useFriendRequests, useFriends } from '../store/friends';
 import { useGroup } from '../store/group';
-import { FriendsTab, GroupTab, PanelTabs, SocialActions } from './Social';
+import { FriendChat, FriendsTab, GroupTab, PanelTabs, SocialActions } from './Social';
 
 /** Where a player is, in words: the area, the bus, the river, the south bank or the main street. */
 export function placeOf(x: number, z: number, bus = ''): { icon: string; name: string } {
@@ -63,6 +63,7 @@ export function PlayersButton({ compact }: { compact: boolean }) {
   const unread = useDmUnread() + useFriendRequests() + useGroup((s) => s.unread + (s.invite ? 1 : 0));
   const open = () => {
     useDm.getState().open(null);
+    useFriends.getState().openChat(null);
     useGame.getState().setUiPanel('players');
   };
   const badge = unread ? <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">{unread}</span> : null;
@@ -89,11 +90,18 @@ export function PlayersPanel() {
   const openId = useDm((s) => s.openId);
   const tab = useDm((s) => s.tab);
   const groupTyping = useGroup((s) => s.typing);
-  const close = () => useGame.getState().setUiPanel(null);
+  const friendChat = useFriends((s) => s.chat);
+  // closing the panel closes the friend chat (it reopens on the friends list)
+  const close = () => {
+    useFriends.getState().openChat(null);
+    useGame.getState().setUiPanel(null);
+  };
   return (
     <Sheet onClose={close} label={t('Players')}>
       {openId ? (
         <Thread id={openId} onClose={close} />
+      ) : tab === 'friends' && friendChat ? (
+        <FriendChat onClose={close} />
       ) : (
         <>
           {/* typing in the group chat on a phone: the list header and tabs make room for the keyboard */}

@@ -209,8 +209,10 @@ export const FRIENDS_MAX = 100;
 export type FriendSend =
   /** which of these player ids are online, and where (any zone) */
   | { op: 'presence'; pids: string[] }
-  /** tell this player (by player id, any zone) that their friend list changed (request sent / accepted) */
-  | { op: 'ping'; pid: string; kind: 'request' | 'accepted' };
+  /** tell this player (by player id, any zone) that their friend list changed (request sent / accepted) or that
+   *  a friend message is waiting (the text itself is read from the API) */
+  | { op: 'ping'; pid: string; kind: FriendPingKind };
+export type FriendPingKind = 'request' | 'accepted' | 'message';
 
 export interface FriendOnline {
   pid: string;
@@ -223,7 +225,7 @@ export interface FriendOnline {
   sessionId: string;
 }
 
-export type FriendEvent = { op: 'presence'; online: FriendOnline[] } | { op: 'ping'; kind: 'request' | 'accepted'; fromPid: string; name: string };
+export type FriendEvent = { op: 'presence'; online: FriendOnline[] } | { op: 'ping'; kind: FriendPingKind; fromPid: string; name: string };
 
 /** REST: GET /friends */
 export interface FriendEntry {
@@ -237,6 +239,22 @@ export interface FriendList {
   incoming: FriendEntry[];
   /** my requests they have not answered yet */
   outgoing: FriendEntry[];
+  /** unread friend messages per friend player id (only friends with unread messages) */
+  unread?: Record<string, number>;
+}
+
+/** Friend messages: kept in the API, so a friend who is offline reads them later. */
+export const FRIEND_MSG_MAX = 300;
+/** Messages kept per pair of friends (older ones are deleted). */
+export const FRIEND_MSG_KEEP = 200;
+export interface FriendMessage {
+  id: string;
+  /** player id of the sender */
+  from: string;
+  text: string;
+  at: string;
+  /** the receiver has read it */
+  read: boolean;
 }
 
 /* ------------------------------------------------------------------------------------------- hotel doors */

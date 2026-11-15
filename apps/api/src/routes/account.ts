@@ -121,6 +121,7 @@ export function accountRoutes(repo: AttemptRepo) {
     await prisma.$transaction([
       prisma.event.deleteMany({ where: { playerId: gid } }),
       prisma.friendship.deleteMany({ where: { OR: [{ aId: gid }, { bId: gid }] } }),
+      prisma.friendMessage.deleteMany({ where: { OR: [{ fromId: gid }, { toId: gid }] } }),
       prisma.user.delete({ where: { id: gid } }),
     ]);
   };

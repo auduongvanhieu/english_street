@@ -284,6 +284,20 @@ model Friendship {
   @@index([bId])
 }
 
+/// Messages between friends, kept so they reach a friend who is offline (read when they come back).
+/// Ids are account or guest player ids, like Friendship. Old messages are pruned per pair.
+model FriendMessage {
+  id        String    @id @default(cuid())
+  fromId    String
+  toId      String
+  text      String
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([fromId, toId, createdAt])
+  @@index([toId, readAt])
+}
+
 enum FriendStatus {
   pending
   accepted

@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import type { FriendEvent, FriendList, FriendOnline } from '@es/shared';
-import { fetchFriends, friendRemove, friendRequest, friendRespond } from '../net/api';
+import { FRIEND_MSG_MAX, type FriendEvent, type FriendList, type FriendMessage, type FriendOnline } from '@es/shared';
+import { fetchFriendMessages, fetchFriends, friendRemove, friendRequest, friendRespond, sendFriendMessage } from '../net/api';
 import { onFriend, sendFriend } from '../net/client';
 import { getPlayerId } from '../net/player';
 import { track } from '../net/analytics';
 import { haptic } from '../native/bridge';
 import { useGame } from './game';
+import { useDm } from './dm';
 
 /**
  * Friends: the list lives in the API (accounts and guests, by player id); the game server tells us who is online
@@ -16,8 +17,16 @@ interface FriendsStore {
   loaded: boolean;
   /** Friends online right now, by player id (any zone). */
   online: Record<string, FriendOnline>;
-  /** Small toast: a request arrived / was accepted. */
-  toast: { kind: 'request' | 'accepted'; pid: string; name: string } | null;
+  /** Small toast: a request arrived / was accepted / a friend sent a message. */
+  toast: { kind: 'request' | 'accepted' | 'message'; pid: string; name: string } | null;
+  /** Friend chat open in the Friends tab (player id), its messages, sending state. Works when they are offline. */
+  chat: string | null;
+  messages: FriendMessage[];
+  chatError: string | null;
+  sending: boolean;
+  openChat: (pid: string | null) => void;
+  loadChat: () => Promise<void>;
+  sendMessage: (text: string) => Promise<boolean>;
   error: string | null;
   load: () => Promise<void>;
   request: (pid: string, name: string) => Promise<void>;
@@ -40,6 +49,53 @@ export const useFriends = create<FriendsStore>((set, get) => ({
   online: {},
   toast: null,
   error: null,
+  chat: null,
+  messages: [],
+  chatError: null,
+  sending: false,
+  openChat(pid) {
+    set((s) => ({
+      chat: pid,
+      messages: pid === s.chat ? s.messages : [],
+      chatError: null,
+      toast: s.toast?.kind === 'message' && s.toast.pid === pid ? null : s.toast,
+    }));
+    if (pid) void get().loadChat();
+  },
+  async loadChat() {
+    const pid = get().chat;
+    if (!pid) return;
+    try {
+      const { messages } = await fetchFriendMessages(pid);
+      if (get().chat !== pid) return;
+      // opening the chat marked them read: clear this friend's unread count
+      set((s) => {
+        const unread = { ...(s.list.unread ?? {}) };
+        delete unread[pid];
+        return { messages, chatError: null, list: { ...s.list, unread } };
+      });
+    } catch (e) {
+      set({ chatError: (e as Error).message });
+    }
+  },
+  async sendMessage(text) {
+    const pid = get().chat;
+    const msg = text.trim().slice(0, FRIEND_MSG_MAX);
+    if (!pid || !msg || get().sending) return false;
+    set({ sending: true, chatError: null });
+    try {
+      const { message } = await sendFriendMessage(pid, msg);
+      if (get().chat === pid) set((s) => ({ messages: [...s.messages, message].slice(-100) }));
+      sendFriend({ op: 'ping', pid, kind: 'message' });
+      track('friend_message', { len: msg.length, online: !!get().online[pid] });
+      return true;
+    } catch (e) {
+      set({ chatError: (e as Error).message });
+      return false;
+    } finally {
+      set({ sending: false });
+    }
+  },
   async load() {
     try {
       set({ list: await fetchFriends(), loaded: true, error: null });
@@ -108,6 +164,14 @@ export function initFriends() {
         ),
       });
     } else if (m.op === 'ping') {
+      if (m.kind === 'message') {
+        const s = useFriends.getState();
+        // reading this chat right now: just fetch the new message, no toast
+        if (s.chat === m.fromPid && useGame.getState().uiPanel === 'players' && useDm.getState().tab === 'friends') {
+          void s.loadChat();
+          return;
+        }
+      }
       void useFriends.getState().load();
       useFriends.setState({ toast: { kind: m.kind, pid: m.fromPid, name: m.name } });
       haptic('light');
@@ -126,5 +190,7 @@ export function initFriends() {
   };
 }
 
-/** Pending friend requests (badge on 👥). */
-export const useFriendRequests = () => useFriends((s) => s.list.incoming.length);
+/** Pending friend requests + unread friend messages (badge on 👥). */
+export const useFriendRequests = () => useFriends((s) => s.list.incoming.length + friendUnread(s.list));
+/** Unread friend messages, all friends. */
+export const friendUnread = (l: FriendList) => Object.values(l.unread ?? {}).reduce((n, x) => n + x, 0);

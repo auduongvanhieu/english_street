@@ -368,6 +368,7 @@ export function adminUserRoutes(app: FastifyInstance) {
       prisma.pushToken.deleteMany({ where: { playerId: u.id } }),
       prisma.feedback.updateMany({ where: { playerId: u.id }, data: { playerId: null } }),
       prisma.friendship.deleteMany({ where: { OR: [{ aId: u.id }, { bId: u.id }] } }),
+      prisma.friendMessage.deleteMany({ where: { OR: [{ fromId: u.id }, { toId: u.id }] } }),
       prisma.user.delete({ where: { id: u.id } }), // attempts + vocab cascade
     ]);
     forgetStatus(u.id);
