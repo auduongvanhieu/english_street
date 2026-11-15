@@ -171,6 +171,7 @@ function Packs() {
             onClick={() => setPack(p)}
             className={`flex flex-col items-center rounded-xl border-2 p-3 ${pack?.id === p.id ? 'border-sky-500 bg-sky-50' : 'border-gray-200 bg-white hover:border-sky-300'}`}
           >
+            {p.testOnly ? <span className="mb-1 rounded-full bg-amber-100 px-2 text-[10px] font-semibold uppercase text-amber-700">{t('Test pack')}</span> : null}
             <span className="flex items-center gap-1 text-xl font-bold text-sky-600">
               <Icon name="gem" size={20} /> {(p.gems * x).toLocaleString('vi-VN')}
             </span>

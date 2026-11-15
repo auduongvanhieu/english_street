@@ -64,7 +64,7 @@ Danh mục đồ 💎 nằm ở `packages/shared/src/avatar.ts` (`gems`) và `ho
 | `payMode` | `off` = ẩn; `test` = chỉ người trong `payTesters` (id hoặc email); `on` = mọi tài khoản đã đăng ký |
 | `payTesters` | Người thử nghiệm. Sửa ở thẻ "Người thử nghiệm nạp tiền" (tab Cài đặt). Đơn của họ có mã `ESTEST` + 6 ký tự, vẫn cộng 💎 nhưng **không tính vào doanh thu** (thẻ "Tiền về" và bảng theo ngày), kể cả khi `payMode = on`. Mã đơn thường không bao giờ bắt đầu bằng `TEST`. |
 | `payVnd`, `payUsdt` | Bật/tắt từng cách trả |
-| `payPacks` | Các gói: `id`, `gems`, `vnd`, `usdt` (mặc định 100 / 270 / 600 💎 = 20.000 / 50.000 / 100.000đ = 1 / 2 / 4 USDT) |
+| `payPacks` | Các gói: `id`, `gems`, `vnd`, `usdt`, `testOnly` (mặc định 100 / 270 / 600 💎 = 20.000 / 50.000 / 100.000đ = 1 / 2 / 4 USDT, cộng gói `test` 10 💎 = 2.000đ = 0,1 USDT với `testOnly: true`: chỉ người thử thấy và mua được) |
 | `payBank`, `payBankAccount`, `payBankName` | Mã ngân hàng VietQR (MB, VCB, 970422…), số tài khoản, tên chủ tài khoản (không dấu) |
 | `payTrc20Address`, `payBep20Address` | **Chỉ địa chỉ ví.** Không bao giờ đưa khoá riêng lên server. |
 | `payBep20Confirmations` | Số block chờ trên BNB Chain (mặc định 15). TRC20 dùng trạng thái "confirmed" của Tron. |

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { prisma } from '../plugins/prisma';
 import { setSettingForTest } from '../settings';
-import { createOrder, receive, PayError, orderView } from './core';
+import { createOrder, receive, PayError, orderView, packsFor } from './core';
 
 setSettingForTest('payMode', 'test');
 setSettingForTest('payTesters', ['pay-tester@example.com']);
@@ -57,6 +57,11 @@ assert.equal((await receive({ source: 'sepay', txRef: `d${t}`, amount: 20_000, c
 
 // a player not in the testers list (top-ups open to everyone) gets a normal code, never ESTEST…
 setSettingForTest('payMode', 'on');
+// the 2 000đ test pack: testers only
+assert.ok(packsFor({ id, email: 'pay-tester@example.com' }).some((p) => p.id === 'test' && p.vnd === 2000));
+assert.ok(!packsFor({ id: other, email: `other-${t}@example.com` }).some((p) => p.testOnly));
+assert.ok(!packsFor(null).some((p) => p.testOnly));
+assert.equal(await err(createOrder({ id: other, email: `other-${t}@example.com` }, 'test', 'vnd')), 'bad_pack');
 const n1 = await createOrder({ id: other, email: `other-${t}@example.com` }, 'small', 'vnd');
 assert.match(n1.code, /^ES[A-HJ-NP-Z2-9]{6}$/);
 assert.ok(!n1.code.startsWith('ESTEST'));

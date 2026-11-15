@@ -35,8 +35,10 @@ export const SETTING_DEFS = {
   payUsdt: { schema: z.boolean(), def: () => true },
   /** gem packs: id, gems, price in đồng and in USDT */
   payPacks: {
-    schema: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), gems: z.number().int().min(1).max(1_000_000), vnd: z.number().int().min(1000).max(50_000_000), usdt: z.number().min(0.5).max(2000) })).min(1).max(8),
+    schema: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), gems: z.number().int().min(1).max(1_000_000), vnd: z.number().int().min(1000).max(50_000_000), usdt: z.number().min(0.1).max(2000), testOnly: z.boolean().optional() })).min(1).max(8),
     def: () => [
+      // testers only: try a real transfer for 2 000đ
+      { id: 'test', gems: 10, vnd: 2_000, usdt: 0.1, testOnly: true },
       { id: 'small', gems: 100, vnd: 20_000, usdt: 1 },
       { id: 'medium', gems: 270, vnd: 50_000, usdt: 2 },
       { id: 'large', gems: 600, vnd: 100_000, usdt: 4 },

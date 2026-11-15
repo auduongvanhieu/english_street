@@ -15,6 +15,8 @@ export interface PayPack {
   gems: number;
   vnd: number;
   usdt: number;
+  /** shown only to testers (setting payTesters), e.g. a tiny pack to try a real transfer */
+  testOnly?: boolean;
 }
 
 export interface PayOrderView {

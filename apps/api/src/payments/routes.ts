@@ -9,7 +9,7 @@ import { audit, bad } from '../admin/core';
 import { changeBalanceTx } from '../npc/attempts';
 import { setting } from '../settings';
 import { chainStatus } from './chain';
-import { PayError, createOrder, expireOld, firstBonusFor, fulfil, methods, orderView, packs, payOpenFor, receive } from './core';
+import { PayError, createOrder, expireOld, firstBonusFor, fulfil, methods, orderView, packsFor, payOpenFor, receive } from './core';
 
 /** The player's side: what can be bought, start an order, watch it, cancel it. Needs Postgres. */
 export function payRoutes(dbOn: boolean) {
@@ -26,13 +26,13 @@ export function payRoutes(dbOn: boolean) {
       if (!ms.length) return off;
       const u = await me(req);
       // guests (no account): only once top-ups are open to everybody, with a "sign up first" note
-      if (!u) return setting('payMode') === 'on' ? { ...off, enabled: true, needAccount: true, methods: ms, packs: packs() } : off;
+      if (!u) return setting('payMode') === 'on' ? { ...off, enabled: true, needAccount: true, methods: ms, packs: packsFor(null) } : off;
       if (!payOpenFor(u)) return off;
-      if (!u.email) return { ...off, enabled: true, needAccount: true, methods: ms, packs: packs() };
+      if (!u.email) return { ...off, enabled: true, needAccount: true, methods: ms, packs: packsFor(u) };
       await expireOld();
       const bonus = await firstBonusFor(u.id);
       const rows = await prisma.paymentOrder.findMany({ where: { userId: u.id }, orderBy: { createdAt: 'desc' }, take: 10 });
-      return { enabled: true, needAccount: false, methods: ms, packs: packs(), firstBonus: bonus, orders: await Promise.all(rows.map((o) => orderView(o, bonus))) };
+      return { enabled: true, needAccount: false, methods: ms, packs: packsFor(u), firstBonus: bonus, orders: await Promise.all(rows.map((o) => orderView(o, bonus))) };
     });
 
     app.post('/me/pay/orders', async (req, reply) => {

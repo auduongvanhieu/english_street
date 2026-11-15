@@ -23,6 +23,8 @@ export const CODE_RE = /ES(?:TEST)?[A-HJ-NP-Z2-9]{6}/;
 export const TEST_PREFIX = 'ESTEST';
 
 export const packs = (): PayPack[] => setting('payPacks');
+/** The packs this player may buy (test-only packs: testers only). */
+export const packsFor = (u: { id: string; email: string | null } | null): PayPack[] => packs().filter((p) => !p.testOnly || (!!u && isPayTester(u)));
 
 /** Ways to pay that are switched on and set up. */
 export function methods(): PayMethod[] {
@@ -91,7 +93,7 @@ export class PayError extends Error {
 export async function createOrder(u: { id: string; email: string | null }, packId: string, method: PayMethod) {
   if (!payOpenFor(u)) throw new PayError('not_open');
   if (!u.email) throw new PayError('need_account');
-  const pack = packs().find((p) => p.id === packId);
+  const pack = packsFor(u).find((p) => p.id === packId);
   if (!pack) throw new PayError('bad_pack');
   if (!methods().includes(method)) throw new PayError('bad_method');
   await expireOld();

@@ -27,7 +27,7 @@ const DESC: Record<string, [string, string, 'number' | 'text' | 'list' | 'long' 
   payTesters: ['Người thử (id hoặc email)', 'Testers (id or e-mail)', 'list'],
   payVnd: ['Cho nạp bằng chuyển khoản VNĐ', 'Allow bank transfer (VND)', 'bool'],
   payUsdt: ['Cho nạp bằng USDT', 'Allow USDT', 'bool'],
-  payPacks: ['Các gói kim cương (id, gems, vnd, usdt)', 'Gem packs (id, gems, vnd, usdt)', 'json'],
+  payPacks: ['Các gói kim cương (id, gems, vnd, usdt; testOnly: true = chỉ người thử thấy)', 'Gem packs (id, gems, vnd, usdt; testOnly: true = testers only)', 'json'],
   payFirstBonus: ['Lần nạp đầu được gấp đôi kim cương', 'First top-up gives double gems', 'bool'],
   gemRate: ['1 💎 đổi được bao nhiêu xu', 'Coins for 1 gem', 'number'],
   gemTurnPack: ['Gói lượt NPC (turns = số lượt, gems = giá)', 'NPC turn pack (turns, gems = price)', 'json'],
