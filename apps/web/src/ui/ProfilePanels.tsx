@@ -49,6 +49,21 @@ export function GemChip({ dark, size = 14 }: { dark?: boolean; size?: number }) 
   );
 }
 
+/** Phones: 💎 balance + "+" next to the level pill, so top-ups are easy to find (same rule as GemChip). */
+function GemPill() {
+  const t = useT();
+  const p = useProfile((s) => s.profile);
+  const payOn = usePay((s) => !!s.info?.enabled);
+  if (!p || !(payOn || p.gems > 0 || (p.quota?.bonusTurns ?? 0) > 0)) return null;
+  return (
+    <button type="button" onClick={() => useGame.getState().setUiPanel('topup')} aria-label={t('Gems')} className="flex min-h-9 items-center gap-1 rounded-full bg-black/45 pl-2.5 pr-1 text-xs font-semibold text-white backdrop-blur-sm">
+      <Icon name="gem" size={14} className="text-sky-300" />
+      {p.gems}
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-400 text-sm font-bold leading-none text-slate-900">+</span>
+    </button>
+  );
+}
+
 export function ProfileHud({ compact }: { compact?: boolean }) {
   const t = useT();
   const p = useProfile((s) => s.profile);
@@ -61,11 +76,11 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
   const pct = Math.min(100, Math.round(((p.xp - prevLevelXp) / Math.max(1, p.nextLevelXp - prevLevelXp)) * 100));
   if (compact) {
     return (
+      <div data-ui className="hud-top absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex items-center gap-1.5">
       <button
         type="button"
-        data-ui
         onClick={() => open('profile')}
-        className="hud-top absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex min-h-9 items-center gap-1.5 rounded-full bg-black/45 px-2.5 text-[11px] text-white backdrop-blur-sm"
+        className="flex min-h-9 items-center gap-1.5 rounded-full bg-black/45 px-2.5 text-[11px] text-white backdrop-blur-sm"
         aria-label={`${t('Profile')}: ${p.name}`}
       >
         {/* the name is over the character's head already: level only */}
@@ -82,6 +97,8 @@ export function ProfileHud({ compact }: { compact?: boolean }) {
           </span>
         )}
       </button>
+      <GemPill />
+      </div>
     );
   }
   return (
