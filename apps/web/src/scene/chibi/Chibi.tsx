@@ -190,6 +190,16 @@ function target(anim: string, st: { t: number; phase: number; animT: number }, d
       p.headY = Math.sin(t * 0.4) * 0.25 * Math.max(0, Math.sin(t * 0.17));
       break;
     }
+    case 'fish': {
+      // on the pier edge: legs dangling over the water (a slow kick), both hands forward on the rod
+      p.legLX = -0.55 + Math.sin(t * 1.6) * 0.18;
+      p.legRX = -0.55 - Math.sin(t * 1.6) * 0.18;
+      p.armLX = p.armRX = -1.15;
+      p.armLZ = -0.3;
+      p.armRZ = 0.3;
+      p.headX = 0.12 + Math.sin(t * 0.9) * 0.03;
+      break;
+    }
     case 'eat': {
       // seated at the table: fork from the plate to the mouth, head dipping to meet it, a happy wiggle
       const k = (Math.sin(t * 4) + 1) / 2;

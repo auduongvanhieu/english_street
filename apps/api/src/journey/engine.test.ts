@@ -71,3 +71,13 @@ test('a day in English Street: steps in order, bonus once, new every day', () =>
   assert.ok(last.storyBonus && st.story === 8);
   assert.ok(!applyEvent(st, 'home_room_enter', {}).storyBonus);
 });
+
+test('a counter that moves without finishing a step is reported (so the state is saved)', () => {
+  const st = fresh(['d-fish']);
+  const one = applyEvent(st, 'fishing_catch', { fish: 'carp' });
+  assert.equal(one.done.length, 0);
+  assert.equal(one.counted, true);
+  assert.equal(st.dailyProg['d-fish'], 1);
+  assert.deepEqual(applyEvent(st, 'fishing_catch', { fish: 'perch' }).done.map((s) => s.id).includes('d-fish'), true);
+  assert.equal(applyEvent(st, 'page_load', {}).counted, false);
+});

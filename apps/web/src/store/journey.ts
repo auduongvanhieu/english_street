@@ -143,17 +143,33 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
   },
 }));
 
-/** The step to show on the HUD: the current main chapter, else a tracked / today's task. */
+/** The step to show on the HUD: a task the player pinned ("Show on my screen") and has not finished, else the
+ *  current main chapter, else today's next task. */
 export function currentStep(v: JourneyView | null): JourneyStep | null {
   if (!v) return null;
+  const st = v.state;
+  const open = (id: string) => {
+    const s = stepById(id);
+    if (!s) return false;
+    // a daily task counts only on its day
+    if (s.kind === 'daily') return st.daily.includes(id) && !st.dailyDone.includes(id);
+    return !st.done.includes(id);
+  };
+  const pinned = [...st.tracked].reverse().find(open);
+  if (pinned) return stepById(pinned) ?? null;
   const main = MAIN_STEPS[v.chapter];
   if (main) return main;
-  const id = v.state.tracked[0] ?? v.state.daily.find((d) => !v.state.dailyDone.includes(d));
+  const id = st.daily.find((d) => !st.dailyDone.includes(d));
   return id ? (stepById(id) ?? null) : null;
 }
 
 export function initJourney() {
   const off = onJourney((ev: JourneyEvent) => {
+    // progress only (a counter moved): refresh quietly
+    if (!ev.done.length && !ev.stamp) {
+      void useJourney.getState().load();
+      return;
+    }
     haptic('medium');
     const toasts = ev.done.map((d) => ({ key: ++toastKey, id: d.id, xp: d.xp, coins: d.coins, gems: d.gems ?? 0, stamp: undefined as string | undefined }));
     if (ev.stamp && toasts[0]) toasts[toasts.length - 1]!.stamp = ev.stamp;

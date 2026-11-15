@@ -255,7 +255,6 @@ function FishingSpot({ spot }: { spot: (typeof FISH_SPOTS)[number] }) {
   const mineHere = useFishing((s) => s.spot === spot.id);
   const phase = useFishing((s) => (s.spot === spot.id ? s.phase : 'idle'));
   const boat = useBoats((s) => !!s.mine || !!s.ferry);
-  const float = useRef<THREE.Mesh>(null);
   const fishing = mineHere && (phase === 'waiting' || phase === 'bite');
   useUsable(
     boat
@@ -270,22 +269,12 @@ function FishingSpot({ spot }: { spot: (typeof FISH_SPOTS)[number] }) {
           use: () => (fishing ? useFishing.getState().reel() : useFishing.getState().cast(spot.id)),
         },
   );
+  // the rod, line and float are drawn on the player (PlayerAvatar Rod), so everybody sees them
   useFrame(() => {
-    const m = float.current;
-    if (!m) return;
-    m.visible = fishing;
-    if (!fishing) return;
-    const time = performance.now() / 1000;
-    m.position.set(spot.x + Math.sin(time * 0.7) * 0.1, WATER_Y + 0.04 + (phase === 'bite' ? -0.09 + Math.sin(time * 18) * 0.05 : Math.sin(time * 2.2) * 0.02), spot.bobZ);
-    // walked away from the spot: stop fishing
-    if (Math.hypot(localPos.x - spot.x, localPos.z - spot.z) > 3) useFishing.getState().stop();
+    // taken away from the spot (a teleport, the bus…): stop fishing
+    if (mineHere && Math.hypot(localPos.x - spot.x, localPos.z - spot.z) > 3) useFishing.getState().stop();
   });
-  return (
-    <mesh ref={float} visible={false}>
-      <sphereGeometry args={[0.07, 8, 6]} />
-      <meshStandardMaterial color="#e05a47" />
-    </mesh>
-  );
+  return null;
 }
 
 export default function River() {

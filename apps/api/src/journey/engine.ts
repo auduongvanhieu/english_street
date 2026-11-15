@@ -70,12 +70,15 @@ export function catchUpMain(st: JourneyState, name: string, props: Record<string
 }
 
 /** Apply one event to a state (no saving). Returns the steps it finished and a new stamp, if any. */
-export function applyEvent(st: JourneyState, name: string, props: Record<string, unknown>): { done: JourneyStep[]; stamp?: string; dailyBonus: boolean; storyBonus: boolean } {
+export function applyEvent(st: JourneyState, name: string, props: Record<string, unknown>): { done: JourneyStep[]; stamp?: string; dailyBonus: boolean; storyBonus: boolean; counted: boolean } {
   const done: JourneyStep[] = [];
+  /** some counter moved (e.g. 1 of 2 fish): the state must be saved even when no step is finished yet */
+  let counted = false;
   const bump = (s: JourneyStep, prog: Record<string, number>) => {
     if (!goalMatches(s.goal, name, props)) return false;
     const n = (prog[s.id] ?? 0) + 1;
     prog[s.id] = n;
+    counted = true;
     return n >= (s.goal.count ?? 1);
   };
   // area tasks (all open at once)
@@ -111,7 +114,7 @@ export function applyEvent(st: JourneyState, name: string, props: Record<string,
     st.storyBonus = true;
     storyBonus = true;
   }
-  return { done, stamp, dailyBonus, storyBonus };
+  return { done, stamp, dailyBonus, storyBonus, counted };
 }
 
 type Push = (uid: string, ev: JourneyEvent) => Promise<unknown>;
@@ -262,7 +265,7 @@ export class Journey {
     const caught = !isNew && !st.mainAny;
     if (caught) await this.catchUp(pid, st);
     const r = applyEvent(st, name, props);
-    if (!r.done.length && !r.dailyBonus && !r.storyBonus && !isNew && !caught) return;
+    if (!r.counted && !r.done.length && !r.dailyBonus && !r.storyBonus && !isNew && !caught) return;
     await this.save(pid, gs, st);
     const paid: JourneyEvent['done'] = [];
     for (const s of r.done) {
@@ -291,6 +294,8 @@ export class Journey {
     }
     if (r.stamp) await this.repo.logEvent({ name: 'journey_stamp', playerId: pid, props: { area: r.stamp } });
     if (paid.length) await this.push(pid, { done: paid, stamp: r.stamp });
+    // only a counter moved (1 of 2 fish): an empty push makes the client reload its progress
+    else if (r.counted) await this.push(pid, { done: [] });
   }
 }
 

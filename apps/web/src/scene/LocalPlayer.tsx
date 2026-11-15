@@ -13,6 +13,7 @@ import { useVoiceChat } from '../net/voicechat';
 import { useProfile } from '../store/profile';
 import { useGame } from '../store/game';
 import { useSettings } from '../store/settings';
+import { FISH_SPOTS, useFishing } from '../store/fishing';
 import { joystick, jumpInput } from '../input/joystick';
 import { hopSound } from '../audio/ambient';
 import { cameraOrbit } from '../input/camera';
@@ -310,7 +311,15 @@ export function LocalPlayer({ name }: { name: string }) {
       g.position.set(gseat.x, gseat.y ?? 0, gseat.z);
       g.rotation.y = gseat.rot;
     }
-    const seated = !!useRestaurant.getState().seat || !!useSeat.getState().seat;
+    // --- fishing: sitting on the pier edge with the rod; moving gets up and stops ---
+    const fishSpot = FISH_SPOTS.find((f) => f.id === useFishing.getState().spot);
+    if (fishSpot && (mag > 0.05 || jump)) useFishing.getState().stop();
+    else if (fishSpot) {
+      g.position.set(fishSpot.x, 0, fishSpot.seatZ);
+      g.rotation.y = fishSpot.rot;
+    }
+    const fishing = !!fishSpot && !(mag > 0.05 || jump);
+    const seated = !!useRestaurant.getState().seat || !!useSeat.getState().seat || fishing;
     // --- in the hotel pool: swim (slower, body in the water) ---
     const P = POOL_WORLD;
     const S = SEA_SWIM;
@@ -322,7 +331,7 @@ export function LocalPlayer({ name }: { name: string }) {
 
     // --- movement with collision ---
     if (seated) {
-      anim.current = useRestaurant.getState().seat && useRestaurant.getState().step === 'eating' ? 'eat' : 'sit';
+      anim.current = fishing ? 'fish' : useRestaurant.getState().seat && useRestaurant.getState().step === 'eating' ? 'eat' : 'sit';
     } else if (mag > 0.05) {
       dir.normalize();
       // running away from a farm dog: only while you have breath (store/myFarm.ts)

@@ -6,6 +6,8 @@ import { haptic } from '../native/bridge';
 import { useGame } from './game';
 import { useProfile } from './profile';
 import { boatSay } from './boats';
+import { sendProp } from '../net/client';
+import { localPos, teleportTo } from '../scene/LocalPlayer';
 
 /**
  * Fishing at the end of the boat-hire piers: cast, wait for a bite, press E / the button in time, and the fish goes
@@ -41,7 +43,19 @@ const loadBook = (): string[] => {
 };
 
 /** Fishing spots: the water end of each boat-hire pier. */
-export const FISH_SPOTS = [PIERS.boatN, PIERS.boatS].map((p) => ({ id: p.id, x: p.x, z: p.tipZ - p.out * 0.35, bobZ: p.tipZ + p.out * 2.2, out: p.out }));
+export const FISH_SPOTS = [PIERS.boatN, PIERS.boatS].map((p) => ({
+  id: p.id,
+  x: p.x,
+  z: p.tipZ - p.out * 0.35,
+  bobZ: p.tipZ + p.out * 2.2,
+  out: p.out,
+  /** where the angler sits: on the very edge of the pier, legs over the water, facing out */
+  seatZ: p.tipZ - p.out * 0.05,
+  rot: p.out > 0 ? 0 : Math.PI,
+}));
+const spotOf = (id: string | null) => FISH_SPOTS.find((f) => f.id === id);
+/** Line length from the angler to the float (Rod in PlayerAvatar draws it for everybody). */
+export const FISH_LINE = 2.25;
 
 interface FishingStore {
   spot: string | null;
@@ -78,18 +92,23 @@ export const useFishing = create<FishingStore>((set, get) => ({
   xp: 0,
   cast(spot) {
     clear();
+    const sp = spotOf(spot);
+    // sit down on the pier edge (LocalPlayer keeps us there while fishing)
+    if (sp && get().spot !== spot) teleportTo(sp.x, sp.seatZ, sp.rot);
     set({ spot, phase: 'waiting', catch: null, xp: 0 });
-    useGame.getState().playEmote('wave');
+    sendProp('rod:wait');
     track('fishing_cast');
     timer = window.setTimeout(
       () => {
         set({ phase: 'bite' });
+        sendProp('rod:bite');
         haptic('medium');
         boatSay('A bite! Pull it in!');
         // too slow: it gets away
         timer = window.setTimeout(() => {
           if (get().phase !== 'bite') return;
           set({ phase: 'missed' });
+          sendProp('rod:wait');
           boatSay('Oh no, it got away. Try again!');
         }, 1600);
       },
@@ -102,6 +121,7 @@ export const useFishing = create<FishingStore>((set, get) => ({
       // pulled too early
       clear();
       set({ phase: 'missed' });
+      sendProp('rod:wait');
       boatSay('Too early! Wait for a bite.');
       return;
     }
@@ -111,7 +131,7 @@ export const useFishing = create<FishingStore>((set, get) => ({
     const book = s.book.includes(f.id) ? s.book : [...s.book, f.id];
     localStorage.setItem(BOOK_KEY, JSON.stringify(book));
     set({ phase: 'caught', catch: f, book });
-    useGame.getState().playEmote('thumbsup');
+    sendProp('rod:wait');
     boatSay(`You caught ${f.en}! ${f.fact}`);
     track('fishing_catch', { fish: f.id });
     if (f.id !== 'boot')
@@ -124,6 +144,10 @@ export const useFishing = create<FishingStore>((set, get) => ({
   },
   stop() {
     clear();
+    const sp = spotOf(get().spot);
     set({ spot: null, phase: 'idle', catch: null });
+    sendProp('');
+    // still sitting on the edge: stand up on the pier
+    if (sp && Math.hypot(localPos.x - sp.x, localPos.z - sp.seatZ) < 0.5) teleportTo(sp.x, sp.z, sp.rot);
   },
 }));

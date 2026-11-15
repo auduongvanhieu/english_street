@@ -49,17 +49,34 @@ export function GemChip({ dark, size = 14 }: { dark?: boolean; size?: number }) 
   );
 }
 
-/** Phones: 💎 balance + "+" next to the level pill, so top-ups are easy to find (same rule as GemChip). */
+/** Short number for the phone pills: 9999, 12k, 1.2M. */
+const short = (n: number) => (n < 10_000 ? String(n) : n < 1_000_000 ? `${Math.floor(n / 1000)}k` : `${(n / 1_000_000).toFixed(1)}M`);
+
+/** Phones: 🪙 coins and 💎 gems + "+" next to the level pill, so both balances are always in sight and top-ups are
+ *  easy to find (gems follow the GemChip rule; coins alone open the profile). */
 function GemPill() {
   const t = useT();
   const p = useProfile((s) => s.profile);
   const payOn = usePay((s) => !!s.info?.enabled);
-  if (!p || !(payOn || p.gems > 0 || (p.quota?.bonusTurns ?? 0) > 0)) return null;
+  if (!p) return null;
+  const gems = payOn || p.gems > 0 || (p.quota?.bonusTurns ?? 0) > 0;
   return (
-    <button type="button" onClick={() => useGame.getState().setUiPanel('topup')} aria-label={t('Gems')} className="flex min-h-9 items-center gap-1 rounded-full bg-black/45 pl-2.5 pr-1 text-xs font-semibold text-white backdrop-blur-sm">
-      <Icon name="gem" size={14} className="text-sky-300" />
-      {p.gems}
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-400 text-sm font-bold leading-none text-slate-900">+</span>
+    <button
+      type="button"
+      onClick={() => useGame.getState().setUiPanel(gems ? 'topup' : 'profile')}
+      aria-label={gems ? `${t('Coins')} ${p.coins} · ${t('Gems')} ${p.gems}` : `${t('Coins')} ${p.coins}`}
+      className={`flex min-h-9 items-center gap-1 rounded-full bg-black/45 pl-2.5 text-xs font-semibold text-white backdrop-blur-sm ${gems ? 'pr-1' : 'pr-2.5'}`}
+    >
+      <Icon name="coin" size={14} className="text-yellow-300" />
+      {short(p.coins)}
+      {gems ? (
+        <>
+          <span className="mx-0.5 h-4 w-px bg-white/25" />
+          <Icon name="gem" size={14} className="text-sky-300" />
+          {short(p.gems)}
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-400 text-sm font-bold leading-none text-slate-900">+</span>
+        </>
+      ) : null}
     </button>
   );
 }
