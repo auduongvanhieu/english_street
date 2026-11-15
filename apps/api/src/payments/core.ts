@@ -18,7 +18,9 @@ const USDT_TAG_MAX = 299;
 export const USDT_TRC20_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 export const USDT_BEP20_CONTRACT = '0x55d398326f99059ff775485246999027b3197955';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export const CODE_RE = /ES[A-HJ-NP-Z2-9]{6}/;
+/** ES + 6 letters/digits; orders of testers (payTesters) get ESTEST + 6 (not counted as revenue) */
+export const CODE_RE = /ES(?:TEST)?[A-HJ-NP-Z2-9]{6}/;
+export const TEST_PREFIX = 'ESTEST';
 
 export const packs = (): PayPack[] => setting('payPacks');
 
@@ -31,15 +33,17 @@ export function methods(): PayMethod[] {
   return m;
 }
 
+/** Is this player in the testers list (payTesters, id or e-mail)? Their orders are test orders. */
+export function isPayTester(u: { id: string; email: string | null }): boolean {
+  const t = setting('payTesters');
+  return t.includes(u.id.toLowerCase()) || (!!u.email && t.includes(u.email.toLowerCase()));
+}
+
 /** May this player see and use top-ups? (payMode: off / test = testers only / on) */
 export function payOpenFor(u: { id: string; email: string | null }): boolean {
   const mode = setting('payMode');
   if (mode === 'on') return true;
-  if (mode === 'test') {
-    const t = setting('payTesters');
-    return t.includes(u.id.toLowerCase()) || (!!u.email && t.includes(u.email.toLowerCase()));
-  }
-  return false;
+  return mode === 'test' && isPayTester(u);
 }
 
 export async function firstBonusFor(userId: string): Promise<boolean> {
@@ -97,8 +101,12 @@ export async function createOrder(u: { id: string; email: string | null }, packI
   if (same) return same;
   if (pending.length >= MAX_PENDING) throw new PayError('too_many_pending');
   const expiresAt = new Date(Date.now() + setting('payOrderMinutes') * 60_000);
+  const test = isPayTester(u);
   for (let i = 0; i < 30; i++) {
-    const code = 'ES' + Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join('');
+    const tail = Array.from({ length: 6 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join('');
+    // a normal code never starts with TEST, so ESTEST… always means a tester's order
+    if (!test && tail.startsWith('TEST')) continue;
+    const code = (test ? TEST_PREFIX : 'ES') + tail;
     let amount = pack.vnd;
     if (method !== 'vnd') {
       amount = Math.round(pack.usdt * MICRO_USDT) + randomInt(1, USDT_TAG_MAX + 1) * 1000;
@@ -139,8 +147,12 @@ async function findOrder(tx: Tx, inc: Incoming) {
   if (inc.source === 'sepay') {
     const text = inc.content.toUpperCase();
     // banks sometimes drop or add spaces / dashes: look in the text as it is, then without them
-    const code = text.match(CODE_RE)?.[0] ?? text.replace(/[^A-Z0-9]/g, '').match(CODE_RE)?.[0];
-    return code ? tx.paymentOrder.findUnique({ where: { code } }) : null;
+    for (const t of [text, text.replace(/[^A-Z0-9]/g, '')]) {
+      const code = t.match(CODE_RE)?.[0];
+      const o = code ? await tx.paymentOrder.findUnique({ where: { code } }) : null;
+      if (o) return o;
+    }
+    return null;
   }
   return tx.paymentOrder.findFirst({ where: { method, amount: inc.amount, status: { in: ['pending', 'expired', 'paid'] }, createdAt: { gte: new Date(Date.now() - 3 * 86_400_000) } }, orderBy: { createdAt: 'desc' } });
 }

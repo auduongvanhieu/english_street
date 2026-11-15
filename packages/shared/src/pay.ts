@@ -7,6 +7,8 @@ export type PayMethod = (typeof PAY_METHODS)[number];
 export type PayStatus = 'pending' | 'paid' | 'expired' | 'cancelled' | 'refunded';
 /** amounts are kept in the smallest unit: đồng, or micro-USDT (1 USDT = 1 000 000) */
 export const MICRO_USDT = 1_000_000;
+/** Orders of testers (setting payTesters) have codes starting with ESTEST; they are not counted as revenue. */
+export const isTestOrderCode = (code: string) => code.startsWith('ESTEST');
 
 export interface PayPack {
   id: string;

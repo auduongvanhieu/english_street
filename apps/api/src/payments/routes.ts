@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { PAY_METHODS, type PayInfo, type PayMethod } from '@es/shared';
+import { PAY_METHODS, isTestOrderCode, type PayInfo, type PayMethod } from '@es/shared';
 import { env } from '../env';
 import { prisma } from '../plugins/prisma';
 import { limiter } from '../npc/ratelimit';
@@ -106,13 +106,15 @@ export function adminPayRoutes(app: FastifyInstance) {
     const [orders, unmatched, paid] = await Promise.all([
       prisma.paymentOrder.findMany({ where: { createdAt: { gte: since } }, orderBy: { createdAt: 'desc' }, take: 200 }),
       prisma.paymentTx.findMany({ where: { status: 'unmatched' }, orderBy: { createdAt: 'desc' }, take: 100 }),
-      prisma.paymentOrder.findMany({ where: { status: 'paid', paidAt: { gte: since } }, select: { paidAt: true, method: true, paidAmount: true, gems: true } }),
+      prisma.paymentOrder.findMany({ where: { status: 'paid', paidAt: { gte: since } }, select: { code: true, paidAt: true, method: true, paidAmount: true, gems: true } }),
     ]);
+    // testers' orders (ESTEST…): real transfers, but not revenue
+    const test = { vnd: 0, usdt: 0, gems: 0, n: 0 };
     const users = await prisma.user.findMany({ where: { id: { in: [...new Set(orders.map((o) => o.userId))] } }, select: { id: true, name: true, email: true } });
     const byDay: Record<string, { vnd: number; usdt: number; gems: number; n: number }> = {};
     for (const p of paid) {
       const d = new Date(p.paidAt!.getTime() + 7 * 3600_000).toISOString().slice(0, 10);
-      const row = (byDay[d] ??= { vnd: 0, usdt: 0, gems: 0, n: 0 });
+      const row = isTestOrderCode(p.code) ? test : (byDay[d] ??= { vnd: 0, usdt: 0, gems: 0, n: 0 });
       if (p.method === 'vnd') row.vnd += p.paidAmount;
       else row.usdt += p.paidAmount;
       row.gems += p.gems;
@@ -122,7 +124,13 @@ export function adminPayRoutes(app: FastifyInstance) {
     const gemRows = await prisma.coinLedger.groupBy({ by: ['reason', 'source'], where: { currency: 'gem', createdAt: { gte: since } }, _sum: { delta: true }, _count: true });
     const gemUse = gemRows.map((r) => ({ reason: r.reason, source: r.source, gems: r._sum.delta ?? 0, n: r._count })).sort((a, b) => Math.abs(b.gems) - Math.abs(a.gems));
     const held = await prisma.user.aggregate({ _sum: { gems: true, npcBonusTurns: true } });
+    // the testers list, with the account each e-mail / id belongs to (if any)
+    const keys = setting('payTesters');
+    const tu = keys.length ? await prisma.user.findMany({ where: { OR: [{ id: { in: keys } }, { email: { in: keys, mode: 'insensitive' } }] }, select: { id: true, name: true, email: true } }) : [];
+    const testers = keys.map((k) => ({ key: k, user: tu.find((u) => u.id.toLowerCase() === k || u.email?.toLowerCase() === k) ?? null }));
     return {
+      test,
+      testers,
       gemUse,
       gemsHeld: held._sum.gems ?? 0,
       bonusTurnsHeld: held._sum.npcBonusTurns ?? 0,

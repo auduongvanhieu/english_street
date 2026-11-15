@@ -35,7 +35,7 @@ assert.equal(await err(createOrder({ id, email: 'pay-tester@example.com' }, 'nop
 const o1 = await createOrder({ id, email: 'pay-tester@example.com' }, 'medium', 'vnd');
 const again = await createOrder({ id, email: 'pay-tester@example.com' }, 'medium', 'vnd');
 assert.equal(again.code, o1.code);
-assert.match(o1.code, /^ES[A-Z2-9]{6}$/);
+assert.match(o1.code, /^ESTEST[A-HJ-NP-Z2-9]{6}$/, 'a tester gets a test code');
 assert.equal(o1.amount, 50_000);
 const v1 = await orderView(o1);
 assert.equal(v1.gems, 540, 'first top-up shows double');
@@ -55,6 +55,21 @@ assert.equal(await gems(), 540, 'credited exactly once');
 // no code at all
 assert.equal((await receive({ source: 'sepay', txRef: `d${t}`, amount: 20_000, content: 'tien an trua', raw: {} })).result, 'unmatched');
 
+// a player not in the testers list (top-ups open to everyone) gets a normal code, never ESTEST…
+setSettingForTest('payMode', 'on');
+const n1 = await createOrder({ id: other, email: `other-${t}@example.com` }, 'small', 'vnd');
+assert.match(n1.code, /^ES[A-HJ-NP-Z2-9]{6}$/);
+assert.ok(!n1.code.startsWith('ESTEST'));
+// bank put spaces inside the code
+const spaced = `${n1.code.slice(0, 2)} ${n1.code.slice(2, 5)} ${n1.code.slice(5)} ck`;
+assert.deepEqual(await receive({ source: 'sepay', txRef: `n${t}`, amount: 20_000, content: spaced, raw: {} }), { result: 'paid', code: n1.code, userId: other, gems: 200 });
+// a test code split by the bank still matches
+const o2 = await createOrder({ id, email: 'pay-tester@example.com' }, 'small', 'vnd');
+assert.ok(o2.code.startsWith('ESTEST'));
+assert.equal((await receive({ source: 'sepay', txRef: `s${t}`, amount: 20_000, content: `ND ${o2.code.slice(0, 6)} ${o2.code.slice(6, 9)}-${o2.code.slice(9)} x`, raw: {} })).result, 'paid');
+await prisma.user.update({ where: { id }, data: { gems: 540 } });
+setSettingForTest('payMode', 'test');
+
 // USDT: unique amount per network, matched by amount, second top-up not doubled
 const u1 = await createOrder({ id, email: 'pay-tester@example.com' }, 'small', 'usdt_trc20');
 const u2 = await createOrder({ id, email: 'pay-tester@example.com' }, 'large', 'usdt_trc20');
@@ -68,10 +83,10 @@ assert.equal((await receive({ source: 'bep20', txRef: `0x${t}:0`, amount: u2.amo
 assert.equal(await gems(), 540 + 100);
 assert.equal((await prisma.user.findUniqueOrThrow({ where: { id } })).coins, 10, 'coins untouched');
 const ledger = await prisma.coinLedger.findMany({ where: { userId: id } });
-assert.deepEqual(ledger.map((l) => `${l.currency}:${l.delta}`).sort(), ['gem:100', 'gem:540']);
+assert.deepEqual(ledger.map((l) => `${l.currency}:${l.delta}`).sort(), ['gem:100', 'gem:100', 'gem:540']);
 
 // clean up
-await prisma.paymentTx.deleteMany({ where: { OR: [{ orderCode: { in: [o1.code, u1.code, u2.code] } }, { txRef: { contains: String(t) } }] } });
+await prisma.paymentTx.deleteMany({ where: { OR: [{ orderCode: { in: [o1.code, o2.code, n1.code, u1.code, u2.code] } }, { txRef: { contains: String(t) } }] } });
 await prisma.paymentOrder.deleteMany({ where: { userId: { in: [id, guest, other] } } });
 await prisma.coinLedger.deleteMany({ where: { userId: { in: [id, guest, other] } } });
 await prisma.event.deleteMany({ where: { playerId: { in: [id, guest, other] } } });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { payAmountText, type PayMethod } from '@es/shared';
+import { isTestOrderCode, payAmountText, type PayMethod } from '@es/shared';
 import { api, get } from '../api';
 import { fmtDate, useL } from '../i18n';
 import { AsyncBtn, Badge, Card, Field, Loaded, Modal, Num, Page, Tabs, Text, Table, confirmDialog, toast, useLoad } from '../ui';
@@ -37,6 +37,9 @@ interface Data {
   gemUse: { reason: string; source: string; gems: number; n: number }[];
   gemsHeld: number;
   bonusTurnsHeld: number;
+  /** testers' paid orders (ESTEST…), not in byDay */
+  test: { vnd: number; usdt: number; gems: number; n: number };
+  testers: { key: string; user: { id: string; name: string; email: string | null } | null }[];
   config: { mode: 'off' | 'test' | 'on'; methods: PayMethod[]; sepayKey: boolean; chain: { trc20: { at: number; ok: boolean; error: string }; bep20: { at: number; ok: boolean; error: string; block: number } } };
 }
 
@@ -71,7 +74,8 @@ export function PaymentsPage() {
               )}
             </p>
           </Card>
-          <Limits keys={['payMode', 'payTesters', 'payVnd', 'payUsdt', 'payFirstBonus', 'payOrderMinutes', 'payBank', 'payBankAccount', 'payBankName', 'payTrc20Address', 'payBep20Address', 'payBep20Confirmations', 'payPacks', 'gemRate', 'gemTurnPack', 'npcPaidDailyBudgetUsd', 'gemGiftStreak', 'gemGiftChapter', 'gemPrices']} />
+          <Loaded s={s}>{(d) => <Testers d={d} reload={s.reload} />}</Loaded>
+          <Limits keys={['payMode', 'payVnd', 'payUsdt', 'payFirstBonus', 'payOrderMinutes', 'payBank', 'payBankAccount', 'payBankName', 'payTrc20Address', 'payBep20Address', 'payBep20Confirmations', 'payPacks', 'gemRate', 'gemTurnPack', 'npcPaidDailyBudgetUsd', 'gemGiftStreak', 'gemGiftChapter', 'gemPrices']} />
         </>
       ) : (
         <Loaded s={s}>
@@ -98,6 +102,11 @@ function Overview({ d }: { d: Data }) {
         <Card title={L('Tiền về (60 ngày)', 'Money in (60 days)')}>
           <p className="text-lg font-bold">{payAmountText('vnd', sum.vnd)}</p>
           <p className="text-sm">{payAmountText('usdt_trc20', sum.usdt)}</p>
+          {d.test.n ? (
+            <p className="mt-1 text-xs text-slate-500">
+              {L('Không tính', 'Not counted')} {d.test.n} {L('đơn thử', 'test orders')}: {[d.test.vnd ? payAmountText('vnd', d.test.vnd) : '', d.test.usdt ? payAmountText('usdt_trc20', d.test.usdt) : ''].filter(Boolean).join(' · ')}
+            </p>
+          ) : null}
         </Card>
         <Card title={L('Đơn đã trả', 'Paid orders')}>
           <p className="text-lg font-bold">{sum.n}</p>
@@ -173,7 +182,11 @@ function Orders({ d, reload }: { d: Data; reload: () => void }) {
         rows={rows}
         rowKey={(o) => o.id}
         cols={[
-          { key: 'code', label: L('Mã', 'Code'), render: (o) => <span className="font-mono">{o.code}</span> },
+          { key: 'code', label: L('Mã', 'Code'), render: (o) => (
+            <span className="font-mono">
+              {o.code} {isTestOrderCode(o.code) ? <Badge tone="amber">{L('thử', 'test')}</Badge> : null}
+            </span>
+          ) },
           { key: 'user', label: L('Người chơi', 'Player'), render: (o) => <a href={`#/users/${o.userId}`} className="text-indigo-600 hover:underline">{o.user?.name ?? o.userId}</a> },
           { key: 'amount', label: L('Số tiền', 'Amount'), render: (o) => payAmountText(o.method, o.amount) },
           { key: 'gems', label: '💎', render: (o) => o.gems.toLocaleString('vi-VN') },
@@ -260,7 +273,7 @@ function Assign({ t, onClose, onDone }: { t: Tx; onClose: () => void; onDone: ()
       <Field label={L('Gán cho đơn (cộng 💎 theo gói của đơn)', 'Pay an order (gems of its pack)')}>
         <div className="flex gap-1">
           <Text value={code} onChange={(v) => setCode(v.toUpperCase())} placeholder="ES…" />
-          <AsyncBtn kind="primary" disabled={!/^ES[A-Z0-9]{6}$/.test(code)} onRun={() => run({ code })}>
+          <AsyncBtn kind="primary" disabled={!/^ES(TEST)?[A-Z0-9]{6}$/.test(code)} onRun={() => run({ code })}>
             {L('Gán', 'Assign')}
           </AsyncBtn>
         </div>
@@ -275,5 +288,57 @@ function Assign({ t, onClose, onDone }: { t: Tx; onClose: () => void; onDone: ()
         </div>
       </Field>
     </Modal>
+  );
+}
+
+/** Testers: may top up while the mode is "testers only"; their orders get an ESTEST… code and are not revenue. */
+function Testers({ d, reload }: { d: Data; reload: () => void }) {
+  const L = useL();
+  const [add, setAdd] = useState('');
+  const keys = d.testers.map((t) => t.key);
+  const next = add.trim().toLowerCase();
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next) || /^[a-z0-9_-]{3,80}$/.test(next);
+  const save = async (list: string[]) => {
+    await api('PUT', '/admin/settings/payTesters', { value: list });
+    toast(L('Đã lưu', 'Saved'));
+    reload();
+  };
+  return (
+    <Card title={L('Người thử nghiệm nạp tiền', 'Top-up testers')} className="mb-3">
+      <p className="mb-3 text-sm text-slate-600">
+        {L(
+          'Những người này nạp được khi chế độ là "Chỉ người thử". Đơn của họ có mã bắt đầu bằng ESTEST, vẫn được cộng 💎 như thường nhưng không tính vào doanh thu (kể cả khi đã mở cho mọi người).',
+          'These players can top up while the mode is "Testers only". Their orders get a code starting with ESTEST: gems are credited as usual, but the money is not counted as revenue (also once top-ups are open to everyone).',
+        )}
+      </p>
+      <div className="mb-3 flex max-w-md gap-1">
+        <Text value={add} onChange={setAdd} placeholder={L('email hoặc id người chơi', 'e-mail or player id')} />
+        <AsyncBtn kind="primary" disabled={!ok || keys.includes(next)} onRun={async () => (await save([...keys, next]), setAdd(''))}>
+          {L('Thêm', 'Add')}
+        </AsyncBtn>
+      </div>
+      <Table
+        rows={d.testers}
+        rowKey={(t) => t.key}
+        empty={L('Chưa có ai', 'Nobody yet')}
+        cols={[
+          { key: 'key', label: L('Email / id', 'E-mail / id'), render: (t) => <span className="font-mono text-xs">{t.key}</span> },
+          {
+            key: 'user',
+            label: L('Tài khoản', 'Account'),
+            render: (t) => (t.user ? <a href={`#/users/${t.user.id}`} className="text-indigo-600 hover:underline">{t.user.name}</a> : <span className="text-xs text-slate-400">{L('chưa có tài khoản', 'no account yet')}</span>),
+          },
+          {
+            key: 'act',
+            label: '',
+            render: (t) => (
+              <AsyncBtn small kind="ghost" onRun={async () => (await confirmDialog(L(`Bỏ ${t.key} khỏi danh sách thử?`, `Remove ${t.key} from the testers?`))) && save(keys.filter((k) => k !== t.key))}>
+                {L('Bỏ', 'Remove')}
+              </AsyncBtn>
+            ),
+          },
+        ]}
+      />
+    </Card>
   );
 }

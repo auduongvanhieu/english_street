@@ -62,6 +62,7 @@ Danh mục đồ 💎 nằm ở `packages/shared/src/avatar.ts` (`gems`) và `ho
 | Cài đặt | Ý nghĩa |
 |---|---|
 | `payMode` | `off` = ẩn; `test` = chỉ người trong `payTesters` (id hoặc email); `on` = mọi tài khoản đã đăng ký |
+| `payTesters` | Người thử nghiệm. Sửa ở thẻ "Người thử nghiệm nạp tiền" (tab Cài đặt). Đơn của họ có mã `ESTEST` + 6 ký tự, vẫn cộng 💎 nhưng **không tính vào doanh thu** (thẻ "Tiền về" và bảng theo ngày), kể cả khi `payMode = on`. Mã đơn thường không bao giờ bắt đầu bằng `TEST`. |
 | `payVnd`, `payUsdt` | Bật/tắt từng cách trả |
 | `payPacks` | Các gói: `id`, `gems`, `vnd`, `usdt` (mặc định 100 / 270 / 600 💎 = 20.000 / 50.000 / 100.000đ = 1 / 2 / 4 USDT) |
 | `payBank`, `payBankAccount`, `payBankName` | Mã ngân hàng VietQR (MB, VCB, 970422…), số tài khoản, tên chủ tài khoản (không dấu) |
@@ -89,7 +90,7 @@ Ví nhận tiền có thể là ví riêng (Trust Wallet, OKX Wallet…) hoặc 
      - Kiểu chứng thực: **API Key**
      - Chỉ nhận tiền vào.
 2. **Đặt `SEPAY_API_KEY=<key>`** vào `/home/sm/apps/english-street/.env` rồi khởi động lại API (`deploy.sh restart`).
-3. **Điền cài đặt trong admin:** điền ngân hàng và ví, đặt `payMode = test`, thêm email của bạn vào `payTesters`.
+3. **Điền cài đặt trong admin:** điền ngân hàng và ví, đặt `payMode = test`, thêm email của bạn vào danh sách người thử nghiệm (đơn của bạn sẽ có mã `ESTEST…` và không tính vào doanh thu).
 4. **Thử thật:**
    - nạp gói nhỏ nhất bằng chuyển khoản;
    - nạp 1 USDT trên mỗi mạng.
