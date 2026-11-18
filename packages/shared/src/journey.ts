@@ -4,7 +4,7 @@ import type { AreaId } from './schemas/area';
  * "Journey": the quest system that walks players through the whole game (plans/english-street-quest-journey.md).
  *  - main: 12 chapters given by Priya at Tourist Info, one after the other;
  *  - area: 3 tasks per area — all done = that area's stamp in the passport;
- *  - daily: 3 small tasks a day picked from DAILY_POOL.
+ *  - daily: a listening and a shadowing lesson + 2 small tasks a day picked from DAILY_POOL.
  * Progress is counted by the API from game events (server events, and the client events it accepts); the texts
  * live in the web app (journeyText.ts) so they go through the translations.
  */
@@ -19,7 +19,7 @@ export interface JourneyGoal {
   stamps?: number;
 }
 /** Where "Take me there" goes. */
-export type JourneyGuide = { npc: string } | { area: AreaId } | { place: 'river' | 'ferry' | 'fishing' | 'kitchen' | 'kiosk' | 'library' };
+export type JourneyGuide = { npc: string } | { area: AreaId } | { place: 'river' | 'ferry' | 'fishing' | 'kitchen' | 'kiosk' | 'library' } | { open: 'listen' | 'shadow' };
 export interface JourneyStep {
   id: string;
   kind: 'main' | 'area' | 'daily' | 'story' | 'bonus';
@@ -71,7 +71,12 @@ export const AREA_STEPS: JourneyStep[] = [
 ];
 export const STAMP_AREAS = [...new Set(AREA_STEPS.map((s) => s.area!))];
 
-/** Daily tasks: three a day, picked per player and day. */
+/** Every day: one listening and one shadowing lesson (ears and mouth), then DAILY_COUNT tasks from the pool. */
+export const DAILY_SKILLS: JourneyStep[] = [
+  { id: 'd-listen', kind: 'daily', goal: { event: 'listening_done' }, reward: R(15, 4), guide: { open: 'listen' } },
+  { id: 'd-shadow', kind: 'daily', goal: { event: 'shadowing_done' }, reward: R(15, 4), guide: { open: 'shadow' } },
+];
+/** Daily tasks: the skills above plus a few picked per player and day. */
 export const DAILY_POOL: JourneyStep[] = [
   { id: 'd-quest', kind: 'daily', goal: { event: 'quest_end', where: { status: 'completed' } }, reward: R(15, 3) },
   { id: 'd-cards', kind: 'daily', goal: { event: 'word_card_open', count: 5 }, reward: R(10, 3) },
@@ -107,7 +112,8 @@ export const STORY_STEPS: (JourneyStep & { hour: number })[] = [
   { id: 's8-night', kind: 'story', hour: 22, goal: { event: ['home_room_enter', 'hotel_checkin'] }, reward: R(10, 3), guide: { area: 'home' } },
 ];
 export const STORY_BONUS = R(50, 20);
-export const DAILY_COUNT = 3;
+/** random tasks a day (on top of DAILY_SKILLS) */
+export const DAILY_COUNT = 2;
 export const DAILY_BONUS = R(20, 10);
 
 /** The day's tasks for a player (same everywhere: hash of id + date). */
@@ -115,8 +121,8 @@ export function dailyFor(playerId: string, day: string): string[] {
   let h = 2166136261;
   for (const ch of `${playerId}|${day}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   const pool = DAILY_POOL.map((s) => s.id);
-  const out: string[] = [];
-  while (out.length < DAILY_COUNT && pool.length) {
+  const out: string[] = DAILY_SKILLS.map((s) => s.id);
+  while (out.length < DAILY_SKILLS.length + DAILY_COUNT && pool.length) {
     h = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
     out.push(pool.splice(h % pool.length, 1)[0]!);
   }
@@ -175,7 +181,7 @@ export const INVITE_PAY_CHAPTER = MAIN_STEPS.findIndex((s) => s.id === INVITE_PA
 export const APP_INSTALL_STEP = 'b-install-app';
 export const BONUS_STEPS: JourneyStep[] = [{ id: APP_INSTALL_STEP, kind: 'bonus', goal: { event: 'app_installed' }, reward: R(50, 200) }];
 
-export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_POOL, ...STORY_STEPS, ...BONUS_STEPS];
+export const ALL_STEPS: JourneyStep[] = [...MAIN_STEPS, ...AREA_STEPS, ...DAILY_SKILLS, ...DAILY_POOL, ...STORY_STEPS, ...BONUS_STEPS];
 export const stepById = (id: string) => ALL_STEPS.find((s) => s.id === id);
 
 /** Saved per player (User.gameState.journey). */

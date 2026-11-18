@@ -1,6 +1,6 @@
 import { InstallCard } from '../InstallApp';
 import { useEffect, useState } from 'react';
-import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, INVITE_PAY_CHAPTER, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
+import { AREA_STEPS, DAILY_BONUS, DAILY_POOL, DAILY_SKILLS, INVITE_PAY_CHAPTER, INVITE_REWARD, MAIN_STEPS, STAMP_AREAS, STORY_BONUS, STORY_STEPS, type JourneyStep } from '@es/shared';
 import { getPlayerId } from '../../net/player';
 import { Panel, DailyContent } from '../ProfilePanels';
 import { useJourney } from '../../store/journey';
@@ -47,8 +47,8 @@ function StepRow({ s, done, progress, current }: { s: JourneyStep; done: boolean
             ) : null}
             {!done && s.guide ? (
               <button type="button" onClick={() => useJourney.getState().go(s)} className="flex min-h-8 items-center gap-1 rounded-full bg-blue-600 px-3 font-semibold text-white">
-                <Icon name="pin" size={15} />
-                {t('Take me there')}
+                <Icon name={'open' in s.guide ? 'speaker' : 'pin'} size={15} />
+                {'open' in s.guide ? t('Start') : t('Take me there')}
               </button>
             ) : null}
             {!done && s.kind !== 'main' ? (
@@ -151,10 +151,10 @@ export function JourneyPanel() {
         </>
       ) : (
         <>
-          <p className="mb-2 text-sm text-gray-600">{t('Do all 3 tasks today for a bonus: +{xp} XP, +{coins} coins.', DAILY_BONUS)}</p>
+          <p className="mb-2 text-sm text-gray-600">{t('Do all {n} tasks today for a bonus: +{xp} XP, +{coins} coins.', { ...DAILY_BONUS, n: st.daily.length })}</p>
           <ul className="space-y-2">
             {st.daily.map((id) => {
-              const s = DAILY_POOL.find((x) => x.id === id);
+              const s = DAILY_SKILLS.find((x) => x.id === id) ?? DAILY_POOL.find((x) => x.id === id);
               return s ? <StepRow key={id} s={s} done={st.dailyDone.includes(id)} progress={st.dailyProg[id]} /> : null;
             })}
           </ul>

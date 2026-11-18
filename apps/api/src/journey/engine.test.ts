@@ -55,7 +55,7 @@ test('daily tasks and the bonus', () => {
 
 test('daily picks and weekly are stable', () => {
   assert.deepEqual(dailyFor('player-1', '2026-11-06'), dailyFor('player-1', '2026-11-06'));
-  assert.equal(new Set(dailyFor('player-1', '2026-11-06')).size, 3);
+  assert.equal(new Set(dailyFor('player-1', '2026-11-06')).size, 4);
   assert.match(weekKey(Date.UTC(2026, 10, 6)), /^2026-W4[45]$/);
   assert.ok(weeklyFor('2026-W45').id.startsWith('w-'));
 });

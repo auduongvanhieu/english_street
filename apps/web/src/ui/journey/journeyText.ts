@@ -26,6 +26,8 @@ const MAIN: Record<string, Text> = {
   'm12-citizen': { title: tk('English Street citizen'), how: tk('Collect 6 area stamps in your passport.') },
 };
 const DAILY: Record<string, Text> = {
+  'd-listen': { title: tk('Listening: 6 questions'), how: tk('Listen to sentences from the street and pick what you heard or the missing word.') },
+  'd-shadow': { title: tk('Shadowing: say 5 sentences'), how: tk('Listen to a sentence, then say it the same way into the microphone.') },
   'd-quest': { title: tk('Finish a conversation quest'), how: tk('Talk to any shopkeeper and finish one of their quests.') },
   'd-cards': { title: tk('Open 5 word cards'), how: tk('Tap things in any area to open their word cards.') },
   'd-fish': { title: tk('Catch 2 fish'), how: tk('Go fishing at the end of a boat pier on the river.') },

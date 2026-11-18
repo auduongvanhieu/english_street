@@ -5,6 +5,7 @@ import {
   STORY_BONUS,
   STORY_STEPS,
   DAILY_POOL,
+  DAILY_SKILLS,
   INVITEE_BONUS,
   INVITE_PAY_STEP,
   INVITE_REWARD,
@@ -39,7 +40,12 @@ function fresh(playerId: string): JourneyState {
 }
 function rollDay(st: JourneyState, playerId: string) {
   const day = today();
-  if (st.day === day) return;
+  if (st.day === day) {
+    // days rolled before the listening / shadowing lessons existed get them too
+    const miss = DAILY_SKILLS.filter((s) => !st.daily.includes(s.id)).map((s) => s.id);
+    if (miss.length) st.daily = [...miss, ...st.daily];
+    return;
+  }
   Object.assign(st, { day, daily: dailyFor(playerId, day), dailyDone: [], dailyProg: {}, dailyBonus: false, story: 0, storyBonus: false });
 }
 export const stampsOf = (st: JourneyState) => STAMP_AREAS.filter((a) => AREA_STEPS.filter((s) => s.area === a).every((s) => st.done.includes(s.id)));
@@ -94,7 +100,7 @@ export function applyEvent(st: JourneyState, name: string, props: Record<string,
   // today's tasks
   for (const id of st.daily) {
     if (st.dailyDone.includes(id)) continue;
-    const s = DAILY_POOL.find((x) => x.id === id);
+    const s = DAILY_SKILLS.find((x) => x.id === id) ?? DAILY_POOL.find((x) => x.id === id);
     if (s && bump(s, st.dailyProg)) (st.dailyDone.push(id), done.push(s));
   }
   let dailyBonus = false;

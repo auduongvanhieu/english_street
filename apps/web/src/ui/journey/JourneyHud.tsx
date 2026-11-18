@@ -42,8 +42,8 @@ export function NextStepChip({ touch }: { touch: boolean }) {
         </span>
       </button>
       {step.guide ? (
-        <button type="button" onClick={() => useJourney.getState().go(step)} title={t('Take me there')} aria-label={t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-6 w-6 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
-          <Icon name="pin" size={touch ? 13 : 18} />
+        <button type="button" onClick={() => useJourney.getState().go(step)} title={'open' in step.guide ? t('Start') : t('Take me there')} aria-label={'open' in step.guide ? t('Start') : t('Take me there')} className={`flex shrink-0 items-center justify-center bg-blue-600 text-white ${touch ? 'h-6 w-6 rounded-full text-xs' : 'h-9 w-9 rounded-xl'}`}>
+          <Icon name={'open' in step.guide ? 'speaker' : 'pin'} size={touch ? 13 : 18} />
         </button>
       ) : null}
     </div>

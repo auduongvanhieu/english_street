@@ -27,6 +27,8 @@ import { initAnalytics, track } from './net/analytics';
 import { useProfile } from './store/profile';
 import { AuthScreen } from './ui/AuthScreen';
 import { ProfileHud, UiPanels } from './ui/ProfilePanels';
+import { PracticePanel } from './ui/PracticePanel';
+import { usePractice } from './store/practice';
 import { useGame } from './store/game';
 import { initPairMessaging, usePair } from './store/pair';
 import { initVoiceWatch, useVoiceChat } from './net/voicechat';
@@ -126,7 +128,7 @@ import { useLang } from './i18n';
 
 if (import.meta.env.DEV) {
   // Test hooks (used by the headless e2e scripts).
-  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile, useTeamGame, useFerry, waiter, useBeachSports, useTripRides, useFishing };
+  (window as unknown as { __es: unknown }).__es = { useGame, usePair, useVoiceChat, cameraOrbit, localPos, CYCLISTS, cyclistAt, serverNow, freezeClock, CRITTERS, poseAt, livePos, useArea, useRestaurant, useFarm, useShopping, useLang, teleportTo, useBus, rideTo, skyDebug, sky, moveTarget, useSeat, useTalk, useFollow, useSettings, useSports, ballState, useMini, useBoats, useBooks, useTutorial, useKitchen, useJourney, useTrain, useMovie, useNearUsable, usables, useClassroom, useClinic, useFitting, useAnimalJobs, useMyRoom, useBeach, useHill, useRiverside, useOldTown, useMyFarm, useProfile, useTeamGame, useFerry, waiter, useBeachSports, useTripRides, useFishing, usePractice };
 }
 
 export default function App() {
@@ -534,6 +536,7 @@ export default function App() {
       <NpcPanel />
       <PairPanel />
       <UiPanels />
+      <PracticePanel />
       <AreaPanel />
       <ItemCard />
       {uiPanel === 'bus' ? <BusPanel /> : uiPanel === 'map' ? <MapPanel /> : uiPanel === 'players' ? <PlayersPanel /> : null}

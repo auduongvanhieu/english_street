@@ -62,6 +62,7 @@ export function guideTarget(g: JourneyGuide | undefined): { x: number; z: number
     const f = n.facing ?? 0;
     return { x: n.position[0] + Math.sin(f) * 1.8, z: n.position[2] + Math.cos(f) * 1.8, rot: f + Math.PI, npc: n.id };
   }
+  if ('open' in g) return null;
   if ('area' in g) {
     // a few steps inside the gate (in the area, so its guide can open on arrival)
     const a = areaById(g.area);
@@ -108,6 +109,12 @@ export const useJourney = create<JourneyStore>((set, getS) => ({
     }
   },
   go(step) {
+    // a lesson, not a place: open it where the player stands
+    if (step.guide && 'open' in step.guide) {
+      track('journey_go', { id: step.id });
+      void import('./practice').then((m) => m.usePractice.getState().start((step.guide as { open: 'listen' | 'shadow' }).open));
+      return;
+    }
     const t = guideTarget(step.guide);
     if (!t) return;
     useGame.getState().setUiPanel(null);

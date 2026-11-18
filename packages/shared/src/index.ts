@@ -25,3 +25,4 @@ export * from './journey';
 export * from './myfarm';
 export * from './teamGames';
 export * from './pay';
+export * from './practice';
